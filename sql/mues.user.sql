@@ -1,8 +1,8 @@
 /*
 
    MUES User Table Schema (MySQL)
-	$Id: mues.user.sql,v 1.3 2001/07/30 12:50:43 deveiant Exp $
-	Time-stamp: <21-Jul-2001 20:18:00 deveiant>
+	$Id: mues.user.sql,v 1.4 2001/09/26 13:35:45 deveiant Exp $
+	Time-stamp: <20-Sep-2001 17:05:08 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -36,7 +36,6 @@ CREATE TABLE muesuser (
 	role				TINYINT			UNSIGNED NOT NULL DEFAULT 0,		-- Permissions role
 	flags				INT				UNSIGNED NOT NULL DEFAULT 0,		-- Bitfield
 	preferences			BLOB,												-- Frozen Ruby hash
-	characters			BLOB,												-- Frozen Ruby hash
 
 	/* Indexes */
 	UNIQUE( username )
