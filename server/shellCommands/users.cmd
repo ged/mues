@@ -1,7 +1,7 @@
 # -*- default-generic -*-
 # User-related MUES::CommandShell commands.
-# Time-stamp: <24-Oct-2002 16:33:39 deveiant>
-# $Id: users.cmd,v 1.8 2002/10/25 05:09:17 deveiant Exp $
+# Time-stamp: <26-Oct-2002 18:58:58 deveiant>
+# $Id: users.cmd,v 1.9 2002/10/28 00:13:54 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -285,17 +285,19 @@ logging in without removing their user record by using the ban system.
 
 == Code
 
-	# attribute only
+	# Match on the name of the user to delete
 	unless argString =~ /(\S+)/
 		raise CommandError, self.usage
 	end
 
+	# Fetch the corresponding user from the Engine
 	username = $1
 	user = MUES::ServerFunctions::getUserByName( username ) or
 		raise CommandError, "No such user '#{username}'"
 	raise CommandError, "User is currently logged in." if user.activated?
 
-	prompt = "Remove %s: Are you sure?" % user.to_s
+	# Confirm the deletion with the user, and do the deletion if they confirm.
+	prompt = "Remove %s: Are you sure? " % user.to_s
 	confirm = MUES::Questionnaire::Confirmation( prompt ) {|qnaire|
 		if qnaire.confirmed?
 			MUES::ServerFunctions::unregisterUser( user )
