@@ -72,12 +72,27 @@ module MUES
 		DefaultSortPosition = 502
 	end
 
+	### Mock event filter subclass that returns another filter as results of
+	### input/output event handlers.
+	class FilterCreatingFilter < MockFilter
+		DefaultSortPosition = 505
+
+		def handleInputEvents( *events )
+			events = [ SubMockFilter::new(455) ] unless events.empty?
+			return events
+		end
+
+		def handleOutputEvents( *events )
+			events = [ SubMockFilter::new(555) ] unless events.empty?
+			return events
+		end
+	end
+
 	### Mock IOEvent classes
 	class MockInputEvent < InputEvent
 	end
 	class MockOutputEvent < OutputEvent
 	end
-
 
 	### Stream test case
 	class IOEventStreamTestCase < MUES::TestCase
@@ -85,6 +100,10 @@ module MUES
 		### Test case set_up method
 		def set_up
 			@stream = TestingStream::new
+		end
+
+		def tear_down
+			@stream.shutdown
 		end
 
 
@@ -290,6 +309,30 @@ module MUES
 			assert_same  inEvent, inFilter.inputEvents[0] 
 			assert_equal  1, outFilter.outputEvents.length 
 			assert_same  outEvent, outFilter.outputEvents[0] 
+		end
+
+		### Test Filter event-handler results
+		def test_08_FilterResult
+			@stream.debugLevel = 5
+
+			filterFilter = FilterCreatingFilter::new( "fcf", 515 )
+			@stream.addFilters( filterFilter )
+
+			assert_equal 3, @stream.filters.length
+
+			inEvent = InputEvent.new( "input" )
+			assert_nothing_raised { @stream.addEvents(inEvent) }
+			Thread.pass until @stream.notifyingInputObjects.empty? && @stream.notifyingOutputObjects.empty?
+			Thread.pass until @stream.idle
+
+			assert_equal 4, @stream.filters.length
+
+			outEvent = OutputEvent.new( "output" )
+			assert_nothing_raised { @stream.addEvents(outEvent) }
+			Thread.pass until @stream.notifyingInputObjects.empty? && @stream.notifyingOutputObjects.empty?
+			Thread.pass until @stream.idle
+
+			assert_equal 5, @stream.filters.length
 		end
 
 	end
