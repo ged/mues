@@ -1,0 +1,11 @@
+lib/**/*.rb
+ext/mues/*.c
+server/bin/*
+server/environments/*
+server/shellCommands/*.cmd
+server/shellCommands/TODO
+README
+INSTALL
+QUICKSTART
+CONFIGURATION
+TODO
