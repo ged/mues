@@ -9,13 +9,12 @@
 # [MUES::SystemEvent]
 # 	An abstract system event class.
 #
-# [MUES::SocketEvent]
-# 	An abstract socket event class. Events which deal with socket connections,
-# 	disconnections, etc. are derived from this class.
+# [MUES::ListenerEvent]
+# 	An abstract MUES::Listener event class. Events which deal with listener
+# 	connections, disconnections, etc. are derived from this class.
 #
-# [MUES::SocketConnectEvent]
-# 	An event class that is created when a connection is accepted on the
-# 	listening socket.
+# [MUES::ListenerConnectEvent]
+# 	An event class that is created when a connection is accepted on a listener.
 #
 # [MUES::LogEvent]
 # 	An event class used to add an entry to the log.
@@ -59,7 +58,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.9 2002/08/02 20:03:44 deveiant Exp $
+# $Id: systemevents.rb,v 1.10 2002/08/29 07:12:32 deveiant Exp $
 # 
 # == Authors
 # 
@@ -76,7 +75,7 @@ require 'poll'
 
 require "mues/Object"
 require "mues/Exceptions"
-require "mues/events/BaseClass"
+require "mues/events/Event"
 
 
 module MUES
@@ -97,13 +96,11 @@ module MUES
 	class ListenerEvent < SystemEvent ; implements MUES::AbstractClass
 
 		### Initialize a new ListenerEvent with the specified <tt>listener</tt>
-		### (a MUES::Listener object) and <tt>poll</tt> (a Poll object).
-		def initialize( listener, poll ) # :notnew:
+		### (a MUES::Listener object).
+		def initialize( listener ) # :notnew:
 			checkType( listener, MUES::Listener )
-			checkType( poll, Poll )
 
 			@listener = listener
-			@poll = poll
 
 			super()
 		end
@@ -114,9 +111,6 @@ module MUES
 
 		# The listener object (MUES::Listener) associated with the event.
 		attr_accessor	:listener
-
-		# The poll object (Poll) that generated the event
-		attr_accessor	:poll
 
 	end
 
@@ -148,12 +142,17 @@ module MUES
 						"Unknown error #{errorMask.inspect}"
 					end
 
-			@error = error
-			super( listener, poll )
+			@error		= error
+			@pollObj	= poll 
+
+			super( listener )
 		end
 
 		# The error message that was detected
-		attr_accessor :error
+		attr_reader :error
+
+		# The poll object which originated the error event
+		attr_reader :pollObj
 	end
 
 
@@ -161,6 +160,48 @@ module MUES
 	### listener's associated IO object. It is a derivative of
 	### MUES::ListenerEvent.
 	class ListenerConnectEvent < ListenerEvent
+
+		### Initialize a new ListenerConnectEvent with the specified
+		### <tt>listener</tt> (a MUES::Listener object) and filter (a
+		### MUES::IOEventFilter object).
+		def initialize( listener, filter )
+			checkType( filter, MUES::OutputFilter )
+
+			super( listener )
+			@filter = filter
+		end
+
+		######
+		public
+		######
+
+		# The new IOEventFilter created to abstract the new connection.
+		attr_reader :filter
+	end
+
+	
+	### An event class created when a connection which needs cleanup or resource
+	### de-allocation at the listener level is terminated.
+	class ListenerCleanupEvent < ListenerEvent
+
+		### Initialize a new ListenerCleanupEvent with the specified
+		### <tt>listener</tt> (a MUES::Listener object) and filter (a
+		### MUES::OutputFilter object).
+		def initialize( listener, filter )
+			checkType( filter, MUES::OutputFilter )
+
+			@filter = filter
+
+			super( listener )
+		end
+
+		######
+		public
+		######
+
+		# The halted IOEventFilter that originated the event.
+		attr_reader :filter
+
 	end
 
 
