@@ -1,7 +1,9 @@
+# -*- default-generic -*-
 #
 # The printobject MUES::CommandShell command.
-# Time-stamp: <12-Oct-2002 10:48:03 deveiant>
-# $Id: printobject.cmd,v 1.3 2002/10/13 23:26:21 deveiant Exp $
+#
+#   Time-stamp: <13-Oct-2002 21:51:47 deveiant>
+#   $Id: printobject.cmd,v 1.4 2002/10/14 09:48:04 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -65,5 +67,67 @@ pp
   end
 
   return [MUES::OutputEvent::new( prettyPrinted + "\n\n" )]
+
+
+### Display an object in YAML format
+= yamlobject
+
+== Abstract
+Display an object serialized into YAML.
+
+== Description
+This command outputs a YAML-formatted representation of the object specified, or
+the "current" context object if no id is specified. YAML is a straightforward
+machine parsable data serialization format designed for human readability.
+
+The host machine must have YAML installed and loaded for this command to
+work. If it does not, an error message will tell you so.
+
+== Usage
+
+  yamlobject <id>
+  yamlobject
+
+== Restriction
+
+implementor
+
+== Synonyms
+
+yp
+
+== Code
+
+  # Code will be called like this:
+  #   cmd.invoke( context, argString )
+  # where 'context' is a MUES::Command::Context object, and argString is the
+  # text of the command entered, with the command name and any leading/trailing
+  # whitespace removed.
+
+  # If YAML doesn't appear to be loaded, raise an error.
+  raise CommandError, "YAML isn't loaded." unless ::Object::const_defined?( :YAML )
+
+  targetObject = nil
+  prettyPrinted = ''
+
+  # If an id was given, look it up in the global ObjectSpace
+  if argString =~ /^\s*(\d+)\s*$/
+    targetId = $1.to_i
+    
+	ObjectSpace.each_object( MUES::Object ) {|obj|
+		next unless obj.id == targetId
+		targetObject = obj
+		break 
+	}
+	return OutputEvent.new( "No object found with id '#{targetId}'.\n\n" ) if
+		targetObject.nil?
+
+  # Otherwise use the context's "current object"
+  else
+    targetObject = context.evalContext
+  end
+
+  # Call the prettyprinter, using the arg-order of whichever version is loaded.
+  return [MUES::OutputEvent::new( targetObject.to_yaml + "\n\n" )]
 
 
