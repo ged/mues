@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.6 2002/09/27 16:05:53 deveiant Exp $
+#	$Id: utils.rb,v 1.7 2002/10/04 05:21:12 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -88,7 +88,7 @@ module UtilityFunctions
 	def debugMsg( msg )
 		return unless $DEBUG
 		msg.chomp!
-		$stderr.puts ansiCode( 'bold', 'red' ) + msg + ansiCode( 'reset' )
+		$stderr.puts ansiCode( 'bold', 'red' ) + ">>> #{msg}" + ansiCode( 'reset' )
 		$stderr.flush
 	end
 
@@ -215,4 +215,31 @@ module UtilityFunctions
 			found
 		}
 	end
+
+	def editInPlace( file )
+		raise "No block specified for editing operation" unless block_given?
+
+		File::open( "#{file}.#{$$}", File::RDWR|File::CREAT, 0600 ) {|tempfile|
+			File::open( file, File::RDONLY ) {|fh|
+				fh.each {|line|
+					newline = yield( line ) or next
+					tempfile.print( newline )
+				}
+			}
+
+			tempfile.seek(0)
+
+			File::open( file, File::TRUNC|File::WRONLY, 0644 ) {|newfile|
+				newfile.print( tempfile.read )
+			}
+		}
+	end
+
+	def shellCommand( *command )
+		raise "Empty command" if command.empty?
+
+		cmdpipe = IO::popen( command.join(' '), 'r' )
+		return cmdpipe.readlines
+	end
+
 end
