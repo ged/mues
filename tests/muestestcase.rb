@@ -18,13 +18,13 @@
 # 
 # == Version
 #
-#  $Id: muestestcase.rb,v 1.1 2002/04/09 07:09:56 deveiant Exp $
+#  $Id: muestestcase.rb,v 1.2 2002/05/16 03:55:17 deveiant Exp $
 # 
 
 if File.directory? "lib"
-	$:.unshift "lib"
+	$:.unshift "lib", "ext"
 elsif File.directory? "../lib"
-	$:.unshift "../lib", ".."
+	$:.unshift "../lib", "../ext", ".."
 end
 
 require "test/unit"
