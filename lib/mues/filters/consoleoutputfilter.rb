@@ -10,11 +10,49 @@ ConsoleOutputFilter - A console output filter class
 
 == Synopsis
 
+  require "mues/filters/ConsoleOutputFilter"
   
+  cof = MUES::ConsoleOutputFilter.new()
 
 == Description
 
+This class is an IOEventFilter which outputs to and takes input from the console
+on which the Engine is running. It is a singleton.
 
+== Classes
+=== MUES::ConsoleOutputFilter
+==== Public Methods
+
+--- MUES::ConsoleOutputFilter#instance
+
+    Return the console output filter instance, creating it if necessary.
+
+--- MUES::ConsoleOutputFilter#ioThread
+
+    Return the filter^s input thread object.
+
+--- MUES::ConsoleOutputFilter#handleOutputEvents( *events )
+
+    Handle an output event by appending its data to the output buffer
+
+--- MUES::ConsoleOutputFilter#handleInputEvents( *events )
+
+    Handle input events.
+
+--- MUES::ConsoleOutputFilter#puts( aString )
+
+    Append a string directly onto the output buffer. Useful when doing
+    direct output and flush.
+
+--- MUES::ConsoleOutputFilter#shutdown
+
+    Signal the input thread to shut down and stop the filter.
+
+==== Protected Methods
+
+--- MUES::ConsoleOutputFilter#_inputThreadRoutine
+
+    Thread routine for input.
 
 == Author
 
@@ -41,8 +79,8 @@ module MUES
 	class ConsoleOutputFilter < IOEventFilter ; implements Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.4 2001/07/18 02:23:25 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.5 2001/11/01 16:54:05 deveiant Exp $
 		DefaultSortPosition = 300
 
 		NULL = "\000"
@@ -116,6 +154,7 @@ module MUES
 		end
 
 		### METHOD: shutdown
+		### Shut the filter down, signalling the IO thread to shut down.
 		def shutdown
 			@ioThread.raise Shutdown
 			super

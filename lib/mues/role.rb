@@ -21,6 +21,37 @@ the context of a specific user. They may represent different levels of
 functionality, different characters, or available accounts that are open to a
 given user.
 
+== Classes
+=== MUES::Role
+==== Public Methods
+
+--- MUES::Role#<=>( otherRole )
+
+    Comparison operator -- sort roles by the environments to which they belong.
+
+--- MUES::Role#description
+
+    Return the description of the role.
+
+--- MUES::Role#environment
+
+    Return the ((<MUES::Environment>)) to which the role belongs.
+
+--- MUES::Role#name
+
+    Return the name of the role.
+
+--- MUES::Role#to_s()
+
+    Returns a stringified version of the role object.
+
+==== Protected Methods
+
+--- MUES::Role#initialize(  environment, name, description )
+
+    Initialize the role with the given ((|environment|)) (a
+    ((<MUES::Environment>)) object), ((|name|)), and ((|description|)) string.
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -44,8 +75,8 @@ module MUES
 		include Event::Handler
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: role.rb,v 1.2 2001/09/26 12:56:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: role.rb,v 1.3 2001/11/01 16:54:06 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize(  aEnvironment=MUES::Environment, aNameString, aDescString )
 		### Initialize the role with the given environment, name, and description string.

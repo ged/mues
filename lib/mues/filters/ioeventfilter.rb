@@ -28,6 +28,80 @@ task which the filter is supposed to accomplish.
 The IOEventFilter class implements the Subject role of the Observer pattern, and
 objects which observe it are notified when it has pending IOEvents.
 
+== Classes
+=== MUES::IOEventFilter
+
+==== Constructor
+
+--- MUES::IOEventFilter#new( sort=nil )
+
+    Create a new filter, optionally setting the sort position to
+    the value specified.
+
+==== Public Methods
+
+--- MUES::IOEventFilter#<=>( anIOEventFilterObject )
+
+    Comparison -- Returns -1, 0, or 1 if the receiver sorts higher, equal
+    to, or lower than the specified object, respectively.
+
+--- MUES::IOEventFilter#sortPosition
+
+    Return the value of the sortPosition attribute.
+
+--- MUES::IOEventFilter#queuedInputEvents
+
+    Return the value of the queuedInputEvents attribute.
+
+--- MUES::IOEventFilter#queuedOutputEvents
+
+    Return the value of the queuedOutputEvents attribute.
+
+--- MUES::IOEventFilter#isFinished
+
+    Return the value of the isFinished attribute.
+
+--- MUES::IOEventFilter#isFinished?
+
+    Synonym for isFinished.
+
+--- MUES::IOEventFilter#shutdown
+
+    Shut the filter down, returning any events which should be dispatched on
+    behalf of the filter.
+
+--- MUES::IOEventFilter#start( streamObject )
+
+    Start up the filter for the specified stream. Returns true on success.
+
+--- MUES::IOEventFilter#stop( streamObject )
+
+    Stop the filter for the specified stream. Returns true on success.
+
+--- MUES::IOEventFilter#queueInputEvents( *events )
+
+    Add saved input events for this filter that will be injected into the event
+    stream on the next IO loop.
+
+--- MUES::IOEventFilter#queueOutputEvents( *events )
+
+    Add saved output events for this filter that will be injected into the event
+    stream on the next IO loop.
+
+--- MUES::IOEventFilter#to_s
+
+    Return a stringified description of the filter
+
+==== Abstract Methods
+
+--- MUES::IOEventFilter#handleInputEvents( *events )
+
+    Default filter method for input events
+
+--- MUES::IOEventFilter#handleOutputEvents( *events )
+
+    Default filter method for output events
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -52,8 +126,8 @@ module MUES
 	class IOEventFilter < Object ; implements Observable, Comparable, Debuggable, AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.8 2001/09/26 13:24:31 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.9 2001/11/01 16:54:05 deveiant Exp $
 		DefaultSortPosition = 500
 
 		### Initializer

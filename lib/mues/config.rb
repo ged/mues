@@ -44,6 +44,102 @@ This would yield an object that you could use thusly:
   sock = TCPServer.new( configObj["ListenSocket"]["BindAddress"],
 						configObj["ListenSocket"]["BindPort"] )
 
+
+== Classes
+=== MUES::Config
+
+This class is the main configuration class.
+
+==== Protected Methods
+
+--- MUES::Config#_initFromFile( sourceFile=String )
+
+    Load the configuration objects from the file specified by ((|sourceFile|)).
+
+--- MUES::Config#_initFromIo( sourceIo=IO )
+
+    Load the configuration values from the specified ((|sourceIo|)) IO object.
+
+--- MUES::Config#_parseConfig( content=Array )
+
+    Parse the configuration from the array of (({Strings})) given, and return a
+    ((<MUES::Config::Section>)) object.
+
+==== Public Methods
+
+--- MUES::Config#[ key ]
+
+    Element reference operator -- Return the value associated with the specified
+    ((|key|)) in the configuration. Returns either a (({String})) in the case of
+    a simple value, or a ((<MUES::Config::Section>)) if the ((|key|)) refers to
+    a section of the configuration file.
+
+--- MUES::Config#[ key ] = value
+
+    Element assignment operator -- Store the ((|value|)) in the configuration
+    associated with the specified ((|key|)). The ((|value|)) argument can be
+    either a (({String})) or a ((<MUES::Config::Section>)) object.
+
+--- MUES::Config#dump()
+
+    Return a (({String})) with a dump of the current configuration.
+
+--- MUES::Config#new( [source] )
+
+    Instantiate a new (({MUES::Config})) object, optionally reading
+    configuration values from optional ((|source|)) argument. The ((|source|))
+    argument may be either a (({String})), in which case it is assumed to be the
+    name of a file which contains configuration data, or an (({IO})) object
+    which is opened to a configuration data source.
+
+=== MUES::Config::Section
+
+Instances of this class are sections of the configuration file. It follows the
+same basic interface for data access as the ((<MUES::Config>)) class.
+
+==== Public Methods
+
+--- MUES::Config::Section#[ key ]
+
+    Element reference operator -- Return the value associated with the specified
+    ((|key|)) in the object^s configuration section. Returns either a
+    (({String})) in the case of a simple value, or a (({MUES::Config::Section}))
+    if the ((|key|)) refers to a subsection section of the object^s section.
+
+--- MUES::Config::Section#[ key ] = value
+
+    Element assignment operator -- Store the ((|value|)) in the configuration
+    associated with the specified ((|key|)). The ((|value|)) argument can be
+    either a (({String})) or a (({MUES::Config::Section})) object.
+
+--- MUES::Config::Section#dump( [indent] )
+
+    Return a (({String})) with a dump of the current configuration section,
+    indented to ((|indent|)) spaces, if specified, or not indented if
+    ((|indent|)) is not specified.
+
+--- MUES::Config::Section#has_key?( key )
+
+	Aliases: (({key?})), (({include?})).
+
+	Returns (({true})) if the section has a configuration value associated with
+	the given ((|key|)).
+
+--- MUES::Config::Section#initialize( sectionName )
+
+    Initialize this config section with the name specified
+
+
+== Author
+
+Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
+
+Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
+
+This module is free software. You may use, modify, and/or redistribute this
+software under the terms of the Perl Artistic License. (See
+((<URL:http://language.perl.com/misc/Artistic.html>)))
+
 =end
 ###########################################################################
 
@@ -57,8 +153,8 @@ module MUES
 	class Config < Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.5 2001/07/18 01:40:22 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.6 2001/11/01 16:54:06 deveiant Exp $
 
 		### METHOD: initialize( sourceIoOrFileName = nil )
 		### Initialize the configuration, optionally loading the configuration

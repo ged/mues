@@ -6,18 +6,61 @@
 
 == Name
 
-ClassLibrary - World object class library service
+ClassLibrary - An AbstractFactory for environment class libraries
 
 == Synopsis
 
   require "mues/ClassLibrary"
-  require "metaclass/Classes"
 
-  cl = MUES::ClassLibrary.new( "MyLibrary" )
+  class MyLibrary < MUES::ClassLibrary
+	
+	def initialize
+	  ...
+	end
+
+  end
   
 == Description
 
-A metaclass collection container object class.
+This class is an implementation of the AbstractFactory design pattern((-Design
+Patterns-)) that instantiates classes from a set of Metaclasses, as expressed in
+the Reflection design pattern((-A System of Patterns, Volume 1-)). It decouples
+the Metaclass implementation from the Environment.
+
+== Classes
+=== MUES::ClassError
+
+An exception class for the ClassLibrary.
+
+=== MUES::ClassLibrary
+==== Public Methods
+
+--- MUES::ClassLibrary#addClass( classObject=Metaclass::Class[, altClassName] )
+
+    Adds the specified ((|classObject|)) to the library, associating it with the
+    specified ((|altClassName|)), or the same name as the name attribute of the
+    class object if no ((|altClassName|)) is specified.
+
+--- MUES::ClassLibrary#addInterface( interface=Metaclass::Interface[, altInterfaceName] )
+
+    Adds the specified ((|interface|)) to the library, associating it with the
+    specified ((|altInterfaceName|)) or the same name as the name attribute of
+    the interface object if no ((|altInterfaceName|)) is specified.
+
+--- MUES::ClassLibrary#getClassAncestry( className )
+
+	Returns the ancestors of the class associated with the ((|className|)) given
+	as an (({Array})) of ((<Metaclass::Class>)) objects.
+
+--- MUES::ClassLibrary#getClassDefinition( className )
+
+	Returns the evalable definition of the class associated with the given
+	((|className|)).
+
+--- MUES::ClassLibrary#new( libraryName )
+
+	Create a new (({MUES::ClassLibrary})) instance with the ((|libraryName|))
+	specified.
 
 == Author
 
@@ -27,7 +70,7 @@ Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
+((<URL:http://language.perl.com/misc/Artistic.html>)))
 
 =end
 ###########################################################################
@@ -42,8 +85,8 @@ module MUES
 	class ClassError < Exception; end
 	class ClassLibrary < Object
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.4 2001/11/01 16:54:06 deveiant Exp $
 
 		attr_reader :name
 

@@ -17,6 +17,25 @@ DefaultOutputFilter - default output event filter class
 This is the default output event filter. It is included in every IOEventStream
 as a last-resort output event handler.
 
+== Classes
+=== MUES::DefaultOutputFilter
+==== Constructor
+
+--- MUES::DefaultOutputFilter#new( historySize=10 )
+
+    Instantiate and return a new default output filter object with the specified
+    ((|historySize|)).
+
+==== Public Methods
+
+--- MUES::DefaultOutputFilter#history
+
+    Return the array of output history.
+
+--- MUES::DefaultOutputFilter#handleOutputEvents( *events )
+
+    Handle output events. Appends output onto the history array.
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -37,8 +56,8 @@ module MUES
 	class DefaultOutputFilter < IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.3 2001/11/01 16:54:05 deveiant Exp $
 		DefaultSortPosition = 0
 
 		### Public methods

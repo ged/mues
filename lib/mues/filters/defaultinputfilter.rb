@@ -14,8 +14,21 @@ DefaultInputFilter - a default input filter class
 
 == Description
 
-This is the default input event filter. It is included in every IOEventStream
-as a last-resort input event handler.
+This is the default input event filter. It is included in every IOEventStream as
+a last-resort input event handler.
+
+== Classes
+=== MUES::DefaultInputFilter
+==== Public Methods
+
+--- MUES::DefaultInputFilter#initialize
+
+    Initialize the filter.
+
+--- MUES::DefaultInputFilter#handleInputEvents( *events )
+
+    Handle the given ((|events|)) by creating an OutputEvent containing an error
+	message for each.
 
 == Author
 
@@ -37,8 +50,8 @@ module MUES
 	class DefaultInputFilter < IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: defaultinputfilter.rb,v 1.2 2001/05/14 12:24:30 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: defaultinputfilter.rb,v 1.3 2001/11/01 16:54:05 deveiant Exp $
 		DefaultSortPosition = 1000
 
 		### Class attributes
@@ -51,12 +64,15 @@ module MUES
 		]
 
 		### METHOD: initialize
+		### Initialize the input filter
 		def initialize
 			super
 			@errorIndex = 0
 		end
 
 		### METHOD: handleInputEvents( *events )
+		### Handle the given ((|events|)) by creating an OutputEvent containing
+		### an error message for each.
 		def handleInputEvents( *events )
 			events.flatten.each do |e|
 				Thread.critical = true

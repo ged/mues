@@ -17,6 +17,102 @@ MUES::Exceptions - Collection of exception classes
 
 This file contains various exception classes for use in the MUES server.
 
+== Functions
+
+Requiring this file will add the following method to the MUES namespace:
+
+--- def_exception( name, message, superclass )
+
+    Define an exception class with the specified ((|name|)) (a (({Symbol})))
+    with the specified ((|message|)). The new exception class will inherit from
+    the specified ((|superclass|)), if specified, or (({StandardError})) if not
+    specified.
+
+== Classes
+
+=== MUES::Exception
+
+The base MUES exception class. Inherits from StandardError.
+
+=== MUES::EngineException
+
+An error class used to indicate an error in a ((<MUES::Engine>)) object.
+
+=== MUES::EventQueueException
+
+An error class used to indicate an error in a ((<MUES::EventQueue>)).
+
+=== MUES::LogError
+
+An error class used to indicate an error in a log handle object.
+
+=== MUES::SecurityViolation
+
+An error class used to indicate a failure of an operation due to security restrictions.
+
+=== MUES::EnvironmentError
+
+An error class used to indicate an error in a ((<MUES::Environment>)).
+
+=== MUES::EnvironmentLoadError
+
+An error class used to indicate an error which occurs while loading a
+((<MUES::Environmment>)).
+
+=== MUES::EnvironmentUnloadError
+
+An error class used to indicate an error which occurs while unloading a
+((<MUES::Environmment>)).
+
+=== MUES::Reload
+
+A pseudo-error class used to indicate to the listener thread that the Engine^s
+configuration is being reloaded.
+
+=== MUES::Shutdown
+
+A server shutdown pseudo-error class used to signal server shutdown to the
+listener thread.
+
+=== MUES::CommandError
+
+An error class used to indicate an error in a user^s command shell.
+
+=== MUES::MacroError
+
+An error class used to indicate an error in a user^s MacroFilter.
+
+=== MUES::UnhandledEventError
+
+An error class used to indicate that an event was dispatched to an object which
+did not provide a handler for it.
+
+=== MUES::EventRecursionError
+
+An error class which is used to indicate that an event included itself in its
+own consequences. Inherits from (({ScriptError})) to avoid being caught by the
+worker thread^s exception handling.
+
+=== MUES::VirtualMethodError
+
+An error class used to indicate a call to an unimplemented virtual
+method. Inherits from (({TypeError})).
+
+=== MUES::InstantiationError
+
+An error class used to indicate an attempted instantiation of an abstract
+class. Inherits from (({TypeError})).
+
+=== MUES::SocketIOError
+
+An error class used to indicate an error condition on a socket. Inherits from
+(({IOError})).
+
+=== MUES::ParseError
+
+An error class used to indicate an error while parsing. Inherits from
+(({SyntaxError})).
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>

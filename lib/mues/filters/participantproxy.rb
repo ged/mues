@@ -17,6 +17,30 @@ ParticipantProxy - a participant control input filter class
 Instances of this class are proxy objects which relay commands to and
 output from an in-game participant.
 
+== Classes
+=== MUES::ParticipantProxy
+==== Constructor
+
+--- MUES::ParticipantProxy.new( user, role, env )
+
+    Instantiate and return a new participant proxy object initialized with the
+    specified ((|user|)) (a ((<MUES::User>)) object), ((|role|)) (a
+    ((<MUES::Role>)) object), and ((|env|)) (a ((<MUES::Environment>)) object).
+
+==== Public Methods
+
+--- MUES::ParticipantProxy#user
+
+    Return the user object associated with this participant proxy.
+
+--- MUES::ParticipantProxy#role
+
+    Return the role associated with this participant proxy.
+
+--- MUES::ParticipantProxy#env
+
+    Return the environment associated with this participant proxy.
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -38,8 +62,8 @@ require "mues/filters/IOEventFilter"
 module MUES
 	class ParticipantProxy < IOEventFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.2 2001/09/26 13:27:49 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: participantproxy.rb,v 1.3 2001/11/01 16:54:05 deveiant Exp $
 		DefaultSortPosition = 850
 
 		#############################################################

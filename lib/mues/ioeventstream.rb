@@ -48,9 +48,14 @@ contained in the events.
 The stream also contains its own thread of execution, so I/O in it is processed
 independently of the main thread of execution.
 
+== Modules
+=== MUES::IOEventStream::State
+
+A namespace for state constants.
+
 == Classes
 === MUES::IOEventStream
-==== Instance Methods
+==== Public Methods
 
 --- MUES::IOEventStream#initialize( *filters )
 
@@ -115,8 +120,6 @@ independently of the main thread of execution.
 --- MUES::IOEventStream#unpause
 
     Unpause the stream, resuming the processing of events.
-
-==== Instance attribute accessors
 
 --- MUES::IOEventStream#filters
 

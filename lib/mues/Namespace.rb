@@ -1,6 +1,5 @@
 #!/usr/bin/ruby
 #################################################################
-
 =begin 
 
 =Namespace.rb
@@ -29,31 +28,76 @@ A collection of modules, functions, and base classes for the Multi-User
 Environment Server. Requiring it adds four type-checking functions
 ((({checkType()})), (({checkEachType()})), (({checkResponse()})), and
 (({checkEachResponse()}))) to the Ruby (({Object})) class, defines the
-(({MUES::})) namespace, the base object class ((({MUES::Object}))), and a mixin
-for abstract classes ((({MUES::AbstractClass}))).
+(({MUES::})) namespace, the base object class (((<MUES::Object>))), and several
+mixins (((<MUES::AbstractClass>)), ((<MUES::Debuggable>)), and
+((<MUES::Notifiable>))).
 
 == Functions
 === Global Functions
 
---- registerHandlerForEvents( handlerObject, *eventClasses )
+The Namespace module adds the following global private functions to the
+(({Object})) class.
 
-    Register ((|handlerObject|)) to receive events of the specified
-    ((|eventClasses|)) or any of their derivatives. See the docs for MUES::Event
-    for how to handle events.
+--- Object::checkType( anObject, *validTypes ) {|anObject, *validTypes| errBlock}
 
---- engine()
+    Check ((|anObject|)) to make sure it^s one of the specified
+    ((|validTypes|)), calling the optional ((|errBlock|)) if specified, or
+    raising a (({TypeError})) if not.
 
-	Returns the engine object.
+--- Object::checkEachType( anArray, *validTypes ) {|anObject, validTypes| errBlock}
+
+    Check ((|anObject|)) to make sure it^s one of the specified
+    ((|validTypes|)), calling the optional ((|errBlock|)) if specified, or
+    raising a (({TypeError})) if not.
+
+--- Object::checkResponse( anObject, *requiredMethods ) {|object,method| errBlock}
+
+    Check ((|anObject|)) for implementations of ((|requiredMethods|)), calling
+    the optional ((|errBlock|)) if specified, or raising a (({TypeError})) if
+    one of the methods is unimplemented.
+
+--- Object::checkEachResponse( anArray, *requiredMethods ) {|object, method| errBlock}
+
+    Check each object of ((|anArray|)) for implementations of
+    ((|requiredMethods|)), calling the optional ((|errBlock|)) if specified, or
+    raising a (({TypeError})) if one of the methods is unimplemented.
+
+==== Syntactic Sugar
+
+The Namespace module also adds the following syntactic sugar global functions to
+the Module class:
+
+--- Module::implements
+
+    An alias for (({include})). This allows syntax of the form:
+
+      class MyClass < MUES::Object; implements Debuggable, AbstracClass
+        ...
+      end
+
+--- Module::implements?
+
+      An alias for ((<Module#<>)), which allows one to ask
+      (({SomeClass.implements?( Debuggable )})).
+
+--- Module::abstract( *symbols )
+
+    Declares one or more methods with the name specified by the given
+    ((|symbols|)) which, when called, will throw a
+    ((<MUES::Exceptions|VirtualMethodError>)). This allows the declaration of
+    abstract methods ((*en masse*)):
+
+      abstract :start, :stop, :run
 
 == Interfaces/Mixins
-==== (({MUES::Notifiable}))
+=== MUES::Notifiable
 
-     An interface that can be implemented by objects (typically, but not
-     necessarily, classes) which need global notification of changes to the
-     Engine^s state outside of the event system. This can be used for
-     initialization and/or cleanup when the event system is not running.
+An interface that can be implemented by objects (typically, but not necessarily,
+classes) which need global notification of changes to the Engine^s state outside
+of the event system. This can be used for initialization and/or cleanup when the
+event system is not running.
 
-	 The methods which it requires/implements are:
+The methods which it requires are:
 
 --- atEngineStartup( engineObject )
 
@@ -67,10 +111,11 @@ for abstract classes ((({MUES::AbstractClass}))).
 	used to queue critical cleanup events that need to be executed before the
 	event subsystem is shut down.
 
-==== (({MUES::Debuggable}))
+=== MUES::Debuggable
 
-	 A mixin that can be used to add debugging capability to a class and
-	 its instances.
+A mixin that can be used to add debugging capability to a class and its
+instances. The following methods are added to your class when you (({include
+MUES::Debuggable})):
 
 --- debugMsg( level, *messages )
 
@@ -91,10 +136,54 @@ for abstract classes ((({MUES::AbstractClass}))).
 
 	Return true if the receiver^s debug level is >= 1.
 
-==== (({MUES::AbstractClass}))
+=== MUES::AbstractClass
 
-	 A mixin that adds abstractness to a class. Instantiating a class which
-	 includes this mixin will result in an InstantiationError.
+A mixin that adds abstractness to a class. Instantiating a class which includes
+this mixin will result in an InstantiationError.
+
+== Classes
+=== MUES::Object
+
+This class is the abstract base class for all MUES objects. Most of the MUES
+classes inherit from this.
+
+==== Private Global Functions
+--- MUES::Object::registerHandlerForEvents( handlerObject, *eventClasses )
+
+    Register ((|handlerObject|)) to receive events of the specified
+    ((|eventClasses|)) or any of their derivatives. See the docs for MUES::Event
+    for how to handle events.
+
+--- MUES::Object::engine()
+
+    Returns the engine object.
+
+==== Protected Methods
+
+--- MUES::Object#initialize( *ignored )
+
+    Initialize the object, adding (({muesid})) and (({objectStoreData}))
+    attributes to it.
+
+==== Public Methods
+
+--- MUES::Object#awaken
+
+    Restore the object after being stored.
+
+--- MUES::Object#lull
+
+    Prepare the object for storage.
+
+--- MUES::Object#muesid
+
+    Return the muesid of the object.
+
+--- MUES::Object#objectStoreData
+
+    Return the objectStoreData of the object. This is an attribute that can be
+    used by the ObjectStore adapters to store meta-data about the object, such
+    as its rowid.
 
 == Author
 
@@ -424,8 +513,8 @@ module MUES
 		autoload "MUES::Engine", "mues/Engine.rb"
 
 		### Class constants
-		Version	= %q$Revision: 1.11 $
-		RcsId	= %q$Id: Namespace.rb,v 1.11 2001/09/26 12:54:45 deveiant Exp $
+		Version	= %q$Revision: 1.12 $
+		RcsId	= %q$Id: Namespace.rb,v 1.12 2001/11/01 16:54:06 deveiant Exp $
 
 		class << self
 			def finalizer( objDesc )
@@ -440,6 +529,8 @@ module MUES
 		end
 
 		### (PROTECTED) METHOD: initialize( *ignored )
+		### Initialize the object, adding (({muesid})) and (({objectStoreData}))
+		### attributes to it. Any arguments passed are ignored.
 		protected
 		def initialize( *ignored )
 			@muesid = __GenerateMuesId()
@@ -490,7 +581,7 @@ module MUES
 		end
 
 
-		### FUNCTION: __GenerateMuesId
+		### (PRIVATE) FUNCTION: __GenerateMuesId
 		### Returns a unique id for an object
 		def __GenerateMuesId
 			raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
