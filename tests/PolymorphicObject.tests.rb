@@ -4,10 +4,18 @@
 # This is a Test::Unit test suite for the PolymorphicObject class.
 #
 
-begin
-	require 'tests/muestestcase'
-rescue
-	require '../muestestcase'
+unless defined? MUES && defined? MUES::TestCase
+	testsdir = File::dirname( File::expand_path(__FILE__) )
+	basedir = File::dirname( testsdir )
+
+	$LOAD_PATH.unshift "#{basedir}/lib" unless
+		$LOAD_PATH.include?( "#{basedir}/lib" )
+	$LOAD_PATH.unshift "#{basedir}/ext" unless
+		$LOAD_PATH.include?( "#{basedir}/ext" )
+	$LOAD_PATH.unshift "#{basedir}/tests" unless
+		$LOAD_PATH.include?( "#{basedir}/tests" )
+
+	require 'muestestcase'
 end
 
 require "mues"

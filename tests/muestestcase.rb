@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-#  $Id: muestestcase.rb,v 1.9 2003/09/12 04:33:38 deveiant Exp $
+#  $Id: muestestcase.rb,v 1.10 2003/10/13 06:26:55 deveiant Exp $
 # 
 # == Authors
 # 
@@ -50,12 +50,15 @@
 # 
 
 begin
-	basedir = File::dirname( File::dirname(__FILE__) )
-	unless $LOAD_PATH.include?( "#{basedir}/lib" )
-		$LOAD_PATH.unshift "#{basedir}/lib",
-			"#{basedir}/ext",
-			"#{basedir}/tests" 
-	end
+	testsdir = File::dirname( File::expand_path(__FILE__) )
+	basedir = File::dirname( testsdir )
+
+	$LOAD_PATH.unshift "#{basedir}/lib" unless
+		$LOAD_PATH.include?( "#{basedir}/lib" )
+	$LOAD_PATH.unshift "#{basedir}/ext" unless
+		$LOAD_PATH.include?( "#{basedir}/ext" )
+	$LOAD_PATH.unshift "#{basedir}/tests" unless
+		$LOAD_PATH.include?( "#{basedir}/tests" )
 end
 
 require "test/unit"
@@ -207,6 +210,20 @@ module MUES
 		###	E X T R A   A S S E R T I O N S
 		#############################################################
 
+		### Override the stupid deprecated #assert_not_nil so when it
+		### disappears, code doesn't break.
+		def assert_not_nil( obj, msg=nil )
+			msg ||= "<%p> expected to not be nil." % obj
+			assert_block( msg ) { !obj.nil? }
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_not_nil/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+		
+
 		### Negative of assert_respond_to
 		def assert_not_respond_to( obj, meth )
 			msg = "%s expected NOT to respond to '%s'" %
@@ -214,6 +231,12 @@ module MUES
 			assert_block( msg ) {
 				!obj.respond_to?( meth )
 			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_not_respond_to/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
 		end
 
 
@@ -228,6 +251,12 @@ module MUES
 			assert_block( msg ) {
 				value == object.instance_variable_get(sym)
 			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_ivar_equal/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
 		end
 
 
@@ -241,6 +270,12 @@ module MUES
 			assert_block( msg ) {
 				object.instance_variables.include?( sym.to_s )
 			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_has_ivar/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
 		end
 
 	end # class TestCase

@@ -1,9 +1,17 @@
 #!/usr/bin/ruby -w
 
-begin
-	require 'tests/muestestcase'
-rescue
-	require '../muestestcase'
+unless defined? MUES && defined? MUES::TestCase
+	testsdir = File::dirname( File::expand_path(__FILE__) )
+	basedir = File::dirname( testsdir )
+
+	$LOAD_PATH.unshift "#{basedir}/lib" unless
+		$LOAD_PATH.include?( "#{basedir}/lib" )
+	$LOAD_PATH.unshift "#{basedir}/ext" unless
+		$LOAD_PATH.include?( "#{basedir}/ext" )
+	$LOAD_PATH.unshift "#{basedir}/tests" unless
+		$LOAD_PATH.include?( "#{basedir}/tests" )
+
+	require 'muestestcase'
 end
 
 require 'mues/metaclasses'
@@ -175,7 +183,7 @@ class InterfaceTestCase < MUES::TestCase
 
 		# and support the inspect method...
 		assert_nothing_raised { rval = instance.inspect }
-		assert_equal "[test object someName #{instance.id}]", rval
+		assert_equal "[test object someName #{instance.object_id}]", rval
 
 		# And the class object should support the 'count' method
 		assert_respond_to testClass.classObj, :count # <- Doesn't work yet.

@@ -4,7 +4,7 @@
 #
 # == Rcsid
 # 
-#  $Id: CommandShell.tests.rb,v 1.6 2003/10/13 04:02:10 deveiant Exp $
+#  $Id: CommandShell.tests.rb,v 1.7 2003/10/13 06:26:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -18,10 +18,18 @@
 #
 # 
 
-begin
-	require 'tests/muestestcase'
-rescue
-	require '../muestestcase'
+unless defined? MUES && defined? MUES::TestCase
+	testsdir = File::dirname( File::expand_path(__FILE__) )
+	basedir = File::dirname( testsdir )
+
+	$LOAD_PATH.unshift "#{basedir}/lib" unless
+		$LOAD_PATH.include?( "#{basedir}/lib" )
+	$LOAD_PATH.unshift "#{basedir}/ext" unless
+		$LOAD_PATH.include?( "#{basedir}/ext" )
+	$LOAD_PATH.unshift "#{basedir}/tests" unless
+		$LOAD_PATH.include?( "#{basedir}/tests" )
+
+	require 'muestestcase'
 end
 
 require 'mues/filters/commandshell'

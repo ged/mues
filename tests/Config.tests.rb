@@ -1,9 +1,17 @@
 #!/usr/bin/ruby -w
 
-begin
-	require 'tests/muestestcase'
-rescue
-	require '../muestestcase'
+unless defined? MUES && defined? MUES::TestCase
+	testsdir = File::dirname( File::expand_path(__FILE__) )
+	basedir = File::dirname( testsdir )
+
+	$LOAD_PATH.unshift "#{basedir}/lib" unless
+		$LOAD_PATH.include?( "#{basedir}/lib" )
+	$LOAD_PATH.unshift "#{basedir}/ext" unless
+		$LOAD_PATH.include?( "#{basedir}/ext" )
+	$LOAD_PATH.unshift "#{basedir}/tests" unless
+		$LOAD_PATH.include?( "#{basedir}/tests" )
+
+	require 'muestestcase'
 end
 
 require 'mues/config'
@@ -98,7 +106,7 @@ module MUES
 
 		def writeDefaultConfigFile
 			lib = nil
-			$".grep( %r:mues/Config\.rb: ) {|path|
+			$".grep( %r:mues/config\.rb: ) {|path|
 				$LOAD_PATH.find {|prefix|
 					if File.exists?( "#{prefix}/#{path}" )
 						lib = "#{prefix}/#{path}"
@@ -107,8 +115,8 @@ module MUES
 				}
 			}
 
-			debugMsg "Found mues/Config at '#{lib}'"
-			raise "Can't find mues/Config" if lib.nil?
+			debugMsg "Found mues/config at '#{lib}'"
+			raise "Can't find mues/config" if lib.nil?
 			testfile = "testconfig.%d.xml" % $$
 			debugMsg "Writing config file to '#{testfile}'"
 
