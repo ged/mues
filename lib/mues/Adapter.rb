@@ -60,13 +60,16 @@ require "mues/Debugging"
 
 module MUES
 	class ObjectStore
+
+		class AdapterError < Exception; end
+
 		class Adapter < Object
 
 			include Debuggable
 			include AbstractClass
 
-			Version = %q$Revision: 1.1 $
-			Rcsid = %q$Id: Adapter.rb,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+			Version = %q$Revision: 1.2 $
+			Rcsid = %q$Id: Adapter.rb,v 1.2 2001/03/20 07:40:46 deveiant Exp $
 
 			def storeObject( obj )
 				raise UnimplementedError, "Required method unimplemented."
