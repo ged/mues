@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES RDoc Documentation Generation Script
-#	$Id: makedocs.rb,v 1.6 2002/10/17 14:47:06 deveiant Exp $
+#	$Id: makedocs.rb,v 1.7 2002/10/22 18:15:53 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -33,7 +33,7 @@ def makeDocs( docsdir, template='css2', upload=nil, diagrams=false )
 	docs = findRdocableFiles()
 
 	header "Making documentation in #{docsdir}."
-	message "Will upload to '#{upload}'" if upload
+	header "Will upload to '#{upload}'\n" if upload
 
 	flags = [
 		'--all',
@@ -86,7 +86,7 @@ def uploadDocs( url, docsdir )
 				message "Would have uploaded using the command:\n    #{cmd}\n\n"
 			end
 		else
-			error "--upload ssh://host/path"
+			abort "--upload ssh://host/path"
 		end
 	when %r{^file://(.*)}
 		targetdir = $1
