@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.9 2002/10/04 05:20:02 deveiant Exp $
+#	$Id: makedist.rb,v 1.10 2002/10/13 23:29:15 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -19,43 +19,6 @@ include UtilityFunctions
 
 ### Configuration stuff
 
-# Define the manifest of files to include, globs okay
-MANIFEST = %w{
-  Artistic
-  ChangeLog
-  CONFIGURATION
-  INSTALL
-  QUICKSTART
-  README
-  docs/lib/**/*
-  docs/makedocs.rb
-  docs/stylesheets/*
-  ext/extconf.rb
-  ext/mues/*
-  install.rb
-  lib/**/*
-  quickstart.rb
-  server/bin/mues.rb
-  server/environments/*
-  server/minimal-config.xml
-  server/shellCommands/*
-  test.rb
-  tests/**/*
-  utils.rb
-}
-
-# The list of regexen that eliminate files from the MANIFEST
-ANTIMANIFEST = [
-	/makedist\.rb/,
-	/\bCVS\b/,
-	/~$/,
-	/^#/,
-	%r{docs/html},
-	%r{docs/man},
-	/^TEMPLATE/,
-	/\.cvsignore/
-]
-
 Options = [
 	[ "--snapshot",	"-s",		GetoptLong::NO_ARGUMENT ],
 	[ "--verbose",  "-v",		GetoptLong::NO_ARGUMENT ],
@@ -65,8 +28,8 @@ Options = [
 
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.9 2002/10/04 05:20:02 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.10 2002/10/13 23:29:15 deveiant Exp $
 
 $Programs = {
 	'tar'	=> nil,
@@ -155,24 +118,7 @@ def main
 	end
 	replaceMessage( "All required programs found.\n" )
 
-	message "Building manifest..."
-	for pat in MANIFEST
-		filelist |= Dir.glob( pat ).find_all {|f| FileTest.file?(f)}
-	end
-	origLength = filelist.length
-	message "Found #{origLength} files.\n"
-
-	message "Vetting manifest..."
-	for regex in ANTIMANIFEST
-		if verbose
-			$stderr.puts "Pattern /#{regex.source}/ removed: " +
-				filelist.find_all {|file| regex.match(file)}.join(', ')
-		end
-		filelist.delete_if {|file| regex.match(file)}
-	end
-	message "removed #{origLength - filelist.length} files from the list.\n"
-
-	#puts "Filelist:\n\t" + filelist.join("\n\t")
+	filelist = getVettedManifest( verbose )
 
 	version = distName = nil
 	if snapshot
