@@ -62,6 +62,8 @@ http://language.perl.com/misc/Artistic.html)
 =end
 #################################################################
 
+require "singleton"
+
 require "mues/Namespace"
 require "mues/Exceptions"
 require "mues/Events"
@@ -70,8 +72,8 @@ module MUES
 	class Service < Object ; implements MUES::Notifiable, AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.1 2001/07/30 11:54:34 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.2 2001/08/05 05:46:08 deveiant Exp $
 
 		### Class methods
 		class << self
