@@ -42,9 +42,9 @@ RequiredLibraries = [
 	[ 'hashslice', "HashSlice",
 		'http://raa.ruby-lang.org/list.rhtml?name=HashSlice',
 		'http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2' ],
-	[ 'pp', 'PrettyPrinter',
-		'http://raa.ruby-lang.org/list.rhtml?name=pp',
-		'http://cvs.m17n.org/~akr/pp/download.html' ],
+	[ 'yip', 'Yaml Interpolation',
+		'http://raa.ruby-lang.org/list.rhtml?name=yip',
+		'http://codedbliss.com/releases/yip-0.8.1.tar.gz' ],
 ]
 
 class Installer
