@@ -81,21 +81,7 @@ module MUES
 	class BaseObjectStoreAdapter < RUNIT::TestCase
 
 		@@TestData = %w{a few test words}
-		@@UserTestData = {
-			'username'		=> 'ged',
-			'cryptedPass'	=> '1c7bf49fb32388100dff7464abf9c588',
-			'realname'		=> 'Michael Granger',
-			'emailAddress'	=> 'ged@FaerieMUD.org',
-			'lastLogin'		=> '2001-01-01 00:00:00',
-			'lastHost'		=> 'galendril.FaerieMUD.org',
-
-			'dateCreated'	=> '2001-01-01 00:00:00',
-			'age'			=> 16,
-
-			'role'			=> User::Role::ADMIN,
-			'preferences'	=> { 'prompt' => '%h [%c]>'},
-			'characters'	=> %w{ged taliesin gond},
-		}
+		@@UserTestData = MUES::User::DefaultDbInfo
 		@@ObjectStore = nil
 		@@Id = nil
 
@@ -165,6 +151,20 @@ module MUES
 				assert_equals( @@UserTestData[k], user.dbInfo[k] )
 			}
 		end
+
+		def test_07ListUsers
+			list = nil
+			assert_no_exception {
+				list = @@ObjectStore.listUsers
+			}
+			assert( list.find {|u| u == @@UserTestData['username']} )
+		end
+
+		def test_08DeleteUser
+			assert_no_exception {
+				@@ObjectStore.delete(@@UserTestData['username'])
+			}
+		end
 	end
 
 	### Test suite for Berkeley DB adapter
@@ -191,7 +191,7 @@ if $0 == __FILE__
 		def TestAll.suite
 			suite = RUNIT::TestSuite.new
 			ObjectSpace.each_object( Class ) {|klass|
-				next unless klass < RUNIT::TestCase && klass.name =~ /^MUES::/
+				next unless klass < RUNIT::TestCase
 				suite.add_test( klass.suite )
 			}
 			suite
