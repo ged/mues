@@ -1,8 +1,8 @@
 /*
 
    MUES User Table Schema (MySQL)
-	$Id: mues.user.sql,v 1.4 2001/09/26 13:35:45 deveiant Exp $
-	Time-stamp: <20-Sep-2001 17:05:08 deveiant>
+	$Id: mues.user.sql,v 1.5 2001/11/01 18:07:47 deveiant Exp $
+	Time-stamp: <11-Oct-2001 10:51:27 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -22,9 +22,9 @@ CREATE TABLE muesuser (
 	ts					TIMESTAMP(12),
 	
 	/* Data fields */
-	userVersion			VARCHAR(10)		NOT NULL,
+	userVersion			VARCHAR(10)		NOT NULL,							-- User class version
 	username			VARCHAR(50) 	NOT NULL,
-	cryptedPass			VARCHAR(20)		NOT NULL,							-- MD5 hexdigest
+	cryptedPass			VARCHAR(32)		NOT NULL,							-- MD5 hexdigest
 	realname			VARCHAR(75),
 	emailAddress		VARCHAR(75),
 	lastLogin			DATETIME,
@@ -33,7 +33,7 @@ CREATE TABLE muesuser (
 	timeCreated			DATETIME,
 	firstLoginTick		INT				UNSIGNED NOT NULL DEFAULT 0,		-- Tick of first login
 
-	role				TINYINT			UNSIGNED NOT NULL DEFAULT 0,		-- Permissions role
+	accounttype			TINYINT			UNSIGNED NOT NULL DEFAULT 0,		-- Account type
 	flags				INT				UNSIGNED NOT NULL DEFAULT 0,		-- Bitfield
 	preferences			BLOB,												-- Frozen Ruby hash
 
