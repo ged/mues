@@ -29,7 +29,7 @@
 # 
 # == Version
 #
-#  $Id: simplememorymanager.rb,v 1.2 2002/07/09 15:11:41 deveiant Exp $
+#  $Id: simplememorymanager.rb,v 1.3 2002/07/09 22:30:22 stillflame Exp $
 # 
 # == Authors
 #
@@ -51,8 +51,8 @@ module MUES
 		class SimpleMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-			Rcsid = %q$Id: simplememorymanager.rb,v 1.2 2002/07/09 15:11:41 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+			Rcsid = %q$Id: simplememorymanager.rb,v 1.3 2002/07/09 22:30:22 stillflame Exp $
 
 			### The symbol of the default method to call to "mark" objects.
 			DefaultMarkMethod = :os_gc_mark
@@ -99,7 +99,7 @@ module MUES
 			
 			### The actual garbage collection algorithm, in this case the simplest we could think of.
 			### Redefine for desired behavior.
-			def _collect( visitor )
+			def startCycle( visitor )
 				@mutex.synchronize( Sync::SH ) {
 					@active_objects.each_value {|o|
 						if( !o.shallow? )
@@ -115,7 +115,7 @@ module MUES
 			end
 
 			### Stores all the (non-shallow) objects in the object store.
-			def saveAllObjects
+			def saveAllObjects 
 				@active_objects.each_value {|o|
 					@objectStore.store(o) unless o.shallow?
 				}
