@@ -23,7 +23,7 @@
 #   <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
 #        "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 #   
-#   <muesconfig version="1.1" time-stamp="$Date: 2003/05/13 07:14:09 $">
+#   <muesconfig version="1.1" time-stamp="$Date: 2003/08/10 17:43:50 $">
 #   
 #     <!--
 #   
@@ -32,7 +32,7 @@
 #     without any argument. For the actual defaults, see the end of
 #     lib/mues/Config.rb.
 #   
-#     $Id: config.rb,v 1.25 2003/05/13 07:14:09 deveiant Exp $
+#     $Id: config.rb,v 1.26 2003/08/10 17:43:50 deveiant Exp $
 #   
 #     -->
 #   
@@ -270,7 +270,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.25 2003/05/13 07:14:09 deveiant Exp $
+# $Id: config.rb,v 1.26 2003/08/10 17:43:50 deveiant Exp $
 # 
 # == Authors
 # 
@@ -307,8 +307,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.25 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.25 2003/05/13 07:14:09 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.26 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.26 2003/08/10 17:43:50 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -337,7 +337,6 @@ module MUES
 				end
 
 				@xmldoc = REXML::Document::new( io )
-				io.close
 			end
 
 			@mainSection = MUES::Config::Section::create( @xmldoc.root )
@@ -672,7 +671,7 @@ module MUES
 					rval = value.to_a.collect {|part|
 						case part
 						when REXML::Text
-							part.to_s
+							REXML::Text::read_with_substitution( part.to_s )
 						when REXML::Instruction
 							self.processInstruction( part )
 						when REXML::Comment
@@ -1419,7 +1418,7 @@ __END__
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2003/05/13 07:14:09 $">
+<muesconfig version="1.1" time-stamp="$Date: 2003/08/10 17:43:50 $">
 
   <!-- General config -->
   <general>
