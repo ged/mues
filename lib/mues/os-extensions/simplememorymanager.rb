@@ -29,7 +29,7 @@
 # 
 # == Version
 #
-#  $Id: simplememorymanager.rb,v 1.4 2002/07/09 23:09:32 stillflame Exp $
+#  $Id: simplememorymanager.rb,v 1.5 2002/08/01 01:19:59 deveiant Exp $
 # 
 # == Authors
 #
@@ -51,8 +51,8 @@ module MUES
 		class SimpleMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: simplememorymanager.rb,v 1.4 2002/07/09 23:09:32 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: simplememorymanager.rb,v 1.5 2002/08/01 01:19:59 deveiant Exp $
 
 			### The symbol of the default method to call to "mark" objects.
 			DefaultMarkMethod = :os_gc_mark
@@ -85,7 +85,6 @@ module MUES
 					end
 				end
 
-				saveAllObjects()
 				return true
 			end
 
@@ -95,24 +94,15 @@ module MUES
 			def startCycle( visitor )
 				@mutex.synchronize( Sync::SH ) {
 					@active_objects.each_value {|o|
-						if( !o.shallow? )
-							if( o.os_gc_accept(visitor) )
-								@mutex.synchronize( Sync::EX ) {
-									@objectStore.store(o)
-									o.become(ShallowReference.new( o.objectStoreID, @objectStore ))
-								}
-							end
+						next if o.shallow?
+						if( o.accept(visitor) )
+							@mutex.synchronize( Sync::EX ) {
+								@objectStore.store(o)
+								o.become(ShallowReference.new( o.objectStoreId, @objectStore ))
+							}
 						end
 					}
 				}
-			end
-
-			### Stores all the (non-shallow) objects in the object store.
-			def saveAllObjects 
-				@active_objects.each_value {|o|
-					@objectStore.store(o) unless o.shallow?
-				}
-				@active_objects.clear
 			end
 
 		end # class SimpleMemoryManager
