@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/23 01:57:40 $">
+#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/23 18:28:55 $">
 #	
 # 	  <!-- General server configuration:
 # 		  server-name:			The name of the server
@@ -189,7 +189,7 @@
 #
 # This would yield an object that you could use like this:
 # 
-#   # Hypens become underscores in method names:
+#   # Hyphens become underscores in method names:
 #   configObj = MUES::Config::new( "muesconfig.xml" )
 #   Dir.chdir configObj.general.root_dir
 #   puts "Starting #{configObj.general.server_name}
@@ -218,7 +218,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.18 2002/10/23 01:57:40 deveiant Exp $
+# $Id: config.rb,v 1.19 2002/10/23 18:28:55 deveiant Exp $
 # 
 # == Authors
 # 
@@ -255,8 +255,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.18 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.18 2002/10/23 01:57:40 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.19 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.19 2002/10/23 18:28:55 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -378,8 +378,8 @@ module MUES
 
 		### Configuration constructors
 		
-		# This is a collection of methods designed to created
-		# properly-configured MUES objects from a configuration object.
+		# This is a collection of methods designed to create properly-configured
+		# MUES objects from a configuration object.
 		
 		### Instantiate the MUES::Engine's objectstore from the configured
 		### values.
@@ -1242,7 +1242,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/23 01:57:40 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/23 18:28:55 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
