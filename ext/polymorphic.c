@@ -1,11 +1,11 @@
 /*
  *	polymorphic.c - Polymorphic backend for MUES::StorableObject
- *	$Id: polymorphic.c,v 1.11 2002/08/02 20:06:00 deveiant Exp $
+ *	$Id: polymorphic.c,v 1.12 2002/10/13 23:20:20 deveiant Exp $
  *
  *	This module defines the MUES::PolymorphicObject class which is a derivative
  *	of MUES::Object that allows it to exchange its identity with another
- *	PolymorphicObject via its #become() method. It is based on code suggested by
- *	Mathieu Bouchard <matju@cam.org>.
+ *	PolymorphicObject via its #polymorph() method. It is based on code suggested
+ *	by Mathieu Bouchard <matju@cam.org>.
  *
  *	Authors:
  *		Martin Chase <stillflame@FaerieMUD.org>
@@ -29,7 +29,7 @@
 VALUE mues_cMuesPolymorphicObject;
 
 /*
- * become( other ) -> anObject
+ * polymorph( other ) -> anObject
  * ---
  * Cause the receiver to switch itself with the specified +other+
  * MUES::PolymorphicObject. A SecurityError will be raised if $SAFE is greater
@@ -37,43 +37,43 @@ VALUE mues_cMuesPolymorphicObject;
  * and either of the objects are tainted. Returns the new receiver.
  */
 static VALUE
-mues_polymorphic_become( self, other ) 
+mues_polymorphic_polymorph( self, other ) 
 	 VALUE self, other;
 {
-  long t[5];
+	long t[5];
 
-  // Restrict what self can become in $SAFE >= 1.
-  if ( rb_safe_level() >= 1 ) {
-	if ( OBJ_TAINTED(self) && !OBJ_TAINTED(other) )
-	  rb_raise( rb_eSecurityError, "Insecure: can't become untainted object." );
-	if ( !OBJ_TAINTED(self) && OBJ_TAINTED(other) )
-	  rb_raise( rb_eSecurityError, "Insecure: can't become tainted object." );
+	// Restrict what self can polymorph in $SAFE >= 1.
+	if ( rb_safe_level() >= 1 ) {
+		if ( OBJ_TAINTED(self) && !OBJ_TAINTED(other) )
+			rb_raise( rb_eSecurityError, "Insecure: can't polymorph into an untainted object." );
+		if ( !OBJ_TAINTED(self) && OBJ_TAINTED(other) )
+			rb_raise( rb_eSecurityError, "Insecure: can't polymorph into a tainted object." );
 
-	// Objects can't polymorph at all in $SAFE >= 4.
-	if ( rb_safe_level() >= 4 && (OBJ_TAINTED( self ) || OBJ_TAINTED( other )) )
-	  rb_raise( rb_eSecurityError, "Insecure: cannot polymorph tainted object." );
-  }
+		// Objects can't polymorph at all in $SAFE >= 4.
+		if ( rb_safe_level() >= 4 && (OBJ_TAINTED( self ) || OBJ_TAINTED( other )) )
+			rb_raise( rb_eSecurityError, "Insecure: cannot polymorph a tainted object." );
+	}
 
-  // Check to make sure the other object is also polymorphic
-  if ( !rb_obj_is_kind_of(other, mues_cMuesPolymorphicObject) )
-	rb_raise( rb_eTypeError, "Cannot become a non-polymorphic object.",
-			  rb_class2name(CLASS_OF( other )) );
+	// Check to make sure the other object is also polymorphic
+	if ( !rb_obj_is_kind_of(other, mues_cMuesPolymorphicObject) )
+		rb_raise( rb_eTypeError, "Cannot polymorph a non-polymorphic object.",
+				  rb_class2name(CLASS_OF( other )) );
 
-  // Make sure both objects are real objects (this shouldn't be a concern, as
-  // they should all be PolymorphicObjects, but better safe than sorry).
-  if ( IMMEDIATE_P(self) )
-	rb_raise( rb_eTypeError, "%s is not boxed",
-			  rb_class2name(CLASS_OF( self )) );
-  if ( IMMEDIATE_P(other) )
-	rb_raise( rb_eTypeError, "%s is not boxed",
-			  rb_class2name(CLASS_OF( other )) );
+	// Make sure both objects are real objects (this shouldn't be a concern, as
+	// they should all be PolymorphicObjects, but better safe than sorry).
+	if ( IMMEDIATE_P(self) )
+		rb_raise( rb_eTypeError, "%s is not boxed",
+				  rb_class2name(CLASS_OF( self )) );
+	if ( IMMEDIATE_P(other) )
+		rb_raise( rb_eTypeError, "%s is not boxed",
+				  rb_class2name(CLASS_OF( other )) );
 
-  // Exchange the ids of the two objects
-  memcpy( (long *)t    , (long *)self , 5 * sizeof(long) );
-  memcpy( (long *)self , (long *)other, 5 * sizeof(long) );
-  memcpy( (long *)other, (long *)t    , 5 * sizeof(long) );
+	// Exchange the ids of the two objects
+	memcpy( (long *)t    , (long *)self , 5 * sizeof(long) );
+	memcpy( (long *)self , (long *)other, 5 * sizeof(long) );
+	memcpy( (long *)other, (long *)t    , 5 * sizeof(long) );
 
-  return self;
+	return self;
 }
 
 
@@ -83,13 +83,13 @@ mues_polymorphic_become( self, other )
 void
 Init_Mues_PolymorphicObject()
 {
-  mues_debug( "Initializing MUES::PolymorphicObject C extension." );
+	mues_debug( "Initializing MUES::PolymorphicObject C extension." );
 
 #if FOR_RDOC_PARSER
-  mues_mMUES = rb_define_module( "MUES" );
+	mues_mMUES = rb_define_module( "MUES" );
 #endif
 
-  // Define the new class and the #become method
-  mues_cMuesPolymorphicObject = rb_define_class_under( mues_mMUES, "PolymorphicObject", mues_cMuesObject );
-  rb_define_method( mues_cMuesPolymorphicObject, "become", mues_polymorphic_become, 1 );
+	// Define the new class and the #polymorph method
+	mues_cMuesPolymorphicObject = rb_define_class_under( mues_mMUES, "PolymorphicObject", mues_cMuesObject );
+	rb_define_method( mues_cMuesPolymorphicObject, "polymorph", mues_polymorphic_polymorph, 1 );
 }
