@@ -31,11 +31,11 @@ http://language.perl.com/misc/Artistic.html)
 
 require "mysql"
 
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/Exceptions"
 require "mues/Debugging"
 
-require "mues/objstore_adapters/Adapter"
+require "mues/adapters/Adapter"
 
 module MUES
 	class ObjectStore
@@ -43,8 +43,8 @@ module MUES
 
 			include Debuggable
 
-			Version = %q$Revision: 1.1 $
-			Rcsid = %q$Id: MysqlAdapter.rb,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+			Version = %q$Revision: 1.2 $
+			Rcsid = %q$Id: MysqlAdapter.rb,v 1.2 2001/03/29 02:47:05 deveiant Exp $
 
 			attr_accessor :db, :host, :user, :password
 			def initialize( db, host, user, password )

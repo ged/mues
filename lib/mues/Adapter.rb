@@ -10,7 +10,7 @@ Adapter - An ObjectStore adapter abstract base class
 
 == Synopsis
 
-  require "mues/objstore_adapters/Adapter"
+  require "mues/adapters/Adapter"
 
   module MUES
     class ObjectStore
@@ -54,7 +54,7 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/Exceptions"
 require "mues/Debugging"
 
@@ -68,8 +68,8 @@ module MUES
 			include Debuggable
 			include AbstractClass
 
-			Version = %q$Revision: 1.2 $
-			Rcsid = %q$Id: Adapter.rb,v 1.2 2001/03/20 07:40:46 deveiant Exp $
+			Version = %q$Revision: 1.3 $
+			Rcsid = %q$Id: Adapter.rb,v 1.3 2001/03/29 02:47:05 deveiant Exp $
 
 			def storeObject( obj )
 				raise UnimplementedError, "Required method unimplemented."

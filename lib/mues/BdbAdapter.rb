@@ -36,11 +36,11 @@ require "bdb"
 require "thread"
 require "ftools"
 
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/Exceptions"
 require "mues/Debugging"
 
-require "mues/objstore_adapters/Adapter"
+require "mues/adapters/Adapter"
 
 module MUES
 	class ObjectStore
@@ -48,8 +48,8 @@ module MUES
 
 			include Debuggable
 
-			Version = %q$Revision: 1.2 $
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.2 2001/03/20 07:54:08 deveiant Exp $
+			Version = %q$Revision: 1.3 $
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.3 2001/03/29 02:47:05 deveiant Exp $
 
 			DirectoryName = 'objectstore-bdb'
 
