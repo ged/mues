@@ -45,6 +45,57 @@ for abstract classes ((({MUES::AbstractClass}))).
 
 	Returns the engine object.
 
+== Interfaces/Mixins
+==== (({MUES::Notifiable}))
+
+     An interface that can be implemented by objects (typically, but not
+     necessarily, classes) which need global notification of changes to the
+     Engine^s state outside of the event system. This can be used for
+     initialization, cleanup, etc. when the event system is not running.
+
+	 The methods which it requires/implements are:
+
+--- atEngineStartup( engineObject )
+
+	This method will be called during engine startup, immediately after the
+	event subsystem is started. Any returned events will be dispatched from the
+	Engine.
+
+--- atEngineShutdown( engineObject )
+
+	This method will be called just before the engine shuts down, and can be
+	used to queue critical cleanup events that need to be executed before the
+	event subsystem is shut down.
+
+==== (({MUES::Debuggable}))
+
+	 A mixin that can be used to add debugging capability to a class and
+	 its instances.
+
+--- debugMsg( level, *messages )
+
+	Output the specified ((|messages|)) to STDERR if the debugging level for the
+	receiver is at ((|level|)) or higher.
+
+--- debugLevel=( value )
+
+	Set the debugging level for the receiver to the specified ((|level|)). The
+	((|level|)) may be a (({Fixnum})) between 0 and 5, the (({true})) value, or
+	(({false})). Setting the level to 0 or (({false})) turns debugging off.
+
+--- debugLevel()
+
+	Return the debug level of the receiver as a (({Fixnum})).
+
+--- debugged?
+
+	Return true if the receiver^s debug level is >= 1.
+
+==== (({MUES::AbstractClass}))
+
+	 A mixin that adds abstractness to a class. Instantiating a class which
+	 includes this mixin will result in an InstantiationError.
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -76,12 +127,21 @@ class Module
 		end
 	end
 	
-	alias :implements, :include
+	### Syntactic sugar for mixin/interface modules
+	alias :implements :include
+	alias :implements? :<
 end
 
+### Add some type-checking functions to the Object class
 class Object
 
-	### FUNCTION: checkType( anObject, *validTypes )
+	### Private functions
+	private
+
+	### FUNCTION: checkType( anObject, *validTypes ) {|anObject, *validTypes| errBlock}
+	### Check ((|anObject|)) to make sure it's one of the specified
+	### ((|validTypes|)), calling the optional ((|errBlock|)) if specified,
+	### or raising a (({TypeError})) if not.
 	def checkType( anObject, *validTypes )
 		if validTypes.size > 0 then
 
@@ -110,7 +170,11 @@ class Object
 		end
 	end
 
+
 	### FUNCTION: checkEachType( anArray, *validTypes ) {|anObject, validTypes| errBlock}
+	### Check ((|anObject|)) to make sure it's one of the specified
+	### ((|validTypes|)), calling the optional ((|errBlock|)) if specified,
+	### or raising a (({TypeError})) if not.
 	def checkEachType( anArray, *validTypes, &errBlock )
 		raise ScriptError, "First argument to checkEachType must be an array" unless
 			anArray.is_a?( Array )
@@ -129,7 +193,11 @@ class Object
 		end
 	end
 
-	### FUNCTION: checkResponse( anObject, *requiredMethods ) {|method, object| errBlock}
+
+	### FUNCTION: checkResponse( anObject, *requiredMethods ) {|object,method| errBlock}
+	### Check ((|anObject|)) for implementations of ((|requiredMethods|)),
+	### calling the optional ((|errBlock|)) if specified, or raising a
+	### (({TypeError})) if one of the methods is unimplemented.
 	def checkResponse( anObject, *requiredMethods )
 		if requiredMethods.size > 0 then
 			requiredMethods.each do |method|
@@ -145,7 +213,12 @@ class Object
 		end
 	end
 
-	### FUNCTION: checkEachResponse( anObject, *requiredMethods ) {|method, object| errBlock}
+
+	### FUNCTION: checkEachResponse( anArray, *requiredMethods ) {|object, method| errBlock}
+	### Check each object of ((|anArray|)) for implementations of
+	### ((|requiredMethods|)), calling the optional ((|errBlock|)) if
+	### specified, or raising a (({TypeError})) if one of the methods is
+	### unimplemented.
 	def checkEachResponse( anArray, *requiredMethods, &errBlock )
 		raise ScriptError, "First argument to checkEachResponse must be an array" unless
 			anArray.is_a?( Array )
@@ -163,9 +236,10 @@ class Object
 		end
 	end
 
-end # class Object
+end
 
 
+### The base MUES namespace
 module MUES
 
 	### MODULE: MUES::AbstractClass
@@ -175,19 +249,105 @@ module MUES
 			class << self
 				def new( *args, &block )
 					raise InstantiationError if self == #{klass.name}
-					super
+						super( *args, &block )
 				end
 			end
 			END
+
+			super( klass )
 		end
 	end
+
+	### MODULE: MUES::Notifiable
+	### An interface that can be implemented by classes which need global
+	### notification of changes to the Engine's state outside of the event
+	### system. This can be used for initialization, cleanup, etc. when the
+	### event system is not running.
+	module Notifiable
+		@@NotifiableClasses = []
+
+		def Notifiable.classes
+			@@NotifiableClasses
+		end
+
+		def Notifiable.append_features( klass )
+			@@NotifiableClasses |= [ klass ]
+			super( klass )
+		end
+
+		module_function
+		def atEngineStartup( engine );		end
+		def atEngineShutdown( engine );		end
+	end
+
+
+	### MODULE: MUES::Debuggable
+	### A mixin that can be used to add debugging functionality to a class and its
+	### instances.
+	module Debuggable
+
+		### (MIXIN) METHOD: debugMsg( level, *messages )
+		### Output the specified messages to STDERR if the debugging level for the
+		### receiver is at ((|level|)) or higher.
+		def debugMsg( level, *messages )
+			raise TypeError, "Level must be a Fixnum, not a #{level.class.name}." unless
+				level.is_a?( Fixnum )
+			return unless debugged?( level )
+
+			logMessage = messages.collect {|m| m.to_s}.join('')
+			frame = caller(1)[0]
+			if Thread.current != Thread.main then
+				$stderr.puts "[Thread #{Thread.current.id}] #{frame}: #{logMessage}"
+			else
+				$stderr.puts "#{frame}: #{logMessage}"
+			end
+
+			$stderr.flush
+		end
+		alias :_debugMsg :debugMsg
+
+		### (MIXIN) METHOD: debugLevel=( value )
+		### Set the debugging level for the receiver to the specified
+		### ((|level|)). The ((|level|)) may be a (({Fixnum})) between 0 and 5, or
+		### (({true})) or (({false})). Setting the level to 0 or (({false})) turns
+		### debugging off.
+		def debugLevel=( value )
+			case value
+			when true
+				@debugLevel = 1
+			when false
+				@debugLevel = 0
+			when Numeric, String
+				value = value.to_i
+				value = 5 if value > 5
+				value = 0 if value < 0
+				@debugLevel = value
+			else
+				raise TypeError, "Cannot set debugging level to #{value.inspect} (#{value.class.name})"
+			end
+		end
+
+		### (MIXIN) METHOD: debugLevel()
+		### Return the debug level of the receiver as a (({Fixnum})).
+		def debugLevel
+			defined?( @debugLevel ) ? @debugLevel : 0
+		end
+
+		### (MIXIN) METHOD: debugged?
+		### Return true if the receiver's debug level is >= 1.
+		def debugged?( level=1 )
+			debugLevel() >= level
+		end
+	end
+
+
 
 	### (ABSTRACT) CLASS: MUES::Object
 	class Object < ::Object; implements AbstractClass
 
 		### Class constants
-		Version	= %q$Revision: 1.8 $
-		RcsId	= %q$Id: mues.rb,v 1.8 2001/06/25 14:08:54 deveiant Exp $
+		Version	= %q$Revision: 1.9 $
+		RcsId	= %q$Id: mues.rb,v 1.9 2001/07/18 01:57:29 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( *ignored )
 		protected
@@ -216,10 +376,10 @@ module MUES
 		#######################################################################
 		###	P R I V A T E   M E T H O D S
 		#######################################################################
-
-		### (PRIVATE GLOBAL) FUNCTION: engine()
-		### Can be used to get a reference to the running server object. Restricted 
 		private
+
+		### FUNCTION: engine()
+		### Can be used to get a reference to the running server object. Restricted 
 		def engine
 			raise SecurityError, "Unauthorized request for engine instance." if self.tainted? || $SAFE >= 3
 			
@@ -227,13 +387,13 @@ module MUES
 				raise EngineException, "Engine class is not yet loaded" 
 			end
 			
-			return Engine.instance
+			return MUES::Engine.instance
 		end
 
-		### (PRIVATE GLOBAL) FUNCTION: registerHandlerForEvents( anObject, *eventClasses )
+
+		### FUNCTION: registerHandlerForEvents( anObject, *eventClasses )
 		### Register the specified object as being interested in events of the
 		### type/s specified by ((|eventClasses|)).
-		private
 		def registerHandlerForEvents( handlerObject, *eventClasses )
 			checkResponse( handlerObject, "handleEvent" )
 
@@ -243,9 +403,8 @@ module MUES
 		end
 
 
-		### (PRIVATE GLOBAL) METHOD: __GenerateMuesId
+		### FUNCTION: __GenerateMuesId
 		### Returns a unique id for an object
-		private
 		def __GenerateMuesId
 			raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
 			return MD5.new( raw ).hexdigest
