@@ -3,17 +3,29 @@
 
 This is an informal list of tasks yet to be done for the MUES.
 
+== Immediate Tasks
+
+These are tasks which should be completed before the next release.
+
 * Update docs in the Engine to reflect changes (partially done already).
-
-* Change the 'pp' command to use YAML if it's loaded, and fall back to 'pp' if
-  not.
-
-* User objects aren't being stored into the database every time they log out.
 
 * Fix the PI-parsing part of MUES::Config::Element.
 
 * Fix /eval CommandShell command by making it use an event that gets executed by
   the privileged queue.
+
+* Fix the mysterious backspace-freezing bug in the TelnetOutputFilter.
+
+* Define a shutdown method for NullEnvironment.
+
+== Planned Tasks
+
+These are things which are planned to be added in the next release.
+
+* I18n via GetText:
+  http://home2.highway.ne.jp/mutoh/tools/ruby/en/ruby-gettext.html
+
+* Finish unit tests.
 
 * Finish design/implementation of MUES::ClassLibrary.
 
@@ -21,15 +33,9 @@ This is an informal list of tasks yet to be done for the MUES.
   current unfinished class-per-decoration implementation for a
   Decorator-pattern-based approach.
 
-* Finish unit tests.
-
-* Fix the mysterious backspace-freezing bug in the TelnetOutputFilter.
-
 * Implement the commands in server/shellCommands/TODO.
-
-* Add 'bans' code to Engine.
 
 * Finish code to re-write a config file.
 
-* Define a shutdown method for NullEnvironment.
+* Add 'bans' code to Engine.
 
