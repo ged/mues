@@ -7,16 +7,12 @@
 # values. MUES::Config objects can also dump the configuration back into a
 # string for writing.
 # 
-# The config file is in YAML format; see the CONFIGURATION file for more
-# information about the details.
-#
-# == Description
-# The configuration values are as follows:
-#
+# The config file can be in any format for which there is a loader class; see
+# the CONFIGURATION file for more information about the details.
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.29 2003/11/27 05:47:37 deveiant Exp $
+# $Id: config.rb,v 1.30 2003/11/27 06:01:01 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,8 +25,6 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-
-require 'yaml'
 
 require 'mues/mixins'
 require 'mues/exceptions'
@@ -55,8 +49,8 @@ module MUES
 		extend Forwardable
 
 		### Class constants/methods
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
-		Rcsid = %q$Id: config.rb,v 1.29 2003/11/27 05:47:37 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
+		Rcsid = %q$Id: config.rb,v 1.30 2003/11/27 06:01:01 deveiant Exp $
 
 		def self::debugMsg( *msgs )
 			$stderr.puts msgs.join
