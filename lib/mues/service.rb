@@ -42,12 +42,40 @@ provides some functionality to the hosted worlds or other subsystems through
     mues/events/ServiceEvents.rb, or define them in a separate class and add the
     file to the list of requires to mues/Events.rb.
 
-== Methods
-=== Factory Method
+== Classes
+=== MUES::Service
+==== Factory Methods
 
 --- MUES::Service.getService( name )
 
 	Get the service specified by the given name, instantiating it if necessary.
+
+==== Class Methods
+
+--- MUES::Service.atEngineStartup( engine )
+
+    ((<MUES::Notifiable|Notifiable>)) interface method.
+
+--- MUES::Service.atEngineShutdown( engine )
+
+    ((<MUES::Notifiable|Notifiable>)) interface method.
+
+==== Public Methods
+
+--- MUES::Service#name
+
+    Return the name of the service.
+
+--- MUES::Service#description
+
+    Return the description of the service.
+
+==== Protected Methods
+
+--- MUES::Service#initialize( name, description )
+
+    Setup and initialize a new service object with the specified ((|name|)) and
+    ((|description|)).
 
 == Author
 
@@ -72,8 +100,8 @@ module MUES
 	class Service < Object ; implements MUES::Notifiable, AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.2 2001/08/05 05:46:08 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.3 2001/11/01 17:15:06 deveiant Exp $
 
 		### Class methods
 		class << self
@@ -82,7 +110,6 @@ module MUES
 			### Get the service specified by the given ((|name|)), instantiating
 			### it if necessary.
 			def getService( type )
-				TestService.instance
 			end
 
 			### (CLASS) METHOD: atEngineStartup( theEngine )
@@ -96,18 +123,24 @@ module MUES
 			end
 		end
 
-		### (PROTECTED) METHOD: initialize()
 		protected
+
+		### (PROTECTED) METHOD: initialize( name )
+		### Setup and initialize a new service object with the specified name.
+		def initialize( name, description )
+			@name = name
+			@description = description
+		end
+
 
 		#############################################################
 		###	P U B L I C   M E T H O D S
 		#############################################################
 		public
 
-	end # class Service
+		attr_reader :name, :description
 
-	class TestService < Service; implements Singleton
-	end
+	end # class Service
 
 end # module MUES
 
