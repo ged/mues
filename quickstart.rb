@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.10 2003/09/12 04:16:55 deveiant Exp $
+#	$Id: quickstart.rb,v 1.11 2004/02/29 04:17:48 deveiant Exp $
 #
-#	Copyright (c) 2001-2003, The FaerieMUD Consortium.
+#	Copyright (c) 2001-2004, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -29,9 +29,6 @@ RequiredLibraries = [
 	[ 'io/reactor', "IO-Reactor", 
 		'http://raa.ruby-lang.org/list.rhtml?name=IO-Reactor',
 		'http://www.devEiate.org/code/IO-Reactor-0.05.tar.gz' ],
-	[ 'rexml/document', 'REXML',
-		'http://raa.ruby-lang.org/list.rhtml?name=REXML',
-		'http://www.germane-software.com/archives/rexml_2.5.2.tgz' ],
 	[ 'forwardable', "Forwardable",
 		'http://raa.ruby-lang.org/list.rhtml?name=forwardable',
 		'ftp://ftp.ruby-lang.org/pub/ruby/contrib/forwardable-1.1.tgz' ],
@@ -41,10 +38,9 @@ RequiredLibraries = [
 	[ 'pp', 'PrettyPrinter',
 		'http://raa.ruby-lang.org/list.rhtml?name=pp',
 		'http://cvs.m17n.org/~akr/pp/download.html' ],
-	[ 'log4r', 'Log4R',
-		'http://raa.ruby-lang.org/list.rhtml?name=log4r',
-		'http://prdownloads.sourceforge.net/log4r/log4r-1.0.4.tgz?download' ],
-
+	[ 'yip', 'YAML Interpolation',
+		'http://raa.ruby-lang.org/list.rhtml?name=yip',
+		'http://codedbliss.com/projects/yip-0.8.1.tar.gz' ],
 ]
 
 
@@ -73,17 +69,15 @@ def main
 		end
 	end
 
-	unless File::exists?( "server/config.xml" )
-		message "Copying example minimal config to config.xml..."
-		File.copy( "server/minimal-config.xml", "server/config.xml", true )
-		message "done.\n"
-
+	if File::exists?( "server/config.yml" )
 		if promptWithDefault( "Edit the configuration? (highly recommended) [Yn]", 'y' ) =~ /y/i
 			editor = ENV['EDITOR'] || ENV['VISUAL'] || findProgram( 'emacs' ) || findProgram( 'vi' ) || ''
 			editor = promptWithDefault( "Editor to use for editing config file? [#{editor}]", editor )
 			message "Invoking editor: #{editor} server/config.xml\n"
 			system( editor, "server/config.xml" ) or abort( "Editor session failed: #{$?}" )
 		end
+	else
+		abort "Missing server/config.yml"
 	end
 
 	unless File::directory?( "server/log" )
