@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mutatoroperation.rb,v 1.4 2002/04/11 15:52:40 deveiant Exp $
+# $Id: mutatoroperation.rb,v 1.5 2002/06/04 06:54:52 deveiant Exp $
 # 
 # == Authors
 # 
@@ -33,8 +33,8 @@ module Metaclass
 	class MutatorOperation < Metaclass::Operation
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: mutatoroperation.rb,v 1.4 2002/04/11 15:52:40 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: mutatoroperation.rb,v 1.5 2002/06/04 06:54:52 deveiant Exp $
 
 		### Create a new MutatorOperation object that sets the instance variable
 		### of the name specified by <tt>sym</tt> (a <tt>Symbol</tt> or
@@ -51,19 +51,13 @@ module Metaclass
 			sym.gsub!( /=$/, '' )
 
 			# Assemble the mutator code
+
 			case scope
 			when Scope::CLASS
-				code = <<-END_CODE
-				@@#{sym} = val
-				END_CODE
+				super( "#{sym}=", "@@#{sym} = val", scope, visibility )
 			else
-				code = <<-END_CODE
-				@#{sym} = val
-				END_CODE
+				super( "#{sym}=", "@#{sym} = val", scope, visibility )
 			end
-
-			# Call the superclass's initializer
-			super( "#{sym}=", code, scope, visibility )
 
 			# Add the 'val' argument
 			self.addArgument( :val, validTypes )
