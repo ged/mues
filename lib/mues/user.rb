@@ -58,53 +58,21 @@ module MUES
 
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
-		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.32 $ )[1]
+		# CVS version tag
+		Version			= /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+
+		# CVS id tag
 		Rcsid			= %q$Id: user.rb,v 1.32 2003/10/13 04:02:16 deveiant Exp $
 
-		# Account type constants module for the MUES::User class. Contains the
-		# following constants:
-		# 
-		# [USER]
-		#   Normal user. No special permissions.
-		# 
-		# [CREATOR]
-		#   Creator permissions allow the user to start and stop their own Environments,
-		#   examine the state of any object inside an Environment which they have
-		#   started, and fetch limited runtime statistics from the Engine.
-		# 
-		# [IMPLEMENTOR]
-		#   Implementor permissions allow the user to start and stop any Environment,
-		#   view the state of any object in any Environment, interact with the Engine to
-		#   a limited degree (shutdown, restart, reload config), view the banlist, etc.
-		# 
-		# [ADMIN]
-		#   Unlimited permissions.
-		module AccountType
-			USER		= 0		# Regular user
-			CREATOR		= 1		# Can world-interaction access
-			IMPLEMENTOR	= 2		# Has server-interaction access
-			ADMIN		= 3		# Unrestricted access
 
-			Name = %w{User Creator Implementor Admin}
-			Default = Name.first
-			
-			Map = begin
-				hash = {}
-				Name.each_with_index {|name,i| hash[name.downcase] = i}
-				hash
-			end
-
-		end
-		AccountType.freeze
-
-
-		### Class methods
+		#############################################################
+		###	C L A S S   M E T H O D S
+		#############################################################
 
 		### Return a MUES::Questionnaire IOEventFilter object suitable for
 		### insertion into a user's IOEventStream to query for the information
 		### necessary to create a new user. 
-		def self.getCreationQuestionnaire
+		def self::getCreationQuestionnaire
 			qnaire = Questionnaire::new( "Create User", *CreateUserQuestions ) {|qnaire|
 				user = MUES::User::new( qnaire.answers )
 				MUES::ServerFunctions::registerUser( user )
@@ -118,7 +86,7 @@ module MUES
 
 		### Return a MUES::Questionnaire IOEventFilter object suitable for
 		### insertion into a user's IOEventStream to query for a new password.
-		def self.getPasswordQuestionnaire( user, isOther )
+		def self::getPasswordQuestionnaire( user, isOther )
 			questions = nil
 
 			# If we're changing another user's password, don't prompt for the
@@ -147,12 +115,16 @@ module MUES
 		### Return a MUES::Questionnaire IOEventFilter object suitable for
 		### insertion into a user's IOEventStream to query for altering an
 		### attribute of a user.
-		def self.getAttributeQuestionnaire(user, attribute)
-			question = CreateUserQuestions.find {|question| question[:name] == attribute} or
-				raise RuntimeError, "Can't build a questionnaire for '%s': No question with that name." %
-				attribute
-			question[:question] = ("Currently: %s\n" % user.send(attribute.intern)) + question[:question]
+		def self::getAttributeQuestionnaire(user, attribute)
+			question = CreateUserQuestions.find {|question|
+				question[:name] == attribute
+			}
+			raise RuntimeError,
+				"Can't build a questionnaire for '%s': No question with that name." %
+				attribute if question.nil?
 
+			question[:question] =
+				("Currently: %s\n" % user.send(attribute.intern)) + question[:question]
 			qnaire = Questionnaire::new( "Change #{attribute}", question ) {|qnaire|
 				MUES::ServerFunctions::unregisterUser( user )
 				user.send("#{attribute}=", qnaire.answers[attribute.intern])
@@ -166,15 +138,13 @@ module MUES
 		end
 
 
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
 
 		### Create a new user object with the hash of attributes specified. The
 		### valid attributes are:
 		###
-		### [<tt>:accountType</tt>]
-		###   The AccountType of the user. One of the constants listed in
-		###   MUES::User::AccountType, or a stringified version of one of the
-		###   constants (eg., 'creator' or 'CREATOR'); defaults to
-		###   MUES::User::AccountType::USER.
 		### [<tt>:username</tt>]
 		###   The login name of the user. Defaults to 'guest'.
 		### [<tt>:realname</tt>]
@@ -194,19 +164,6 @@ module MUES
 			@remoteHost			= nil
 			@ioEventStream		= nil
 			@activated			= false
-
-			# Translate stringified account types
-			if attributes[:accountType].kind_of? String
-				type = attributes[:accountType].downcase
-				raise MUES::Exception, "No such account type #{type}" unless
-					AccountType::Map.key?( type )
-				attributes[:accountType] = AccountType::Map[ type ]
-			end
-
-			@accountType		= attributes[:accountType]	|| AccountType::USER
-			@accountType.freeze
-
-			self.taint unless @accountType >= AccountType::IMPLEMENTOR
 
 			@username			= attributes[:username]		|| 'guest'
 			@realname			= attributes[:realname]		|| 'Guest User'
@@ -254,9 +211,6 @@ module MUES
 		# The host the user last logged in from
 		attr_accessor	:lastHost
 
-		# The type of account the user has (one of MUES::User::AccountType)
-		attr_reader		:accountType
-
 		# Bitflags for the user (currently unused)
 		attr_accessor	:flags
 
@@ -288,51 +242,19 @@ module MUES
 		end
 
 
-		### Returns true if this user has creator permissions
-		def isCreator? 
-			return @accountType >= AccountType::CREATOR
-		end
-
-
-		### Returns true if this user has implementor permissions
-		def isImplementor? 
-			return @accountType >= AccountType::IMPLEMENTOR
-		end
-
-
-		### Returns true if this user has admin permissions
-		def isAdmin? 
-			return @accountType >= AccountType::ADMIN
-		end
-
-
 		### Returns a stringified version of the user object
 		def to_s 
-			if self.isCreator?
-				return "%s - %s <%s> (%s)" % [
-					@realname,
-					@username.capitalize,
-					@emailAddress,
-					AccountType::Name[@accountType]
-				]
-			else
-				return "%s - %s <%s>" % [
-					@realname,
-					@username.capitalize,
-					@emailAddress
-				]
-			end
+			"%s - %s <%s>" % [
+				@realname,
+				@username.capitalize,
+				@emailAddress
+			]
 		end
 
 
-		### Comparison operator
+		### Comparison operator -- compares usernames.
 		def <=>( otherUser )
-
-			# Return either the accounttype comparison (since #nonzero? returns
-			# the numeric value itself if it is true), or the comparison of
-			# usernames, which should always be unique.
-			(@accountType <=> otherUser.accounttype).nonzero? ||
-				@username <=> otherUser.username
+			@username <=> otherUser.username
 		end
 
 
@@ -352,23 +274,10 @@ module MUES
 
 		### Activate the user, set up their environment with the given stream,
 		### and output the specified 'message of the day', if given.
-		def activate( stream, cshell, motd=nil )
-			checkType( stream, MUES::IOEventStream )
-			checkType( cshell, MUES::CommandShell )
-
-			# Create the command shell and macro filters and add them
-			macros = MUES::MacroFilter.new( self )
-			stream.addFilters( cshell, macros )
-
-			# Set the stream, send the MOTD if it was specified, and flag the
-			# object as activated
+		def activate( stream, *filters )
+			# Set the stream
 			@ioEventStream = stream
-			if motd
-				@ioEventStream.addEvents \
-					MUES::OutputEvent::new("\n\n" + motd.gsub(/^\t+/m, '').strip + "\n\n")
-			end
 			@ioEventStream.unpause
-
 			@activated = true
 
 			registerHandlerForEvents( self, MUES::OutputEvent ) #MUES::TickEvent )
@@ -433,6 +342,8 @@ module MUES
 		end
 
 
+
+
 		#########
 		protected
 		#########
@@ -447,251 +358,7 @@ module MUES
 		###	Q U E S T I O N N A I R E S
 		#############################################################
 
-		### The user-creation questionnaire.
-		CreateUserQuestions = [
 
-			# Username
-			{
-				:name		=> "username",
-				:question   => "Username: ",
-				:validator	=> Proc::new {|questionnaire,answer|
-					questionnaire.abort() if answer.strip.empty?
-
-					# 'return' isn't allowed in an anonymous Proc, so we have to
-					# use continuations to allow the return value to be
-					# decided in more than one place.
-					callcc {|rval|
-						if answer.empty?
-							questionnaire.abort
-							rval.call( false )
-
-						elsif answer !~ /^[a-z]\w{2,}$/i
-							questionnaire.error( "Username must begin with a-z " \
-												 "character, and contain only " \
-												 "alphanumerics.\n\n" )
-							rval.call( false )
-						end
-
-						if MUES::ServerFunctions::getUserNames.include?( answer.downcase )
-							questionnaire.error( "User '#{answer}' already exists.\n\n" )
-							rval.call( false )
-						end
-
-						true
-					} # callcc
-				}, # Proc::new
-			},
-
-			# Account type
-			{
-				:name		=> "accountType",
-				:question	=> "Account type [#{AccountType::Map.keys.sort.join(',')}]: ",
-				:default	=> AccountType::Default,
-				:validator	=> Proc::new {|questionnaire,answer|
-
-					# 'return' isn't allowed in an anonymous Proc, so we have to
-					# use continuations to allow the return value to be
-					# decided in more than one place.
-					callcc {|rval|
-
-						# Normalize the input and return an error condition if it's
-						# empty.
-						answer = answer.strip.gsub(/\W+/, '').downcase
-						if answer.empty?
-							questionnaire.abort
-							rval.call( false )
-						end
-
-						# Use matching to allow abbreviations
-						pat = Regexp::new("^#{answer}")
-						res = AccountType::Map.find_all {|name,val| pat.match(name)}
-
-						# If it didn't match anything, it's an error
-						if res.empty?
-							questionnaire.
-								error( "Invalid account type '%s': "\
-									   "Must specify one of %s\n\n" %
-									   [answer, AccountType::Map.keys.sort.join(',')] )
-							rval.call( false )
-
-						# If it matched more than one thing, it was un-ambiguous.
-						elsif res.length > 1
-							matched = res.collect {|name,val| name}.join(', ')
-							questionnaire.
-								error( "Ambiguous type '%s': Matched %s\n\n" %
-									   [answer, matched] )
-							rval.call( false )
-
-						# Otherwise, return the Integer value associated with the
-						# answer.
-						else
-							rval.call( res[0][1] )
-						end
-					} # callcc
-				}, # Proc::new
-			},
-
-			# Real name
-			{
-				:name		=> "realname",
-				:question	=> "Real name: ",
-				:validator	=> /[a-z ]+/i,
-				:errorMsg	=> "Invalid input. Real name must consist only of "\
-								"letters and spaces.\n\n",
-			},
-
-			# Email address
-			{
-				:name		=> "emailAddress",
-				:question	=> "Email address: ",
-
-				# This is pretty simplistic, but we really only need to be
-				# mostly correct. Perhaps replace this with something like
-				# Perl's Email::Valid if it becomes an issue.
-				:validator	=> /[a-z0-9][-\.!\w]+@[-\.\w]+\.[a-z]/i,
-				:errorMsg	=> "Invalid input. Please confirm the address you " \
-								"are typing is valid.\n\n",
-			},
-
-			# Password
-			{
-				:name		=> 'password',
-				:hidden		=> true,
-				:question	=> "Password: ",
-				:validator	=> Proc::new {|questionnaire,answer|
-
-					# 'return' isn't allowed in an anonymous Proc, so we have to
-					# use continuations to allow the return value to be
-					# decided in more than one place.
-					callcc {|rval|
-						if answer.empty?
-							questionnaire.abort
-
-						elsif answer.length < 6
-							questionnaire.error( "Invalid password: Must be at "\
-												 "least 6 characters.\n\n" )
-							rval.call( false )
-
-						elsif answer !~ /\W/
-							questionnaire.error( "Invalid password: Must have at "\
-												 "least one non-alphanumeric character.\n\n" )
-							rval.call( false )
-
-						else
-							rval.call( true )
-						end
-					} # callcc
-				}, # Proc::new
-			},
-
-			# Password confirmation
-			{
-				:name		=> 'passwordConfirm',
-				:hidden		=> true,
-				:question	=> " (again): ",
-				:validator	=> Proc::new {|questionnaire,answer|
-
-					# 'return' isn't allowed in an anonymous Proc, so we have to
-					# use continuations to allow the return value to be
-					# decided in more than one place.
-					callcc {|rval|
-						if answer != questionnaire.answers[:password]
-							questionnaire.error( "Passwords didn't match.\n\n" )
-							questionnaire.undoSteps( 1 )
-							rval.call( false )
-						else
-							rval.call( true )
-						end
-					} # callcc
-				}, # Proc::new
-
-			},
-
-		]
-
-
-		### The admin password-changing questionnaire.
-		ChangePasswordQuestions = [
-
-			# Previous password
-			{
-				:name		=> 'oldPassword',
-				:hidden		=> true,
-				:question   => "Old password: ",
-				:validator	=> Proc::new {|qnaire, answer|
-					user = qnaire.data[:user]
-
-					callcc {|rval|
-						if answer.empty?
-							if user.cryptedPass == '*'
-								rval.call(true)
-							else
-								qnaire.abort
-							end
-						elsif user.passwordMatches?(answer)
-							rval.call(true)
-						else
-							qnaire.error("Old password does not match.\n\n")
-							rval.call(false)
-						end
-					} # callcc
-				} # Proc::new
-			},
-
-			# Password
-			{
-				:name		=> 'newPassword',
-				:hidden		=> true,
-				:question	=> "New password: ",
-				:validator	=> Proc::new {|qnaire, answer|
-
-					# 'return' isn't allowed in an anonymous Proc, so we have to
-					# use continuations to allow the return value to be
-					# decided in more than one place.
-					callcc {|rval|
-						if answer.empty?
-							qnaire.abort
-
-						elsif answer.length < 6
-							qnaire.error( "Invalid password: Must be at "\
-												 "least 6 characters.\n\n" )
-							rval.call( false )
-
-						elsif answer !~ /\W/
-							qnaire.error( "Invalid password: Must have at "\
-												 "least one non-alphanumeric character.\n\n" )
-							rval.call( false )
-
-						else
-							rval.call( true )
-						end
-					} # callcc
-				} # Proc::new
-			},
-
-			# Password confirmation
-			{
-				:name		=> 'passwordConfirm',
-				:hidden		=> true,
-				:question	=> "     (again): ",
-				:validator	=> Proc::new {|questionnaire,answer|
-					
-					# 'return' isn't allowed in an anonymous Proc, so we have to
-					# use continuations to allow the return value to be
-					# decided in more than one place.
-					callcc {|rval|
-						if answer != questionnaire.answers[:newPassword]
-							questionnaire.error( "Passwords didn't match.\n\n" )
-							questionnaire.undoSteps( 1 )
-							rval.call( false )
-						else
-							rval.call( true )
-						end
-					} # callcc
-				}, # Proc::new
-			}
-		]
-		
 
 	end #class User
 end #module MUES
