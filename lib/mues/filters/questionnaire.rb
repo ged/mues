@@ -56,8 +56,8 @@
 #      match will be used.
 #
 #   [an Array]
-#	   Validation succeeds when the Array contains a list of valid data. The
-#	   unchanged data is returned.
+#	   The Array contains a list of valid data; validation succeeds when the
+#	   answer matches one of the values. The unchanged data is returned.
 #
 #   [a Hash]
 #	   Validation succeeds when the input data or the Symbol-ified input data
@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.2 2002/10/04 05:14:33 deveiant Exp $
+# $Id: questionnaire.rb,v 1.3 2002/10/04 11:18:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.2 2002/10/04 05:14:33 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.3 2002/10/04 11:18:46 deveiant Exp $
 
 		DefaultSortPosition = 600
 
