@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.38 2003/04/24 14:48:05 deveiant Exp $
+#  $Id: objectstore.rb,v 1.39 2003/09/12 02:20:21 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.38 $} )[1]
-		Rcsid = %q$Id: objectstore.rb,v 1.38 2003/04/24 14:48:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.39 $} )[1]
+		Rcsid = %q$Id: objectstore.rb,v 1.39 2003/09/12 02:20:21 deveiant Exp $
 
 
 		# The default MemoryManager class
@@ -157,7 +157,7 @@ module MUES
 		###      If specified, the value will be passed as the last argument to
 		###      the Visitor on instantiation.
 		def self.create( args )
-			TypeCheckFunctions::checkResponse( args, :[] )
+			TypeCheckFunctions::checkType( args, Hash )
 
 			config = args[:config] || {}
 
