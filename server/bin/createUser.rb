@@ -1,7 +1,7 @@
 #!/usr/bin/ruby -w
 
 require "readline"
-require "mues/Player"
+require "mues/User"
 require "mues/ObjectStore"
 
 include Readline
@@ -15,21 +15,21 @@ def main
 	user = ARGV.shift
 	driver = ARGV.shift || "Mysql"
 
-	puts "Creating player record for '#{user}' in a #{driver} objectstore."
+	puts "Creating user record for '#{user}' in a #{driver} objectstore."
 	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
-	player = os.createPlayer( user )
+	user = os.createUser( user )
 
-	player.password = prompt( "Password" )
-	player.realname = prompt( "Real name" )
-	player.emailAddress = prompt( "Email" )
+	user.password = prompt( "Password" )
+	user.realname = prompt( "Real name" )
+	user.emailAddress = prompt( "Email" )
 
-	player.role = promptForRole()
+	user.role = promptForRole()
 
-	print "Storing new player record:"
-	os.storePlayer( player )
+	print "Storing new user record:"
+	os.storeUser( user )
 	puts "done."
 
-	puts player.inspect
+	puts user.inspect
 end
 
 def prompt( promptString )
@@ -39,15 +39,15 @@ end
 
 def promptForRole
 	role = nil
-	roles = MUES::Player::Role.constants.collect {|s| s.downcase}
+	roles = MUES::User::Role.constants.collect {|s| s.downcase}
 	oldCp = Readline.completion_proc = Proc.new {|str|
 		roles.find_all {|rolename| rolename =~ /^#{str}/}
 	}
 	oldCf = Readline.completion_case_fold = true
 
 	until ! role.nil?
-		rname = prompt( "Player role [#{roles.join(', ')}]" )
-		role = MUES::Player::Role.const_get( rname.upcase.intern ) if
+		rname = prompt( "User role [#{roles.join(', ')}]" )
+		role = MUES::User::Role.const_get( rname.upcase.intern ) if
 			roles.detect {|str| str.downcase == rname.downcase}
 		if role.nil?
 			puts ">>> Invalid role '#{rname}'."

@@ -1,7 +1,7 @@
 #!/usr/bin/ruby -w
 
 require "mues/ObjectStore"
-require "mues/Player"
+require "mues/User"
 
 unless ARGV.length.nonzero?
 	$stderr.puts "usage: #{$0} <username> [<driver>]"
@@ -11,8 +11,8 @@ end
 user = ARGV.shift
 driver = ARGV.shift || "Mysql"
 
-puts "Deleting player record for '#{user}' from a #{driver} objectstore."
+puts "Deleting user record for '#{user}' from a #{driver} objectstore."
 os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
-player = os.deletePlayer( user )
+user = os.deleteUser( user )
 
-puts "Player record for #{user} deleted."
+puts "User record for #{user} deleted."
