@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: flatfilebackend.rb,v 1.5 2002/09/12 12:42:14 deveiant Exp $
+# $Id: flatfilebackend.rb,v 1.6 2002/09/27 16:20:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,8 +43,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: flatfilebackend.rb,v 1.5 2002/09/12 12:42:14 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: flatfilebackend.rb,v 1.6 2002/09/27 16:20:31 deveiant Exp $
 
 			### Create a new BerkeleyDBBackend object.
 			def initialize( name, indexes=[], configHash={} )
@@ -249,6 +249,13 @@ module MUES
 						sync()
 					}
 				}
+			end
+
+
+			### Return an Array of keys for the specified <tt>index</tt>.
+			def indexKeys( index )
+				raise MUES::IndexError, "No such index #{index}" unless self.hasIndex?( index )
+				@indexes[index.to_s.intern].keys
 			end
 
 			
