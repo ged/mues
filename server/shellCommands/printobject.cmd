@@ -1,7 +1,7 @@
 #
 # The printobject MUES::CommandShell command.
-# Time-stamp: <14-Sep-2002 08:02:30 deveiant>
-# $Id: printobject.cmd,v 1.2 2002/09/15 07:44:37 deveiant Exp $
+# Time-stamp: <12-Oct-2002 10:48:03 deveiant>
+# $Id: printobject.cmd,v 1.3 2002/10/13 23:26:21 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -38,7 +38,7 @@ pp
   # whitespace removed.
 
   targetObject = nil
-  prettyPrinted = []
+  prettyPrinted = ''
 
   # If an id was given, look it up in the global ObjectSpace
   if argString =~ /^\s*(\d+)\s*$/
@@ -57,8 +57,13 @@ pp
     targetObject = context.evalContext
   end
 
-  PP.pp( targetObject, 79, prettyPrinted )
+  # Call the prettyprinter, using the arg-order of whichever version is loaded.
+  if PP.instance_methods.include?( "guard_inspect_key" )
+	PP.pp( targetObject, prettyPrinted, 79 )
+  else
+	PP.pp( targetObject, 79, prettyPrinted )
+  end
 
-  return [MUES::OutputEvent::new( prettyPrinted.join('') + "\n\n" )]
+  return [MUES::OutputEvent::new( prettyPrinted + "\n\n" )]
 
 
