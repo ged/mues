@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.9 2003/10/13 04:02:13 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -46,9 +46,30 @@ module MUES
 	### A listener class for raw TCP/IP socket connections.
 	class SocketListener < MUES::Listener
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.9 2003/10/13 04:02:13 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default configuration parameters -- will be merged with those
+		# given to the constructor.
+		DefaultParameters = {
+			:bindAddress		=> '0.0.0.0',
+			:bindPort			=> 4848,
+			:useWrapper			=> false,
+			:wrapName			=> "mues",
+			:wrapIdent			=> false,
+			:wrapIdentTimeout	=> 30,
+		}
+
+
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
 
 		### Create a new SocketListener object with the specified
 		### <tt>name</tt>. This listener understands the following
@@ -81,18 +102,20 @@ module MUES
 		### [<tt>filter-debug</tt> (optional)]
 		###	The debugging level set on filters created by this listener.
 		def initialize( name, parameters={} )
+			params = DefaultParameters.merge( parameters )
+
 			@io					= nil
 			@name				= name
-			@bindAddr			= parameters['bind-address'] || '0.0.0.0'
-			@bindPort			= parameters['bind-port'] || 4848
+			@bindAddr			= params[:bindAddress]
+			@bindPort			= params[:bindPort]
 			@wrappered			= false
-			@wrapName			= parameters['wrap-name'] || name
-			@wrapIdent			= parameters['wrap-ident'] || false
-			@wrapIdentTimeout	= parameters['wrap-ident-timeout'] || 30
+			@wrapName			= params[:wrapName]
+			@wrapIdent			= params[:wrapIdent]
+			@wrapIdentTimeout	= params[:wrapIdentTimeout]
 
 			# If the listener's configured to use tcp_wrappers, load the tcpwrap
 			# library and set the wrappered flag.
-			if parameters['use-wrapper']
+			if params[:useWrapper]
 				require 'tcpwrap'
 				@wrappered = true
 			end
@@ -103,18 +126,18 @@ module MUES
 
 			# Create the listener socket, as pass it to the parent constructor
 			# as the IO for this object.
-			self.log.debug {"Creating socket..."}
+			self.log.debug "Creating socket..."
 			socket = TCPServer::new( @bindAddr, @bindPort )
-			self.log.debug {"...done."}
+			self.log.debug "...done."
 
 			# If the socket's wrappered, stick it in a TCPWrapper.
 			if self.wrappered?
-				self.log.debug {"Wrapping socket..."}
+				self.log.debug "Wrapping socket..."
 				socket = TCPWrapper::new( @wrapName, socket, @wrapIdent, @wrapIdentTimeout )
-				self.log.debug {"...done."}
+				self.log.debug "...done."
 			end
 
-			self.log.debug {"Calling superclass constructor."}
+			self.log.debug "Calling superclass constructor."
 			super( name, parameters, socket )
 		end
 
