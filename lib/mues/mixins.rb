@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.13 2002/10/24 14:52:31 deveiant Exp $
+# $Id: mixins.rb,v 1.14 2002/10/26 18:59:34 deveiant Exp $
 # 
 # == Authors
 # 
@@ -647,12 +647,8 @@ module MUES
 				### loaded subclasses can be found in the class variable
 				### '<tt>@@typeRegistry</tt>'.
 				def self.inherited( subClass )
-					MUES::Log.debug( "%s (factory) inherited by %s" % [self.name, subClass.name] )
 					return self.superclass.inherited( subClass ) unless @@typeRegistry.has_key?( self )
 					factoryType = self.factoryType
-
-					MUES::Log.debug( "Adding derivative '%s' to the %s factory" % [
-										subClass.name, factoryType ])
 
 					truncatedName =
 						if subClass.name.match( /(?:.*::)?(\w+)(?:#{factoryType})/ )
@@ -662,20 +658,9 @@ module MUES
 						end
 					
 					[ subClass.name, truncatedName, subClass ].each {|key|
-						MUES::Log.debug( "Registering the %s %s(%s) as %s (%s) for %s" % [
-											subClass.name,
-											factoryType,
-											subClass.class.name,
-											key, key.class.name,
-											self.name
-										])
 						@@typeRegistry[self][ key ] = subClass
 					}
 
-					MUES::Log.debug( "%d derivatives now registered for %s Factory" %
-									 [@@typeRegistry[self].keys.length, factoryType] )
-
-					#super( subClass )
 				end
 
 
@@ -687,18 +672,9 @@ module MUES
 					return self if ( self.name == className || className == '' )
 					return className if className.is_a?( Class ) && className >= self
 
-					MUES::Log.debug( "Fetching the '#{className}' derivative of #{self.name}" )
 					unless @@typeRegistry[self].has_key? className
 						
 						self.loadDerivative( className )
-
-						@@typeRegistry[self].keys.each {|k|
-							if k == className
-								MUES::Log.debug( "...registry key #{k.inspect} == #{className.inspect}" )
-							else
-								MUES::Log.debug( "...registry key #{k.inspect} != #{className.inspect}" )
-							end
-						}
 
 						unless ( @@typeRegistry[self].has_key? className )
 							pp @@typeRegistry[self]
@@ -731,10 +707,6 @@ module MUES
 					className = className.to_s
 					factoryType = self.factoryType
 
-					MUES::Log.debug( "%s: (%s Factory): loadDerivative( %s )" % [
-							self.name, factoryType, className
-						])
-
 					# Get the unique part of the derived class name and try to
 					# load it from one of the derivative subdirs, if there are
 					# any.
@@ -744,8 +716,8 @@ module MUES
 					# Check to see if the specified listener is now loaded. If it
 					# is not, raise an error to that effect.
 					unless @@typeRegistry[self][ className ]
-						MUES::Log.debug( "Failed to load '%s' via %s.create" % [
-											className, self.name ])
+						MUES::Log.error "Failed to load '%s' via %s.create" %
+							[ className, self.name ]
 						raise RuntimeError,
 							"Couldn't find a %s named '%s'" % [
 							factoryType,
