@@ -32,7 +32,7 @@ class MUES::ListenerTestCase < MUES::TestCase
 		printTestHeader "Listener: Instantiation"
 
 		assert_instance_of Class, MUES::Listener
-		assert MUES::Listener < MUES::Factory, "Listener < Factory"
+		assert MUES::Listener < PluginFactory, "Listener < PluginFactory"
 
 		assert_raises( MUES::InstantiationError ) {
 			MUES::Listener::new
