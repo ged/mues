@@ -66,7 +66,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.12 2002/10/14 09:38:48 deveiant Exp $
+# $Id: systemevents.rb,v 1.13 2002/10/25 03:12:42 deveiant Exp $
 # 
 # == Authors
 # 
@@ -387,7 +387,7 @@ module MUES
 
 	### An event which is generated when a signal is trapped by the signal
 	### handlers. It derives from MUES::SystemEvent.
-	class SignalEvent < SystemEvent
+	class SignalEvent < PrivilegedSystemEvent
 
 		### Create and return a new ExceptionEvent with the specified +exception+.
 		def initialize( signalName, message=nil )
