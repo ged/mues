@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.16 2002/10/04 05:15:19 deveiant Exp $
+# $Id: eventqueue.rb,v 1.17 2002/10/14 09:31:09 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.16 2002/10/04 05:15:19 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.17 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.17 2002/10/14 09:31:09 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -520,7 +520,7 @@ module MUES
 
 					unless resultEvent.kind_of?( MUES::Event )
 						self.log.error( "%s: Discarding non-event result '%s' from consequences of %s" % 
-									   [self.name, resultEvent.inspect, event.inspect] )
+									   [self.name, resultEvent.inspect, event.to_s] )
 						next
 					end
 
