@@ -13,9 +13,10 @@
 
 require "mysql"
 require "weakref"
-require "rmutex"
+require "sync"
 require "md5"
 
+#require "translucenthash"
 require "tableadapter/Search"
 
 class TableAdapterError < StandardError; end
@@ -28,7 +29,7 @@ class TableAdapter
 		### Initialize the ObjectCache object
 		def initialize( *args )
 			super( *args )
-			@mutex = RMutex.new
+			@mutex = Sync.new
 		end
 
 		### (OVERRIDDEN) METHOD: []( key )
@@ -38,7 +39,7 @@ class TableAdapter
 
 			### Synchronize to avoid screwing up the GC setting with multiple
 			### threads
-			@mutex.synchronize {
+			@mutex.synchronize( Sync::EX ) {
 
 				# Disable garbage collection while we fetch the object behind
 				# the weak reference
@@ -81,13 +82,13 @@ class TableAdapter
 
 			@savedChecksum = checksum()
 			@modifiedFields = {}
-			@mutex = RMutex.new
+			@mutex = Sync.new
 		end
 
 		### (OVERRIDDEN) METHOD: [ column ]= value
 		### Set the value of the specified column to the specified value
 		def []=( col, val )
-			@mutex.synchronize {
+			@mutex.synchronize(Sync::EX) {
 				super( col, val )
 				@modifiedFields[ col ] = 1
 			}
@@ -97,7 +98,7 @@ class TableAdapter
 		### Set the hash values and checksum of the row data to those of the
 		### specified hash
 		def setState( hash )
-			@mutex.synchronize {
+			@mutex.synchronize(Sync::EX) {
 				replace( hash )
 				@savedChecksum = checksum()
 				@modifiedFields = {}
@@ -171,8 +172,8 @@ class TableAdapter
 		"BINARY"		=> MysqlField::BINARY_FLAG
 	}
 
-	Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-	Rcsid = %q$Id: Mysql.rb,v 1.2 2001/04/08 08:23:08 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+	Rcsid = %q$Id: Mysql.rb,v 1.3 2001/05/26 07:49:59 deveiant Exp $
 
 
 	###########################################################################
@@ -182,14 +183,7 @@ class TableAdapter
 	### Cached objects, connection handles, and table info
 	@@oCache	= {}
 	@@handles	= {}
-	@@tableInfo = nil
-
-	### Connection variables
-	@@database	= nil
-	@@table		= nil
-	@@username	= nil
-	@@password	= nil
-	@@host		= nil
+	@@tableInfo	= {}
 
 	### Flag: Print a warning every time we alias a real method out of the way
 	@@printMethodClashWarnings = true
@@ -199,6 +193,21 @@ class TableAdapter
 	###########################################################################
 	class << self
 
+		### (CLASS) METHOD: printMethodClashWarnings=( trueOrFalse )
+		### Returns the value of the flag that controls method clash warnings
+		### for redefined methods
+		def printMethodClashWarnings
+			@@printMethodClashWarnings
+		end
+
+		### (CLASS) METHOD: printMethodClashWarnings=( trueOrFalse )
+		### Turn on or off the method clash warnings for redefined methods
+		def printMethodClashWarnings=( trueFalse )
+			raise TypeError, "Flag must be true or false" unless
+				trueFalse == true || trueFalse == false
+			@@printMethodClashWarnings = trueFalse
+		end
+
 		### (CLASS) METHOD: dbKey()
 		### Returns a string which uniquely identifies the particular database
 		### this class's table lives in. The returned string is of the form:
@@ -206,11 +215,11 @@ class TableAdapter
 		###	'host:database:username'
 		###
 		def dbKey
-			unless @@database && @@database.is_a?( String ) && @@database.length > 0
+			unless database && database.is_a?( String ) && database.length > 0
 				raise TableAdapterError, "No database defined for the \"#{self.name}\" class"
 			end
 
-			return [ @@host, @@database, @@username ].join(":")
+			return [ host, database, username ].join(":")
 		end
 
 
@@ -221,11 +230,11 @@ class TableAdapter
 		###	"#{dbKey()}:table"
 		###
 		def tableKey
-			unless @@table && @@table.is_a?( String ) && @@table.length > 0
+			unless table && table.is_a?( String ) && table.length > 0
 				raise TableAdapterError, "No table defined for the \"#{self.name}\" class"
 			end
 
-			return [ dbKey(), @@table ].join(':')
+			return [ dbKey(), table ].join(':')
 		end
 
 
@@ -233,7 +242,7 @@ class TableAdapter
 		### Returns a (possible cached) hash of table information like that
 		### returned by (({fetchTableInfoHash()}))
 		def tableInfo
-			@@tableInfo ||= fetchTableInfoHash( @@table )
+			@@tableInfo[tableKey] ||= fetchTableInfoHash( table )
 		end
 
 
@@ -264,7 +273,7 @@ class TableAdapter
 				query = nil
 				if splicedIds.length == 1
 					query = "SELECT * FROM %s WHERE %s = %s" % [
-						@@table,
+						table,
 						primaryKey(),
 						quoteValuesForField( primaryKey(), splicedIds[0] )[0]
 					]
@@ -272,7 +281,7 @@ class TableAdapter
 
 					### :GENERICIZE: IN( <set> ) is probably not portable
 					query = "SELECT * FROM %s WHERE %s IN ( %s )" % [
-						@@table,
+						table,
 						primaryKey(),
 						quoteValuesForField( primaryKey(), splicedIds ).join(",")
 					]
@@ -345,7 +354,13 @@ class TableAdapter
 		### Open, cache, and return a database connection to the database this
 		### class's table is in
 		def dbHandle
-			@@handles[ dbKey() ] ||= Mysql.connect( @@host, @@username, @@password, @@database )
+			key = dbKey()
+			return @@handles[ key ] if @@handles[ key ]
+			$stderr.puts( %Q{Mysql.connect( "%s", "%s", "%s", "%s" )} % 
+						 [ host, username, password, database ])
+			handle = Mysql.connect( host, username, password, database )
+			@@handles[ key ] = handle
+			return @@handles[ key ]
 		end
 
 
@@ -387,7 +402,7 @@ class TableAdapter
 		### specified.
 		def quoteValuesForField( field, *values )
 			fieldType = self.tableInfo[field].type
-			raise ArgumentError, "No such column '#{field}' in the '#{@table}' table." unless fieldType
+			raise ArgumentError, "No such column '#{field}' in the '#{table}' table." unless fieldType
 
 			quotedVals = []
 			values.collect {|val|
@@ -396,7 +411,7 @@ class TableAdapter
 						MysqlField::TYPE_DATE, MysqlField::TYPE_TIME,
 						MysqlField::TYPE_DATETIME, MysqlField::TYPE_YEAR
 					
-					"'%s'" % [ Mysql.escape_string( val.to_s ) ]
+					"'%s'" % Mysql.escape_string( val.to_s )
 
 				when MysqlField::TYPE_NULL
 					"NULL"
@@ -413,7 +428,7 @@ class TableAdapter
 					"(#{set})"
 
 				when MysqlField::TYPE_BLOB, MysqlField::TYPE_STRING, 253
-					"'%s'" % [ Mysql.escape_string( val.to_s ) ]
+					"'%s'" % Mysql.escape_string( val.to_s )
 
 				else
 					val
@@ -503,18 +518,18 @@ class TableAdapter
 
 		dbh = self.class.dbHandle()
 
-		if rowid.nil? || rowid == "0"
+		if self.rowid.nil? || self.rowid == "0"
 			query = 'INSERT INTO %s SET %s' %
-				[ @@table, setPhrase ]
+				[ self.class.table, setPhrase ]
 			$stderr.puts( "Running query: #{query}" ) if $DEBUG
 			res = dbh.query( query )
 			insertId = dbh.insert_id
-			rowid = insertId
+			self.rowid = insertId
 			@@oCache[ self.class.tableKey() ] ||= ObjectCache.new
 			@@oCache[ self.class.tableKey() ][ insertId ] = self
 		else
 			query = 'UPDATE %s SET %s WHERE %s = %s' %
-				[ @@table, setPhrase, self.class.primaryKey(), rowid ]
+				[ self.class.table, setPhrase, self.class.primaryKey(), rowid ]
 			$stderr.puts( "Running query: #{query}" ) if $DEBUG
 			res = dbh.query( query )
 		end
@@ -529,8 +544,8 @@ class TableAdapter
 	### ((|cascade|)) parameter isn't used yet, but will eventually when the
 	### object-relational stuff works.
 	def delete( cascade=false )
-		res = dbh.query("DELETE FROM %s WHERE %s = %s" % [ @@table, self.class.primaryKey, rowid ])
-		rowid = nil
+		res = dbh.query("DELETE FROM %s WHERE %s = %s" % [ self.class.table, self.class.primaryKey, rowid ])
+		self.rowid = nil
 		return true
 	end
 
@@ -542,21 +557,51 @@ class TableAdapter
 		methName = origMethName.sub( /=$/, '' )
 		super unless self.class.tableInfo.has_key?( methName )
 
-		oldVerbose = $VERBOSE
-		$VERBOSE = false
+		code = ''
 
-		self.class.class_eval <<-"end_eval"
-		def #{methName}( arg=nil )
-			if !arg.nil?
+		### :FIXME: This is obviously more generalizable, and really should be
+		### made to be more sensitive to the datatype of any field, not just
+		### BLOBs.
+		if self.class.tableInfo[methName].type == MysqlField::TYPE_BLOB
+			code =<<-"ENDCODE"
+			def #{methName}
+
+				### :FIXME: There's probably a better way to check for a
+				### Marshalled string... This also will break for Marshal format
+				### versions with a major number above 10 or a minor number
+				### above 99.
+				if @row["#{methName}"].is_a?( String ) &&
+				   @row["#{methName}"][0] < 10 &&
+				   @row["#{methName}"][1] < 100
+					Marshal.restore( @row["#{methName}"] )
+				else
+					@row["#{methName}"]
+				end
+			end
+
+			def #{methName}=( arg )
+				unless (String Numeric).find {|t| arg.type == t}
+					@row["#{methName}"] = Marshal.dump( arg )
+				else
+					@row["#{methName}"] = arg
+				end
+			end
+			ENDCODE
+		else
+			code =<<-"ENDCODE"
+			def #{methName}
+				@row["#{methName}"]
+			end
+
+			def #{methName}=( arg )
 				@row["#{methName}"] = arg
 			end
-			@row["#{methName}"]
+			ENDCODE
 		end
-		def #{methName}=( arg )
-			self.#{methName}( arg )
-		end
-		end_eval
 
+		oldVerbose = $VERBOSE
+		$VERBOSE = false
+		self.class.class_eval code
 		$VERBOSE = oldVerbose
 
 		raise RuntimeError, "Method definition for '#{methName}' failed." if method( methName ).nil?
@@ -574,7 +619,7 @@ class TableAdapter
 	### METHOD: rowid=( arg )
 	### Set the value of the primary key column for this row
 	def rowid=( arg )
-		send( self.class.primaryKey(), arg )
+		send( "#{self.class.primaryKey()}=", arg )
 	end
 
 	
@@ -582,18 +627,32 @@ end
 
 
 ### Global function to facilitate the creation of an adapter class.
-def TableAdapterClass( db, table, user, password, host = nil )
+def TableAdapterClass( db, table, user, pass, host = nil )
 	klass = Class.new( TableAdapter )
+	klass.class_eval <<-"EOF"
+		class << self
+			def database
+				"#{db}"
+			end
 
-	klass.class_eval {
-		@@database = db
-		@@table = table
-		@@user = user
-		@@password = password
-		@@host = host
+			def table
+				"#{table}"
+			end
 
-		@@tableInfo = nil
-	}
+			def username
+				"#{user}"
+			end
+
+			def host
+				"#{host}"
+			end
+
+			def password
+				"#{pass}"
+			end
+		end
+		EOF
+
 
 	return klass
 end
