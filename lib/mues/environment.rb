@@ -57,7 +57,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.21 2003/10/13 05:16:43 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -70,7 +70,8 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "sync"
+require 'sync'
+require 'pluginfactory'
 
 require 'mues/object'
 require 'mues/mixins'
@@ -85,12 +86,12 @@ module MUES
 	class Environment < MUES::Object ; implements MUES::AbstractClass,
 			MUES::Notifiable, MUES::Debuggable
 
-		include MUES::TypeCheckFunctions, MUES::Event::Handler, MUES::Factory
+		include MUES::TypeCheckFunctions, MUES::Event::Handler, PluginFactory
 
 		### Class constants
 		# Versioning stuff
 		Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
-		Rcsid = %q$Id: environment.rb,v 1.21 2003/10/13 05:16:43 deveiant Exp $
+		Rcsid = %q$Id$
 
 
 		### Class variables and methods
