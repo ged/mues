@@ -26,7 +26,10 @@ class ResponseTestObject
 	end
 end
 
+
 class LibraryFunctionsTestCase < MUES::TestCase
+
+	include MUES::TypeCheckFunctions, MUES::SafeCheckFunctions
 
 	### Test instantiation with various arguments
 	def test_checkSafeLevel
@@ -119,31 +122,85 @@ class LibraryFunctionsTestCase < MUES::TestCase
 		anonSubClass = nil
 		testObj = nil
 
-		# Define a test class with one virtual method
 		assert_nothing_raised {
-			anonClass = Class::new {|klass|
-				abstract :foo
+			anonClass = Class::new( MUES::Object ) {
+				self.class_eval {
+					include MUES::AbstractClass
+					abstract :foo
+					abstract_arity :fooArity, 1
+				}
 			}
 		}
-
 		assert_instance_of Class, anonClass
-		assert_nothing_raised { testObj = anonClass.new }
-		assert_raises( MUES::VirtualMethodError ) { testObj.foo }
-
-		# Now override the virtual method in a subclass and test again.
+		
+		# Try a concrete version with overriding method with insufficient arity
+		# -- should succeed, as correct arity isn't checked for until
+		# instantiation
 		assert_nothing_raised {
 			anonSubClass = Class::new( anonClass ) {
-				class_eval %Q{
-					def foo
-						return true
+				self.class_eval %{
+					def fooArity
+						return "fooArity"
 					end
 				}
 			}
 		}
+		assert_instance_of Class, anonSubClass
+		assert_raises( MUES::VirtualMethodError ) { anonSubClass.new }
 
+		# Now make a concrete version with the correct arity, but this one
+		# should fail when foo is called.
+		assert_nothing_raised {
+			anonSubClass = Class::new( anonClass ) {
+				self.class_eval %{
+					def fooArity( arg )
+						return "fooArity"
+					end
+				}
+			}
+		}
+		assert_instance_of Class, anonSubClass
+		assert_nothing_raised { testObj = anonSubClass.new }
+		assert_raises( MUES::VirtualMethodError ) { testObj.foo }
+
+		# Now make a concrete version with the correct arity, and an overriding
+		# foo method.
+		assert_nothing_raised {
+			anonSubClass = Class::new( anonClass ) {
+				self.class_eval %{
+					def foo
+						return "foo"
+					end
+
+					def fooArity( arg )
+						return "fooArity"
+					end
+				}
+			}
+		}
 		assert_instance_of Class, anonSubClass
 		assert_nothing_raised { testObj = anonSubClass.new }
 		assert_nothing_raised { testObj.foo }
+
+		# Now make a concrete version with the correct (negative) arity, and an
+		# overriding foo method.
+		assert_nothing_raised {
+			anonSubClass = Class::new( anonClass ) {
+				self.class_eval %{
+					def foo
+						return "foo"
+					end
+
+					def fooArity( arg="default" )
+						return "fooArity"
+					end
+				}
+			}
+		}
+		assert_instance_of Class, anonSubClass
+		assert_nothing_raised { testObj = anonSubClass.new }
+		assert_nothing_raised { testObj.foo }
+
 	end
 
 
