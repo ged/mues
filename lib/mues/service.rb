@@ -35,7 +35,7 @@
 #
 # == Rcsid
 # 
-# $Id: service.rb,v 1.6 2002/06/04 07:04:55 deveiant Exp $
+# $Id: service.rb,v 1.7 2002/07/09 14:56:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,30 +48,24 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "singleton"
-
 require "mues"
 require "mues/Exceptions"
 require "mues/Events"
 
 module MUES
 
+	### Service exception class
+	def_exception :ServiceError, "Service Error", MUES::Exception
+
+
 	### Abstract base class for MUES::Engine subsystems (services)
-	class Service < MUES::Object ; implements MUES::Notifiable, MUES::AbstractClass, MUES::Event::Handler
+	class Service < MUES::Object ; implements MUES::Notifiable, MUES::AbstractClass
+
+		include MUES::Event::Handler, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.6 2002/06/04 07:04:55 deveiant Exp $
-
-		# Directory to look for services (relative to $LOAD_PATH)
-		ServicesDir = 'mues/services'
-
-		# Instances of services, keyed by type
-		@@instances = {}
-
-		# Registered service classes, keyed by class name and shortened class
-		# name
-		@@registeredServices = {}
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.7 2002/07/09 14:56:13 deveiant Exp $
 
 
 		### Initialize a new service object with the specified +name+ and
@@ -84,62 +78,21 @@ module MUES
 
 
 		### Class methods
-		class << self
 
-			### Register a Service as available
-			def inherit( subClass )
-				truncatedName = subClass.name.sub( /(?:.*::)?(\w+)(?:Service)?/, "\1" )
-				@@registeredServices[ subClass.name ] = subClass
-				@@registeredServices[ truncatedName ] = subClass
-			end
-
-			### Factory method: Instantiate and return a new Service of the
-			### specified <tt>serviceClass</tt>, using the specified
-			### <tt>objectStore</tt>, <tt>name</tt>, <tt>dump_undump</tt>
-			### Proc, and <tt>indexes</tt> Array.
-			def create( serviceClass, objectStore, name, dump_undump, indexes )
-				unless @@registeredServices.has_key? serviceClass
-					self.loadService( serviceClass )
-				end
-
-				@@registeredServices[ serviceClass ].new( objectStore,
-														 name,
-														 dump_undump,
-														 indexes )
-			end
-
-			### Attempt to guess the name of the file containing the
-			### specified service class, and look for it. If it exists, and
-			### is not yet loaded, load it.
-			def loadService( className )
-				modName = File.join( ServicesDir,
-									className.sub(/(?:.*::)?(\w+)(?:Service)?/, "\1Service") )
-
-				# Try to require the module that defines the specified
-				# service, raising an error if the require fails.
-				unless require( modName )
-					raise ObjectStoreError, "No such service class '#{className}'"
-				end
-
-				# Check to see if the specified service is now loaded. If it
-				# is not, raise an error to that effect.
-				unless @@registeredServices.has_key? className
-					raise ObjectStoreError,
-						"Loading '#{modName}' didn't define a service named '#{className}'"
-				end
-
-				return true
-			end
-
-
-			### Setup callback method
-			def atEngineStartup( theEngine )
-			end
-
-			### Shutdown callback method
-			def atEngineShutdown( theEngine )
-			end
+		### Directory to look for services, relative to $LOAD_PATH (part of
+		### MUES::FactoryMethods interface)
+		def self.derivativeDir
+			return 'mues/services'
 		end
+
+		### Setup callback method
+		def self.atEngineStartup( theEngine )
+		end
+
+		### Shutdown callback method
+		def self.atEngineShutdown( theEngine )
+		end
+
 
 		######
 		public
