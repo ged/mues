@@ -1,7 +1,7 @@
 /*
    MUES Database Schema (MySQL)
-	$Id: MUES.sql,v 1.2 2001/05/14 12:34:22 deveiant Exp $
-	Time-stamp: <31-Mar-2001 10:23:30 deveiant>
+	$Id: MUES.sql,v 1.3 2001/07/30 22:26:30 deveiant Exp $
+	Time-stamp: <21-Jul-2001 20:15:08 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -23,7 +23,7 @@ GRANT SELECT,INSERT,UPDATE,DELETE ON mues.*
 	TO mues@localhost
 	IDENTIFIED BY 'changeme';
 
-#include "mues.player.sql"
+#include "mues.user.sql"
 #include "mues.denyallow.sql"
 #include "mues.object.sql"
 

@@ -1,7 +1,7 @@
 /*
    MUES Engine Table Schema (MySQL)
-	$Id: mues.denyallow.sql,v 1.1 2001/05/14 11:11:35 deveiant Exp $
-	Time-stamp: <31-Mar-2001 10:22:43 deveiant>
+	$Id: mues.denyallow.sql,v 1.2 2001/07/30 22:26:30 deveiant Exp $
+	Time-stamp: <21-Jul-2001 20:16:28 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -12,14 +12,14 @@
 
  */
 
-/* The denied host/player table */
+/* The denied host/muesuser table */
 DROP TABLE IF EXISTS deny;
 CREATE TABLE deny (
 	id					INT				UNSIGNED auto_increment PRIMARY KEY,
 	ts					TIMESTAMP(14),
 	
 	/* Associations */
-	creatorId			INT				UNSIGNED NOT NULL REFERENCES player(id),
+	creatorId			INT				UNSIGNED NOT NULL REFERENCES muesuser(id),
 
 	/* Data fields */
 	username			VARCHAR(50)		NOT NULL DEFAULT '*',
@@ -33,14 +33,14 @@ CREATE TABLE deny (
 	endDate				DATETIME
 );
 
-/* The allowed host/player table */
+/* The allowed host/muesuser table */
 DROP TABLE IF EXISTS allow;
 CREATE TABLE allow (
 	id					INT				UNSIGNED auto_increment PRIMARY KEY,
 	ts					TIMESTAMP(14),
 	
 	/* Associations */
-	creatorId			INT				UNSIGNED NOT NULL REFERENCES player(id),
+	creatorId			INT				UNSIGNED NOT NULL REFERENCES muesuser(id),
 
 	/* Data fields */
 	username			VARCHAR(50)		NOT NULL DEFAULT '*',

@@ -1,7 +1,7 @@
 /*
    MUES Engine Table Schema (MySQL)
-	$Id: mues.ban.sql,v 1.1 2001/03/15 02:22:16 deveiant Exp $
-	Time-stamp: <28-Jan-2001 02:17:10 deveiant>
+	$Id: mues.ban.sql,v 1.2 2001/07/30 22:26:30 deveiant Exp $
+	Time-stamp: <21-Jul-2001 20:18:42 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -12,14 +12,14 @@
 
  */
 
-/* The banned host/player table */
+/* The banned host/muesuser table */
 DROP TABLE IF EXISTS ban;
 CREATE TABLE ban (
 	id					INT				UNSIGNED auto_increment PRIMARY KEY,
 	ts					TIMESTAMP(14),
 	
 	/* Associations */
-	creatorId			INT				UNSIGNED NOT NULL REFERENCES player(id),
+	creatorId			INT				UNSIGNED NOT NULL REFERENCES muesuser(id),
 
 	/* Data fields */
 	username			VARCHAR(50)		NOT NULL,
