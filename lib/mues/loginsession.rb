@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.13 2002/09/28 12:10:20 deveiant Exp $
+# $Id: loginsession.rb,v 1.14 2002/09/28 12:12:57 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module MUES
 			MUES::FactoryMethods,
 			MUES::UntaintingFunctions
 
-		Version = %q$Revision: 1.13 $
-		Rcsid = %q$Id: loginsession.rb,v 1.13 2002/09/28 12:10:20 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
+		Rcsid = %q$Id: loginsession.rb,v 1.14 2002/09/28 12:12:57 deveiant Exp $
 
 		# Pattern for untainting user input for username and password
 		LoginUntaintPattern		= %r{([a-z]\w+)}
