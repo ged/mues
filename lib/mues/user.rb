@@ -57,10 +57,11 @@ Namespace for account type constants. Contains:
     fashion will be ordered by accounttype, with more permissioned users first, and
     then by username.
 
---- MUES::User#activate( stream )
+--- MUES::User#activate( stream[, motd] )
 
     Activate the user object with the given ((|stream|)), which must be an
-    instance of ((<MUES::IOEventStream>)) or one of its subclasses.
+    instance of ((<MUES::IOEventStream>)) or one of its subclasses, and output
+    the specified ((|motd|)) (({String})), if given.
 
 --- MUES::User#activated?
 
@@ -168,8 +169,8 @@ module MUES
 		include Event::Handler
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.11 2001/11/01 17:18:35 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.12 2001/11/01 21:25:53 deveiant Exp $
 
 		# User AccountType constants
 		module AccountType
@@ -296,9 +297,10 @@ module MUES
 		end
 
 
-		### METHOD: activate( stream=MUES::IOEventStream )
-		### Activate the user and set up their environment with the given stream
-		def activate( stream )
+		### METHOD: activate( stream=MUES::IOEventStream[, motd=String] )
+		### Activate the user, set up their environment with the given stream,
+		### and output the specified 'message of the day', if given.
+		def activate( stream, motd=nil )
 			checkType( stream, MUES::IOEventStream )
 
 			# Create the command shell and macro filters and add them
@@ -311,7 +313,10 @@ module MUES
 			# Set the stream attribute and flag the object as activated
 			@ioEventStream = stream
 			@ioEventStream.unpause
+			@ioEventStream.addEvents( OutputEvent.new(motd) ) if motd
 			@activated = true
+
+			debugMsg( 1, "MOTD is: #{motd.inspect}" )
 
 			OutputEvent.RegisterHandlers( self )
 			#TickEvent.RegisterHandlers( self )
