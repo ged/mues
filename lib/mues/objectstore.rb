@@ -35,7 +35,7 @@
 #   40.times do
 #	    newObj = MUES::StorableObject.new
 #       objs << newObj
-#       ids << newObj.objectStoreID
+#       ids << newObj.objectStoreId
 #   end
 #
 #   $store.store( *objs )
@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.29 2002/07/08 14:59:53 deveiant Exp $
+#  $Id: objectstore.rb,v 1.30 2002/08/01 03:00:35 deveiant Exp $
 # 
 # == Authors
 #
@@ -74,10 +74,6 @@ require 'mues/ObjectSpaceVisitor'
 
 module MUES
 
-    # Exception class for ObjectStore errors
-    def_exception :ObjectStoreException,	"Objectstore internal error",	MUES::Exception
-	
-
 	# The ObjectStore provides a mechanism for object persistance and,
 	# optionally, a way of swapping disused objects (mostly) out of memory
 	# temporarily via a MemoryManager.
@@ -86,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.29 $
-		RcsId	= %q$Id: objectstore.rb,v 1.29 2002/07/08 14:59:53 deveiant Exp $
+		Version	= %q$Revision: 1.30 $
+		RcsId	= %q$Id: objectstore.rb,v 1.30 2002/08/01 03:00:35 deveiant Exp $
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -96,7 +92,7 @@ module MUES
 		DefaultBackend = "Flatfile"
 
 		# The default MemoryManager Visitor class
-		DefaultMemMgrVisitor = MUES::ObjectSpaceVisitor
+		DefaultVisitor = MUES::ObjectSpaceVisitor
 
 		# The name of the subdirectory to load default backends and
 		# memorymanager classes from (relative to $LOAD_PATH)
@@ -134,6 +130,8 @@ module MUES
 		###   use, the class object itself, or an instance of a memory
 		###   manager. See the "Specifying a Backend or MemoryManager" section
 		###   of lib/mues/ObjectStore.rb for more information.
+		###
+		### The following arguments are optional:
         ### [:indexes]
 		###   An Array of symbols/strings for index methods. Index methods are
 		###   methods which are to be used as index values to facilitate fast
@@ -172,11 +170,22 @@ module MUES
 			TypeCheckFunctions::checkType( indexes, Array )
 			TypeCheckFunctions::checkEachType( indexes, String, Symbol )
 
+			# If they didn't supply a visitor, just use the default one
+			args[:visitor] ||= DefaultVisitor
+			if args[:visitor].is_a?( Class )
+				visitor = args[:visitor].new( config[:visitor] )
+			else
+				TypeCheckFunctions::checkType( args[:visitor], MUES::ObjectSpaceVisitor )
+				visitor = args[:visitor]
+			end
+
 			# Build the list of objects we need for the store
-			visitor	= ObjectSpaceVisitor::create( args[:visitor], config[:visitor] )
-			backend	= Backend::create( args[:backend] || DefaultBackend, indexes,
-									   config[:backend] )
-			memmgr	= MemoryManager::create( args[:memmgr] || DefaultMemMgr, backend, config[:memmgr] )
+			backend	= 
+				ObjectStore::Backend::create( args[:backend] || DefaultBackend,
+											  name, indexes, config[:backend] )
+			memmgr = 
+				ObjectStore::MemoryManager::create( args[:memmgr] || DefaultMemMgr,
+												    backend, config[:memmgr] )
 
 			# Return the new store after adding it to the instance list
 			return @@instances[ name ] = new( name, memmgr, backend, visitor )
@@ -218,6 +227,7 @@ module MUES
 		def initialize( name, memmgr, backend, visitor ) # :notnew:
 			super()
 
+			@name			= name
 			@mutex			= Sync.new
 			@backend		= backend
 			@memmgr			= memmgr
@@ -253,23 +263,28 @@ module MUES
 		### <tt>ids</tt>, after registering the objects with the
 		### MemoryManager.
 		def retrieve( *ids )
-			ids.collect {|id| @memmgr[id] ||= @backend.fetch(id)}
+			self.log.debug {"Retrieving #{ids.length} objects by id."}
+			objs = @backend.retrieve( *ids )
+			self.log.debug {"Retrieved #{objs.compact.length} objects."}
+			return *self.restore( *objs )
 		end
 
 
 		### Fetch an Array of all objects stored in the ObjectStore.
 		def retrieve_all
 			objs = @backend.retrieve_all
-			return objs.collect {|obj| @memmgr[ obj.objectStoreID ] ||= obj.awaken}
+			return *self.restore( *objs )
 		end
 		alias :retrieveAll :retrieve_all
 
 		
 		### Given a hash of index keys and values, fetch and return each object
 		### that matches all of the specified pairs.
-		def lookup( index_pairs )
-			objs = @backend.lookup( index_pairs )
-			return objs.collect {|obj| @memmgr[ obj.objectStoreID ] ||= obj.awaken}
+		def lookup( indexPairs )
+			self.log.debug {"Looking up objects with #{indexPairs.length} search terms."}
+			objs = @backend.lookup( indexPairs )
+			self.log.debug {"Lookup found #{objs.length} objects."}
+			return *self.restore( *objs )
 		end
 
 
@@ -310,8 +325,13 @@ module MUES
 		
 		### Closes the database.
 		def close
+			self.log.info( "Closing objectstore #@name" )
 			objects = @memmgr.shutdown
+
+			self.log.info { "Syncing objectspace (%d objects) to backing store" % objects.length }
 			@backend.store( *objects )
+
+			self.log.debug { "Closing backend" }
 			@backend.close
 		end
 
@@ -344,24 +364,45 @@ module MUES
 		end
 
 
+		### Clear the objectspace, close the ObjectStore and remove the backing
+		### store
+		def drop
+			self.log.notice( "Dropping objectstore '#@name'" )
+			self.log.debug { "Calling shutdown() on the memory manager" }
+			@memmgr.shutdown
+			self.log.debug { "Calling clear() on the memory manager" }
+			@memmgr.clear
+			self.log.debug { "Calling drop() on the backend" }
+			@backend.drop
+		end
+
+
 
 		#########
 		protected
 		#########
 		
-		### Fetches and returns the MUES::StorableObjects specified by the given
-		### <tt>ids</tt> from the backend.
-		def fetch( *ids )
-			@backend.retrieve( *ids ).collect {|obj|
-				if obj.nil? then nil else obj.awaken end
+		### Restores objects to the active objectspace, awakening and then
+		### registering each object with the memory manager.
+		def restore( *objs )
+			self.log.debug {"Restoring #{objs.length} objects."}
+			checkEachType( objs, MUES::StorableObject )
+
+			self.log.debug {"Waking objects up for restore."}
+			objs.each {|obj|
+				raise "Farked object #{obj.inspect}" unless obj.respond_to?( :awaken! )
+				obj.awaken!( self ) unless obj.nil?
 			}
+
+			@memmgr.register( *(objs.compact) )
+			return *objs
 		end
 
 
 		### Puts the specified MUES::StorableObjects into the backend datastore.
 		def put( *objs )
 			checkEachType( objs, MUES::StorableObject )
-			@backend.store( objs.collect {|obj| obj.lull} )
+			@backend.store( objs.collect {|obj| obj.lull(self)} )
 		end
 
 
@@ -383,7 +424,7 @@ module MUES
 				return super( sym, *args ) unless @indexes.has_key?( idx )
 				code = %Q{
 					def self.#{methodName}( val )
-						@backend.retrieve_by_index( :#{idx}, val )
+						*@backend.retrieve_by_index( :#{idx}, val )
 					end
 				}
 
@@ -405,3 +446,6 @@ module MUES
     end # class ObjectStore
 end # module MUES
 
+
+require 'mues/os-extensions/Backend'
+require 'mues/os-extensions/MemoryManager'
