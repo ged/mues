@@ -104,6 +104,10 @@ class ObjectStoreGC
   ###   algor_args - the percent of memory aloowed before GC stops
   def start (args = @algor_args)
     self.algor_args = args
+    @shutting_down = false
+    unless (@thread.alive?)
+      @thread = Thread.new { _gc_routine(@algor_args) }
+    end
   end
     
   ### Kills the garbage collector, first storing all active objects
@@ -139,7 +143,7 @@ class ObjectStoreGC
       # during shutdown. This has the added benefit of counting the time it
       # takes for _collect to run in the loop_time.
       until (Time.new - loop_time >= delay || @shutting_down) do
-	Thread.stop unless @shutting_down #:!: deadlock is here, when #shutdown calls Thread.join
+	Thread.pass
       end
     end
 
