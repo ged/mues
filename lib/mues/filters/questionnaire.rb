@@ -182,7 +182,7 @@ module MUES
 					find {|path| File::file?( path )} or
 					raise LoadError, "Could not find a Questionnaire named #{name}"
 			
-				src = File::read( file )
+				src = File::read( file ).untaint
 				questions = eval( src, nil, file, 1 )
 
 				@loaded[name] = new( name, *questions )
@@ -591,7 +591,7 @@ module MUES
 			raise "Not blocked" unless self.blocked?
 			raise "Blocked, but no continuation set yet" unless @restartPoint
 
-			@restartPoint.call( value )
+			self.stopBlocking( value )
 		end
 
 
@@ -733,9 +733,10 @@ module MUES
 
 
 		### Stop blocking on the current answer
-		def stopBlocking
+		def stopBlocking( value )
 			@blocked = false
-			self.stream.unpause
+			self.stream.unpause { @restartPoint.call(value) }
+			return true
 		end
 
 
@@ -805,11 +806,6 @@ module MUES
 				self.startBlocking
 				result = callcc {|cc| cc}
 
-				# If the result isn't a continuation, then the continuation's
-				# been called, so stop blocking.
-				if !result.is_a?( Continuation )
-					self.stopBlocking
-				end
 			end
 
 			result = data if result.equal?( true )
