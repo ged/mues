@@ -29,7 +29,7 @@ welcome.
 
 == Caveats
 
-*IMPORTANT*: This is an *alpha* release, a work in progress. It might blow up,
+*IMPORTANT*: This is an *beta* release, a work in progress. It might blow up,
 compromise your security, write random data to sensitive portions of your hard
 drive, or otherwise fail to work as advertised. It is intended to be used by
 developers who are interested in helping out or curious onlookers who don't mind
@@ -84,7 +84,7 @@ INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 FITNESS FOR A PARTICULAR PURPOSE.
 
 
- $Id: README,v 1.5 2002/10/13 23:28:19 deveiant Exp $
+ $Id: README,v 1.6 2002/10/23 18:24:51 deveiant Exp $
 
 
 

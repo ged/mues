@@ -30,31 +30,35 @@ your mileage may vary.
   RAA::		 http://www.ruby-lang.org/en/raa-list.rhtml?name=HashSlice
   Download:: http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2
 
-* Ruby-Poll (>= 0.03)- Object-oriented implementation of the poll(2) system call
+* Ruby-Poll - Object-oriented implementation of the poll(2) system call (>= 0.03)
   RAA::		 http://www.ruby-lang.org/en/raa-list.rhtml?name=Ruby-Poll
   Download:: http://www.devEiate.org/code/Ruby-Poll-0.03.tar.bz2
 
-* REXML (>= 2.5.1)- XML Processor
+* REXML - XML Processor (>= 2.5.1)
   Homepage:: http://www.germane-software.com/software/rexml/
   Download:: http://www.germane-software.com/archives/rexml_2.5.1.tgz
 
-* Log4R (>= 1.0.2) - Logging library
+* Log4R - Logging library (>= 1.0.2)
   Homepage:: http://log4r.sourceforge.net/
   Download:: http://sourceforge.net/project/showfiles.php?group_id=43396
 
 === Optional libraries:
 
-* Test::Unit (>= 0.1.4)- For running unit tests
-  RAA::      http://www.ruby-lang.org/en/raa-list.rhtml?name=Test%3A%3AUnit
-  Download:: http://testunit.talbott.ws/packages/testunit-0.1.4.tar.gz
+* Test::Unit - For running unit tests (>= 0.1.4)
+  RAA::       http://www.ruby-lang.org/en/raa-list.rhtml?name=Test%3A%3AUnit
+  Download::  http://testunit.talbott.ws/packages/testunit-0.1.4.tar.gz
 
-* ruby-tcpwrap (>=0.3) - Config option
-  RAA::      http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap
-  Download:: http://www.shugo.net/archive/ruby-tcpwrap/ruby-tcpwrap-0.3.tar.gz
+* ruby-tcpwrap - Config option (>=0.3)
+  RAA::       http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap
+  Download::  http://www.shugo.net/archive/ruby-tcpwrap/ruby-tcpwrap-0.3.tar.gz
 
-* RDoc (>= beta-1) - Documentation generator
+* RDoc - Documentation generator (>= beta-1)
   RAA::       http://www.ruby-lang.org/en/raa-list.rhtml?name=RDoc
   Home page:: http://rdoc.sourceforge.net
+
+* Rimport - RDoc => ri source import utility
+  RAA::       http://www.ruby-lang.org/en/raa-list.rhtml?name=Rimport
+  Download::  http://www.jamesbritt.com/code/rimport-latest.rb
 
 
 == Installation
@@ -75,8 +79,8 @@ This will prompt you for a 'server directory', which should be the path to the
 directory you intend to run the server from. This directory will contain the
 shell command and environment class directories, as well as the server startup
 script and several utilities. The MUES libraries, along with several support
-libraries will be installed under the site_ruby directory of the running Ruby's
-library directory.
+libraries will be installed under the site_ruby/version directory of the running
+Ruby's library directory.
 
 
 == Documentation
@@ -91,24 +95,28 @@ This will leave HTML documentation in 'docs/html'.
 
 == Running
 
-If you wish to run the server from the distribution directory:
+If you wish to run the server from the distribution directory (no installation
+necessary):
 
- $ cp server/MUES.cfg.example server/MUES.cfg
- (edit server/MUES.cfg to reflect your system and desires)
- $ server/bin/createUser.rb <username> server/MUES.cfg
- $ server/bin/mues.rb
-
+ $ ./quickstart.rb
 
 If you've run the install script, assuming the 'server directory' you chose is
 in the environmental variable SERVER_ROOT:
 
- $ cp $SERVER_ROOT/MUES.cfg.example $SERVER_ROOT/MUES.cfg
- (edit $SERVER_ROOT/MUES.cfg to reflect your system and desires)
- $ $SERVER_ROOT/bin/createUser.rb <username> $SERVER_ROOT/MUES.cfg
- $ $SERVER_ROOT/bin/mues.rb
+ $ cp $SERVER_ROOT/minimal-config.xml $SERVER_ROOT/config.xml
+ (edit $SERVER_ROOT/config.xml to reflect your system and desires)
+ $ $SERVER_ROOT/bin/mues.rb --init
 
 After starting the server, you can telnet to the host and port you configured
-(6565 by default) to connect to the server, eg.:
+(4848 by default) to connect to the server, eg.:
 
- $ telnet localhost 6565
+ $ telnet localhost 4848
+
+When starting the server in init mode (ie., with --init), you can log in from
+localhost using 'admin' as the username, and no password.
+
+Once connected, you should turn off initmode by executing the '/initoff' command
+at the prompt, and then create a new user for yourself at the 'admin' level with
+the '/adduser' command.
+
 
