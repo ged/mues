@@ -4,7 +4,18 @@
 #
 #
 
-$:.unshift "lib", "tests"
+BEGIN {
+	$:.unshift "lib", "ext", "tests"
+
+	require "mues/Log"
+	require "log4r"
+	require "log4r/outputter/fileoutputter"
+	MUES::Log::mueslogger.outputters =
+		Log4r::FileOutputter::new( 'logfile',
+								  :filename => 'test.log',
+								  :trunc => true )
+}
+
 
 require 'find'
 require 'test/unit'
