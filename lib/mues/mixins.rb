@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.9 2002/10/14 04:30:23 deveiant Exp $
+# $Id: mixins.rb,v 1.10 2002/10/14 09:33:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -358,8 +358,9 @@ module MUES
 	end # module SafeCheckFunctions
 
 
-	### Mixin module that adds untainting functions to the current scope.
-	module UntaintingFunctions
+	### Mixin module that adds various miscellaneous utility functions to the
+	### current scope.
+	module UtilityFunctions
 		
 		###############
 		module_function
@@ -369,9 +370,44 @@ module MUES
 		### after having been untainted with the given <tt>pattern</tt> (a
 		### Regexp object). The pattern should contain paren-groups for all the
 		### parts it wishes returned.
-		def untaint( string, pattern )
+		def untaintString( string, pattern )
 			match = pattern.match( string ) or return nil
 			parts = match.to_ary[ 1 .. -1 ].collect{|part| part.untaint}
+		end
+
+		### Return a String containing a description of the specified number of
+		### <tt>seconds</tt> in the form: "/y/ years /d/ days /h/ hours /m/
+		### minutes /s/ seconds". If <tt>includeZero</tt> is <tt>true</tt>,
+		### units that are zero are included; if it's <tt>false</tt>, they are
+		### omitted. If <tt>joinWithComma</tt>, the units will be separated by a
+		### comma in addition to the space.
+		def timeDelta( seconds, includeZero=false, joinWithComma=true )
+			minuteSeconds	= 60
+			hourSeconds		= ( minuteSeconds * 60 )
+			daySeconds		= ( hourSeconds * 24 )
+			yearSeconds		= ( daySeconds * 365 )
+
+			part = Struct::new( :unit, :count )
+
+			parts = []
+			parts << part.new('year', (seconds/yearSeconds).to_i)
+			seconds %= yearSeconds
+
+			parts << part.new('day', (seconds/daySeconds).to_i)
+			seconds %= daySeconds
+
+			parts << part.new('hour', (seconds/hourSeconds).to_i)
+			seconds %= hourSeconds
+
+			parts << part.new('minute', (seconds/minuteSeconds).to_i)
+			seconds %= minuteSeconds
+
+			parts << part.new('second', seconds.to_i)
+
+			joinStr = joinWithComma ? ', ' : ' '
+			return parts.find_all {|p| includeZero || p.count.nonzero?}.
+				collect {|p| "%d %s%s" % [p.count, p.unit, p.count == 1 ? "" : "s"]}.
+				join( joinStr )
 		end
 
 	end
@@ -436,7 +472,7 @@ module MUES
 		### Return a multi-line string indicating the current status of the engine.
 		def engineStatusString
 			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
-			return MUES::Engine::instance.statusString
+			return MUES::Engine::instance.getStatusString
 		end
 
 		### Fetch a list of the names of all users known to the server, both
@@ -476,6 +512,14 @@ module MUES
 		def cancelInitMode
 			return MUES::Engine::instance.cancelInitMode
 		end
+
+		### Fetch and return the Engine's scheduled events table as a String and
+		### return it.
+		def engineScheduledEventsString
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.getScheduledEventsString
+		end
+
 
 	end # module ServerFunctions
 
