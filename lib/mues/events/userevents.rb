@@ -37,6 +37,8 @@ require "mues/events/BaseClass"
 
 module MUES
 
+	autoload :IOEventStream, "mues/IOEventStream"
+
 	###########################################################################
 	###	A B S T R A C T   E V E N T   C L A S S E S
 	###########################################################################
@@ -72,7 +74,6 @@ module MUES
 	### CLASS: UserLoginEvent < UserEvent
 	class UserLoginEvent < UserEvent
 
-		autoload	'MUES::IOEventStream', "mues/IOEventStream"
 		attr_reader	:stream, :loginSession
 
 		### METHOD: new( aUser, anIOEventStream, aLoginSession )
