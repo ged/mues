@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.29 2003/10/13 04:02:17 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.30 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -74,7 +74,7 @@ module MUES
 
 	### A filtered input/output stream class modelled after the Chain of
 	### Responsibility design pattern.
-	class IOEventStream < Object ; implements MUES::Debuggable
+	class IOEventStream < MUES::Object ; implements MUES::Debuggable
 
 		# Import the default event handler dispatch method
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.29 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.29 2003/10/13 04:02:17 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.30 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.30 2003/10/13 05:16:43 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and

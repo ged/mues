@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.10 2003/10/13 04:02:12 deveiant Exp $
+# $Id: backend.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -47,12 +47,11 @@ module MUES
 		### [<tt>store</tt>]
 		###	  
 		class Backend < MUES::Object ; implements MUES::AbstractClass
-			
-			include MUES::FactoryMethods
+			include MUES::Factory
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-			Rcsid = %q$Id: backend.rb,v 1.10 2003/10/13 04:02:12 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+			Rcsid = %q$Id: backend.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
 
 
 			# The directory in which file-based objectstores will be kept,
@@ -72,27 +71,20 @@ module MUES
 			}
 
 
-			### Class methods
-
-			# Alias away the #create added to the class by MUES::FactoryMethods
-			# so we can override it without clobbering it.
-			alias_class_method :__create, :create
-
-
 			### (Overridden) Factory method: Instantiate and return a new
 			### Backend of the specified <tt>backendType</tt>, using the
 			### specified <tt>name</tt>, <tt>indexes</tt> Array, and
 			### <tt>argHash</tt>.
-			def self.create( backendType, name, indexes=[], configValue=nil )
+			def self::create( backendType, name, indexes=[], configValue=nil )
 				Dir::mkdir( StoreDir ) unless File.directory? StoreDir
-				return __create( backendType, name, indexes, configValue )
+				super( backendType, name, indexes, configValue )
 			end
 
 
-			### FactoryMethods callbacks
+			### Factory callbacks
 
 			# Returns the directory objectstores live under (part of the
-			# FactoryMethods interface)
+			# Factory interface)
 			def self.derivativeDirs
 				return ['mues/os-extensions']
 			end

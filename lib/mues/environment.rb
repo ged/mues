@@ -57,7 +57,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.20 2003/10/13 04:02:17 deveiant Exp $
+# $Id: environment.rb,v 1.21 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -85,12 +85,12 @@ module MUES
 	class Environment < MUES::Object ; implements MUES::AbstractClass,
 			MUES::Notifiable, MUES::Debuggable
 
-		include MUES::TypeCheckFunctions, MUES::Event::Handler, MUES::FactoryMethods
+		include MUES::TypeCheckFunctions, MUES::Event::Handler, MUES::Factory
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
-		Rcsid = %q$Id: environment.rb,v 1.20 2003/10/13 04:02:17 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
+		Rcsid = %q$Id: environment.rb,v 1.21 2003/10/13 05:16:43 deveiant Exp $
 
 
 		### Class variables and methods

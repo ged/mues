@@ -16,7 +16,7 @@ require 'mues/mixins'
 puts "Defining base class"
 module Base
 	class Service
-		include MUES::FactoryMethods
+		include MUES::Factory
 
 		def self.beforeCreation( backendClass, *args )
 			puts "   beforeCreation: About to instantiate a #{backendClass.inspect}."

@@ -35,7 +35,7 @@
 #
 # == Rcsid
 # 
-# $Id: service.rb,v 1.10 2003/10/13 04:02:16 deveiant Exp $
+# $Id: service.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,11 +61,11 @@ module MUES
 	### Abstract base class for MUES::Engine subsystems (services)
 	class Service < MUES::Object ; implements MUES::Notifiable, MUES::AbstractClass
 
-		include MUES::Event::Handler, MUES::FactoryMethods
+		include MUES::Event::Handler, MUES::Factory
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.10 2003/10/13 04:02:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
 
 		### Class globals
 		@@ServiceDirectories = ["mues/services"]
@@ -94,7 +94,7 @@ module MUES
 
 
 		### Directory to look for services, relative to $LOAD_PATH (part of
-		### MUES::FactoryMethods interface)
+		### MUES::Factory interface)
 		def self.derivativeDirs
 			@@ServiceDirectories
 		end

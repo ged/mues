@@ -1,6 +1,6 @@
 #!/usr/bin/ruby -w
 
-# This tests not only the Listener code itself, but also the FactoryMethods
+# This tests not only the Listener code itself, but also the Factory
 # mixin, as Listener uses it to allow creation of its subclasses through itself.
 
 begin
@@ -24,7 +24,7 @@ class MUES::ListenerTestCase < MUES::TestCase
 		printTestHeader "Listener: Instantiation"
 
 		assert_instance_of Class, MUES::Listener
-		assert MUES::Listener < MUES::FactoryMethods, "Listener < FactoryMethods"
+		assert MUES::Listener < MUES::Factory, "Listener < Factory"
 
 		assert_raises( MUES::InstantiationError ) {
 			MUES::Listener::new

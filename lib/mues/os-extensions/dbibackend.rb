@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: dbibackend.rb,v 1.4 2003/10/13 04:02:12 deveiant Exp $
+# $Id: dbibackend.rb,v 1.5 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -45,7 +45,7 @@ module MUES
 			# we need. Derivatives defined at the bottom of DBIBackend.rb, or
 			# via user requires.
 			class Adapter < MUES::Object ; implements MUES::AbstractClass
-				include MUES::FactoryMethods
+				include MUES::Factory
 
 				abstract :createDatabase,
 					:createTable,
@@ -60,8 +60,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
-			Rcsid = %q$Id: dbibackend.rb,v 1.4 2003/10/13 04:02:12 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
+			Rcsid = %q$Id: dbibackend.rb,v 1.5 2003/10/13 05:16:43 deveiant Exp $
 
 			# The default settings to use when connecting.
 			DefaultConfig = {

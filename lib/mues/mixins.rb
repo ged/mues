@@ -24,7 +24,7 @@
 # [<tt>MUES::Debuggable</tt>]
 #    An interface/mixin that adds debugging functions and methods to a class.
 #
-# [<tt>MUES::FactoryMethods</tt>]
+# [<tt>MUES::Factory</tt>]
 #    A mixin that adds methods to a class that allow it to be used as a factory
 #    for derivative classes that follow a certain naming convention.
 #
@@ -40,13 +40,13 @@
 #   require 'mues/mixins'
 #
 #   class MyClass
-#   include MUES::AbstractClass, MUES::FactoryMethods, MUES::Debuggable,
+#   include MUES::AbstractClass, MUES::Factory, MUES::Debuggable,
 #           MUES::TypeCheckFunctions, MUES::SafeCheckFunctions,
 #           MUES::ServerFunctions, MUES::Notifiable
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.22 2003/10/13 04:02:16 deveiant Exp $
+# $Id: mixins.rb,v 1.23 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -574,15 +574,14 @@ module MUES
 	end # module ServerFunctions
 
 
-
 	### A mixin that adds factory class methods to a base class, so that
 	### subclasses may be instantiated by name.
-	module FactoryMethods
+	module Factory
 
 		### Inclusion callback -- extends the including class.
 		def self::included( klass )
 			klass.extend( self )
-			klass.extend( MUES::TypeCheckFunctions )
+			klass.extend( TypeCheckFunctions )
 		end
 
 
@@ -622,7 +621,7 @@ module MUES
 				end
 			}
 
-			raise FactoryError, "Couldn't find factory base for #{self.name}" if
+			raise MUES::FactoryError, "Couldn't find factory base for #{self.name}" if
 				base.nil?
 
 			if base.name =~ /^.*::(.*)/
@@ -636,17 +635,17 @@ module MUES
 		### Inheritance callback -- Register subclasses in the derivatives hash
 		### so that ::create knows about them.
 		def inherited( subclass )
-			MUES::Log.debug( "Inheritance callback for '%s'" % self.factoryType )
 			truncatedName =
 				# Handle class names like 'FooBar' for 'Bar' factories.
 				if subclass.name.match( /(?:.*::)?(\w+)(?:#{self.factoryType})/ )
-					Regexp.last_match[1]
+					Regexp.last_match[1].downcase
 				else
-					subclass.name.sub( /.*::/, '' )
+					subclass.name.sub( /.*::/, '' ).downcase
 				end
 
 			[ subclass.name, truncatedName, subclass ].each {|key|
-				MUES::Log.debug( "Registering '%s' as '%s'" % [subclass.name, key] )
+				MUES::Log.info "Registering %s derivative of %s as %s" %
+					[ key, self.name, truncatedName ]
 				self.derivatives[ key ] = subclass
 			}
 			super
@@ -666,36 +665,20 @@ module MUES
 		### instantiates it with the given <tt>args</tt>. The <tt>className</tt>
 		### may be the the fully qualified name of the class, the class object
 		### itself, or the unique part of the class name. The following examples
-		### would all try to load and instantiate a class called
-		### "MUES::FooListener" if MUES::Listener included MUES::FactoryMethods
-		### (which it does):
-		###   obj = MUES::Listener::create( 'MUES::FooListener' )
-		###   obj = MUES::Listener::create( MUES::FooListener )
-		###   obj = MUES::Listener::create( 'Foo' )
-		### If the including class responds to a method called
-		### <tt>beforeCreation</tt>, it will be called after the subclass is
-		### looked up, but before it is instantiated, passing the subclass, the
-		### <tt>className</tt> argument, and the argument array. If the class
-		### responds to a method called <tt>afterCreation</tt>, it will be
-		### called after the object is instantiated, and is passed the new
-		### instance.
-		def create( subType, *args )
+		### would all try to load and instantiate a class called "FooListener"
+		### if Listener included Factory
+		###   obj = Listener::create( 'FooListener' )
+		###   obj = Listener::create( FooListener )
+		###   obj = Listener::create( 'Foo' )
+		def create( subType, *args, &block )
 			checkType( subType, ::String, ::Class )
 			subclass = getSubclass( subType )
 
-			if self.respond_to?( :beforeCreation )
-				# :TODO: Use return values?
-				self.beforeCreation( subclass, subType, *args )
-			end
-
-			instance = subclass.new( *args )
-
-			if self.respond_to?( :afterCreation )
-				# :TODO: Use return values?
-				self.afterCreation( instance, *args )
-			end
-
-			return instance
+			return subclass.new( *args, &block )
+		rescue => err
+			nicetrace = err.backtrace.reject {|frame| /#{__FILE__}/ =~ frame}
+			msg = "When creating '#{subType}': " + err.message
+			Kernel::raise( err.class, msg, nicetrace )
 		end
 
 
@@ -707,23 +690,25 @@ module MUES
 			return self if ( self.name == className || className == '' )
 			return className if className.is_a?( Class ) && className >= self
 
-			unless self.derivatives.has_key?( className )
+			unless self.derivatives.has_key?( className.downcase )
 
 				self.loadDerivative( className )
 
-				unless self.derivatives.has_key?( className )
-					raise FactoryError,
+				unless self.derivatives.has_key?( className.downcase )
+					raise MUES::FactoryError,
 						"loadDerivative(%s) didn't add a '%s' key to the "\
-						"registry for %s" % [ className, className, self.name ]
+						"registry for %s" %
+						[ className, className.downcase, self.name ]
 				end
-				unless self.derivatives[className].is_a?( Class )
-					raise FactoryError,
+				unless self.derivatives[className.downcase].is_a?( Class )
+					raise MUES::FactoryError,
 						"loadDerivative(%s) added something other than a class "\
-						"to the registry for %s" % [ className, self.name ]
+						"to the registry for %s: %p" %
+						[ className, self.name, self.derivatives[className] ]
 				end
 			end
 
-			return self.derivatives[ className ]
+			return self.derivatives[ className.downcase ]
 		end
 
 
@@ -747,13 +732,12 @@ module MUES
 
 			# Check to see if the specified listener is now loaded. If it
 			# is not, raise an error to that effect.
-			unless self.derivatives[ className ]
-				MUES::Log.error "Failed to load '%s' via %s::create" %
-					[ className, self.name ]
+			unless self.derivatives[ className.downcase ]
 				raise RuntimeError,
-					"Couldn't find a %s named '%s'" % [
+					"Couldn't find a %s named '%s'. Loaded derivatives are: %p" % [
 					self.factoryType,
-					className
+					className.downcase,
+					self.derivatives.keys,
 				], caller(3)
 			end
 
@@ -763,14 +747,13 @@ module MUES
 
 		### Build and return the unique part of the given <tt>className</tt>
 		### either by stripping leading namespaces if the name already has the
-		### name of the factory type in it (eg., 'My::FooService' for
-		### MUES::Service, or by appending the factory type if it doesn't.
+		### name of the factory type in it (eg., 'My::FooService' for Service,
+		### or by appending the factory type if it doesn't.
 		def getModuleName( className )
 			if className =~ /\w+#{self.factoryType}/
-				modName = className.sub( /(?:.*::)?(\w+)(?:#{self.factoryType})?/,
-										"\1#{self.factoryType}" )
+				modName = className.sub( /(?:.*::)?(\w+)(?:#{self.factoryType})/, "\\1" )
 			else
-				modName = "%s#{self.factoryType}" % className
+				modName = className
 			end
 
 			return modName
@@ -796,35 +779,38 @@ module MUES
 
 			# Iterate over the subdirs until we successfully require a
 			# module.
-			subdirs.collect {|dir| dir.strip}.each {|subdir|
-				modPath = subdir.empty? ? modName : File::join( subdir, modName )
+			catch( :found ) {
+				subdirs.collect {|dir| dir.strip}.each do |subdir|
+					modPath = subdir.empty? ? modName : File::join( subdir, modName )
+					lcModPath = subdir.empty? ? modName.downcase : File::join( subdir, modName.downcase )
+					altModPath = modPath + self.factoryType.downcase
+					lcAltModPath = lcModPath + self.factoryType.downcase
 
-				MUES::Log.debug(
-					%Q{Trying to load '%s' %s with 'require "%s"'} % [
-						modName,
-						self.factoryType,
-						modPath
-					]
-				)
+					[modPath, lcModPath, altModPath, lcAltModPath].each {|path|
+						# $stderr.puts "Trying to load '#{path}'"
 
-				# Try to require the module that defines the specified
-				# listener
-				begin
-					require( modPath.untaint )
-				rescue LoadError => e
-					MUES::Log.warn "No module at '#{modPath}': '#{e.message}'"
-				rescue ScriptError,StandardError => e
-					MUES::Log.error "Found '#{modPath}', but encountered an error:\n" +
-						"    #{e.message} at #{e.backtrace[0]}"
-				else
-					MUES::Log.info "Successfully loaded '#{modPath}'"
-					break
+						# Try to require the module that defines the specified
+						# derivative
+						begin
+							require( path.untaint )
+						rescue LoadError => e
+							#MUES::Log[self].warn "No module at '#{path}': '#{e.message}'"
+							next
+						rescue ScriptError,StandardError => e
+							#MUES::Log[self].error "Found '#{path}', but encountered an error:\n" +
+							#	"    #{e.message} at #{e.backtrace[0]}"
+							next
+						else
+							throw :found
+						end
+
+						# $stderr.puts "Done trying to load '#{path}'"
+					}
 				end
 			}
-
 		end
+	end # module Factory
 
-	end # module FactoryMethods
 
 end # module MUES
 

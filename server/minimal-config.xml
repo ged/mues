@@ -2,7 +2,7 @@
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/28 00:11:10 $">
+<muesconfig version="1.1" time-stamp="$Date: 2003/10/13 05:16:43 $">
 
   <!--
 
@@ -11,7 +11,7 @@
   without any argument. For the actual defaults, see the end of
   lib/mues/Config.rb.
 
-  $Id: minimal-config.xml,v 1.6 2002/10/28 00:11:10 deveiant Exp $
+  $Id: minimal-config.xml,v 1.7 2003/10/13 05:16:43 deveiant Exp $
 
   -->
 
@@ -184,8 +184,8 @@
 				from the command shell.
 	class:		The MUES::Environment derivative that should be used as the
 				argument to the Environment factory. This accepts any valid
-				MUES::FactoryMethods-style class name. See
-				MUES::FactoryMethods::create for more about how to specify a
+				MUES::Factory-style class name. See
+				MUES::Factory::create for more about how to specify a
 				valid class name.
 	description: The description string that is shown when listing environments
 				in the server.

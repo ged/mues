@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.9 2003/10/13 04:02:12 deveiant Exp $
+# $Id: memorymanager.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -42,17 +42,17 @@ module MUES
 		### which should take a MUES::ObjectSpaceVisitor object as its argument
 		class MemoryManager < MUES::Object ; implements MUES::AbstractClass
 
-			include MUES::TypeCheckFunctions, MUES::FactoryMethods
+			include MUES::TypeCheckFunctions, MUES::Factory
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
-			Rcsid = %q$Id: memorymanager.rb,v 1.9 2003/10/13 04:02:12 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+			Rcsid = %q$Id: memorymanager.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
 
 
 			### Class methods
 
 			# Returns the directory objectstore extensions live under (part of
-			# the FactoryMethods interface)
+			# the Factory interface)
 			def self.derivativeDirs
 				return 'mues/os-extensions'
 			end

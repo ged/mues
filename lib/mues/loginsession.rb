@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.20 2003/10/13 04:02:16 deveiant Exp $
+# $Id: loginsession.rb,v 1.21 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -58,11 +58,11 @@ module MUES
 
 		include MUES::TypeCheckFunctions,
 			MUES::ServerFunctions,
-			MUES::FactoryMethods,
+			MUES::Factory,
 			MUES::UtilityFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
-		Rcsid = %q$Id: loginsession.rb,v 1.20 2003/10/13 04:02:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
+		Rcsid = %q$Id: loginsession.rb,v 1.21 2003/10/13 05:16:43 deveiant Exp $
 
 		# Pattern for untainting user input for username and password
 		LoginUntaintPattern		= %r{([a-z]\w+)}

@@ -47,7 +47,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.9 2003/10/13 04:02:17 deveiant Exp $
+# $Id: listener.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -71,13 +71,13 @@ module MUES
 	### An abstract base class for listener objects.
 	class Listener < MUES::Object; implements MUES::AbstractClass
 
-		include MUES::FactoryMethods
+		include MUES::Factory
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
 
 		# CVS id tag 
-		Rcsid = %q$Id: listener.rb,v 1.9 2003/10/13 04:02:17 deveiant Exp $
+		Rcsid = %q$Id: listener.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
 
 		#############################################################
 		###	C L A S S   M E T H O D S

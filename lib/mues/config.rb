@@ -23,7 +23,7 @@
 #   <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
 #        "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 #   
-#   <muesconfig version="1.1" time-stamp="$Date: 2003/10/13 04:02:17 $">
+#   <muesconfig version="1.1" time-stamp="$Date: 2003/10/13 05:16:43 $">
 #   
 #     <!--
 #   
@@ -32,7 +32,7 @@
 #     without any argument. For the actual defaults, see the end of
 #     lib/mues/Config.rb.
 #   
-#     $Id: config.rb,v 1.27 2003/10/13 04:02:17 deveiant Exp $
+#     $Id: config.rb,v 1.28 2003/10/13 05:16:43 deveiant Exp $
 #   
 #     -->
 #   
@@ -205,8 +205,8 @@
 #   				from the command shell.
 #   	class:		The MUES::Environment derivative that should be used as the
 #   				argument to the Environment factory. This accepts any valid
-#   				MUES::FactoryMethods-style class name. See
-#   				MUES::FactoryMethods::create for more about how to specify a
+#   				MUES::Factory-style class name. See
+#   				MUES::Factory::create for more about how to specify a
 #   				valid class name.
 #   	description: The description string that is shown when listing environments
 #   				in the server.
@@ -270,7 +270,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.27 2003/10/13 04:02:17 deveiant Exp $
+# $Id: config.rb,v 1.28 2003/10/13 05:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -307,8 +307,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.27 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.27 2003/10/13 04:02:17 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.28 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.28 2003/10/13 05:16:43 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -1418,7 +1418,7 @@ __END__
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2003/10/13 04:02:17 $">
+<muesconfig version="1.1" time-stamp="$Date: 2003/10/13 05:16:43 $">
 
   <!-- General config -->
   <general>
