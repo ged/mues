@@ -27,7 +27,7 @@ if player.nil?
 	puts "No such player '#{user}'."
 else
 	puts "Player record for user '#{player.username}':\n" +
-		"\t#{player.username.capitalize} is #{RoleDescriptions[player.role]}.\n" +
+		"\t#{player.username.capitalize} is #{RoleDescriptions[player.role.to_i]}.\n" +
 		"\tCreated: #{player.timeCreated.to_s}\n" +
 		"\tCrypted password: #{player.cryptedPass}\n" +
 		"\tReal name: #{player.realname}\n" +
@@ -36,7 +36,7 @@ else
 		"\tLast host: #{player.lastHost}\n" +
 		"\tFirst login tick: #{player.firstLoginTick}\n" +
 		"\tPreferences: \n" + player.preferences.collect {|k,v| "\t\t#{k} => #{v}\n"}.to_s +
-		"\tCharacters: \n" + player.characters.keys.collect {|name| "\t\t#{name}\n"}.to_s +
+		"\tCharacters: \n" + player.characters.collect {|char| "\t\t#{char.name}\n"}.to_s +
 		"\n\n"
 end
 
