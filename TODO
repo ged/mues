@@ -8,17 +8,7 @@ This is an informal list of tasks yet to be done for the MUES.
 * Change the 'pp' command to use YAML if it's loaded, and fall back to 'pp' if
   not.
 
-* Write the user maintenance commands (partially done -- requires much more
-  testing).
-
 * Fix the PI-parsing part of MUES::Config::Element.
-
-* Fix /roles CommandShell command:
-    Internal command error in roles 
-	(/home/deveiant/source/ruby/MUES/server/shellCommands/environments.cmd:198):
-	 NoMethodError: undefined method `getEnvironment' for #<MUES::Engine:0x40493084>
-        lib/mues/Mixins.rb:426:in `getEnvironment'
-        (eval):15:in `invoke'
 
 * Fix /eval CommandShell command by making it use an event that gets executed by
   the privileged queue.
@@ -30,3 +20,9 @@ This is an informal list of tasks yet to be done for the MUES.
   Decorator-pattern-based approach.
 
 * Finish unit tests.
+
+* Fix the mysterious backspace-freezing bug in the TelnetOutputFilter.
+
+* Make a list of CommandShell commands to implement, and start implementing
+  them.
+
