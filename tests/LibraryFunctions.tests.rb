@@ -124,42 +124,40 @@ class LibraryFunctionsTestCase < MUES::TestCase
 
 		assert_nothing_raised {
 			anonClass = Class::new( MUES::Object ) {
-				self.class_eval {
-					include MUES::AbstractClass
-					abstract_arity :fooArity, 1
-				}
+				include MUES::AbstractClass
+				abstract_arity :fooArity, 1
+				abstract :foo
 			}
 		}
 		assert_instance_of Class, anonClass
+		assert_raises( MUES::InstantiationError ) { anonClass.new }
 		
 		# Try a concrete version with overriding method with insufficient arity
 		# -- should succeed, as correct arity isn't checked for until
 		# instantiation
 		assert_nothing_raised {
 			anonSubClass = Class::new( anonClass ) {
-				self.class_eval %{
-					def fooArity
-						return "fooArity"
-					end
-				}
+				def fooArity
+					return "fooArity"
+				end
 			}
 		}
 		assert_instance_of Class, anonSubClass
+
+		# Actually, correct arity isn't even checked for at instantiation
+		# yet. These next assertions will have to change when that works.
 		# assert_raises( MUES::VirtualMethodError ) { anonSubClass.new } # <- Not working yet
+		assert_nothing_raised { testObj = anonSubClass.new }
+		assert_instance_of anonSubClass, testObj
+		assert_raises( MUES::VirtualMethodError ) { testObj.foo }
 
 		# Now make a concrete version with the correct arity, but this one
 		# should fail when foo is called.
 		assert_nothing_raised {
 			anonSubClass = Class::new( anonClass ) {
-				self.instance_eval %{
-					def initialize
-						$stderr.puts ">>> Instantiating anonClass <#{self.class.name}: #{self.inspect}>"
-					end
-
-					def fooArity( arg )
-						return "fooArity"
-					end
-				}
+				def fooArity( arg )
+					return "fooArity"
+				end
 			}
 		}
 		assert_instance_of Class, anonSubClass
@@ -171,15 +169,13 @@ class LibraryFunctionsTestCase < MUES::TestCase
 		# foo method.
 		assert_nothing_raised {
 			anonSubClass = Class::new( anonClass ) {
-				self.class_eval %{
-					def foo
-						return "foo"
-					end
+				def foo
+					return "foo"
+				end
 
-					def fooArity( arg )
-						return "fooArity"
-					end
-				}
+				def fooArity( arg )
+					return "fooArity"
+				end
 			}
 		}
 		assert_instance_of Class, anonSubClass
@@ -190,15 +186,13 @@ class LibraryFunctionsTestCase < MUES::TestCase
 		# overriding foo method.
 		assert_nothing_raised {
 			anonSubClass = Class::new( anonClass ) {
-				self.class_eval %{
-					def foo
-						return "foo"
-					end
+				def foo
+					return "foo"
+				end
 
-					def fooArity( arg="default" )
-						return "fooArity"
-					end
-				}
+				def fooArity( arg="default" )
+					return "fooArity"
+				end
 			}
 		}
 		assert_instance_of Class, anonSubClass
