@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -32,84 +32,90 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
+require 'pluginfactory'
+
 require 'mues/object'
 require 'mues/exceptions'
 require 'mues/objectstore'
 
 module MUES
-	class ObjectStore
+class ObjectStore
 
-		### This class is the abstract base class for MUES::ObjectStore
-		### backends. Derivatives of this class provide an adapter-like
-		### interface to a means of storing MUES::StorableObjects in some sort
-		### of datastore, and must provide implementations for the following
-		### methods:
-		### [<tt>store</tt>]
-		###	  
-		class Backend < MUES::Object ; implements MUES::AbstractClass
-			include MUES::Factory
+	### This class is the abstract base class for MUES::ObjectStore
+	### backends. Derivatives of this class provide an adapter-like
+	### interface to a means of storing MUES::StorableObjects in some sort
+	### of datastore, and must provide implementations for the following
+	### methods:
+	### [<tt>store</tt>]
+	###	  
+	class Backend < MUES::Object ; implements MUES::AbstractClass
+		include PluginFactory
 
-			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-			Rcsid = %q$Id: backend.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
 
+		# SVN Id
+		SVNId = %q$Id$
 
-			# The directory in which file-based objectstores will be kept,
-			# relative to the base dir.
-			StoreDir = "objectstores"
+		# SVN URL
+		SVNURL = %q$URL$
 
-			# Default de/serializing proc
-			DefaultSerializer = Proc.new {|obj|
-				case obj
-				when String
-					Marshal.load( obj )
-				when StorableObject
-					Marshal.dump( obj )
-				else
-					raise ObjectStoreError, "Cannot serialize a #{obj.class.name}"
-				end
-			}
+		# The directory in which file-based objectstores will be kept,
+		# relative to the base dir.
+		StoreDir = "objectstores"
 
-
-			### (Overridden) Factory method: Instantiate and return a new
-			### Backend of the specified <tt>backendType</tt>, using the
-			### specified <tt>name</tt>, <tt>indexes</tt> Array, and
-			### <tt>argHash</tt>.
-			def self::create( backendType, name, indexes=[], configValue=nil )
-				Dir::mkdir( StoreDir ) unless File.directory? StoreDir
-				super( backendType, name, indexes, configValue )
+		# Default de/serializing proc
+		DefaultSerializer = Proc.new {|obj|
+			case obj
+			when String
+				Marshal.load( obj )
+			when StorableObject
+				Marshal.dump( obj )
+			else
+				raise ObjectStoreError, "Cannot serialize a #{obj.class.name}"
 			end
+		}
 
 
-			### Factory callbacks
-
-			# Returns the directory objectstores live under (part of the
-			# Factory interface)
-			def self.derivativeDirs
-				return ['mues/os-extensions']
-			end
-
-
-			### Declare pure virtual methods for required interface
-			abstract :initialize,
-				:store,
-				:retrieve,
-				:retrieve_by_index,
-				:retrieve_all,
-				:lookup,
-				:remove,
-				:close,
-				:exists?,
-				:open?,
-				:nitems,
-				:clear,
-				:drop,
-				:addIndexes,
-				:indexKeys,
-				:hasIndex?
-
+		### (Overridden) Factory method: Instantiate and return a new
+		### Backend of the specified <tt>backendType</tt>, using the
+		### specified <tt>name</tt>, <tt>indexes</tt> Array, and
+		### <tt>argHash</tt>.
+		def self::create( backendType, name, indexes=[], configValue=nil )
+			Dir::mkdir( StoreDir ) unless File.directory? StoreDir
+			super( backendType, name, indexes, configValue )
 		end
 
-	end # class ObjectStore
+
+		### Factory callbacks
+
+		# Returns the directory objectstores live under (part of the
+		# Factory interface)
+		def self.derivativeDirs
+			return ['mues/os-extensions']
+		end
+
+
+		### Declare pure virtual methods for required interface
+		abstract :initialize,
+			:store,
+			:retrieve,
+			:retrieve_by_index,
+			:retrieve_all,
+			:lookup,
+			:remove,
+			:close,
+			:exists?,
+			:open?,
+			:nitems,
+			:clear,
+			:drop,
+			:addIndexes,
+			:indexKeys,
+			:hasIndex?
+
+	end
+
+end # class ObjectStore
 end # module MUES
 
