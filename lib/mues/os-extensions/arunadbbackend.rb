@@ -15,6 +15,10 @@
 # * Martin Chase <stillflame@FaerieMUD.org>
 # * Michael Granger <ged@FaerieMUD.org>
 #
+# == To Do
+#
+# * Add #indexKeys, #hasIndex?, and #addIndexes methods.
+#
 #:include: COPYRIGHT
 #
 #---
@@ -37,8 +41,8 @@ module MUES
 	    class ArundaDBBackend < MUES::ObjectStore::Backend
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-			Rcsid = %q$Id: arunadbbackend.rb,v 1.2 2002/08/01 01:18:04 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+			Rcsid = %q$Id: arunadbbackend.rb,v 1.3 2002/09/27 16:21:12 deveiant Exp $
 
 
 			include Sync_m
@@ -294,6 +298,8 @@ module MUES
 				
 				return dump_undump( rset )
 			end
+
+			
 
 		end # class ArunaDBBackend
 
