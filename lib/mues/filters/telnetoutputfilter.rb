@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.12 2002/10/04 05:14:55 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.13 2002/10/23 03:03:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.12 2002/10/04 05:14:55 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.13 2002/10/23 03:03:54 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {
@@ -551,14 +551,18 @@ module MUES
 		def parseInputBuffer( inputBuffer )
 			newInputEvents = []
 
-			# Split input lines by CR+LF and strip whitespace before
-			# creating an event
+			# Look for lines ending with CR+LF in the buffer, creating an event
+			# for each one.
 			inputBuffer.gsub!( /^([^#{CR}#{LF}]*)#{CR}(#{LF}|#{NULL})/ ) {|s|
 				input = $1
 
 				# Do delete/backspace replacement
 				while input =~ /\x7f|\x08/
-					input.gsub!( /[^\x08\x7f](?:\x08|\x7f)/, "" )
+					if input =~ /[^\x08\x7f](?:\x08|\x7f)/
+						input.gsub!( /[^\x08\x7f](?:\x08|\x7f)/, "" )
+					else
+						input.gsub!( /\x7f|\x08/, "" )
+					end
 				end
 
 				debugMsg( 4, "Creating an input event for input = '#{input.strip}'" )
