@@ -1,75 +1,119 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# Instances of this class are used to add attributes to Metaclass::Class objects.
+# 
+# == Synopsis
+# 
+#   locationAttr = Metaclass::Attribute.new( "location", LocationVector )
+#   nameAttr = Metaclass::Attribute.new( "name", String )
+# 
+#   someClass.addAttributes( locationAttr, nameAttr )
+# 
+# == Rcsid
+# 
+# $Id: attribute.rb,v 1.3 2002/03/30 19:12:30 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=Attribute.rb
+require 'metaclass/Constants'
+require 'metaclass/AccessorOperation'
+require 'metaclass/MutatorOperation'
 
-== Name
+module Metaclass
 
-MetaClass::Attribute - An class attribute metaclass
+	### Class attribute metaclass
+	class Attribute
 
-== Synopsis
+		include Comparable
 
-  locationAttr = MetaClass::Attribute.new( "location", LocationVector )
-  nameAttr = MetaClass::Attribute.new( "name", String )
+		# The default scope of new Attribute objects
+		DEFAULT_SCOPE = Scope::INSTANCE
+		DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-  someClass.addAttributes( locationAttr, nameAttr )
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: attribute.rb,v 1.3 2002/03/30 19:12:30 deveiant Exp $
 
-== Description
-
-Instances of this class are used to add attributes to MetaClass::Class objects.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-module MetaClass
-
-	class Attribute < Object
-
-		module Constants
-			SCOPE_GLOBAL = 0
-			SCOPE_CLASS = 1
-			SCOPE_INSTANCE = 2
-
-			SCOPE_DEFAULT = SCOPE_INSTANCE
-		end
-		include Constants
-
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: attribute.rb,v 1.2 2001/05/14 12:36:59 deveiant Exp $
-
-		attr_accessor :name, :validTypes, :scope
-
-		### METHOD: initialize( name, validType = Object, scope = SCOPE_DEFAULT )
-		def initialize( name, validTypes = nil, scope = SCOPE_DEFAULT )
+		### Create and return a new attribute with the specified name. If the
+		### optional <tt>validTypes</tt> argument is specified, the attribute
+		### will be type-checked in any generated code that uses it. The +scope+
+		### argument controls whether the attribute is scoped per-class or
+		### per-instance, and the +visibility+ argument controls the
+		### accessability of any accessor methods generated in host classes.
+		def initialize( name, validTypes=nil, scope=DEFAULT_SCOPE, visibility=DEFAULT_VISIBILITY )
+			name = name.id2name if name.is_a? Symbol
+			raise TypeError, "Illegal attribute name #{name}" unless
+				name.kind_of? String
 			unless ( validTypes == nil || validTypes.type === ::Class || validTypes.type == Class ||
 					(validTypes.is_a?( Array ) && !validTypes.find {|x| !x.type === ::Class && !x.type == Class}) )
 				raise TypeError, "ValidType must be a Class or an array of classes, not a '#{validTypes.type.inspect}'" 
 			end
 			raise TypeError, "Illegal value for scope." unless
-				[ SCOPE_INSTANCE, SCOPE_GLOBAL, SCOPE_CLASS ].find {|k| k == scope}
+				scope == Scope::INSTANCE || scope == Scope::CLASS
 
 			@name = name
 			@scope = scope
+			@visibility = visibility
 			@validTypes = validTypes.to_a.flatten.compact
 		end
 
-		### METHOD: <=>( otherAttribute )
+
+		######
+		public
+		######
+
+		# The attribute name
+		attr_accessor :name
+		
+		# The Array of valid types for this attribute
+		attr_accessor :validTypes
+
+		# The scope of the attribute (one of the constants in
+		# Metaclass::Scope).
+		attr_accessor :scope
+
+		# The visibility of the attribute (one of the constants in
+		# Metaclass::Scope).
+		attr_accessor :visibility
+
+
+		### <tt>Comparable</tt> interface method. Returns -1, 0, or 1 if this
+		### attribute should sort higher, the same, or lower than the specified
+		### <tt>otherAttribute</tt>. In truth, this method will only return '0'
+		### if <tt>otherAttribute</tt> is the same as the receiver.
 		def <=>( otherAttribute )
-			return (
-					@scope <=> otherAttribute.scope	||
-					@name <=> otherAttribute.name	||
-					self.id <=> otherAttribute.id )
+			return (@scope <=> otherAttribute.scope).nonzero? ||
+				(@name <=> otherAttribute.name).nonzero? ||
+				self.id <=> otherAttribute.id
+		end
+
+
+		### Returns a Metaclass::Operation object suitable for addition to a
+		### Metaclass::Class object as an accessor method.
+		def makeAccessorOp
+			return Metaclass::AccessorOperation.new( self.name,
+													 self.scope,
+													 self.visibility )
+		end
+
+		### Returns a Metaclass::Operation object suitable for addition to a
+		### Metaclass::Class object as a mutator method. If the receiver has a
+		### list of #validTypes, the mutator will do type-checking for one of
+		### those types with <tt>kind_of?</tt>.
+		def makeMutatorOp
+			return Metaclass::MutatorOperation.new( "#{self.name}=",
+												    self.validTypes,
+												    self.scope,
+												    self.visibility
+												   )
 		end
 
 	end
