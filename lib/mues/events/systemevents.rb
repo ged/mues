@@ -9,12 +9,20 @@
 # [MUES::SystemEvent]
 # 	An abstract system event class.
 #
+# [MUES::PrivilegedSystemEvent]
+#	An abstract privileged system event class.
+#
 # [MUES::ListenerEvent]
 # 	An abstract MUES::Listener event class. Events which deal with listener
 # 	connections, disconnections, etc. are derived from this class.
 #
 # [MUES::ListenerConnectEvent]
 # 	An event class that is created when a connection is accepted on a listener.
+#
+# [MUES::RebuildCommandRegistryEvent]
+#	An event class that is used to request that the Engine's factory look for
+#	updated command files, and if found, reload the commands contained in
+#	them.
 #
 # [MUES::LogEvent]
 # 	An event class used to add an entry to the log.
@@ -58,7 +66,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.11 2002/09/12 12:18:08 deveiant Exp $
+# $Id: systemevents.rb,v 1.12 2002/10/14 09:38:48 deveiant Exp $
 # 
 # == Authors
 # 
@@ -92,7 +100,7 @@ module MUES
 
 	### An abstract privileged system event class. It is derived from the
 	### MUES::PrivilegedEvent class.
-	class PrivilegedSystemEvent < Event ; implements MUES::AbstractClass
+	class PrivilegedSystemEvent < PrivilegedEvent ; implements MUES::AbstractClass
 	end
 
 
@@ -125,6 +133,13 @@ module MUES
 	#####################################################################
 	###	C O N C R E T E   E V E N T   C L A S S E S
 	#####################################################################
+
+	### An event class that is used to request that the Engine's factory look
+	### for updated command files, and if found, reload the commands contained
+	### in them. It derives from MUES::PrivilegedSystemEvent.
+	class RebuildCommandRegistryEvent < PrivilegedSystemEvent
+	end
+
 
 	### An event class that is created when an error condition is detected on a
 	### listener's associated IO object. It is a derivative of
@@ -294,8 +309,9 @@ module MUES
 
 
 	### An event that notifies the Engine that an item in the server
-	### configuration has changed. It derives from the MUES::SystemEvent class.
-	class ReconfigEvent < SystemEvent
+	### configuration has changed. It derives from the
+	### MUES::PrivilegedSystemEvent class.
+	class ReconfigEvent < PrivilegedSystemEvent
 	end
 
 
@@ -353,6 +369,11 @@ module MUES
 			@callback = callback
 			@args = args
 			super()
+		end
+
+		### Call the callback with the args given at instantiation.
+		def call
+			@callback.call( *@args )
 		end
 	end
 
