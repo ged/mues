@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Documentation Generation Script
-#	$Id: makedocs.rb,v 1.4 2002/03/30 19:08:15 deveiant Exp $
+#	$Id: makedocs.rb,v 1.5 2002/04/18 14:15:48 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -12,7 +12,7 @@
 
 # Muck with the load path and the cwd
 $filename = __FILE__
-$basedir = File::expand_path( $0 ).sub( %r{/docs/makesitedocs.rb}, '' )
+$basedir = File::expand_path( $0 ).sub( %r{/docs/makedocs.rb}, '' )
 unless $basedir.empty? || Dir.getwd == $basedir
 	$stderr.puts "Changing working directory from '#{Dir.getwd}' to '#$basedir'"
 	Dir.chdir( $basedir ) 
@@ -27,7 +27,7 @@ include UtilityFunctions
 opts = GetoptLong.new
 opts.set_options(
 	[ '--debug',	'-d',	GetoptLong::NO_ARGUMENT ],
-	[ '--verbose',	'-v',	GetoptLong::NO_ARGUMENT ],
+	[ '--verbose',	'-v',	GetoptLong::NO_ARGUMENT ]
 )
 
 $docsdir = "docs/html"
