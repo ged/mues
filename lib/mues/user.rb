@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.30 2002/10/26 19:02:12 deveiant Exp $
+# $Id: user.rb,v 1.31 2002/10/28 00:06:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.30 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.30 2002/10/26 19:02:12 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.31 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.31 2002/10/28 00:06:17 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -109,7 +109,7 @@ module MUES
 				user = MUES::User::new( qnaire.answers )
 				MUES::ServerFunctions::registerUser( user )
 
-				qnaire.message( "User '%s' created." % user.login.capitalize )
+				qnaire.message( "\nUser '%s' created.\n" % user.login.capitalize )
 			}
 			qnaire.debugLevel = 5
 			return qnaire
