@@ -172,8 +172,8 @@ class TableAdapter
 		"BINARY"		=> MysqlField::BINARY_FLAG
 	}
 
-	Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-	Rcsid = %q$Id: Mysql.rb,v 1.3 2001/05/26 07:49:59 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+	Rcsid = %q$Id: Mysql.rb,v 1.4 2001/07/18 02:25:28 deveiant Exp $
 
 
 	###########################################################################
@@ -549,6 +549,28 @@ class TableAdapter
 		return true
 	end
 
+
+	### METHOD: [ key ]
+	### Column accessor method
+	def []( key )
+		return self.send( key )
+	end
+
+
+	### METHOD: [ key ]= value
+	### Column accessor method
+	def []=( key, value )
+		return self.send( "#{key}=", value )
+	end
+
+
+	### METHOD: has_key?( keyname )
+	### Returns true if the table which this object abstracts has a column named
+	### ((|keyname|)).
+	def has_key?( keyname )
+		return self.class.tableInfo.has_key?( keyname )
+	end
+	alias :key? :has_key?
 
 	### METHOD: method_missing( aSymbol, *args )
 	### Create and call methods that are the same as column names
