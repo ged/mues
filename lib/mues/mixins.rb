@@ -32,8 +32,8 @@
 #    An interface/mixin that designates a class as being interested in receiving
 #    a notification when the Engine is starting or stopping.
 #
-# [<tt>MUES::UntaintingFunctions</tt>]
-#    A mixin that adds untainting functions to the including scope.
+# [<tt>MUES::UtilityFunctions</tt>]
+#    A mixin that contains some miscellaneous utility functions.
 #
 # == Synopsis
 # 
@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.14 2002/10/26 18:59:34 deveiant Exp $
+# $Id: mixins.rb,v 1.15 2002/10/28 00:30:04 deveiant Exp $
 # 
 # == Authors
 # 
