@@ -2,7 +2,7 @@
 # 
 # This file contains the MUES::ObjectStore::BerkeleyDBBackend class: A
 # MUES::ObjactStore backend that uses BerkeleyDB as its storage database.
-# 
+#
 # == Synopsis
 # 
 #   require 'mues/ObjectStore'
@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.6 2002/09/27 16:22:07 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.7 2002/10/12 10:33:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -44,12 +44,13 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.6 2002/09/27 16:22:07 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.7 2002/10/12 10:33:49 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,
 				:set_lk_detect	=> 1,
+				:set_verbose	=> true,
 			}
 			EnvFlags = BDB::CREATE|BDB::INIT_TRANSACTION|BDB::INIT_MPOOL|BDB::INIT_LOG
 
@@ -75,7 +76,7 @@ module MUES
 				Dir::mkdir( @dir ) unless File.directory?( @dir )
 
 				@env = BDB::Env.new( @dir, EnvFlags, EnvOptions )
-				@db = @env.open_db( BDB::Hash, @name, nil, BDB::CREATE, :marshal => Marshal )
+				@db = @env.open_db( BDB::Hash, @name, nil, BDB::CREATE )
 
 				@open = true
 				self.addIndexes( *indexes )
@@ -103,20 +104,21 @@ module MUES
 				checkOpened()
 				checkEachType( objects, MUES::StorableObject )
 
-				self.log.debug { "Storing %d objects" % objects.length }
+				self.log.debug "      Storing objects: %s..." % objects.inspect
 
 				begin
 					# Start a transaction and store each object. Txn
 					# auto-commits at the end of the block.
 					self.log.debug { "   Beginning transaction..." }
-					# @env.begin( BDB::TXN_COMMIT, @db ) do |txn, db|
+					@env.begin( BDB::TXN_COMMIT, @db ) do |txn, db|
 						objects.each {|obj|
 							id = obj.objectStoreId
 
-							self.log.debug { "      Storing object '#{obj.objectStoreId}'..." }
-							@db[ id ] = obj
+							self.log.debug "      Storing object <%s> with id = '%s'..." %
+								[ obj.inspect, obj.objectStoreId ]
+							db[ id ] = Marshal::dump( obj )
 						}
-					#end
+					end
 					self.log.debug { "   Done with transaction." }
 				rescue => err
 					raise MUES::ObjectStoreError,
@@ -133,7 +135,13 @@ module MUES
 				objs = []
 
 				begin
-					objs.replace ids.collect {|id| @db[ id ].to_orig}
+					objs.replace ids.collect {|id|
+						if @db.key?( id )
+							Marshal::restore(@db[ id ])
+						else
+							nil
+						end
+					}
 				rescue => err
 					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching: #{err.message}",
@@ -151,11 +159,13 @@ module MUES
 			def retrieve_by_index( key, val )
 				checkOpened()
 				raise ArgumentError, "Invalid index #{key.inspect}" unless
-					@indexes.has_key?[ key.to_s ]
+					@indexes.has_key?[ key.to_s.intern ]
 
-				objs = nil
+				objs = []
 				begin
-					objs.replace( @indexes[key.to_s.intern].duplicates(val, false) )
+					objs.replace @indexes[key.to_s.intern].
+						duplicates(val, false).
+						collect {|o| Marshal::restore(o) }
 				rescue => err
 					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching: #{err.message}",
@@ -169,10 +179,10 @@ module MUES
 			### Fetch and return every object stored in the ObjectStore.
 			def retrieve_all
 				checkOpened()
-				objs = nil
+				objs = []
 
 				begin
-					objs.replace( @db.values.collect {|o| o.to_orig} )
+					objs.replace @db.values.collect {|o| Marshal::restore(o) }
 				rescue => err
 					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching values: #{err.message}",
@@ -194,16 +204,16 @@ module MUES
 					raise MUES::ObjectStoreError, "No such index #{idx.inspect}" unless
 						@indexes.has_key? idx
 				}
-					
+				
 				begin
 					cursors = []
-					# @env.begin( 0, @db ) {|txn, db|
+					@env.begin( 0, @db ) do |txn, db|
 						indexValuePairs.each {|idx,vals|
+							vals = [ vals ] unless vals.is_a?( Array )
 							self.log.debug { "Looking up values '#{vals.inspect}' for idx '#{idx.inspect}'" }
-							vals.to_a.each {|val|
+							vals.each {|val|
 								self.log.debug { "Fetching cursor for '#{val}'" }
-								#cursor = txn.associate( @indexes[idx] ).cursor
-								cursor = @indexes[idx].cursor
+								cursor = txn.associate( @indexes[idx] ).cursor
 								rval = cursor.set( val )
 								self.log.debug { "Got a cursor with #{cursor.count} values." }
 
@@ -213,19 +223,16 @@ module MUES
 
 						self.log.debug {"Preparing to do a join with #{cursors.length} cursors."}
 
-						@db.join(cursors) {|key,val|
-							self.log.debug {"Adding a '%s' object (%s) for join." % [val.class.name, val.muesid]}
-
-							# Have to do this despite the source saying not to
-							# use this method because the delegator it returns
-							# doesn't delegate inherited methods...
-							objs << val.to_orig
-							val = nil
+						db.join(cursors) {|key,val|
+							objs << Marshal::restore( val )
+							self.log.debug "Added obj: <%s> in join." % objs[-1].inspect
 						}
 
-						#self.log.debug "Closing join transaction..."
-						#txn.close
-					#}
+						self.log.debug "Closing cursors..."
+						cursors.each {|cursor| cursor.close}
+
+						self.log.debug "Leaving join transaction..."
+					end
 				rescue => err
 					self.log.error "Transaction failed while fetching values: %s: %s" % [
 						err.message, err.backtrace.join("\n\t") ]
@@ -296,17 +303,29 @@ module MUES
 					# value pair.
 					@indexes[idx] =
 						@env.open_db( BDB::Hash, indexName + "_i", nil, BDB::CREATE,
-									  :set_flags => BDB::DUP|BDB::DUPSORT, :marshal => ::Marshal )
+									  :set_flags => BDB::DUP|BDB::DUPSORT )
 
-					@db.associate( @indexes[idx], BDB::CREATE ) {|db,key,value|
+					# We have to de-serialize the value here (once per index per
+					# object) because it's given to the associated indexer after
+					# it's been serialized for some reason, which, of course,
+					# makes it much slower. However, it *doesn't* pass the
+					# serialized version when you use BDB's :marshal attribute,
+					# but that strategy breaks your objects when you get them
+					# back out by wrapping them in a delegate that doesn't
+					# forward inherited methods.
+
+					# @db.associate( @indexes[idx], BDB::CREATE ) {|db,key,value|
+					@db.associate( @indexes[idx], BDB::CREATE ) {|db,key,serialized|
+						value = Marshal::restore(serialized)
+
 						# :TODO: This should be taken out of production code
 						unless value.is_a? MUES::StorableObject
-							$stderr.puts "Ack! Value in indexer proc is not a StorableObject," +
+							$stderr.puts "Ack! Illegal value in indexer proc is not a StorableObject," +
 								"but a #{value.class.name}!"
 						end
 
 						if value.respond_to?( idx )
-							value.send( idx )
+							value.send( idx ).to_s
 						else
 							false
 						end
