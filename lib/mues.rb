@@ -238,7 +238,7 @@ class Object
 		# Debug level might be inappropriate?
 		os = validTypes.size
 		validTypes.compact!
-		debugMsg("1", "nil given in *validTypes") unless os == validTypes.size
+		debugMsg(1, "nil given in *validTypes") unless os == validTypes.size
 		if validTypes.size > 0 then
 
 			### Compare the object against the array of valid types, and either
@@ -299,7 +299,7 @@ class Object
 		# Debug level might be inappropriate?
 		os = requiredMethods.size
 		requiredMethods.compact!
-		debugMsg("1", "nil given in *requiredMethods") unless os == requiredMethods.size
+		debugMsg(1, "nil given in *requiredMethods") unless os == requiredMethods.size
 		if requiredMethods.size > 0 then
 			requiredMethods.each do |method|
 				next if anObject.respond_to?( method )
@@ -523,8 +523,8 @@ module MUES
 	class Object < ::Object; implements AbstractClass
 
 		### Class constants
-		Version	= %q$Revision: 1.14 $
-		RcsId	= %q$Id: mues.rb,v 1.14 2001/12/06 13:38:25 red Exp $
+		Version	= %q$Revision: 1.15 $
+		RcsId	= %q$Id: mues.rb,v 1.15 2001/12/06 13:39:36 red Exp $
 
 		class << self
 			def finalizer( objDesc )
