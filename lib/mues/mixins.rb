@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.15 2002/10/28 00:30:04 deveiant Exp $
+# $Id: mixins.rb,v 1.16 2002/10/31 08:19:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -779,7 +779,7 @@ module MUES
 						# Try to require the module that defines the specified
 						# listener
 						begin
-							require( modPath )
+							require( modPath.untaint )
 						rescue LoadError => e
 							MUES::Log.warn "No module at '#{modPath}': '#{e.message}'"
 						rescue ScriptError,StandardError => e
