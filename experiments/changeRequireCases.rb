@@ -3,15 +3,15 @@
 # Script to rewrite requires in MUES files to reflect change in file-naming
 # convention to all-lowercase.
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: changeRequireCases.rb,v 1.1 2003/10/13 04:07:11 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
 # * Michael Granger <ged@FaerieMUD.org>
 # 
-# Copyright (c) 2001-2003, The FaerieMUD Consortium.
+# Copyright (c) 2001-2004, The FaerieMUD Consortium.
 #
 # This is free software. You may use, modify, and/or redistribute this software
 # under the terms of the Perl Artistic License. (See

@@ -30,12 +30,33 @@ engine:
     backend: BerkeleyDB
     memorymanager: Null
   listeners:
-  - class: Telnet
-    name: telnet
-    params:
-      bind port: 4848
-      bind address: 0.0.0.0
-      use wrapper: false
+    shell:
+      kind: telnet
+      params:
+        useWrapper: false
+        banner: >
+          --- #{general.serverName} ---------------
+
+          #{general.serverDescription}
+
+          Contact: #{general.serverAdmin}
+
+
+        questionnaire:
+          name: login
+          params:
+            userPrompt: "Username: "
+            passPrompt: "Password: "
+        bindAddress: 0.0.0.0
+        bindPort: 4848
+    console:
+      kind: console
+      params:
+        questionnaire:
+          name: login
+          params:
+            userPrompt: "Console: "
+            passPrompt: "Password (echoed): "
 login:
   banner: |
     --- %general/server name% ---------------
@@ -50,15 +71,17 @@ logging:
     level: debug
     outputters: ''
   MUES::Engine:
-    level: info
+    level: debug
     outputters:
       file: server/log/server.log
 environments:
-  envpath: '*rootDir/server/environments'
+  envPath:
+    - server/environments
   autoload:
-  - class: Null
-    name: null
-    description: A testing environment without any surroundings.
+    "null":
+      kind: "Null"
+      params: {}
+      description: A testing environment without any surroundings.
 commandshell:
   - shell class: MUES::CommandShell
   - params:
