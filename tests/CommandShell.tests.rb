@@ -4,7 +4,7 @@
 #
 # == Rcsid
 # 
-#  $Id: CommandShell.tests.rb,v 1.2 2002/10/06 02:06:36 deveiant Exp $
+#  $Id: CommandShell.tests.rb,v 1.3 2002/10/25 05:10:30 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,7 +79,7 @@ module MUES
 				:registry				=> Hash,
 				:commandPath			=> Array,
 				:parserClass			=> Class,
-				:loadCommands			=> Array,
+				:loadNewCommands		=> Array,
 				:buildCommandRegistry	=> nil,
 				:rebuildCommandRegistry	=> nil,
 			}.each {|sym,expected|
