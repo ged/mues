@@ -1,9 +1,25 @@
 #!/usr/bin/ruby
 # 
-# A simple garbage-collection class for MUES::ObjectStore. It iterates over each
-# object in the active object space each cycle, swapping out any that are marked
-# as old.
+# A simple memory-management strategy class for MUES::ObjectStore -- a very
+# simple manager that will swap disused objects out of memory at regular
+# intervals. It does so by sending the MUES::ObjectSpaceVisitor it is given to
+# all live objects at periodic intervals and swapping any that return true. This
+# is not intended to be a very efficient collection strategy, but rather to
+# provide basic functionality for testing and a starting point for more advanced
+# algorithms. Iterations over large object spaces such as this are very
+# resource-intensive, and an objectspace of more than a few hundred objects will
+# almost certainly require a more sophisticated strategy.
 # 
+# This class is not intended to be loaded directly. It can be used by specifying
+# 'Simple' as the fourth argument to MUES::ObjectStore#create, or by specifying
+# 'Simple' in the class attribute of the <tt>memorymanager</tt> element of an
+# <tt>objectstore</tt> section of the config file (see lib/mues/Config.rb for
+# more).
+#
+# == Arguments
+#
+# This collector accepts the following configuration arguments 
+#
 # == Synopsis
 # 
 #   require 'mues/ObjectStore'
@@ -13,7 +29,7 @@
 # 
 # == Version
 #
-#  $Id: simplememorymanager.rb,v 1.1 2002/05/28 03:21:29 deveiant Exp $
+#  $Id: simplememorymanager.rb,v 1.2 2002/07/09 15:11:41 deveiant Exp $
 # 
 # == Authors
 #
@@ -30,28 +46,26 @@
 module MUES
 	class ObjectStore
 
-		### A simple garbage-collection class for MUES::ObjectStore
-		class SimpleGarbageCollector < MUES::ObjectStore::GarbageCollector
+		### A simple memory-management class for MUES::ObjectStore objects. See
+		### lib/mues/os-extensions/SimpleMemoryManager.rb for more.
+		class SimpleMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-			Rcsid = %q$Id: simplememorymanager.rb,v 1.1 2002/05/28 03:21:29 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+			Rcsid = %q$Id: simplememorymanager.rb,v 1.2 2002/07/09 15:11:41 deveiant Exp $
 
 			### The symbol of the default method to call to "mark" objects.
 			DefaultMarkMethod = :os_gc_mark
 
 
-			### Create and return a new GarbageCollector:
+			### Create and return a new MemoryManager:
 			### [objectStore]
-			###   the MUES::ObjectStore to use as the objectstore for 'swapped' objects
-			### [mark]
-			###   the symbol of the method to be used for 'mark'ing
-			###   objects. Defaults to <tt>:os_gc_mark</tt>.
-			### [trash_rate]
-			###   The minimum number of seconds between garbage collection
-			###   runs. Defaults to 50.
-			def initialize( objectStore, trash_rate = 50 )
-				@trash_rate = trash_rate
+			###   the  to use as the objectstore for 'swapped' objects
+			### [interval]
+			###   The minimum number of seconds between swap runs. Defaults to
+			###   50.
+			def initialize( objectStore, interval = 50 )
+				@interval = interval
 				@mark = mark
 
 				super( objectStore )
@@ -65,20 +79,20 @@ module MUES
 			protected
 			#########
 
-			### The garbage collection routine: Loops at most every @delay
-			### seconds and calls #_collect with the specified <tt>args</tt>.
-			def _gc_routine( visitor )
+			### The memory management thread routine: Loops at most every @delay
+			### seconds and calls #startCycle with the specified <tt>args</tt>.
+			def managerThreadRoutine( visitor )
 
 				until(@shutting_down)
 					loop_time = Time.now
-					_collect( visitor )
+					startCycle( visitor )
 
-					until (Time.new - loop_time >= @trash_rate || @shutting_down) do
+					until (Time.new - loop_time >= @interval || @shutting_down) do
 						Thread.pass
 					end
 				end
 
-				_collect_all()
+				saveAllObjects()
 				return true
 			end
 
@@ -100,16 +114,15 @@ module MUES
 				}
 			end
 
-			### Collects all the (non-shallow) objects.
-			### may take arguments from the same hash _collect doesct
-			def _collect_all
+			### Stores all the (non-shallow) objects in the object store.
+			def saveAllObjects
 				@active_objects.each_value {|o|
 					@objectStore.store(o) unless o.shallow?
 				}
 				@active_objects.clear
 			end
 
-		end # class SimpleGarbageCollector
+		end # class SimpleMemoryManager
 	end # class ObjectStore
 end # module MUES
 
