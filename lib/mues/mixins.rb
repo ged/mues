@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.8 2002/10/12 11:24:24 deveiant Exp $
+# $Id: mixins.rb,v 1.9 2002/10/14 04:30:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -470,6 +470,11 @@ module MUES
 		def unregisterUser( user )
 			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
 			return MUES::Engine::instance.unregisterUser( user )
+		end
+
+		### Turn off 'init mode' in the Engine, if it was on.
+		def cancelInitMode
+			return MUES::Engine::instance.cancelInitMode
 		end
 
 	end # module ServerFunctions
