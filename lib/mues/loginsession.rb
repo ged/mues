@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.15 2002/10/14 09:31:40 deveiant Exp $
+# $Id: loginsession.rb,v 1.16 2002/10/23 13:21:07 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module MUES
 			MUES::FactoryMethods,
 			MUES::UtilityFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
-		Rcsid = %q$Id: loginsession.rb,v 1.15 2002/10/14 09:31:40 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
+		Rcsid = %q$Id: loginsession.rb,v 1.16 2002/10/23 13:21:07 deveiant Exp $
 
 		# Pattern for untainting user input for username and password
 		LoginUntaintPattern		= %r{([a-z]\w+)}
@@ -101,13 +101,18 @@ module MUES
 			# scheduled event to kill us after the timeout expires
 			timeout = @config.login.timeout
 			if timeout > 0 
-				@timeoutEvent = LoginSessionFailureEvent.new( self, "Timeout (#{timeout} seconds)." )
+				@timeoutEvent = MUES::LoginSessionFailureEvent::
+					new( self, "Timeout (#{timeout} seconds)." )
 				scheduleEvents( Time.now + timeout, @timeoutEvent )
 			end
 
-			# Now queue the motd and the first username prompt output events
-			@delegator.queueOutputEvents( OutputEvent.new(@config.login.banner),
-										  PromptEvent.new(@config.login.userprompt) )
+			banner = @config.login.banner.gsub( /^[ \t]+/s, '' )
+			userprompt = @config.login.userprompt
+
+			# Now queue the login banner and the first username prompt output
+			# events
+			@delegator.queueOutputEvents( MUES::OutputEvent::new(banner),
+										  MUES::PromptEvent::new(userprompt) )
 		end
 		
 
