@@ -5,7 +5,7 @@
 #
 # == Rcsid
 # 
-# $Id: html_generator.rb,v 1.1 2002/03/30 19:01:10 deveiant Exp $
+# $Id: html_generator.rb,v 1.2 2002/05/16 03:40:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -18,40 +18,24 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-
+require "cgi"
 require "rdoc/generators/html_generator"
 
 module Generators
 
-  ##
-  # Override the regular ContextUser module so the collect_methods() method can be overridden.
-  class ContextUser
-
-    def collect_methods
-      list = @context.method_list
-      unless @options.show_all
-        list = list.find_all {|m| m.visibility == :public }
-      end
-      @methods = list.collect {|m| MyHtmlMethod.new(m, self, @options) }
-    end
-
-  end # class MyContextUser
-
-
-  ##
-  # Override the HtmlMethod class so we can do more intelligent code markup in markup_code()
+  # Override the HtmlMethod class so we can do more granular code markup in
+  # markup_code()
   class MyHtmlMethod < HtmlMethod
     include MarkUp
 
-    ##
-    # Given a sequence of source tokens, mark up the source code
-    # to make it look purty.
-    
+    # Given a sequence of source tokens, mark up the source code to make it look
+    # purty.
     def markup_code(tokens)
       src = ""
       tokens.each do |t|
 			next unless t
 
+			# Convert tabs to spaces
 			tokenText = t.text.gsub( /\t/ ) {|tab|
 				match = $~
 				
@@ -63,6 +47,7 @@ module Generators
 			}
 			tokenText = CGI::escapeHTML( tokenText )
 
+			# Pick a css class for interesting token-types
 			style = case t
 					when RubyToken::TkCONSTANT
 						"ruby-constant"
