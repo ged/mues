@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
 =MysqlAdapter.rb
@@ -30,7 +30,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "sync"
 
@@ -39,7 +39,7 @@ require "tableadapter/Search"
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Player"
+require "mues/User"
 
 require "mues/adapters/Adapter"
 
@@ -50,28 +50,28 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: MysqlAdapter.rb,v 1.4 2001/07/18 02:06:35 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: MysqlAdapter.rb,v 1.5 2001/07/30 12:07:25 deveiant Exp $
 
-			PlainPlayerFields = MUES::Player::DefaultDbInfo.find_all {|field, defaultVal|
+			PlainUserFields = MUES::User::DefaultDbInfo.find_all {|field, defaultVal|
 				!defaultVal.is_a?( Array ) && !defaultVal.is_a?( Hash )
 			}.collect {|ary| ary[0]}
-			MarshalledPlayerFields = MUES::Player::DefaultDbInfo.find_all {|field, defaultVal|
+			MarshalledUserFields = MUES::User::DefaultDbInfo.find_all {|field, defaultVal|
 				defaultVal.is_a?( Array ) || defaultVal.is_a?( Hash )
 			}.collect {|ary| ary[0]}
 
 			### Class variables
 			@@ObjectTable	= 'object'
-			@@PlayerTable	= 'player'
+			@@UserTable		= 'muesuser'
 			@@DenyTable		= 'deny'
 			@@AllowTable	= 'allow'
 
 			### Turn off warnings about method classes
 			TableAdapter.printMethodClashWarnings = false
 
-			###################################################################
+			#########################################################
 			###	P R O T E C T E D   M E T H O D S
-			###################################################################
+			#########################################################
 			protected
 
 			### (PROTECTED) METHOD: initialize( db, host, user, password )
@@ -82,17 +82,17 @@ module MUES
 				@useTableLocks	= false
 
 				@objectAdapterClass = TableAdapterClass( db, @@ObjectTable, user, password, host )
-				@playerAdapterClass	= TableAdapterClass( db, @@PlayerTable, user, password, host )
+				@userAdapterClass	= TableAdapterClass( db, @@UserTable, user, password, host )
 				@denyAdapterClass	= TableAdapterClass( db, @@DenyTable, user, password, host )
 				@allowAdapterClass	= TableAdapterClass( db, @@AllowTable, user, password, host )
 
-				@lock = { 'player' => Sync.new, 'object' => Sync.new }
+				@lock = { 'user' => Sync.new, 'object' => Sync.new }
 			end
 
 
-			###################################################################
+			#########################################################
 			###	P U B L I C   M E T H O D S
-			###################################################################
+			#########################################################
 			public
 
 			### Attribute accessors
@@ -174,30 +174,30 @@ module MUES
 			end
 
 
-			### METHOD: storePlayerData( playerName, dbInfo )
-			### Store the data for the specified player object, returning the
+			### METHOD: storeUserData( userName, dbInfo )
+			### Store the data for the specified user object, returning the
 			### (possibly modified) database info object.
-			def storePlayerData( playerName, dbInfo )
+			def storeUserData( userName, dbInfo )
 
 				# Check the type of the info object. If it's a table adapter,
 				# just store it. If it's a hash, convert it to a table adapter
 				# and store it. Anything else raises an exception.
 				case dbInfo
 				when TableAdapter
-					dbInfo.username = playerName
-					@lock['player'].synchronize( Sync::EX ) { dbInfo.store }
+					dbInfo.username = userName
+					@lock['user'].synchronize( Sync::EX ) { dbInfo.store }
 					return dbInfo
 
 				when Hash
-					@lock['player'].synchronize( Sync::EX ) { 
-						playerRow = @playerAdapterClass.new
-						(PlainPlayerFields + MarshalledPlayerFields).each {|key|
-							playerRow.send( "#{key}=", dbInfo[key] )
+					@lock['user'].synchronize( Sync::EX ) { 
+						userRow = @userAdapterClass.new
+						(PlainUserFields + MarshalledUserFields).each {|key|
+							userRow.send( "#{key}=", dbInfo[key] )
 						}
 
-						playerRow.username = playerName
-						playerRow.store
-						return playerRow
+						userRow.username = userName
+						userRow.store
+						return userRow
 					}
 				else
 					raise AdapterError, "Cannot convert a #{dbInfo.type.name} to a MysqlAdapter"
@@ -206,46 +206,46 @@ module MUES
 			end
 
 
-			### METHOD: fetchPlayerData( username )
-			### Fetch the hash of player data for the specified user
-			def fetchPlayerData( username )
+			### METHOD: fetchUserData( username )
+			### Fetch the hash of user data for the specified user
+			def fetchUserData( username )
 				checkType( username, String )
 
-				playerData = nil
-				@lock['player'].synchronize( Sync::SH ) {
-					search = TableAdapter::Search.new( @playerAdapterClass, 'username' => username )
-					playerData = search[0]
+				userData = nil
+				@lock['user'].synchronize( Sync::SH ) {
+					search = TableAdapter::Search.new( @userAdapterClass, 'username' => username )
+					userData = search[0]
 				}
 
-				return playerData
+				return userData
 			end
 
 
-			### METHOD: createPlayerData( username )
-			### Create a new hash of player data for the specified user
-			def createPlayerData( username )
+			### METHOD: createUserData( username )
+			### Create a new hash of user data for the specified user
+			def createUserData( username )
 				checkType( username, String )
 
-				@lock['player'].synchronize( Sync::SH ) {
-					raise AdapterError, "A player with the username '#{username}' already exists" unless
-						fetchPlayerData( username ).nil?
+				@lock['user'].synchronize( Sync::SH ) {
+					raise AdapterError, "A user with the username '#{username}' already exists" unless
+						fetchUserData( username ).nil?
 
-					storePlayerData( username, MUES::Player::DefaultDbInfo.dup )
+					storeUserData( username, MUES::User::DefaultDbInfo.dup )
 				}
 			end
 
 
-			### METHOD: deletePlayerData( username )
-			### Delete the hash of player data from the database for the specified user
-			def deletePlayerData( username )
+			### METHOD: deleteUserData( username )
+			### Delete the hash of user data from the database for the specified user
+			def deleteUserData( username )
 				checkType( username, String )
 
-				@lock['player'].synchronize( Sync::SH ) {
-					record = fetchPlayerData( username )
-					raise AdapterError, "No player with the username '#{username}' exists" if
+				@lock['user'].synchronize( Sync::SH ) {
+					record = fetchUserData( username )
+					raise AdapterError, "No user with the username '#{username}' exists" if
 						record.nil?
 
-					@lock['player'].synchronize( Sync::EX ) {
+					@lock['user'].synchronize( Sync::EX ) {
 						record.delete
 					}
 				}
@@ -253,9 +253,9 @@ module MUES
 
 
 
-			###################################################################
+			#########################################################
 			###	P R I V A T E   M E T H O D S
-			###################################################################
+			#########################################################
 			private
 
 			### (PRIVATE) METHOD: __prepFieldValue( key, val )
@@ -269,7 +269,7 @@ module MUES
 					Marshal.dump(val)
 
 				else
-					raise AdapterError, "Attempt to store a #{val.type.name} in a player #{key} field"
+					raise AdapterError, "Attempt to store a #{val.type.name} in a user #{key} field"
 				end
 			end
 
