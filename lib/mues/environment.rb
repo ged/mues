@@ -47,7 +47,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.12 2002/07/07 18:29:57 deveiant Exp $
+# $Id: environment.rb,v 1.13 2002/08/01 01:07:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -70,17 +70,6 @@ require "mues/IOEventFilters"
 
 module MUES
 
-	### Exception class used for indicating a problem in an environment object
-	def_exception :EnvironmentError, "General environment error", Exception
-
-	### Exception class used when an environment is created with the same name as
-	### an already-extant one.
-	def_exception :EnvironmentNameConflictError, "Environment name conflict error", EnvironmentError
-
-	### Exception class used to indicate a problem with a role object in an environment.
-	def_exception :EnvironmentRoleError, "Environment role error", EnvironmentError
-
-
 	### Environment abstract base class
 	class Environment < Object ; implements MUES::AbstractClass,
 			MUES::Notifiable, MUES::Debuggable
@@ -89,46 +78,61 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.12 2002/07/07 18:29:57 deveiant Exp $
-
-
-		### Class globals
-		@@ChildClasses = {}
-		@@EnvMutex = Sync.new
-		@@EnvLoadTime = Time.at(0) # Set initial load time to epoch
-
-
-		### Initialize the environment with the specified <tt>name</tt> and
-		### <tt>description</tt>.
-		def initialize( aName, aDescription="(No description)" ) # :notnew:
-			checkType( aName, ::String )
-			checkType( aDescription, ::String )
-
-			@name			= aName
-			@description	= aDescription
-
-			super()
-		end
+		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.13 2002/08/01 01:07:46 deveiant Exp $
 
 
 		### Class methods
 
-		### Return an array of environment class names which have been loaded
-		def self.listEnvClasses
-			return self.getDerivativeClasses.collect {|klass|
-				klass.name.sub( /Environment/ )
+		### Create and return an Array of environments from the specified
+		### configuration (a MUES::Config::EnvironmentsSection).
+		def self.createFromConfig( config )
+			checkType( config, MUES::Config::EnvironmentSection )
+
+			return config.environments.collect {|name,confighash|
+				ostore = if confighash['ostore']
+							 ostore = MUES::ObjectStore::createFromConfig( confighash['ostore'] )
+						 else
+							 nil
+						 end
+				self.create( confighash['class'],
+							 name,
+							 confighash['description'],
+							 confighash['parameters'],
+							 ostore )
 			}
 		end
 
+		### Return an array of environment class names which have been loaded
+		def self.listEnvClasses
+			return self.getDerivativeClasses.collect {|klass|
+				klass.name.sub( /Environment/, '' )
+			}
+		end
 
 		### Initialize subsystems after engine startup (stub).
 		def self.atEngineStartup( theEngine )
 		end
 
-
 		### Clean up subsystems before engine shutdown (stub).
 		def self.atEngineShutdown( theEngine )
+		end
+
+
+		### Constructor
+
+		### Initialize the environment with the specified <tt>name</tt> and
+		### <tt>description</tt>.
+		def initialize( aName, aDescription="(No description)", parameters={} ) # :notnew:
+			checkType( aName, ::String )
+			checkType( aDescription, ::String )
+			checkType( parameters, ::Hash )
+
+			@name			= aName
+			@description	= aDescription
+			@parameters		= parameters
+
+			super()
 		end
 
 
@@ -139,9 +143,9 @@ module MUES
 		# The name of the environment object
 		attr_reader :name
 
-
 		# The user-readable description of the object
 		attr_reader :description
+
 
 
 		### Virtual methods
