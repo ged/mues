@@ -47,9 +47,13 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.31 2003/10/13 04:02:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.32 2004/02/29 18:47:08 deveiant Exp $
 
+
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
 
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
 		# attributes to it. Any arguments passed are ignored.
@@ -57,6 +61,25 @@ module MUES #:nodoc:
 			super()
 			@objectStoreData = nil
 		end
+
+
+		### Copy initializer: copy state from the +original+ object to the
+		### receiver.
+		def initialize_copy( original )
+
+			# Deep copy all instance variables by default
+			self.instance_variables.each {|ivar|
+				oval = original.instance_variable_get( ivar )
+				case oval
+				when Numeric, NilClass, TrueClass, FalseClass, Symbol
+					newval = oval
+				else
+					newval = oval.dup
+				end
+				self.instance_variable_set( ivar, newval )
+			}
+		end
+
 
 
 		######
@@ -90,30 +113,6 @@ module MUES #:nodoc:
 		end
 
 
-		### Create and return a copy of the receiving object with its instance
-		### variables preserved.
-		def copy
-			duplicate = self.dup
-
-			# Use built-in copy_object, if available, as it's much less
-			# expensive (and much prettier).
-			if self.respond_to?( :copy_object )
-				duplicate.copy_object( self )
-
-			else
-				# Now eval each instance variable into the copy
-				self.instance_variables.each {|ivar|
-					val = eval(ivar)
-					debugMsg 5, "Copying ivar %s = %s" %
-						[ ivar, val.inspect ]
-					duplicate.instance_eval("#{ivar} = val")
-				}
-			end
-
-			return duplicate
-		end
-
-
 		### Callback method for prepping the object for storage in an
 		### ObjectStore. Should return a copy of itself suitable for
 		### serialization (eg., with references flattened, un-serializable data
@@ -123,7 +122,7 @@ module MUES #:nodoc:
 		### MUES::ObjectStore it is about to be stored in is given as the
 		### <tt>objStore</tt> argument.
 		def lull( objStore )
-			duplicate = self.copy
+			duplicate = self.dup
 			duplicate.lull!( objStore )
 			return duplicate
 		end
@@ -140,7 +139,7 @@ module MUES #:nodoc:
 		### ObjectStore. Should return either itself, or a copy of itself which
 		### has been prepared for use in some way (references restored,
 		### un-serializable data reconstituted, etc.). The MUES::ObjectStore it
-		### is about to be stored in is given as the <tt>objStore</tt> argument.
+		### was retrieved from is given as the <tt>objStore</tt> argument.
 		def awaken( objStore )
 			self.awaken!( objStore )
 			return self
@@ -156,6 +155,7 @@ module MUES #:nodoc:
     end # class StorableObject
 
 
+
     # A placeholder class for StorableObjects which have been swapped out of
     # memory and into the ObjectStore.
     class ShallowReference < MUES::PolymorphicObject
@@ -163,8 +163,8 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.31 2003/10/13 04:02:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.32 2004/02/29 18:47:08 deveiant Exp $
 
 
 		# Methods to not remove from the instances of this class
@@ -203,7 +203,7 @@ module MUES #:nodoc:
 
 			if obj.kind_of? MUES::StorableObject
 				@muesid = id.objectStoreId
-				@indexTable = indexTable ? indexTable : {}
+				@indexTable = indexTable || {}
 			else
 				@muesid = obj.to_s
 				@indexTable = {}
