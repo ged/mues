@@ -32,6 +32,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
+require 'mues.so'
 
 module MUES #:nodoc:
 
