@@ -1,13 +1,13 @@
 #!/usr/bin/ruby
 # 
-# This file contains the AccessorOperation class: An attribute accessor
-# specialization of Metaclass::Operation. It is used to create accessor methods
-# for Metaclass::Class objects.
+# This file contains the MUES::Metaclass::AccessorOperation class: An attribute
+# accessor specialization of MUES::Metaclass::Operation. It is used to create
+# accessor methods for MUES::Metaclass::Class objects.
 # 
 # == Synopsis
 #
 #   ...
-#   myClass << Metaclass::AccessorOperation.new( "name" )
+#   myClass << MUES::Metaclass::AccessorOperation.new( "name" )
 #
 #	eval myClass.classDefinition
 #
@@ -17,7 +17,7 @@
 # 
 # == Rcsid
 # 
-# $Id: accessoroperation.rb,v 1.2 2002/04/11 15:50:15 deveiant Exp $
+# $Id: accessoroperation.rb,v 1.3 2002/10/04 04:05:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -30,26 +30,30 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'metaclass/Operation'
+require 'mues/metaclass/Operation'
 
-module Metaclass
+module MUES
+	module Metaclass
 
-	### An attribute accessor specialization of Metaclass::Operation.
-	class AccessorOperation < Metaclass::Operation
+		### An attribute accessor specialization of Metaclass::Operation.
+		class AccessorOperation < Metaclass::Operation
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: accessoroperation.rb,v 1.2 2002/04/11 15:50:15 deveiant Exp $
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
+			Rcsid = %q$Id: accessoroperation.rb,v 1.3 2002/10/04 04:05:38 deveiant Exp $
 
-		### Create a new AccessorOperation object.
-		def initialize( name, scope=Operation::DEFAULT_SCOPE, visibility=Operation::DEFAULT_VISIBILITY )
-			case scope
-			when Scope::CLASS
-				super( name, "@@#{name}", scope, visibility )
-			else
-				super( name, "@#{name}", scope, visibility )
+			### Create a new AccessorOperation object.
+			def initialize( name, scope=Operation::DEFAULT_SCOPE, visibility=Operation::DEFAULT_VISIBILITY )
+				case scope
+				when Scope::CLASS
+					super( name, "@@#{name}", scope, visibility )
+				else
+					super( name, "@#{name}", scope, visibility )
+				end
 			end
-		end
 
-	end # class AccessorOperation
-end # module Metaclass
+		end # class AccessorOperation
+
+	end # module Metaclass
+end # module MUES
+

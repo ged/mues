@@ -1,22 +1,22 @@
 #!/usr/bin/ruby
 # 
-# This file is the base require for the Metaclass classes -- it loads all the
-# required subordinate modules and sets up the Metaclass namespace with constants
-# and functions that the other modules share.
+# This file is the base require for the MUES::Metaclass classes -- it loads all
+# the required subordinate modules and sets up the MUES::Metaclass namespace
+# with constants and functions that the other modules share.
 # 
 # == Synopsis
 # 
-#   require "metaclasses"
+#   require "mues/metaclasses"
 # 
-#   myClass = Metaclass::Class.new( "MyClass" )
-#   implementable = Metaclass::Interface( "Implementable" )
+#   myClass = MUES::Metaclass::Class.new( "MyClass" )
+#   implementable = MUES::Metaclass::Interface( "Implementable" )
 #   myClass << implementable
 # 
 #   ...etc.
 # 
 # == Rcsid
 #
-# $Id: metaclasses.rb,v 1.3 2002/07/07 18:17:44 deveiant Exp $
+# $Id: metaclasses.rb,v 1.4 2002/10/04 04:03:38 deveiant Exp $
 #
 # == Authors
 # 
@@ -29,14 +29,15 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'metaclass/Constants'
-require 'metaclass/Association'
-require 'metaclass/Attribute'
-require 'metaclass/Interface'
-require 'metaclass/Namespace'
-require 'metaclass/Operation'
-require 'metaclass/Parameter'
-require 'metaclass/Class'
-require 'metaclass/VirtualOperation'
-require 'metaclass/AccessorOperation'
-require 'metaclass/MutatorOperation'
+require 'mues/metaclass/Constants'
+require 'mues/metaclass/Association'
+require 'mues/metaclass/Attribute'
+require 'mues/metaclass/Interface'
+require 'mues/metaclass/Namespace'
+require 'mues/metaclass/Operation'
+require 'mues/metaclass/Parameter'
+require 'mues/metaclass/Class'
+require 'mues/metaclass/AccessorOperation'
+require 'mues/metaclass/MutatorOperation'
+
+
