@@ -65,7 +65,8 @@ class ObjectStoreGC
     @algor_args = algor_args
     @mutex = Sync.new
     @shutting_down = false
-    @thread = Thread.new { _gc_routine(@algor_args) }
+    @running = true
+    @thread = Thread.new { _gc_routine(@algor_args); @running = false }
 
     return self
   end
@@ -73,6 +74,8 @@ class ObjectStoreGC
   ######
   public
   ######
+
+  attr_reader :shutting_down, :active_objects, :running
 
   def mark
     # :MG: Don't need to synchronize here, as return is an atomic operation...
@@ -88,26 +91,22 @@ class ObjectStoreGC
     # }
   end
   
-  def algor_args= (val)
-
-    # :MG: Hmmmm... it's a Hash at construction, but errors if you try to set it
-    # to anything but a Float?
-    #raise TypeError("Must be a Float between 0 and 1") unless val.kind_of?(Float) and 
-    #  val.between?(0.0,1.0)
-    raise TypeError, "Expected Hash, got #{val.type.name}" unless
-      val.kind_of? Hash
+  def algor_args= (aHash)
+    raise TypeError, "Expected Hash, got #{aHash.type.name}" unless
+      aHash.kind_of? Hash
 
     @mutex.synchronize( Sync::EX ) {
-      @algor_args = val
+      @algor_args = aHash
     }
   end
   
   ### Runs the GC right now
   ### arguments:
   ###   algor_args - the percent of memory aloowed before GC stops
-  def start (args = @algor_args)
-    self.algor_args = args
+  def start (aHash = nil)
+    ( self.algor_args = aHash ) if aHash
     @shutting_down = false
+    @running = true
     unless (@thread.alive?)
       @thread = Thread.new { _gc_routine(@algor_args) }
     end
@@ -125,6 +124,8 @@ class ObjectStoreGC
     objects.compact!
     @mutex.synchronize( Sync::EX ) {
       objects.each {|o|
+	raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
+	  o.kind_of?(StorableObject)
 	@active_objects[o.objectStoreID] = o
       }
     }
@@ -155,7 +156,8 @@ class ObjectStoreGC
 	Thread.pass
       end
     end
-    _collect_all(aHash) # :MC: after it shuts down, it should store every active object into
+    _collect(aHash)
+#    _collect_all(aHash) # :MC: after it shuts down, it should store every active object into
                  # the database.
     return true
   end
@@ -164,11 +166,11 @@ class ObjectStoreGC
   ### Redefine for desired behavior.
   def _collect(aHash)
     @mutex.synchronize( Sync::SH ) {
-      @active_objects.each {|o|
+      @active_objects.each_value {|o|
 	if( !o.shallow? and (o.refCount <= 1 or o.send(@mark)) )
 	  @mutex.synchronize( Sync::EX ) {
 	    @objectStore.store(o)
-	    o.become(ShallowReference.new( o.objectStoreID ))
+	    o.become(ShallowReference.new( @objectStore, o.objectStoreID ))
 	  }
 	end
       }
@@ -176,8 +178,12 @@ class ObjectStoreGC
   end
 
   ### Collects all the (non-shallow) objects.
+  ### may take arguments from the same hash _collect does
   def _collect_all (aHash)
-
+    @active_objects.each_value {|o|
+      @objectStore.store(o) unless o.shallow?
+    }
+    @active_objects.clear
   end
   
 end

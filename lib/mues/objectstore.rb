@@ -209,7 +209,7 @@ class ObjectStore
 	  @database = database || create_database(@filename)
 	  
 	  @table = @database[-1]
-	  @active_objects = Hash.new
+	  @active_objects = Hash.new # the GC has responsibility for maintaining this
 	  @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
 	  @mutex = Sync.new
 	end
@@ -241,19 +241,21 @@ class ObjectStore
 	  ids = objects.collect {|o| o.objectStoreID}
 	  serialized = objects.collect {|o| o.send(@serialize, -1)}
 	  classes = objects.collect {|o| o.class.send(@serialize, -1)}
-	  trans = A_Transaction.new
-	  col_names = ['id', 'obj', 'obj_class'] + index_names
-	  ids.each_index do |i|
-	    if @table.exists?(trans, ids[i])
-	      #update(transaction, pkey, column_names, values)
-	      @table.update(trans, ids[i], col_names[1, col_names.length-2],
-			    [serialized[i], index_returns[i]].flatten)
-	    else
-	      @table.insert( trans, col_names,
-			    [ids[i], serialized[i], classes[i], index_returns[i]].flatten )
+	  @mutex.synchronize( Sync::EX ) {
+	    trans = A_Transaction.new
+	    col_names = ['id', 'obj', 'obj_class'] + index_names
+	    ids.each_index do |i|
+	      if @table.exists?(trans, ids[i])
+		#update(transaction, pkey, column_names, values)
+		@table.update(trans, ids[i], col_names[1, col_names.length-2],
+			      [serialized[i], index_returns[i]].flatten)
+	      else
+		@table.insert( trans, col_names,
+			      [ids[i], serialized[i], classes[i], index_returns[i]].flatten )
+	      end
 	    end
-	  end
-	  trans.commit
+	    trans.commit
+	  }
 	end
 
 	### Closes the database.

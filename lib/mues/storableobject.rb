@@ -165,8 +165,10 @@ class ShallowReference < PolymorphicObject
   ###   and supplying a block.  No changes to the object made in the block will be
   ###   written to the database.
   def read_only(&block)
-    obj = @obj_store._retrieve( @id )
-    block.yield(obj)
+    unless (@obj_store.gc.shutting_down)
+      obj = @obj_store._retrieve( @id )
+      block.yield(obj)
+    end
   end
 
   ### equality by objectStoreID
@@ -178,9 +180,12 @@ class ShallowReference < PolymorphicObject
   ###   and send again.
   def method_missing (*args)
     thingy = @obj_store._retrieve( @id )
-    super unless !thingy.shallow? and thingy.respond_to?(args[0])
-    become(thingy)
-    send args.shift, *args
+    if( thingy.shallow? or ! thingy.respond_to?(args[0]) )
+      super
+    else
+      become(thingy)
+      send args.shift, *args
+    end
   end
 
 end
