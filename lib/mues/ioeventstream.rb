@@ -2,11 +2,11 @@
 ###########################################################################
 =begin
 = IOEventStream
-== NAME
+== Name
 
 MUES::IOEventStream - An IO event handler stack class
 
-== SYNOPSIS
+== Synopsis
 
   require "mues/IOEventStream"
   require "mues/IOEventFilters"
@@ -34,31 +34,32 @@ MUES::IOEventStream - An IO event handler stack class
   connectMsg = MUES::OutputEvent.new( "Welcome to ExperimentalMUD." )
   @stream.addOutputEvents( loginMsg )
 
-== DESCRIPTION
+== Description
 
-MUES::IOStream is a filtered input/output stream class for the intercommunication of
-objects in the FaerieMUD engine. It can be used to route input and output events
-between objects, and serves as a single point of control for complex IO streams.
+(({MUES::IOEventStream})) is a filtered input/output stream class for the
+intercommunication of objects in the FaerieMUD engine. It it primarily used for
+input and output events bound for or coming from the socket object contained in
+a ((<MUES::Player>)) object, but it can be used to route input and output events
+for any object which requires a complex I/O abstraction.
 
-The stream itself is only a container; it is essentially just a container or
-stack of filter objects, each of which can act upon the input and output events
-flowing through the stream. A filter may, depending on its purpose and
-configuration, act on the IO events in the stream in many different ways. It can
-redirect, modify, duplicate, and/or inject new events into the stream based on
-the contents of each event.
+The stream itself is only a container; it is essentially just a stack of filter
+objects, each of which can act upon the input and output events flowing through
+the stream. A filter may, depending on its purpose and configuration, act on the
+I/O events in the stream in many different ways. It can redirect, modify,
+duplicate, and/or inject new events based on the contents of event.
 
-The stream is bi-directional, meaning that both input and output flow through it
-in opposite directions. This allows a single filter to act on events flowing in
-both directions.
+The stream is bi-directional, meaning that all filters contained in the stream
+see both input and output events. This allows a single filter to act on events
+flowing in both directions.
 
-The stream also contains its own thread of execution, so IO in it is processed
+The stream also contains its own thread of execution, so I/O in it is processed
 independently of the main thread of execution.
 
-== AUTHOR
+== Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -70,7 +71,7 @@ http://language.perl.com/misc/Artistic.html)
 require "thread"
 require "timeout"
 
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/IOEventFilters"
 require "mues/Events"
 require "mues/Debugging"
@@ -114,7 +115,7 @@ module MUES
 		### METHOD: addFilters( *filters)
 		### Add the specified filters to the stream
 		def addFilters( *filters )
-			_debugMsg( "Adding #{filters.size} filters to stream #{self.id}" )
+			_debugMsg( 1, "Adding #{filters.size} filters to stream #{self.id}" )
 			return unless @state == RUNNING
 			@filterMutex.synchronize {
 				@filters |= filters
@@ -124,7 +125,7 @@ module MUES
 		### METHOD: removeFilters( *filters )
 		### Remove the specified filters from the stream
 		def removeFilters( *filters )
-			_debugMsg( "Removing #{filters.size} filters from stream #{self.id}" )
+			_debugMsg( 1, "Removing #{filters.size} filters from stream #{self.id}" )
 			return unless @state == RUNNING
 			returnFilters = []
 			@filterMutex.synchronize {
@@ -160,7 +161,7 @@ module MUES
 		def addOutputEvents( *events )
 			events.flatten!
 
-			_debugMsg( "Adding #{events.size} output events to the queue for the next run." )
+			_debugMsg( 1, "Adding #{events.size} output events to the queue for the next run." )
 
 			@outputEventMutex.synchronize do
 				@outputEvents += events
@@ -177,7 +178,7 @@ module MUES
 				@outputEvents.clear
 			end
 
-			_debugMsg( "Fetched #{events.size} queued output events." )
+			_debugMsg( 1, "Fetched #{events.size} queued output events." )
 			return events
 		end
 
@@ -209,7 +210,7 @@ module MUES
 		### METHOD: shutdown
 		### Shut down all the filters contained in the stream and prepare for destruction.
 		def shutdown
-			_debugMsg( "Shutting down event stream #{self.id}." )
+			_debugMsg( 1, "Shutting down event stream #{self.id}." )
 			@filterMutex.synchronize do
 				@state = SHUTDOWN
 			end
@@ -268,24 +269,24 @@ module MUES
 			### Get the currently queued input events and clear the queue
 			events = fetchInputEvents()
 			events.flatten!
-			_debugMsg( "#{events.size} input events to filter." )
+			_debugMsg( 1, "#{events.size} input events to filter." )
 
 			### Delegate the list of events to each filter in turn, and catch any
 			### that are returned for the next filter
 			@filters.sort.each do |filter|
-				_debugMsg( "Sending #{events.size} input events to a #{filter.class.name}." )
+				_debugMsg( 1, "Sending #{events.size} input events to a #{filter.class.name}." )
 				results = filter.handleInputEvents( events )
-				_debugMsg( "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
+				_debugMsg( 1, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
 				if ( results.nil? || filter.isFinished ) then
-					_debugMsg( "#{filter.to_s} indicated it was finished. Removing it from the stream." )
+					_debugMsg( 1, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
 					removeFilters( filter )
 					oev = filter.queuedOutputEvents
-					_debugMsg( "Adding #{oev.size} output events from finished filter to queue for next cycle." )
+					_debugMsg( 1, "Adding #{oev.size} output events from finished filter to queue for next cycle." )
 					addOutputEvents( oev )
 					events = filter.queuedInputEvents
 					next
 				end
-				_debugMsg( "#{results.size} events left after filtering." )
+				_debugMsg( 1, "#{results.size} events left after filtering." )
 				events = results.flatten
 			end
 
@@ -303,19 +304,19 @@ module MUES
 			### Get the currently queued output events and clear the queue
 			events = fetchOutputEvents()
 			events.flatten!
-			_debugMsg( "#{events.size} output events to filter." )
+			_debugMsg( 1, "#{events.size} output events to filter." )
 
 			### Delegate the list of events to each filter in turn, and catch any
 			### that are returned for the next filter
 			@filters.sort.reverse.each do |filter|
-				_debugMsg( "Sending #{events.size} output events to a #{filter.class.name}." )
+				_debugMsg( 1, "Sending #{events.size} output events to a #{filter.class.name}." )
 				results = filter.handleOutputEvents( events )
-				_debugMsg( "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
+				_debugMsg( 1, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
 				if ( results.nil? || filter.isFinished ) then
-					_debugMsg( "#{filter.to_s} indicated it was finished. Removing it from the stream." )
+					_debugMsg( 1, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
 					removeFilters( filter )
 					iev = filter.queuedInputEvents
-					_debugMsg( "Adding #{iov.size} input events from finished filter to queue for next cycle." )
+					_debugMsg( 1, "Adding #{iov.size} input events from finished filter to queue for next cycle." )
 					addInputEvents( iev )
 					events = filter.queuedOutputEvents
 					next
