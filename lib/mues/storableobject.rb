@@ -87,18 +87,26 @@ class ShallowReference < PolymorphicObject
 
   ### This undefines all the methods for this object, so that any call to it will
   ###   envoke #method_missing.
-  self.public_instance_methods(true).each {|method|
-    break if method == "become" or method == "__send__" or
+  public_instance_methods(true).each {|method|
+    next if method == "become" or method == "__send__" or
       method == "__id__"
-    undef_method( method )
+    undef_method( eval ":#{method}" )
   }
-
+  
   #########
   protected
   #########
 
   ### Creates a new ShallowReference object
+  ### arguments:
+  ###   an_id - the stringy id value that is to be used to retrieve the actual
+  ###           object from the objectStore
+  ###   an_obj_store - the ObjectStore to get things from
   def initialize(an_id, an_obj_store)
+    raise TypeError("Expected String but got #{an_id.type.name}") if
+      ! an_id.kind_of?(String)
+    raise TypeError("Expected ObjectStore but got #{an_id.type.name}") if
+      ! an_obj_store.kind_of?(ObjectStore)
     @id = an_id
     @obj_store = an_obj_store
   end
@@ -108,10 +116,10 @@ class ShallowReference < PolymorphicObject
   ######
 
   ### Allows momentary access to the object from the database, by calling this method
-  ###   and supplying a block.
+  ###   and supplying a block.  No changes to the object made in the block will be
+  ###   written to the database.
   def read_only(&block)
-    read_only = true
-    obj = @obj_store._retrieve( @id, read_only )
+    obj = @obj_store._retrieve( @id )
     block.yield(obj)
   end
 
@@ -119,7 +127,7 @@ class ShallowReference < PolymorphicObject
   ###   and send again.
   def method_missing (*args)
     become( @obj_store._retrieve( @id ) )
-    send args.unshift, *args
+    send args.shift, *args
   end
 
 end

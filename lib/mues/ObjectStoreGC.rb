@@ -73,14 +73,14 @@ class ObjectStoreGC
 
   def mark
     # :MG: Don't need to synchronize here, as return is an atomic operation...
-    # @mutex.sychronize( Sync::SH ) {
+    # @mutex.synchronize( Sync::SH ) {
       @mark
     # }
   end
   
   def algor_args
     # :MG: Don't need to synchronize here, as return is an atomic operation...
-    # @mutex.sychronize( Sync::SH ) {
+    # @mutex.synchronize( Sync::SH ) {
       @algor_args
     # }
   end
@@ -94,7 +94,7 @@ class ObjectStoreGC
     raise TypeError, "Expected Hash, got #{val.type.name}" unless
       val.kind_of? Hash
 
-    @mutex.sychronize( Sync::EX ) {
+    @mutex.synchronize( Sync::EX ) {
       @algor_args = val
     }
   end

@@ -218,7 +218,7 @@ class ObjectStore
 	  }
 	  ids = objects.collect {|o| o.objectStoreID}
 	  serialized = objects.collect {|o| o.send(@serialize, -1)}
-	  classes = objects.collect {|o| o.class.send(@serialize, 0)} #:?: what depth for classes?
+	  classes = objects.collect {|o| o.class.send(@serialize, 0)}
 	  #:?: or should classes be stored as keys that point to entries in the db?
 	  trans = A_Transaction.new
 	  col_names = ['id', 'obj', 'obj_class'] + index_names
@@ -245,30 +245,26 @@ class ObjectStore
 	
 	### Opens the database again.  Starts a new garbage collector.
 	### That is, if the database isn't already open.
-	def open
-	  (@table = A_Table.connect(@table_name)) if ! @table
-	  @gc.start( 'trash_rate' => TRASH_RATE )
-	end
+#	def open
+#	  (@table = A_Table.connect(@table_name)) if ! @table
+#	  @gc.start( 'trash_rate' => TRASH_RATE )
+#	end
+	#:!: opening databases usually means flock problems
 
 	### Gets the object specified by the given id out of the database
 	### Well, not really.  returns a StorableObject style shallow reference
 	def retrieve ( id )
-	  ShallowReference.new( id )
+	  ShallowReference.new( id, self )
 	end
 
 	### *ACTUALLY* gets the object specifed by the given id out of the database
 	### arguments:
 	###   id - the id (objectStoreID) of the object
-	###   read_only - whether or not this lookup is read-only
-	def _retrieve ( id , read_only = false )
-	  table_data = (@table.find( nil, id )).obj
+	def _retrieve ( id )
+	  table_data = (@table.find( nil, id ))
 	  aClass = Class.send( @deserialize, table_data.obj_class )
 	  object = aClass.send( @deserialize, table_data.obj )
-	  if read_only
-	    yield object
-	  else
-	    return object
-	  end
+	  return object
 	end
 
 	def add_indexes ( *indexes )
