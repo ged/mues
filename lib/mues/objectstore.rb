@@ -153,6 +153,7 @@ class ObjectStore
 	  
 	  @database = database || create_database(@filename)
 	  @table = @database[-1]
+		@gc = ObjectStoreGC.new(self, :os_gc_mark)
 	end
 	
 	######

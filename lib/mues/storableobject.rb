@@ -71,6 +71,12 @@ class StorableObject < PolymorphicObject; include AbstractClass
     raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
     @objectStoreID = MD5.new( raw ).hexdigest
   end
+  
+  ### Check to see if this object needs to be deleted by the ObjectStoreGC.
+  ###   return true: object goes away
+  def os_gc_mark
+	  false
+  end
 
 end
 

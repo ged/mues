@@ -42,57 +42,109 @@
 # * Martin Chase <stillflame@FaerieMUD.org>
 #
 
+require "sync"
+
 class ObjectStoreGC
 
-  attr_accessor :mark, :delay, :trash_rate, :objectStore
-  
-  #########
-  protected
-  #########
-
+ 
   ### Initialize a new ObjectStoreGC object
   ### arguments:
   ###   objectStore - the ObjectStore to 'delete' objects to
   ###   mark - the symbol of the method to be used for 'mark'ing objects
-  ###   trash_rate - the percent of memory allowed to be trash
+  ###   trash_ratio - the percent of memory allowed to be trash
   ###   delay - the (seconds) delay between GC invocations
-  def initialize(objectStore, mark = nil, trash_rate = 0.1, delay = 5)
-	@objectStore = objectStore
-    @mark = mark
-    @delay = delay
-    @trash_rate = trash_rate
+  def initialize(objectStore, mark = nil, trash_ratio = 0.1, delay = 50)
+	  @objectStore = objectStore
+	  @active_objects = @objectStore.active_objects
+	  @mark = mark
+	  @delay = delay
+	  @trash_ratio = trash_ratio
+	  @mutex = Sync.new
+	  @thread = Thread.new { _gc_routine() }
+	  @shutting_down = false
   end
 
   ######
   public
   ######
+
+   def mark
+	  @mutex.sychronize( Sync::SH ) {
+		  @mark
+	  }
+  end
+  
+  def trash_ratio
+	  @mutex.sychronize( Sync::SH ) {
+		  @trash_ratio
+	  }
+  end
+
+  def trash_ratio= (val)
+	  unless val.kind_of?(Float) and val.between?(0,1) raise TypeError end
+	  @mutex.sychronize( Sync::EX ) {
+		  @trash_ratio = val
+	  }
+  end
   
   ### Runs the GC right now
   ### arguments:
-  ###   trash_rate - the percent of memory aloowed before GC stops
-  def start (trash_rate = @trash_rate)
-	  @trash_rate = trash_rate if trash_rate
-  end
+  ###   trash_ratio - the percent of memory aloowed before GC stops
+  alias :start :trash_ratio=
 
   ### Kills the garbage collector, first storing all active objects
   def shutdown
 	  #oi.  what should happen here, i don't know.
 	  #it'll need to go through every object it's keeping track of, and
 	  #'delete' them into the database.
+	  @shutting_down = true
+	  @thread.join
   end
 
   ### Registers object(s) with the GC
   def register ( *objects )
-	  @objects << objects.flatten
+	  @mutex.synchronize( Sync::EX ) {
+		  @objects << objects.flatten
+	  }
   end
 
+  #########
+  protected
+  #########
+  
+  def _gc_routine
+	  until(@shutting_down)
+		  loop_time = Time.now
+		  until (Time.new - loop_time >= @delay) Thread.stop end
+		  _collect
+	  end
+  end
+
+  def _collect
+	  @mutex.synchronize( Sync::SH ) {
+		  @active_objects.each {|o|
+			  if(o.refCount == 1 or o.send(@mark))
+				  @mutex.synchronize( Sync::EX ) {
+					  @objectStore.store(o)
+					  o.become(ShallowReference.new( o.objectStoreID ))
+				  }
+			  end
+		  }
+	  }
+  end
+
+  #######
+  private
+  #######
+
+  
 end
 
 #######
 #NOTES#
 #######
 
-# Should the delay be fixed, or dependant on the trash_rate vs. actual fill
+# Should the delay be fixed, or dependant on the trash_ratio vs. actual fill
 # level (Fx: as the fill level is approached, decrease the delay to compensate
 # for this).  the example had the fill level style....  hmmm.  it does seem
 # cooler.
