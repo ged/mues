@@ -119,7 +119,7 @@ module MUES
 
 			# Get the timeout from the config, and if there is one, create a
 			# scheduled event to kill us after the timeout expires
-			if timeout > 0 
+			if @params[:timeout] > 0 
 				@timeoutEvent = 
 					MUES::LoginFailureEvent::new( self,
 					"Timeout (#{@params[:timeout]} seconds)." )
