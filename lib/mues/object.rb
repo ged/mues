@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
+# $Id: object.rb,v 1.12 2004/02/29 18:33:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,9 +79,41 @@ class Class
 end
 
 
+### Add some stuff to the String class to allow easy transformation to Regexp
+### and in-place interpolation.
+class String
+	def to_re( casefold=false, extended=false )
+		return Regexp::new( self.dup )
+	end
+
+	### Ideas for String-interpolation stuff courtesy of Hal E. Fulton
+	### <hal9000@hypermetrics.com> via ruby-talk
+
+	### Interpolate any '#{...}' placeholders in the string within the given
+	### +scope+ (a Binding object).
+    def interpolate( scope )
+        unless scope.is_a?( Binding )
+            raise TypeError, "Argument to interpolate must be a Binding, not "\
+                "a #{scope.class.name}"
+        end
+
+		# $stderr.puts ">>> Interpolating '#{self}'..."
+
+        copy = self.gsub( /"/, %q:\": )
+        eval( '"' + copy + '"', scope )
+	rescue Exception => err
+		nicetrace = err.backtrace.find_all {|frame|
+			/in `(interpolate|eval)'/i !~ frame
+		}
+		Kernel::raise( err, err.message, nicetrace )
+    end
+
+end
+
+
 require 'mues/exceptions'
 require 'mues/mixins'
-require 'mues/log'
+require 'mues/logger'
 
 module MUES
 
@@ -92,8 +124,8 @@ module MUES
 		include Comparable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.12 2004/02/29 18:33:25 deveiant Exp $
 
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
@@ -158,8 +190,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.12 2004/02/29 18:33:25 deveiant Exp $
 
 
 		#############################################################
@@ -185,9 +217,9 @@ module MUES
 		def self::makeFinalizer( objDesc )
 			return Proc.new {
 				if Thread.current != Thread.main
-					MUES::Log.debug {"[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."}
+					MUES::Logger.debug {"[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."}
 				else
-					MUES::Log.debug {"[Main Thread]: " + objDesc + " destroyed."}
+					MUES::Logger.debug {"[Main Thread]: " + objDesc + " destroyed."}
 				end
 			}
 		end
@@ -226,7 +258,7 @@ module MUES
 			# method.
 			class_eval %Q{
 				def #{oldSym.to_s}( *args )
-					self.log.warn "warning: %s: #{warningMessage}" % caller(1)
+					self.log.warning "%s: #{warningMessage}" % caller(1)
 					send( #{newSym.inspect}, *args )
 				rescue => err
 					# Mangle exceptions to point someplace useful
@@ -262,7 +294,7 @@ module MUES
 			# method.
 			class_eval %Q{
 				def self::#{oldSym.to_s}( *args )
-					MUES::Log.warn "warning: %s: #{warningMessage}" % caller(1)
+					MUES::Logger.warning "%s: #{warningMessage}" % caller(1)
 					send( #{newSym.inspect}, *args )
 				rescue => err
 					# Mangle exceptions to point someplace useful
@@ -314,9 +346,9 @@ module MUES
 		protected
 		#########
 
-		### Return the MUES::Log logger object for the receiving class.
+		### Return the MUES::Logger object for the receiving class.
 		def log
-			MUES::Log[ self.class.name ] || MUES::Log::new( self.class.name )
+			MUES::Logger[ self.class.name ] || MUES::Logger::new( self.class.name )
 		end
 	end # class Object
 
