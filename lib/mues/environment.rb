@@ -57,7 +57,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.18 2003/06/06 22:21:39 deveiant Exp $
+# $Id: environment.rb,v 1.19 2003/09/12 04:13:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -89,8 +89,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
-		Rcsid = %q$Id: environment.rb,v 1.18 2003/06/06 22:21:39 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
+		Rcsid = %q$Id: environment.rb,v 1.19 2003/09/12 04:13:23 deveiant Exp $
 
 
 		### Class variables and methods
@@ -104,7 +104,7 @@ module MUES
 
 		### Return an array of environment class names which have been loaded
 		def self.listEnvClasses
-			return self.getDerivativeClasses.collect {|klass|
+			return self.derivativeClasses.collect {|klass|
 				klass.name.sub( /Environment/, '' )
 			}
 		end
