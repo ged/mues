@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: role.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
+# $Id: role.rb,v 1.8 2002/10/28 00:04:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -41,19 +41,19 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: role.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: role.rb,v 1.8 2002/10/28 00:04:45 deveiant Exp $
 
-		### Create and return a role object for the given environment with the name,
-		### and description string specified.
-		def initialize( anEnvironment, aNameString, aDescString )
-			checkType( anEnvironment, MUES::Environment )
-			checkType( aNameString, ::String )
-			checkType( aDescString, ::String )
+		### Create and return a role object for the given <tt>environment</tt> with the
+		### <tt>name</tt> and <tt>description</tt> string specified.
+		def initialize( environment, name, description )
+			checkType( environment, MUES::Environment )
+			checkType( name, ::String )
+			checkType( description, ::String )
 
-			@environment	= anEnvironment
-			@name			= aNameString
-			@description	= aDescString
+			@environment	= environment
+			@name			= name
+			@description	= description
 
 			super()
 		end
