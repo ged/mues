@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.18 2002/10/31 02:18:55 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.19 2003/09/12 04:31:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -27,7 +27,6 @@
 
 require 'sync'
 require 'socket'
-require 'poll'
 
 require 'mues/Object'
 require 'mues/Events'
@@ -49,13 +48,13 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.18 2002/10/31 02:18:55 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.19 2003/09/12 04:31:11 deveiant Exp $
 		DefaultSortPosition = 15
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
-		# The poll events to react to
-		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN|Poll::OUT
+		# The reactor events to react to
+		HandledReactorEvents = [ :read, :write, :error ]
 
 		# Legibility constants
 		NULL = "\000"
@@ -73,15 +72,15 @@ module MUES
 
 
 		### Create and return a new socket output filter with the specified
-		### <tt>socket</tt> (an IPSocket object), <tt>pollProxy</tt>
-		### (MUES::PollProxy object), and an optional <tt>sortOrder</tt>.
-		def initialize( socket, pollProxy, originListener, sortOrder=DefaultSortPosition )
+		### <tt>socket</tt> (an IPSocket object), <tt>reactorProxy</tt>
+		### (MUES::ReactorProxy object), and an optional <tt>sortOrder</tt>.
+		def initialize( socket, reactorProxy, originListener, sortOrder=DefaultSortPosition )
 			checkType( socket, IPSocket )
-			checkType( pollProxy, MUES::PollProxy )
+			checkType( reactorProxy, MUES::ReactorProxy )
 			checkType( originListener, MUES::SocketListener )
 
 			@socket = socket
-			@pollProxy = pollProxy
+			@reactorProxy = reactorProxy
 			super( socket.peeraddr[2], originListener, sortOrder )
 
 			@readBuffer		= ''
@@ -124,7 +123,7 @@ module MUES
 		### Handle the specified input <tt>events</tt> (MUES::InputEvent objects).
 		def handleInputEvents( *events )
 			return events unless @state == State::CONNECTED
-			return nil unless @pollProxy.registered?
+			return nil unless @reactorProxy.registered?
 
 			return super( *events )
 		end
@@ -140,8 +139,8 @@ module MUES
 			# If we're not in a connected state, just return the array we're given
 			return events unless @state == State::CONNECTED
 
-			# If we're no longer registered with the Poll object, we're finished.
-			return nil unless @pollProxy.registered?
+			# If we're no longer registered with the Reactor object, we're finished.
+			return nil unless @reactorProxy.registered?
 
 			# Lock the output event queue and add the events we've been given to it
 			debugMsg( 5, "Appending '" + events.collect {|e| e.data }.join("") + "' to the output buffer." )
@@ -172,8 +171,8 @@ module MUES
 			results = super( stream )
 
 			@writeMutex.synchronize( Sync::EX ) {
-				@pollProxy.register( Poll::IN, method(:handlePollEvent) )
-				@pollProxy.addMask( Poll::OUT ) unless @writeBuffer.empty?
+				@reactorProxy.register( :read, &method(:handleReactorEvent) )
+				@reactorProxy.enableEvents( :write ) unless @writeBuffer.empty?
 			}
 			@state = State::CONNECTED
 
@@ -182,7 +181,7 @@ module MUES
 
 		### Shut the filter down, disconnecting from the remote host.
 		def stop( stream )
-			self.sendShutdownMessage if @pollProxy.registered?
+			self.sendShutdownMessage if @reactorProxy.registered?
 			self.shutdown
 			return super( stream )
 		end
@@ -194,7 +193,7 @@ module MUES
 		#########
 
 		### Append the specified <tt>strings</tt> to the output buffer and mask
-		### the Poll object to receive writable condition events.
+		### the Reactor object to receive writable condition events.
 		def appendToWriteBuffer( *strings )
 			data = strings.join("")
 
@@ -204,44 +203,38 @@ module MUES
 				# If there's something in the output buffer, register this filter as
 				# interested in its socket being writable.
 				unless @writeBuffer.empty?
-					@pollProxy.addMask( Poll::OUT )
+					@reactorProxy.enableEvents( :write )
 				end
 			}
 		end
 
 
-		### Handler routine for Poll events. Reads data from queued
+		### Handler routine for Reactor events. Reads data from queued
 		### output events, sends it to the remote client, and creates new input
 		### events from user input via the socket.
-		def handlePollEvent( socket, mask )
-			debugMsg( 5, "Got poll event: #{mask.class.name}: %x" % mask )
+		def handleReactorEvent( socket, event )
+			debugMsg( 5, "Got reactor event: #{event.class.name}: %x" % event )
 
 			### Handle invalid file descriptor
-			if (mask & (Poll::NVAL|Poll::HUP)).nonzero?
-				err = (mask == Poll::NVAL ? "Invalid file descriptor" : "Hangup")
-				self.log.error( "#{err} for #{socket.inspect}" )
-				self.shutdown
-			end
-
-			### Handle socket errors
-			if (mask & Poll::ERR).nonzero?
+			case event
+			when :error
 				so_error = socket.getsockopt( Socket::SOL_SOCKET, Socket::SO_ERROR )
-				self.log.error( "Socket error: #{so_error.inspect}" )
-			end
+				self.log.error( "Socket error: #{so_error.inspect}." )
+				self.shutdown
 
 			### Read any input from the socket if it's ready
-			if (mask & Poll::IN).nonzero?
+			when :read
 				readData = socket.sysread( @@MTU )
-				debugMsg( 5, "Read %d bytes in poll event handler (readData = %s)." %
+				debugMsg( 5, "Read %d bytes in reactor event handler (readData = %s)." %
 						[ readData.length, readData.inspect ] )
 				handleRawInput( readData )
-			end
 
 			### Write any buffered output to the socket if we have output
 			### pending and the socket is writable
-			if (mask & Poll::OUT).nonzero?
-				debugMsg( 5, "Writing %d bytes in poll event handler (@writebuffer = %s)." % 
-						  [ @writeBuffer.length, @writeBuffer.inspect ])
+			when :write
+				debugMsg( 5, "Writing %d bytes in reactor event handler "\
+					"(@writebuffer = %s)." %
+					[ @writeBuffer.length, @writeBuffer.inspect ])
 
 				@writeMutex.synchronize(Sync::EX) {
 					bytesWritten = socket.syswrite( @writeBuffer )
@@ -249,16 +242,14 @@ module MUES
 					@writeBuffer[0 .. bytesWritten] = ''
 
 					if @writeBuffer.empty?
-						debugMsg( 4, "Removing Poll::OUT mask" )
-						@pollProxy.removeMask( Poll::OUT )
+						debugMsg( 4, "Disabling write event" )
+						@reactorProxy.disableEvents( :write )
 					end
 				}
-			end
 
-			# If the mask contains bits we don't handle, log them
-			if ( (mask ^ HandledBits) & mask ).nonzero?
-				self.log.notice( "Unhandled Poll event in #{self.class.name}: %o" %
-								 ((mask ^ HandledBits) & mask) )
+			else
+				self.log.notice "Unhandled Reactor event in %s: %p" %
+					[ self.class.name, event ]
 			end
 
 		rescue => e
@@ -273,10 +264,10 @@ module MUES
 
 			@state = State::DISCONNECTED
 
-			# Unregister the filter from the poll object, which indicates that
-			# it is to be removed from the stream, if it's not already being
-			# done (ie., from #stop).
-			@pollProxy.unregister
+			# Unregister the filter from the reactor object, which indicates
+			# that it is to be removed from the stream, if it's not already
+			# being done (ie., from #stop).
+			@reactorProxy.unregister
 
 			@socket.flush
 			@socket.shutdown( 2 )

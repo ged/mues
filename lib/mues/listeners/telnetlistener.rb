@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetlistener.rb,v 1.4 2002/10/23 02:14:02 deveiant Exp $
+# $Id: telnetlistener.rb,v 1.5 2003/09/12 04:32:20 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,8 +38,8 @@ module MUES
 	class TelnetListener < MUES::SocketListener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: telnetlistener.rb,v 1.4 2002/10/23 02:14:02 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: telnetlistener.rb,v 1.5 2003/09/12 04:32:20 deveiant Exp $
 
 		### Create a new TelnetListener object. See
 		### MUES::SocketListener#initialize for the list of valid
@@ -57,10 +57,10 @@ module MUES
 
 		### Listener callback: Create a new MUES::TelnetOutputFilter from the
 		### client socket after calling #accept on the listener socket.
-		def createOutputFilter( poll )
+		def createOutputFilter( reactor )
 			clientSocket = @io.accept
-			pollProxy = MUES::PollProxy::new( poll, clientSocket )
-			filter = MUES::TelnetOutputFilter::new( clientSocket, pollProxy, self )
+			reactorProxy = MUES::ReactorProxy::new( reactor, clientSocket )
+			filter = MUES::TelnetOutputFilter::new( clientSocket, reactorProxy, self )
 			filter.debugLevel = self.filterDebugLevel
 
 			return filter

@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.14 2002/10/31 02:19:00 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.15 2003/09/12 04:31:20 deveiant Exp $
 # 
 # == Authors
 # 
@@ -58,11 +58,13 @@ module MUES
 		end
 		include StateConstants
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.14 2002/10/31 02:19:00 deveiant Exp $
+		# CVS version tag
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
 
-		### List of supported options and whether we ask for or offer them
+		# CVS id tag
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.15 2003/09/12 04:31:20 deveiant Exp $
+
+		# List of supported options and whether we ask for or offer them
 		Supported = {
 			TELOPT_NAWS		=> 'ask',
 			TELOPT_TTYPE	=> 'ask',
@@ -75,10 +77,15 @@ module MUES
 		# IOEventStream sort order
 		DefaultSortPosition = 15
 
+		
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
+
 		### Create and return a new telnet output filter with the specified
-		### <tt>socket</tt> (an IPSocket object), <tt>pollProxy</tt>
-		### (MUES::PollProxy object), and an optional <tt>sortOrder</tt>.
-		def initialize( socket, pollProxy, originListener=nil, order=DefaultSortPosition )
+		### <tt>socket</tt> (an IPSocket object), <tt>reactorProxy</tt>
+		### (MUES::ReactorProxy object), and an optional <tt>sortOrder</tt>.
+		def initialize( socket, reactorProxy, originListener=nil, order=DefaultSortPosition )
 			@cmdContBuffer	= ''
 			@terminalType	= "dumb"
 			@stateTrace		= []
@@ -91,7 +98,7 @@ module MUES
 			@oobWriteBuffer	= ''
 			@oobReadBuffer	= ''
 
-			super( socket, pollProxy, originListener, order )
+			super( socket, reactorProxy, originListener, order )
 		end
 
 
@@ -320,8 +327,6 @@ module MUES
 		### Send the specified +message+ as out-of-band urgent data <em>(currently
 		### unimplemented)</em>.
 		def sendOutOfBand( message )
-			# This will eventually just append to the OOB write buffer and add
-			# the Poll::WRBAND mask to the pollProxy
 			raise UnimplementedMethodError
 		end
 

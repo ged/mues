@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.7 2002/10/31 02:19:18 deveiant Exp $
+# $Id: socketlistener.rb,v 1.8 2003/09/12 04:32:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -47,8 +47,8 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.7 2002/10/31 02:19:18 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.8 2003/09/12 04:32:11 deveiant Exp $
 
 		### Create a new SocketListener object with the specified
 		### <tt>name</tt>. This listener understands the following
@@ -94,7 +94,7 @@ module MUES
 			# library and set the wrappered flag.
 			if parameters['use-wrapper']
 				require 'tcpwrap'
-				@wrappered			= true
+				@wrappered = true
 			end
 
 			self.log.info( "Creating a %s on %s:%d%s." %
@@ -106,6 +106,8 @@ module MUES
 			self.log.debug {"Creating socket..."}
 			socket = TCPServer::new( @bindAddr, @bindPort )
 			self.log.debug {"...done."}
+
+			# If the socket's wrappered, stick it in a TCPWrapper.
 			if self.wrappered?
 				self.log.debug {"Wrapping socket..."}
 				socket = TCPWrapper::new( @wrapName, socket, @wrapIdent, @wrapIdentTimeout )
@@ -157,10 +159,10 @@ module MUES
 
 		### Listener callback: Create and return a new MUES::SocketOutputFilter
 		### from the client socket after calling #accept on the listener socket.
-		def createOutputFilter( poll )
+		def createOutputFilter( reactor )
 			clientSocket = @io.accept
-			pollProxy = MUES::PollProxy::new( poll, clientSocket )
-			filter = MUES::SocketOutputFilter::new( clientSocket, pollProxy, self )
+			reactorProxy = MUES::ReactorProxy::new( reactor, clientSocket )
+			filter = MUES::SocketOutputFilter::new( clientSocket, reactorProxy, self )
 			filter.debugLevel = self.filterDebugLevel
 
 			return filter
@@ -169,12 +171,18 @@ module MUES
 
 		### Listener callback: Dispose of the given (inactive) <tt>filter</tt>
 		### (a MUES::SocketOutputFilter object) if need be.
-		def releaseOutputFilter( pollObj, filter )
+		def releaseOutputFilter( reactor, filter )
 			self.log.notice "Filter %s (%s) released to %s" % 
 				[ filter.muesid, filter.class.name, self.class.name ]
 			return []
 		end
 
+
+		### Halt the listener. No more incoming connections will be accepted.
+		def stop
+			@io.shutdown
+			super
+		end
 
 
 		#########
