@@ -2,9 +2,9 @@
 #
 # Unit tests for the MUES::CommandShell.
 #
-# == Rcsid
+# == Subversion ID
 # 
-#  $Id: CommandShell.tests.rb,v 1.7 2003/10/13 06:26:54 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

@@ -33,9 +33,9 @@
 #		end
 #	end
 # 
-# == Rcsid
+# == Subversion ID
 # 
-#  $Id: muestestcase.rb,v 1.10 2003/10/13 06:26:55 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
