@@ -16,7 +16,7 @@
 # 
 # == Rcsid
 # 
-# $Id: outputfilter.rb,v 1.1 2002/08/29 07:17:59 deveiant Exp $
+# $Id: outputfilter.rb,v 1.2 2002/10/25 03:13:22 deveiant Exp $
 # 
 # == Authors
 # 
@@ -37,8 +37,8 @@ module MUES
 	class OutputFilter < MUES::IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: outputfilter.rb,v 1.1 2002/08/29 07:17:59 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: outputfilter.rb,v 1.2 2002/10/25 03:13:22 deveiant Exp $
 		DefaultSortPosition = 5
 
 		### Create a new OutputFilter object with the specified
@@ -69,6 +69,15 @@ module MUES
 
 		# The listener that created this filter
 		attr_reader :originListener
+
+
+		### Returns <tt>true</tt> if the filter's connection should be
+		### considered 'local'; if it is 'local', it may be given special
+		### capabilities such as connecting as the 'init-mode' admin user,
+		### etc. It returns <tt>false</tt> by default.
+		def isLocal?
+			false
+		end
 
 
 		### Shut the filter down, severing the connection with the output

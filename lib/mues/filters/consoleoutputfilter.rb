@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.9 2002/09/12 12:36:56 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.10 2002/10/25 03:13:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,8 +39,8 @@ module MUES
 	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.9 2002/09/12 12:36:56 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.10 2002/10/25 03:13:16 deveiant Exp $
 		DefaultSortPosition = 300
 
 		# Legibility constants
@@ -75,13 +75,20 @@ module MUES
 			@writeMutex = Sync.new
 
 			@shutdown = false
-			super( "FD%d" % io.fileno, sortOrder )
+			super( "Console (fd=%d)" % io.fileno, sortOrder )
 		end
 
 
 		######
 		public
 		######
+
+		### The console is, by definition, on the local machine, so this
+		### overridden version always returns <tt>true</tt>.
+		def isLocal?
+			true
+		end
+
 
 		### Handle the specified input <tt>events</tt> (MUES::InputEvent objects).
 		def handleInputEvents( *events )
