@@ -12,11 +12,12 @@
 # 
 # == Rcsid
 # 
-# $Id: attribute.rb,v 1.6 2002/05/16 04:04:45 deveiant Exp $
+# $Id: attribute.rb,v 1.7 2002/06/04 06:50:34 deveiant Exp $
 # 
 # == Authors
 # 
 # * Michael Granger <ged@FaerieMUD.org>
+# * Alexis Lee <red@FaerieMUD.org>
 # 
 #:include: COPYRIGHT
 #
@@ -40,8 +41,8 @@ module Metaclass
 		DEFAULT_SCOPE = Scope::INSTANCE
 		DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: attribute.rb,v 1.6 2002/05/16 04:04:45 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: attribute.rb,v 1.7 2002/06/04 06:50:34 deveiant Exp $
 
 		### Create and return a new attribute with the specified name. If the
 		### optional <tt>validTypes</tt> argument is specified, the attribute
@@ -106,6 +107,11 @@ module Metaclass
 		### <tt>otherAttribute</tt>. In truth, this method will only return '0'
 		### if <tt>otherAttribute</tt> is the same as the receiver.
 		def <=>( otherAttribute )
+			raise TypeError,
+				"Cannot compare an attribute with #{otherAttribute.inspect}:"+
+				"#{otherAttribute.type.name}" unless
+				otherAttribute.kind_of?( Metaclass::Attribute )
+
 			return (@scope <=> otherAttribute.scope).nonzero? ||
 				(@name <=> otherAttribute.name).nonzero? ||
 				self.id <=> otherAttribute.id
@@ -147,6 +153,166 @@ module Metaclass
 		end
 		alias :makeMutatorOp :getMutatorOp
 
-	end
 
-end
+
+		### Mixin module that provides Metaclass::Attribute accessor methods for
+		### classes which include them.
+		module Methods
+
+			### Initialize @operations and @classOperations instance variables
+			### for including classes (or ones that call super(), anyway.
+			def initialize( *args ) # :notnew
+				@attributes			= {}
+				@classAttributes	= {}
+
+				super( *args )
+			end
+
+
+			######
+			public
+			######
+
+			# The Hash of attributes belonging to this class, keyed by name
+			attr_reader :attributes
+
+			# The Hash of class attributes belonging to this class, keyed by name
+			attr_reader :classAttributes
+
+
+			### Test for the attribute specified. Returns true if instances of the
+			### class have an attribute with the specified attribute, which may be a
+			### Metaclass::Attribute object, or a String containing the name of the
+			### attribute to test for.
+			def hasAttribute?( attribute )
+				if attribute.kind_of? Metaclass::Attribute
+					return true if @attributes.has_value? attribute
+				else
+					return @attributes.has_key? attribute.to_s
+				end
+			end
+
+			
+			### Test for the class attribute specified. Returns true if instances of
+			### the class have an attribute with the specified attribute, which may
+			### be a Metaclass::Attribute object, or a String containing the name of
+			### the attribute to test for.
+			def hasClassAttribute?( attribute )
+				if attribute.kind_of? Metaclass::Attribute
+					return true if @classAttributes.has_value? attribute
+				else
+					return @classAttributes.has_key? attribute.to_s
+				end
+			end
+
+
+			### Add the specified attribute (a Metaclass::Attribute object) to the
+			### class. If the optional +name+ argument is given, it will be used as
+			### the association name instead of the attribute's own name. If the
+			### attribute's visibility is either PUBLIC or PROTECTED, and there
+			### aren't already synonymous operations defined, accessor and mutator
+			### operation objects will be added as well. Returns true if the
+			### attribute was successfully added.
+			def addAttribute( attribute, name=nil, readOnly=false )
+				raise ArgumentError, "Illegal argument 1: Metaclass::Attribute object." unless
+					attribute.kind_of?( Metaclass::Attribute )
+
+				# Normalize the name
+				name ||= attribute.name
+
+				# Add attribute and accessor/mutator if the receiver supports
+				# operations.
+				if self.class.included_modules.include? Metaclass::Operation::Methods
+
+					# Add instance methods if the attribute is scoped to the
+					# instance.
+					if attribute.scope == Scope::INSTANCE
+						@attributes[ name ] = attribute
+
+						# Add any accessors/mutators which are called for
+						if attribute.visibility >= Visibility::PROTECTED
+							# If there's not already an accessor, add one
+							unless self.hasOperation? name
+								self.addOperation( attribute.makeAccessorOp, name )
+							end
+
+							# ...same for a mutator unless the attribute's read-only
+							unless readOnly || self.hasOperation?("#{name}=")
+								self.addOperation( attribute.makeMutatorOp, "#{name}=" )
+							end
+						end
+
+					# Otherwise, add class accessors
+					else
+						@classAttributes[ name ] = attribute
+
+						# Add any accessors/mutators which are called for
+						if attribute.visibility >= Visibility::PROTECTED
+							# If there's not already an accessor, add one
+							unless self.hasClassOperation? name
+								self.addOperation( attribute.makeAccessorOp, name )
+							end
+
+							# ...same for a mutator unless the attribute's read-only
+							unless readOnly || self.hasClassOperation?("#{name}=")
+								self.addOperation( attribute.makeMutatorOp, "#{name}=" )
+							end
+						end
+					end
+				end
+
+				return true
+			end
+
+
+			### Remove the specified attribute (a Metaclass::Attribute object or a
+			### String containing the name of the attribute), from the class. If an
+			### accessor and/or mutator was added to the class by the attribute,
+			### those too will be removed. Returns the removed attribute on success,
+			### or <tt>nil</tt> if the specified attribute was not found.
+			def removeAttribute( attribute )
+				raise ArgumentError,
+					"Expected a Metaclass::Attribute or a String, not a #{attribute.type.name}" unless
+					attribute.kind_of?( Metaclass::Attribute ) || attribute.kind_of?( String )
+
+				# Look for and remove the specified attribute
+				rval = @attributes.find {|name,attrObj|
+					attrObj.eql?( attribute ) || name.eql?( attribute )
+				}
+
+				# If we found the pair, remove them and their associated operations, if present
+				if rval
+					rval = @attributes.delete( rval[0] )
+					if self.class.included_modules.include? Metaclass::Operation::Methods
+						self.removeOperation( rval.makeAccessorOp )
+						self.removeOperation( rval.makeMutatorOp )
+					end
+				end
+
+				return rval
+			end
+
+
+			### Return the code necessary to add the receiver's class attributes
+			### to the current scope
+			def classAttributesDeclaration( includeComments=true )
+				decl = []
+
+				unless @classAttributes.empty?
+					decl << "### Class variables" if includeComments
+					decl << @classAttributes.sort {|x,y|
+						x[1] <=> y[1]
+					}.collect {|varname,var|
+						"@@#{varname} = " + var.defaultValue.inspect
+					}
+					
+					decl << ""
+				end
+
+				return decl
+			end			
+
+		end # module Methods
+	end # class Attribute
+
+end # module Metaclass
