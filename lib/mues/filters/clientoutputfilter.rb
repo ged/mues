@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: clientoutputfilter.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+# $Id: clientoutputfilter.rb,v 1.6 2002/08/29 07:19:59 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,17 +25,17 @@
 #
 
 require "mues/Object"
-require "mues/filters/IOEventFilter"
+require "mues/filters/OutputFilter"
 
 module MUES
 
 	### A derivative of the MUES::IOEventFilter class for processing IO for a
 	### dedicated game client. <em>This class is currently just a
 	### placeholder.</em>
-	class ClientOutputFilter < IOEventFilter
+	class ClientOutputFilter < MUES::OutputFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: clientoutputfilter.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: clientoutputfilter.rb,v 1.6 2002/08/29 07:19:59 deveiant Exp $
 		DefaultSortPosition = 101
 
 	end # class ClientOutputFilter
