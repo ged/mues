@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.19 2003/11/21 22:14:18 stillflame Exp $
+#	$Id: utils.rb,v 1.20 2003/11/23 04:37:57 stillflame Exp $
 #
 #	Copyright (c) 2001-2003, The FaerieMUD Consortium.
 #
@@ -201,16 +201,13 @@ module UtilityFunctions
 	### returns true.  An optional failure message can also be passed in.
 	def promptWithDefault( promptString, default, failure_msg="Try again.", &test )
 		response = prompt( "%s [%s]" % [ promptString, default ] )
-		if response.empty?
-			return default
-		else
-			until test.call(response)
-				errorMessage(faiure_msg)
-				message("\n")
-				response = promptWithDefault( promptString, default )
-			end if test
-			return response
-		end
+		response = default if response.empty?
+		until test.call(response)
+			errorMessage(faiure_msg)
+			message("\n")
+			response = promptWithDefault( promptString, default )
+		end if test
+		return response
 	end
 
 	### Search for the program specified by the given <tt>progname</tt> in the
