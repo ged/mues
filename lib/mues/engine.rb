@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.19 2002/09/15 00:08:13 deveiant Exp $
+# $Id: engine.rb,v 1.20 2002/09/27 16:12:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -114,9 +114,6 @@
 #
 # Please see the file COPYRIGHT for licensing details.
 #
-
-require "tracer"
-Tracer.off
 
 require "thread"
 require "sync"
@@ -173,8 +170,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.19 2002/09/15 00:08:13 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.20 2002/09/27 16:12:33 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -235,7 +232,7 @@ module MUES
 			@exceptionStackMutex	= Sync::new
 
 			@commandShellFactory	= nil
-			@engineObjectStore		= nil
+			@objectStore			= nil
 
 			super()
 		end
@@ -341,22 +338,154 @@ module MUES
 		end
 
 
+		### Check to be sure the Engine is running, and if not, raise an
+		### exception with a message containing the specified <tt>action</tt>.
+		def checkStateRunning( action="use it" )
+			return true if self.running?
+
+			action ||= "use it"
+			raise RuntimeError,
+				"The engine must be running to #{action}.",
+				caller(1)
+		end
+
+
+
+		#############################################################
+		###	E N V I R O N M E N T   A C C E S S O R S
+		#############################################################
+
 		### Returns an Arry of the names of the loaded environments
 		def getEnvironmentNames
 			return @environments.keys
 		end
 
 
-		### Get the loaded environment with the specified +name+.
-		def getEnvironment( name )
+		### Fetch a running environment by +name+. Returns +nil+ if no such
+		### environment is currently running.
+		def getEnvironmentByName( name )
+			checkSafeLevel( 3 )
 			checkType( name, ::String )
-			return @environments[name]
+			@environments[ name.downcase ]
 		end
 
+
+		### Fetch any running environments of the specified <tt>envClass</tt>,
+		### which can be either a Class object or a String containing the name
+		### of a class. If <tt>includeInherited</tt> is true, subclasses of the
+		### specified class will also match.
+		def getEnvironmentsByClass( envClass, includeInherited=false )
+			checkSafeLevel( 3 )
+			checkType( envClass, ::Class, ::String )
+
+			if envClass.is_a?( ::String )
+				envClass = MUES::Environment::getSubclass( envClass )
+				return nil if envClass.nil?
+			end
+
+			@environments.find {|env|
+				op = includeInherited ? :>= : :==
+				env.class.send( op, envClass )
+			}
+		end
+
+
+
+		#############################################################
+		###	U S E R   A C C E S S O R S
+		#############################################################
+
+		### Fetch a list of the names of all users known to the server, both
+		### connected and unconnected.
+		def getUserNames
+			checkSafeLevel( 3 )
+			checkStateRunning( "get a list of user names" )
+			@objectStore.indexKeys( :username )
+		end
+
+
+		### Fetch a list of the names of all connected users
+		def getConnectedUserNames
+			checkSafeLevel( 3 )
+			@users.keys
+		end
+
+
+		### Fetch a connected user object by +name+. Returns +nil+ if no such
+		### user is currently connected.
+		def getUserByName( name )
+			checkSafeLevel( 2 )
+			checkStateRunning( "look up a user by name" )
+			self.fetchUser( name.to_s )
+		end
+
+
+		### Add a new user (a MUES::User object) to the Engine's objectstore.
+		def registerUser( user )
+			checkSafeLevel( 2 )
+			checkType( user, MUES::User )
+			checkStateRunning( "register a new user" )
+			@objectStore.store( user )
+		end
+
+
+		### Remove the specified user (a MUES::User oject) from the Engine's
+		### objectstore.
+		def unregisterUser( user )
+			checkSafeLevel( 2 )
+			checkType( user, MUES::User )
+			checkStateRunning( "unregister a user" )
+			@objectStore.remote( user )
+		end
+
+
+
+		#############################################################
+		###	L I S T E N E R   A C C E S S O R S
+		#############################################################
+
+		### Fetch a listener object by +name+. Returns +nil+ if no such listener
+		### is currently installed.
+		def getListenerByName( name )
+			checkSafeLevel( 3 )
+			@listeners[ name.downcase ]
+		end
+
+
+
+		#############################################################
+		###	G E N E R A L   I N F O R M A T I O N   M E T H O D S
+		#############################################################
+
+		### Return a multi-line string indicating the current status of the engine.
+		def statusString
+			status =	"#{@name}\n" 
+			status +=	" MUES Engine %s\n" % [ Version ]
+			status +=	" Up %0.2f seconds at tick %s " % [ Time.now - @startTime, @tick ]
+			status +=	" %d users logging in\n" % [ @loginSessions.length ]
+			@usersMutex.synchronize(Sync::SH) {
+				status +=	" %d users active, %d linkdead\n\n" % 
+					[ @users.find_all {|pl,st| st["status"] == "active"}.size,
+					  @users.find_all {|pl,st| st["status"] == "linkdead"}.size ]
+				status +=	"\n Users:\n"
+				@users.keys.each {|user|
+					status += "  #{user.to_s}\n"
+				}
+			}
+
+			status += "\n"
+			return status
+		end
+
+
+		#############################################################
+		###	E V E N T S   I N T E R F A C E
+		#############################################################
 
 		### Queue the given +events+ for dispatch.
 		def dispatchEvents( *events )
 			checkEachType( events, MUES::Event )
+			checkStateRunning( "dispatch events" )
 
 			# self.log.debug( "Dispatching #{events.length} events." )
 			pevents = events.find_all {|ev| ev.kind_of?(MUES::PrivilegedEvent)}
@@ -476,50 +605,6 @@ module MUES
 		end
 
 
-		### Return a multi-line string indicating the current status of the engine.
-		def statusString
-			status =	"#{@name}\n"
-			status +=	" MUES Engine %s\n" % [ Version ]
-			status +=	" Up %.2f seconds at tick %s " % [ Time.now - @startTime, @tick ] #. <- Wanky font-lock
-			status +=	" %d users logging in\n" % [ @loginSessions.length ]
-			@usersMutex.synchronize(Sync::SH) {
-				status +=	" %d users active, %d linkdead\n\n" % 
-					[ @users.find_all {|pl,st| st["status"] == "active"}.size,
-					  @users.find_all {|pl,st| st["status"] == "linkdead"}.size ]
-				status +=	"\n Users:\n"
-				@users.keys.each {|user|
-					status += "  #{user.to_s}\n"
-				}
-			}
-
-			status += "\n"
-			return status
-		end
-
-
-		### Fetch a connected user object by +name+. Returns +nil+ if no such
-		### user is currently connected.
-		def getUserByName( name )
-			checkSafeLevel( 3 )
-			@users.find {|u| u.username.downcase == name.downcase}
-		end
-
-
-		### Fetch a listener object by +name+. Returns +nil+ if no such listener
-		### is currently installed.
-		def getListenerByName( name )
-			checkSafeLevel( 3 )
-			@listeners.find {|u| u.listener.name.downcase == name.downcase}
-		end
-
-
-		### Fetch a running environment by +name+. Returns +nil+ if no such
-		### environment is currently running.
-		def getEnvironmentByName( name )
-			checkSafeLevel( 3 )
-			@environments.find {|u| u.environmentname.downcase == name.downcase}
-		end
-
 
 
 		#########
@@ -566,9 +651,9 @@ module MUES
 		### config (a MUES::Config object).
 		def setupObjectStore( config )
 			self.log.info( "Setting up Engine objecstore." )
-			@engineObjectStore = @config.createEngineObjectstore
-			@engineObjectStore.addIndexes( :class, :username )
-			self.log.info( "Created Engine objectstore: #{@engineObjectStore.to_s}" )
+			@objectStore = @config.createEngineObjectstore
+			@objectStore.addIndexes( :class, :username )
+			self.log.info( "Created Engine objectstore: #{@objectStore.to_s}" )
 		end
 
 
@@ -647,7 +732,7 @@ module MUES
 			# Load the configured environment classes
 			config.createConfiguredEnvironments.each {|env|
 				@environmentsMutex.synchronize( Sync::EX ) {
-					@environments[ env.name ] = env
+					@environments[ env.name.downcase ] = env
 				}
 			}
 
@@ -756,6 +841,8 @@ module MUES
 			checkType( instanceName, ::String )
 			results = []
 
+			instanceName.downcase!
+
 			@environmentsMutex.synchronize( Sync::SH ) {
 
 				# Make sure the environment specified isn't already loaded
@@ -788,6 +875,8 @@ module MUES
 		def unloadEnvironment( instanceName )
 			results = []
 
+			instanceName.downcase!
+
 			@environmentsMutex.synchronize( Sync::SH ) {
 
 				# Make sure the environment specified exists
@@ -800,7 +889,7 @@ module MUES
 					# Unload the environment object, reporting any errors
 					@environmentsMutex.synchronize( Sync::EX ) {
 						results << @environments[instanceName].shutdown()
-						@environments[instanceName] = nil
+						@environments.delete( instanceName )
 					}
 				end
 			}
@@ -937,16 +1026,23 @@ module MUES
 				begin
 					@tick += 1
 					debugMsg( 5, "In tick #{@tick}..." )
-					sleep tickLength
 					pendingEvents = getPendingEvents( @tick )
-					dispatchEvents( TickEvent.new(@tick), *pendingEvents )
+					dispatchEvents( TickEvent.new(@tick), *pendingEvents ) 
 				rescue StandardError => e
-					dispatchEvents( UntrappedExceptionEvent.new(e) )
+					if self.running?
+						dispatchEvents( UntrappedExceptionEvent.new(e) )
+					else
+						self.log.error "Untrapped exception in main loop in a "\
+							"non-running state: %s\n\t%s" %
+							[ e.message, e.backtrace.join("\n\t") ]
+					end
 					next
 				rescue Interrupt
 					dispatchEvents( UntrappedSignalEvent.new("INT") )
 				rescue SignalException => e
 					dispatchEvents( UntrappedSignalEvent.new(e) )
+				ensure
+					sleep tickLength if self.running?
 				end
 			end
 			self.log.notice( "Exiting event loop." )
@@ -1075,10 +1171,10 @@ module MUES
 			@usersMutex.synchronize( Sync::SH ) {
 
 				# Look up the user if there's not one already in the users table
-				unless @users.include? username
+				unless @users.keys.include? username
 					self.log.info "Looking up user record for '#{username}'"
 					@usersMutex.synchronize( Sync::EX ) {
-						results = @engineObjectStore.lookup( :class => MUES::User, :username => username )
+						results = @objectStore.lookup( :class => MUES::User, :username => username )
 						debugMsg( 2, "Results from user lookup => #{results.inspect}" )
 
 						self.log.warn( "Lookup of user '#{username}' returned #{results.length} object" ) if
