@@ -1,10 +1,17 @@
 #!/usr/bin/ruby -w
 
-require 'test/unit'
+begin
+	require 'muesunittest'
+rescue
+	require '../muesunittest'
+end
 
-class RequireTestCase < Test::Unit::TestCase
+require 'metaclasses'
 
-	def test_requires
+### Log tests
+class AARequireTestCase < MUES::TestCase
+
+	def test_00Requires
 		assert_nothing_raised { require 'metaclass/Constants' }
 		assert_instance_of Module, Metaclass
 
