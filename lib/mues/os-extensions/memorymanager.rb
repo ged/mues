@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.5 2002/08/29 07:31:06 deveiant Exp $
+# $Id: memorymanager.rb,v 1.6 2002/10/13 23:25:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,6 +79,9 @@ module MUES
 			attr_reader :running
 			alias :running? :running
 
+			# The Hash of objects in active memory, keyed by id.
+			attr_reader :activeObjects
+
 
 			### Get the object associated with the specified id from the objects
 			### registered with the MemoryManager.
@@ -86,6 +89,16 @@ module MUES
 				@mutex.synchronize( Sync::SH ) {
 					# @activeObjects[ *ids ]
 					ids.collect {|id| @activeObjects[id]}
+				}
+			end
+
+
+			### Returns all of the objects currently registered with the memory
+			### manager that are not shallow (ie., haven't been swapped into the
+			### backing store).
+			def unswappedObjects
+				@mutex.synchronize( Sync::SH ) {
+					@activeObjects.values.reject {|o| o.shallow?}
 				}
 			end
 
@@ -130,7 +143,7 @@ module MUES
 			def shutdown
 				@managerThread.raise Shutdown
 				@managerThread.join
-				return @activeObjects.values.reject {|o| o.shallow?}
+				return self.unswappedObjects
 			end
 
 
