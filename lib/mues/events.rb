@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.13 2002/10/23 02:05:10 deveiant Exp $
+# $Id: events.rb,v 1.14 2002/10/23 04:57:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -57,6 +57,7 @@ require "mues/events/UserEvents"
 require "mues/events/SystemEvents"
 require "mues/events/EnvironmentEvents"
 require "mues/events/ServiceEvents"
+require "mues/events/CommandEvents"
 
 module MUES
 
