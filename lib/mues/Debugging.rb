@@ -71,9 +71,9 @@ module Debuggable
 		when false
 			@debugLevel = 0
 		when Fixnum
-			level = 5 if level > 5
-			level = 0 if level < 0
-			@debugLevel = level
+			value = 5 if value > 5
+			value = 0 if value < 0
+			@debugLevel = value
 		else
 			raise TypeError, "Cannot set debugging level to #{value.to_s}"
 		end
