@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.11 2002/06/04 06:58:48 deveiant Exp $
+# $Id: eventqueue.rb,v 1.12 2002/07/12 15:10:28 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,8 +48,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.11 2002/06/04 06:58:48 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.12 2002/07/12 15:10:28 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2
@@ -57,6 +57,18 @@ module MUES
 		@@DefaultThreshold	= 0.2
 		@@DefaultSafeLevel	= 2
 
+		### Class methods
+		def self.createFromConfig( config )
+			checkType( config, MUES::Config::EventQueueSection )
+
+			return self.new( config.minworkers,
+							 config.maxworkers,
+							 config.threshold,
+							 config.safelevel )
+		end
+
+
+		### Constructor
 
 		### Create and return a new MUES::EventQueue object with the specified
 		### configuration. The queue will not be running -- you'll need to call
