@@ -1,7 +1,7 @@
 #
 # The help MUES::CommandShell command.
-# Time-stamp: <14-Sep-2002 08:02:18 deveiant>
-# $Id: help.cmd,v 1.2 2002/09/15 07:44:37 deveiant Exp $
+# Time-stamp: <17-Oct-2002 09:52:06 deveiant>
+# $Id: help.cmd,v 1.3 2002/10/23 02:17:09 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -46,12 +46,20 @@ description and its synonyms.
 	helpTable = context.shell.commandTable.getHelpTable()
 	rows << "Help topics:\n"
 
-	### Add a row or two for each table entry
-	helpTable.sort.each {|cmd,desc|
-		rows << "\t%20s : %s" % [ cmd, desc[0] ]
-		rows << " [Synonyms: %s]" % desc[1].join(', ') unless desc[1].empty?
-		rows << "\n"
+    # Find the maximum length of the commands
+	length = helpTable.keys.inject(0) {|len,key|
+		key.length > len ? key.length : len
 	}
+
+	# Add a row for each table entry
+	helpTable.sort.each {|cmd,desc|
+		row = "%#{length + 2}s : %s" % [ cmd, desc[0] ]
+		row << " [Synonyms: %s]" % desc[1].join(', ') unless desc[1].empty?
+		row << "\n"
+		rows.push( row )
+	}
+
+	rows << "\nYou can get more detailed help about a command with /help <command>\n"
   end
 
   rows << "\n"
