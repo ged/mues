@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.16 2003/05/12 18:41:29 deveiant Exp $
+# $Id: events.rb,v 1.17 2003/05/14 10:46:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -90,7 +90,7 @@ module MUES
 				# Search the event's class heirarchy for Event subclasses, and
 				# look up handler methods based on the class name
 				event.class.ancestors.find_all {|klass| 
-					klass <= Event
+					klass < Event
 				}.each {|klass|
 					eventType = klass.name.sub( /MUES::/, '' )
 					debugMsg( 2, "Checking for a handle#{eventType} method..." )
