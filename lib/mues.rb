@@ -157,13 +157,14 @@ module MUES
 		include AbstractClass
 
 		### Class constants
-		Version	= %q$Revision: 1.4 $
-		RcsId	= %q$Id: mues.rb,v 1.4 2001/03/29 08:58:22 deveiant Exp $
+		Version	= %q$Revision: 1.5 $
+		RcsId	= %q$Id: mues.rb,v 1.5 2001/04/06 08:19:20 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( *ignored )
 		protected
 		def initialize( *ignored )
 			@muesid = __GenerateMuesId()
+			@objectStoreData = nil
 		end
 
 		#######################################################################
@@ -171,6 +172,7 @@ module MUES
 		#######################################################################
 		public
 		attr_reader :muesid
+		attr_accessor :objectStoreData
 
 		### METHOD: lull
 		def lull
