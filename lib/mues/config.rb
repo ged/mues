@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/27 18:11:52 $">
+#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/27 18:21:18 $">
 #	
 # 	  <!-- General server configuration:
 # 		  server-name:			The name of the server
@@ -218,7 +218,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.20 2002/10/27 18:11:52 deveiant Exp $
+# $Id: config.rb,v 1.21 2002/10/27 18:21:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -255,8 +255,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.20 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.20 2002/10/27 18:11:52 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.21 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.21 2002/10/27 18:21:18 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -1021,7 +1021,8 @@ module MUES
 			# The Array of directories to search in when looking for
 			# environments
 			attr_accessor :envPath
-
+			alias_method :envpath, :envPath
+			alias_method :envpath=, :envPath=
 
 
 			#########
@@ -1050,12 +1051,18 @@ module MUES
 					}
 
 				when 'envpath'
+					# Remove the default if they've specified something
+					@envPath.clear
+
+					# Add each directory to the path array, doing PI-translation
+					# in the process.
 					elem.each_element {|dir|
 						raise MUES::ConfigError,
 							"Unknown element #{dir.name} in commandshell/commandpath" unless
 							dir.name = 'directory'
-						@envPath.unshift( self.processValue(dir) )
+						@envPath.push( self.processValue(dir) )
 					}
+					@envPath.uniq!
 
 				else
 					raise MUES::ConfigError,
@@ -1270,7 +1277,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/27 18:11:52 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/27 18:21:18 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
