@@ -30,9 +30,9 @@ your mileage may vary.
   RAA::		 http://www.ruby-lang.org/en/raa-list.rhtml?name=HashSlice
   Download:: http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2
 
-* Ruby-Poll (>= 0.02)- Object-oriented implementation of the poll(2) system call
+* Ruby-Poll (>= 0.03)- Object-oriented implementation of the poll(2) system call
   RAA::		 http://www.ruby-lang.org/en/raa-list.rhtml?name=Ruby-Poll
-  Download:: http://www.devEiate.org/code/Ruby-Poll-0.02.tar.bz2
+  Download:: http://www.devEiate.org/code/Ruby-Poll-0.03.tar.bz2
 
 * REXML (>= 2.5.1)- XML Processor
   Homepage:: http://www.germane-software.com/software/rexml/
