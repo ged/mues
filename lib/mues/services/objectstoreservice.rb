@@ -45,7 +45,6 @@ require "mues"
 require "mues/Service"
 require "mues/Events"
 require "mues/Exceptions"
-#:?: do i need to include the events, or does this even look at those objects?
 require "ObjectStoreEvents"
 require "ObjectStore"
 require "ObjectStoreGC"
@@ -58,8 +57,8 @@ module MUES
 
     ### Class constants
 	  #:!: MUES has its own, i shouldn't tread.
-#    Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-#    Rcsid = %q$Id: objectstoreservice.rb,v 1.5 2002/03/06 23:04:04 stillflame Exp $
+#    Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+#    Rcsid = %q$Id: objectstoreservice.rb,v 1.6 2002/03/19 08:35:14 stillflame Exp $
 
     #########
     protected
@@ -71,25 +70,18 @@ module MUES
     ### 'mark' -> the symbol for the method to be used for marking objects for
     ###           garbage collection.
     ### 'GC_delay' -> the period of time inbetween garbage collection sweeps
-    def initialize(name, filename=nil, objects = nil, indexes = nil,
-		   serialize = nil, deserialize = nil, mark = nil, gc_delay = nil)
-
-### :!: This NEEDS lots of work.  do i let them pass everything into the initialization,
-###     or do i make them use events?
-
-		# :!: didn't work, didn't find out why not
+    def initialize(name, filename=nil, objects=[], indexes=[],
+		   serialize=nil, deserialize=nil, mark=:os_gc_mark, gc_delay=nil)
+		#:TODO: find out why this doesn't work
 #		registerHandlerForEvents(ObjectStoreGCEvent,
 #								 CloseObjectStoreEvent,
 #								 NewObjectStoreEvent,
 #								 LoadObjectStoreEvent,
 #								 StoreObjectEvent,
 #								 RequestObjectEvent)
-		@name = name
-		if(filename)
-			@objectStore = ObjectStore.new(filename)
-		end
-		###:?: maybe all this shouldn't happen here...
-		@gc = ObjectStoreGC.new(@objectStore, mark, gc_delay)
+      @name = name
+      @objectStore = ObjectStore.new(filename, indexes, serialize, deserialize)
+      @gc = @objectStore.gc
     end
 
     ### Class methods
@@ -149,7 +141,7 @@ module MUES
 
 	### All object storing is to be done through the garbage collector
     def _handleStoreObjectEvent (event)
-		@gc.register( event.data )
+		@gc.register( event.objects )
     end
 
     def _handleRequestObjectEvent (event)

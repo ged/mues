@@ -85,6 +85,8 @@ require "StorableObject/StorableObject.rb"
 require "ObjectStoreGC"
 require "sync"
 
+class ObjectNotInDatabaseError < RuntimeError; end
+
 class ObjectStore
 
         TRASH_RATE = 50 #seconds
@@ -139,13 +141,20 @@ class ObjectStore
 	### args:
 	###   conf_filename - the name of the ObjectStoreConfig file to be
 	def create_database(conf_filename)
-	  basename = %r~(.*)(\..*)?~.match(conf_filename)[1]
+	  if ( match = %r~(.*)(\..*)?~.match(conf_filename) )
+	    basename = match[1]
+	  else
+	    t = Time.now
+	    basename = "object_store" + t.to_i.to_s
+	  end
 	  cat_name = basename + ".ctl"
 	  fs_name = basename
 	  fs_filename = basename + "1.adb"
+	  locks_filename = basename + "2.adb"
 	  @table_name = bt_name = basename
-	  cat  = A_Catalog.new(cat_name)
+	  cat  = A_Catalog.use(cat_name)
 	  fs   = A_FileStore.create(fs_name, 1024, fs_filename)
+	  locs = A_FileStore.create("locks", 1024, locks_filename)
 	  bt   = A_BTree.new(bt_name, fs_name)
 	  cols = []
 	  typ = ( @serialize ? "v" : "*" )
@@ -155,7 +164,7 @@ class ObjectStore
 	  @indexes.each { |ind|
 	    typ = get_type( ind[1] )  #should not be "*"
 	    cols << A_Column.new( ind[0].id2name, typ )
-	  }
+	  } unless @indexes or @indexes.compact!.empty?
 	  pkeys= "id"
 	  tabl = A_Table.new(bt_name, cols, pkeys)
 	  return [cat,tabl]
@@ -164,15 +173,17 @@ class ObjectStore
 	### Returns the arunadb code for the type of storage to be used on a class.
 	### Raises: TypeError if class isn't supported
 	def get_type(aClass)
+	  raise TypeError.new( "Expected Class but received #{aClass.type.name}" ) unless
+	    aClass.kind_of?(Class)
 	  case aClass
-	    when FixNum
+	    when Fixnum
 	      "l"
 	    when Time
 	      "t"
 	    when String
 	      "v"
 	    else
-	      raise TypeError "Indexes cannot return objects of class %s" % aClass
+	      raise TypeError.new( "Indexes cannot return objects of class %s" % aClass )
 	  end
 	end
 
@@ -196,6 +207,7 @@ class ObjectStore
 	  @database = database || create_database(@filename)
 	  
 	  @table = @database[-1]
+	  @active_objects = Hash.new
 	  @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
 	end
 	
@@ -204,7 +216,7 @@ class ObjectStore
 	######
 	
 	attr_reader :filename, :database, :serialize, :deserialize, :indexes,
-	  :active_objects, :table, :table_name
+	  :active_objects, :table, :table_name, :gc
 
 	### Stores the objects into the database
 	### arguments:
@@ -262,10 +274,16 @@ class ObjectStore
 	### arguments:
 	###   id - the id (objectStoreID) of the object
 	def _retrieve ( id )
-	  table_data = (@table.find( nil, id ))
-	  aClass = Class.send( @deserialize, table_data.obj_class )
-	  object = aClass.send( @deserialize, table_data.obj )
-	  return object
+	  if ( an_obj = @active_objects[id] )
+	    return an_obj
+	  elsif ( table_data = (@table.find( nil, id )) )
+	    aClass = Class.send( @deserialize, table_data.obj_class )
+	    object = aClass.send( @deserialize, table_data.obj )
+	    return object
+	  else
+#	    return nil
+	    raise ObjectNotInDatabaseError.new( "Object with id (#{id}) not found in the database" )
+	  end
 	end
 
 	def add_indexes ( *indexes )

@@ -56,6 +56,9 @@ class ObjectStoreGC
   ###   algor_args - the arguments to pass to the GC algorithm (a Hash).
   ###                varies depending on algorithm.
   def initialize(objectStore, mark = :os_gc_mark, algor_args = {})
+    raise TypeError.new("Expected ObjectStore but received #{objectStore.type.name}") unless
+      objectStore.kind_of?(ObjectStore)
+    
     @objectStore = objectStore
     @active_objects = @objectStore.active_objects
     @mark = mark
@@ -118,8 +121,12 @@ class ObjectStoreGC
 
   ### Registers object(s) with the GC
   def register ( *objects )
+    objects.flatten!.compact!
     @mutex.synchronize( Sync::EX ) {
-      @objects |= objects.flatten #:MC: changed '<<' to '|=' to prevent duplicates
+      objects.each {|o|
+	@active_objects[o.objectStoreID] = o
+      }
+      #      @objects |= objects #:MC: changed '<<' to '|=' to prevent duplicates
     }
   end
 
@@ -143,6 +150,8 @@ class ObjectStoreGC
       # during shutdown. This has the added benefit of counting the time it
       # takes for _collect to run in the loop_time.
       until (Time.new - loop_time >= delay || @shutting_down) do
+	# :MC: changed Thread.stop to Thread.pass, as a 'stop'ed thread needs another
+	# thread to call 'run' before it can do anything.
 	Thread.pass
       end
     end

@@ -82,6 +82,9 @@ class StorableObject < PolymorphicObject; include AbstractClass
   end
 
   ### sets the objectStoreID attribute, but only if it isn't already set
+  ### returns: nil if already set, otherwise the id
+  ### arguments:
+  ###   aString - the id to be
   def objectStoreID= (aString)
     unless @objectStoreID
       @objectStoreID = aString
@@ -93,6 +96,11 @@ class StorableObject < PolymorphicObject; include AbstractClass
   ###   return false: object stays till its reference count goes to 1 (would be 
   ###                 zero, but one reference is kept by the ObjectStore system).
   def os_gc_mark
+    false
+  end
+
+  ### allows shallow references to be seen for what they are.
+  def shallow?
     false
   end
 
@@ -130,6 +138,11 @@ class ShallowReference < PolymorphicObject
   public
   ######
 
+  ### just a little something to see if an object is a shallow referece or not
+  def shallow?
+    true
+  end
+  
   ### Allows momentary access to the object from the database, by calling this method
   ###   and supplying a block.  No changes to the object made in the block will be
   ###   written to the database.
