@@ -80,7 +80,7 @@ More comprehensive documentation to follow, but in the meantime, you can find
 the working copy at:
 ((<URL:http://docs.faeriemud.org/bin/view/Dream/TheEngine>)).
 
-== Methods
+== Classes
 === MUES::Engine
 ==== Class Methods
 
@@ -165,6 +165,20 @@ the working copy at:
 
     Returns (({true})) if the engine is in any state except
     ((<State::STOPPED>)).
+
+--- MUES::Engine#getEnvironmentNames
+
+	Returns an array of loaded environment names.
+
+--- MUES::Engine#getEnvironment( name )
+
+	Returns the loaded environment object associated with the specified name, or
+	(({nil})) if no such environment exists.
+
+--- MUES::Engine#loadEnvironment( className[, envName] )
+
+	Load an instance of the specified Environment class and associate it with
+	the specified name.
 
 --- MUES::Engine#running?
 
@@ -284,8 +298,8 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.10 2001/07/30 10:24:25 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.11 2001/09/26 12:40:32 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -387,6 +401,7 @@ module MUES
 												  @config["objectstore"]["host"],
 												  @config["objectstore"]["username"],
 												  @config["objectstore"]["password"] )
+			@engineObjectStore.debugLevel = 0
 
 			### Register the server as being interested in a couple of different events
 			@log.info( "Registering engine event handlers." )
@@ -408,8 +423,11 @@ module MUES
 			@eventQueue = EventQueue.new( @config["eventqueue"]["minworkers"], 
 										  @config["eventqueue"]["maxworkers"],
 										  @config["eventqueue"]["threshold"] )
-			# @eventQueue.debugLevel = 1
+			@eventQueue.debugLevel = 0
 			@eventQueue.start
+
+			# Load the configured environment classes
+			MUES::Environment.loadEnvClasses( @config )
 
 			# Notify all the Notifiables that we're started
 			@log.notice( "Sending onEngineStartup() notifications." )
@@ -488,6 +506,7 @@ module MUES
 			### call)
 			cleanupEvents.flatten!
 			cleanupEvents.compact!
+			@log.debug( "Got #{cleanupEvents.length} cleanup events." )
 			@eventQueue.priorityEnqueue( *cleanupEvents ) unless cleanupEvents.empty?
 
 			### Shut down the event queue
@@ -498,6 +517,12 @@ module MUES
 			return true
 		end
 
+
+		### METHOD: getEnvironmentNames
+		### Get a list of the names of the loaded environments
+		def getEnvironmentNames
+			return @environments.keys
+		end
 
 		### METHOD: getEnvironment( aNameString )
 		### Get the loaded environment with the specified name.
@@ -821,12 +846,12 @@ module MUES
 
 			### Create the event stream, add the new filters to the stream
 			ios = IOEventStream.new
-			ios.debugLevel = 1
+			ios.debugLevel = 0
 			ios.addFilters( soFilter )
 
 			### Create the login session and add it to our collection
 			session = LoginSession.new( @config, ios, sock.addr[2] )
-			session.debugLevel = 5
+			session.debugLevel = 0
 			@loginSessionsMutex.synchronize(Sync::EX) {
 				@loginSessions.push session
 			}
@@ -843,11 +868,16 @@ module MUES
 			results = []
 			@log.debug( "In _handleUserEvent. Event is: #{event.to_s}" )
 
-			### Handle the user status change events by changing the contents of the users hash
+			### Handle the different user events
 			case event
 
 			when UserLoginEvent
 				stream = event.stream
+				loginSession = event.loginSession
+
+				# Set last login time and host in the user record
+				user.lastLogin = Time.now
+				user.remoteHost = loginSession.remoteHost
 
 				### If the user object is already active (ie., already
 				### connected and has a shell), remove the old socket connection
@@ -861,8 +891,13 @@ module MUES
 					results << user.activate( stream )
 				end
 
+				# Add the activated user to our userlist, and remove the spent
+				# login session from our list of active logins
 				@usersMutex.synchronize(Sync::EX) {
 					@users[ user ] = { "status" => "active" }
+				}
+				@loginSessionsMutex.synchronize( Sync::EX ) {
+					@loginSessions -= [ loginSession ]
 				}
 
 			when UserDisconnectEvent
@@ -884,9 +919,13 @@ module MUES
 			when UserSaveEvent
 				@log.debug( "In UserSaveEvent handler for #{user.to_s}" )
 				results << LogEvent.new("info", "Saving record for user #{user.to_s}.")
+				@log.debug( "Finished adding LogEvent to results array." )
 				begin
+					@log.debug( "About to call storeUser()." )
 					@engineObjectStore.storeUser( user )
+					@log.debug( "Back from storeUser()." )
 					results << LogEvent.new("info", "Saved user record for #{user.to_s}")
+					@log.debug( "Added LogEvent to results array." )
 				rescue Exception => e
 					@log.error( "Error while saving #{user.to_s}: ", e.backtrace.join("\n") )
 					results << LogEvent.new("error", "Exception while storing user record for #{user.to_s}")
@@ -937,7 +976,6 @@ module MUES
 			### Otherwise succeed
 			else
 				results << LogEvent.new( "notice", "User '#{username}' authenticated successfully." )
-				user.remoteIp = remoteHost
 				results << event.successCallback.call( user )
 			end
 
@@ -993,7 +1031,7 @@ module MUES
 
 					# Report success
 					unless event.user.nil?
-						event.user.handleEvent(OutputEvent.new( "Successfully unloaded '#{event.name}'" ))
+						event.user.handleEvent(OutputEvent.new( "Successfully loaded '#{event.name}'\n\n" ))
 					end
 
 				rescue EnvironmentLoadError => e
@@ -1001,7 +1039,7 @@ module MUES
 
 					# If the event is associated with a user, send them a diagnostic event
 					unless event.user.nil?
-						event.user.handleEvent(OutputEvent.new( e.message ))
+						event.user.handleEvent(OutputEvent.new( e.message + "\n\n" ))
 					end
 				end
 
@@ -1034,7 +1072,7 @@ module MUES
 
 					# If the event is associated with a user, send them a diagnostic event
 					unless event.user.nil?
-						event.user.handleEvent(OutputEvent.new( e.message ))
+						event.user.handleEvent(OutputEvent.new( e.message + "\n\n" ))
 					end
 				end
 				
@@ -1116,6 +1154,11 @@ module MUES
 			when EngineShutdownEvent
 				@log.notice( "Engine shut down by #{event.agent.to_s}." )
 				stop()
+
+			when GarbageCollectionEvent
+				@log.notice( "Starting forced garbage collection." )
+				GC.start
+
 			else
 				results.push LogEvent.new("notice", 
 										  "Got a system event (a #{event.class.name}) " +
