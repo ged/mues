@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.21 2002/10/04 05:15:12 deveiant Exp $
+# $Id: engine.rb,v 1.22 2002/10/12 15:34:24 deveiant Exp $
 # 
 # == Authors
 # 
@@ -170,8 +170,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.21 2002/10/04 05:15:12 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.22 2002/10/12 15:34:24 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -407,7 +407,7 @@ module MUES
 		### Fetch a list of the names of all connected users
 		def getConnectedUserNames
 			checkSafeLevel( 3 )
-			@users.keys
+			@users.keys.collect {|user| user.login}
 		end
 
 
@@ -1171,21 +1171,21 @@ module MUES
 			@usersMutex.synchronize( Sync::SH ) {
 
 				# Look up the user if there's not one already in the users table
-				unless @users.keys.include? username
+				if (( user = @users.keys.find {|user| user.username == username} ))
+					self.log.info "Returning user record for connected user"
+					return user
+
+				else
 					self.log.info "Looking up user record for '#{username}'"
-					@usersMutex.synchronize( Sync::EX ) {
-						results = @objectStore.lookup( :class => MUES::User, :username => username )
-						debugMsg( 2, "Results from user lookup => #{results.inspect}" )
+					results = @objectStore.lookup( :class => MUES::User, :username => username )
+					debugMsg( 2, "Results from user lookup => #{results.inspect}" )
 
-						self.log.warn( "Lookup of user '#{username}' returned #{results.length} object" ) if
-							results.length > 1
+					self.log.warn( "Lookup of user '#{username}' returned #{results.length} objects" ) if
+						results.length > 1
 					
-						self.log.info "Found #{results.length} results"
-						@users[ username ] = results.shift unless results.empty?
-					}
+					self.log.info "Found #{results.length} results"
+					return results[0]
 				end
-
-				return @users[ username ]
 			}
 		end
 
@@ -1256,7 +1256,7 @@ module MUES
 
 			### Create the login session and add it to our collection
 			session = LoginSession::new( @config, ios, event.filter.peerName )
-			session.debugLevel = 5
+			session.debugLevel = 1
 			@loginSessionsMutex.synchronize(Sync::EX) {
 				@loginSessions.push session
 			}
@@ -1296,7 +1296,7 @@ module MUES
 			else
 				self.log.notice( "Login succeeded for #{user.to_s}." )
 				cshell = @commandShellFactory.createShellForUser( user )
-				cshell.debugLevel = 5
+				cshell.debugLevel = 1
 
 				results << user.activate( stream, cshell, config.general.motd )
 			end
@@ -1323,8 +1323,12 @@ module MUES
 			debugMsg( 3, "In handleUserDisconnectEvent. Event is: #{event.to_s}" )
 
 			self.log.notice("User #{user.name} went link-dead.")
-			@usersMutex.synchronize(Sync::EX) { @users[ user ]["status"] = "linkdead" }
-			results << user.deactivate
+			@usersMutex.synchronize(Sync::SH) {
+				@usersMutex.synchronize(Sync::EX) {
+					@users[ user ]["status"] = "linkdead"
+				}
+				results << user.deactivate
+			}
 
 			return results
 		end
@@ -1338,9 +1342,12 @@ module MUES
 			debugMsg( 3, "In handleUserIdleTimeoutEvent. Event is: #{event.to_s}" )
 
 			self.log.notice("User #{user.name} disconnected due to idle timeout.")
-			# @usersMutex.synchronize {	@users[ user ]["status"] = "linkdead" }
-			@usersMutex.synchronize(Sync::EX) { @users.delete( user ) }
-			user.deactivate
+			@usersMutex.synchronize(Sync::SH) {
+				@usersMutex.synchronize(Sync::EX) {
+					@users[ user ]["status"] = "linkdead"
+				}
+				results << user.deactivate
+			}
 
 			return results
 		end
@@ -1356,7 +1363,7 @@ module MUES
 
 			self.log.notice("User #{user.to_s} disconnected.")
 			@usersMutex.synchronize(Sync::EX) { @users.delete( user ) }
-			user.deactivate
+			results << user.deactivate
 
 			return results
 		end
