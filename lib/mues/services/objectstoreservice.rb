@@ -55,11 +55,12 @@ module MUES
 		protected
 		#########
 
-		### Check to see if anyone wants an ObjectStore
+		### Handle events which are requesting an adapter for this service.
 		def _handleGetServiceAdapterEvent (event)
-			if (event.name == @name)
-				store = ObjectStore.new(*(event.args))
-				@objectStores << 
+			if event.name == @name
+				*(event.args)
+
+				store = MUES::ObjectStore::create( *(event.args) )
 				event.callback.call( @objectStores[-1] )
 			end
 			return []
