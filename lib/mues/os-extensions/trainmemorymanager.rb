@@ -57,9 +57,15 @@
 #	For information on what is modeled here, see:
 #	http://www.daimi.aau.dk/~beta/Papers/Train/train.html
 # 
+# == Caveats
+#
+#	This is just proof of concept, and so isn't clean and professional, and is
+#	not being maintained.  For actual use, please see
+#	ImprovedTrainMemoryManager.rb.
+#
 # == Rcsid
 # 
-# $Id: trainmemorymanager.rb,v 1.2 2002/07/10 18:22:50 stillflame Exp $
+# $Id: trainmemorymanager.rb,v 1.3 2002/07/14 04:46:08 stillflame Exp $
 # 
 # == Authors
 # 
@@ -74,7 +80,6 @@
 
 require 'mues'
 
-
 module MUES
 	class ObjectStore
 		### an incremental memory manager scheme, to allow for non-disruptive
@@ -82,8 +87,8 @@ module MUES
 		class TrainMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-			Rcsid = %q$Id: trainmemorymanager.rb,v 1.2 2002/07/10 18:22:50 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+			Rcsid = %q$Id: trainmemorymanager.rb,v 1.3 2002/07/14 04:46:08 stillflame Exp $
 
 			######
 			public
@@ -91,18 +96,12 @@ module MUES
 
 			def initialize( *args )
 				super( *args )
-				@interval =
-					@config.has_key?('interval') ?	@config['interval'] :
-													50
-				@carSize =
-					@config.has_key?('carSize') ?	@config['carSize'] :
-													2**10
-				@trainRefCycle =
-					@config.has_key?('trainRefCycle') ?	@config['trainRefCycle'] :
-														10
-				@trainObjectRatio =
-					@config.has_key?('trainObjectRatio') ?	@config['trainObjectRatio'] :
-															0.1
+				@interval			= @config['interval']			|| 50
+				@trainInterval		= @config['trainInterval']		|| 30
+				@trainObjectRatio	= @config['trainObjectRatio']	|| 0.1
+				@trainRatioAccuracy	= @config['trainRatioAccuracy']	|| .05
+				@trainSize			= @config['trainSize']			|| 3
+				@carSize			= @config['carSize']			|| 2**10
 				@trainyard = Trainyard::new(self)
 				@trainThread = nil
 				@activeObjectReferences = {}
@@ -120,17 +119,29 @@ module MUES
 			# number of objects.
 			attr_accessor :trainObjectRatio
 
-			# the number of trainThread cycles that won't have the references of
-			# @activeObjects checked
-			attr_accessor :trainRefCycle
+			# the give or take of the trainObjectRatio - how close the ratio can
+			# actually be without invoking interval changing.
+			attr_accessor :trainRatioAccuracy
 
 			# the number of objects allowed per car
 			attr_accessor :carSize
+
+			# the number of cars allowed per train before a new one is started.
+			# this only applies to the youngest train.
+			attr_accessor :trainSize
 
 			# the active objects keyed to a list of every registered object that
 			# references it.
 			attr_accessor :activeObjectReferences
 
+			# Caveat: this assumes that the references between objects does not
+			# change after registration.  This will not be true for any real
+			# system, but since reference tracking is being added simply for the
+			# sake of argument, no effort was put into making this realistic.
+			# The most correct way to have implemented this would be to have
+			# altered Object to be able to know how many links there are to it
+			# at any given time, or possibly tied into the hook of whenever any
+			# variable is changed, and set the values that way.
 			def register( *objs )
 				super( *objs )
 				@mutex.synchronize( Sync::EX ) {
@@ -161,7 +172,9 @@ module MUES
 			# add functionality to the start method.
 			def start( visitor )
 
-				super( thread )
+				$stderr.puts "Starting TrainMemoryManager threads" if $debug
+
+				super( visitor )
 
 				unless @trainThread && @trainThread.alive?
 					@trainThread = Thread.new {
@@ -180,7 +193,9 @@ module MUES
 			#########
 			protected
 			#########
-			
+
+			# simple - calls startCycle, waits at least @interval time, then
+			# starts over.  on shutdown, calls saveAllObjects.
 			def managerThreadRoutine( visitor )
 				begin
 					while true
@@ -192,20 +207,20 @@ module MUES
 						end
 					end
 				ensure
+					$stderr.puts "saveAllObjects being called" if $debug
 					saveAllObjects()
-					raise
 				end
 			end
 
-			### The object maturation algorithm.  This gets started repeatedly.
+			### The object maturation algorithm.  This gets run once a cycle.
 			def startCycle( visitor )
 				@mutex.synchronize( Sync::SH ) {
 					@active_objects.each_value {|o|
-						if( !o.shallow? )
-							maturity = visitor.visit( o )
-							if( maturity )
-								@trainyard.newlyMatured(o)
-							end
+						unless o.shallow?
+							# maturity is a boolean - true means the object is mature
+							maturity = o.accept(visitor)
+							@trainyard.newlyMatured(o) if maturity
+							$stderr.puts "object #{o.to_s} found to be mature" if $debug && maturity
 						end
 					}
 				}
@@ -213,8 +228,10 @@ module MUES
 
 			### Stores all the (non-shallow) objects in the object store.
 			def saveAllObjects 
-				@active_objects.each_value {|o|
-					@objectStore.store(o) unless o.shallow?
+				@mutex.synchronixe( Sync::EX ) {
+					@active_objects.each_value {|o|
+						@objectStore.store(o) unless o.shallow?
+					}
 				}
 				@active_objects.clear
 				@activeObjectReferences.clear
@@ -227,8 +244,9 @@ module MUES
 					loop_time = Time.now
 					checkTrains( visitor )
 					case @trainyard.objectCount / @active_objects.length
-					when (@trainObjectRatio*.95)..(@trainObjectRatio*1.05)
-						#close enough, leave it alone
+					when (@trainObjectRatio*(1-@trainRatioAccuracy))..(
+							@trainObjectRatio*(1+@trainRatioAccuracy))
+						#close enough, leave it alone.
 					when @trainObjectRatio..1.0
 						#too much trash, go faster
 						@trainInterval *= .9
@@ -237,52 +255,78 @@ module MUES
 						@trainInterval *= 1.1
 					end
 
-					
 					until (Time.new - loop_time >= @trainInterval) do
 						Thread.pass
 					end
 				end
 			end
 
-			# checks the train yard for cars in need of deletion.  should only
-			# look at one car each iteration - @trainyard[0][0] - the first car
-			# on the first train.  the train is then "deleted" or not based on
-			# the way the references between trains are networked.  if it is not
-			# deleted, the objects in the car are shuffled off to the newest
-			# train that references them, or the newest train if reference from
-			# outside mature object space, or to the end of the oldest train if
-			# not referenced.
+			# checks the train yard for cars in need of deletion.  only looks at
+			# one car each iteration - the first car on the first train.  the
+			# train is then "deleted" or not based on the way the references
+			# between trains are networked.  if it is not deleted, the objects
+			# in the car are shuffled off to the newest train that references
+			# them, or the newest train if the reference is from outside mature
+			# object space, or to the end of the oldest train if not referenced.
+			# Caveat: this assumes that once an object is declared mature, that
+			# will not have changed by the time it gets deleted.
 			def checkTrains( visitor )
+				deleteTheTrain = true
 				@trainyard[0][0].objects.each {|old|
-					deleteMe = true
-					@activeObjectReferences[old].each {|ref|
+					newest = nil
+					@activeObjectReferences[old].each {|obj|
+						# find which trains, if any, the reference to our object
+						# comes from.
 						residence = @trainyard.trains.reverse.collect {|t|
-							t.hasObject?(ref) t : nil
-						}.compress
+							t.hasObject?(obj) ? t : nil
+						}.compact
 						if residence.empty?
-							deleteMe = false
-						elseif residence[0] == @trainyard[0] # do nothing
+							# the reference to the mature object wasn't found in
+							# any of the trains, meaning it comes from outside
+							# of mature object space, and this object should be
+							# moved to the end of the newest train.
+							deleteTheTrain = false
+							@mutex.synchronize( Sync::EX ) {
+								@trainyard[0][0].objects.delete(old)
+							}
+							newlyMatured(old)
+							break # no need to check any more references
+						elsif residence[-1] == residence[0] && residence[0] == @trainyard[0]
+							# this reference is on the same train, so do nothing
+							# - will get moved to end of this train or deleted,
+							# but not until the rest of this car is checked.
 						else
-							deleteMe = false
-							residence[-1].
+							# otherwise, the reference is known to be in a
+							# train, and the object should be put there.
+							# :TODO:
+							# for best behavior, check every reference, then put
+							# it in with the youngest of those.
+							deleteTheTrain = false
+							@mutex.synchronize( Sync::EX ) {
+								@trainyard[0][0].objects.delete(old)
+								residence[-1].addObj(old)
+							}
 						end
 					}
 				}
 
-				if deleteMe
-					# no outside references were found, so trash the train
-					self.delete(@trainyard.trains.shift.cars.collect {|c|
-									c.objects
-								}.flatten)
+				if deleteTheTrain
+					# no outside references were found, so trash the whole train
+					$stderr.puts "deleting a train of length #{@trainyard[0].length}" if $debug
+					self.reclaim(@trainyard.shift.cars.collect {|c|
+									 c.objects
+								 }.flatten)
 				else
-					# put this car, with all the remaining objects, onto the end
-					# of this train
+					# some outside references were found, meaning the entire
+					# train may not have been checked, so put this car, with all
+					# its remaining objects, onto the end of this train, thus
+					# maintaining any datastructures that span multiple cars.
 					@trainyard.[0].cars.push( @trainyard[0].cars.unshift )
 				end
 			end
 
 			# replace the object(s) with a shallow reference
-			def delete( *objs )
+			def reclaim( *objs )
 				objs.to_a.each {|o|
 					@mutex.synchronize( Sync::EX ) {
 						@objectStore.store(o)
@@ -291,9 +335,10 @@ module MUES
 				}
 			end
 
-			#
-			#
-			class Trainyard #< MUES::Object
+			# A datastructure used to help facilitate incremental collection of
+			# garbage that may contain structures which span more than the
+			# designated increment size.
+			class Trainyard < MUES::Object
 
 				# makes a new Trainyard object
 				def initialize( m_m )
@@ -301,89 +346,94 @@ module MUES
 					@trains = []
 					@trains << MMTrain::new( m_m )
 					@activeObjectReferences = m_m.activeObjectReferences
+					@carSize m_m.carSize
+					@trainSize = m_m.trainSize
 				end
 
+				def_delegators :@trains, *(Array.instance_methods - %w[inspect to_s])
+
 				# return the maximum car size
-				def carSize 
-					return @memoryManager.carSize
-				end
+				attr_reader :carSize
 
 				# returns the number of objects in the trainyard
 				def objectCount 
-					count = 0
-					@trains.each {|t| t.cars.each {|c|
-							count += c.objects.length
-						}}
-					return count
+					@trains.inject(0) {|tot,train| tot + train.objectCount}
 				end
 
 				# takes a newly matured object and puts it into the trainyard.
-				def newlyMatured( newly )
-					refsFromObj = @activeObjectReferences[newly]
-					@activeObjectReferences.delete(o)
-					refsToObj = []
-					@activeObjectRefences.each {|o,r|
-						refsToObj << o if r.include?(newly)
-					}
-					@trains.each {|t|
-						t.cars.each {|c|
-							c.objects.each {|o,r|
-								refsToObj << o if r[1].include?(newly)
-							}
-						}
-					}
-					# set parameter - the last train may only have 4 cars
-					@trains << MMTrain::new(@memoryManager) if @trains[-1].cars.length > 3
-					@trains[-1].addObj(newly, refsFromObj, refsToObj)
+				def newlyMatured( *newlies )
+					@trains << MMTrain::new(@memoryManager) if
+						@trains[-1].cars.length >= @trainSize
+					@trains[-1].addObj(newlies)
 				end
-
 
 			end # class Trainyard
 
-			class MMTrain < Object
+			class MMTrain < MUES::Object
 
-				# creates a new MMTrain object, with the specifed car size, or 1024
-				# bytes.
+				# creates a new MMTrain object, used in the train algorithm for
+				# memory management.
 				def initialize( m_m )
+					$stderr.puts "creating a new train" if $debug
 					@memoryManager = m_m
 					@cars = []
+					@activeObjectReferences = m_m.activeObjectReferences
 					@cars << MMCar::new( m_m )
 				end
+
+				def_delegators :@cars, *(Array.instance_methods - %w[inspect to_s])
 
 				# the array of cars on this train
 				attr_accessor :cars
 
-				def addObj( obj, fromRefs, toRefs )
-					if @memoryManager.carSize <= @cars[-1].size
+				# returns the number of objects in the trainyard
+				def objectCount 
+					@cars.inject(0) {|tot,car| tot + car.objectCount}
+				end
+
+				def addObj( *objs)
+					@cars[-1].addObj(objs.slice!(0, (@cars[-1].spaceLeft))
+					until objs.empty?
 						@cars << MMCar::new(@memoryManager)
+						@cars[-1].addObj(objs.slice!(0, @carSize))
 					end
-					@cars[-1].addObj(obj, fromRefs, toRefs)
 				end
 
 			end # class MMTrain
 
 			class MMCar < MUES::Object
 
+				# creates a new MMCar object, used in the train algorithm for
+				# memory management.
 				def initialize( m_m )
+					$stderr.puts "creating a new car" if $debug
 					@memoryManager = m_m
-					@objects = {}
+					@objects = []
 					@maxSize = m_m.car_size
+					@activeObjectReferences = m_m.activeObjectReferences
 					@size = 0
 				end
 
-				# adds the object to the car
-				def addObj( obj, fromRefs, toRefs )
-					@objects[obj] = [fromRefs, toRefs]
+				def_delegators :@objects, *(Array.instance_methods - %w[inspect to_s])
+
+				# returns the number of objects in the trainyard
+				def objectCount 
+					@objects.length
+				end
+
+				# returns whether or not the car is full
+				def full? 
+					@maxSize <= @size
 				end
 
 				# returns the objects that belong to this car
 				def objects 
-					return @objects
+					@objects
 				end
 
 				# returns the amount of space left on this car
 				def spaceLeft 
-					return @maxSize - @size
+					@maxSize - @size
 				end
 
 				# puts the object(s) into the car, or raises a TrainError if there
@@ -391,14 +441,12 @@ module MUES
 				# object as 1 space, not taking into account instance vars that
 				# aren't StorableObjects, or even just looking at Marshal.dump
 				# return length.  this also doesn't handle reassigning the 
-				def addObjects( *obj )
+				def addObj( *obj )
 					obj.to_a.each {|o|
-						if @size + 1 > @maxSize
-							raise TrainError, "Insufficient space to add an object to the car"
-						else
-							@size = @size + 1
+						@size = @size + 1
+						@mutex.synchronize( Sync::EX ) {
 							@objects << o
-						end
+						}
 					}
 					@objects.compress! # get rid of duplicates
 				end
@@ -410,7 +458,3 @@ module MUES
 
 	end # class ObjectStore
 end # module MUES
-
-# 								@mutex.synchronize( Sync::EX ) {
-# 									@objectStore.store(o)
-# 									o.become(ShallowReference.new( o.objectStoreID, @objectStore ))
