@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.12 2004/02/29 18:33:25 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -34,83 +34,7 @@
 require 'digest/md5'
 require 'sync'
 
-### A couple of syntactic sugar aliases for the Module class.
-###
-### [<tt>Module::implements</tt>]
-###     An alias for <tt>include</tt>. This allows syntax of the form:
-###       class MyClass < MUES::Object; implements MUES::Debuggable, AbstracClass
-###         ...
-###       end
-###
-### [<tt>Module::implements?</tt>]
-###     An alias for <tt>Module#<</tt>, which allows one to ask
-###     <tt>SomeClass.implements?( Debuggable )</tt>.
-###
-class Module
-
-	# Syntactic sugar for mixin/interface modules.  (Borrowed from Hipster's
-	# component "conceptual script" - http://www.xs4all.nl/~hipster/)
-	alias :implements :include
-	alias :implements? :include?
-end
-
-
-### A couple of utility methods for the Class class.
-### [<tt>Class::alias_class_method</tt>]
-###     Create an alias for a class method. Borrowed from RubyTreasures by Paul
-###     Brannan <paul@nospam.atdesk.com>.
-class Class
-
-	### Alias a class method.
-	def alias_class_method( newSym, oldSym )
-		retval = nil
-		eval %{
-		  class << self
-			retval = alias_method :#{newSym}, :#{oldSym}
-		  end
-		}
-	    return retval
-	rescue Exception => err
-		# Mangle exceptions to point someplace useful
-		frames = err.backtrace
-		frames.shift while frames.first =~ /#{__FILE__}/
-		Kernel::raise err, err.message.gsub(/in `\w+'/, "in `alias_class_method'"), frames
-	end
-end
-
-
-### Add some stuff to the String class to allow easy transformation to Regexp
-### and in-place interpolation.
-class String
-	def to_re( casefold=false, extended=false )
-		return Regexp::new( self.dup )
-	end
-
-	### Ideas for String-interpolation stuff courtesy of Hal E. Fulton
-	### <hal9000@hypermetrics.com> via ruby-talk
-
-	### Interpolate any '#{...}' placeholders in the string within the given
-	### +scope+ (a Binding object).
-    def interpolate( scope )
-        unless scope.is_a?( Binding )
-            raise TypeError, "Argument to interpolate must be a Binding, not "\
-                "a #{scope.class.name}"
-        end
-
-		# $stderr.puts ">>> Interpolating '#{self}'..."
-
-        copy = self.gsub( /"/, %q:\": )
-        eval( '"' + copy + '"', scope )
-	rescue Exception => err
-		nicetrace = err.backtrace.find_all {|frame|
-			/in `(interpolate|eval)'/i !~ frame
-		}
-		Kernel::raise( err, err.message, nicetrace )
-    end
-
-end
-
-
+require 'mues/utils'
 require 'mues/exceptions'
 require 'mues/mixins'
 require 'mues/logger'
@@ -123,9 +47,15 @@ module MUES
 		
 		include Comparable
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.12 2004/02/29 18:33:25 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
@@ -189,9 +119,14 @@ module MUES
 	# classes inherit from this.
 	class Object < ::Object; implements MUES::AbstractClass
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.12 2004/02/29 18:33:25 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		#############################################################
@@ -202,8 +137,12 @@ module MUES
 		def self::version
 			ver = nil
 
-			if self.const_defined?( :Version )
+			if self.const_defined?( :SVNRev )
+				rev = self.const_get( :SVNRev )
+				ver = if rev.match( /(\d+)/ ) then $1 else 0 end
+			elsif self.const_defined?( :Version )
 				ver = self.const_get( :Version )
+				MUES::Logger[self].info "Deprecated 'Version' constant"
 			else
 				ver = "0.01"
 			end
@@ -217,9 +156,9 @@ module MUES
 		def self::makeFinalizer( objDesc )
 			return Proc.new {
 				if Thread.current != Thread.main
-					MUES::Logger.debug {"[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."}
+					MUES::Logger.debug "[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."
 				else
-					MUES::Logger.debug {"[Main Thread]: " + objDesc + " destroyed."}
+					MUES::Logger.debug "[Main Thread]: " + objDesc + " destroyed."
 				end
 			}
 		end
