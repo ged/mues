@@ -1,0 +1,149 @@
+/*
+ *		FaerieMUD RDoc Stylesheet
+ *		$Id: rdoc.css,v 1.1 2002/03/30 19:01:09 deveiant Exp $
+ *
+ *		Author:		Michael Granger
+ *		Time-stamp:	<23-Feb-2002 01:37:24 deveiant>
+ *
+ */
+
+@import url("http://www.FaerieMUD.org/stylesheets/base.css");
+
+BODY {
+    margin: 0;
+    padding: 0;
+}
+
+H1, H2, H3, H4, H5, H6 { text-align: left; }
+H1, H2 { color: white; background: transparent }
+H2, H3, H4, H5, H6 { margin-top: 1em; margin-bottom: 0.5em; }
+H1 { font: bold 120% sans-serif; margin-bottom: 0; margin-top: 0; }
+H2 { font: bold 110% sans-serif }
+H3 { font: bold 105% sans-serif }
+H4 { font: bold 100% sans-serif }
+H5 { font: italic 100% sans-serif }
+H6 { font: small-caps 100% sans-serif }
+
+
+/* Structural elements */
+
+DIV#index {
+    margin: 0;
+    padding: 0;
+    font-size: 70%;
+}
+
+DIV#index A {
+    margin-left: 0.7em;
+}
+
+DIV#classHeader {
+    width: auto;
+    background: #008A09;
+    color: white;
+    padding: 0.5em 1.5em 0.5em 1.5em;
+    margin: 0;
+    border-bottom: 3px solid #050;
+}
+
+DIV#classHeader A,TD {
+    background: inherit;
+    color: white;
+}
+
+DIV#fileHeader {
+    width: auto;
+    background: #008A09;
+    color: white;
+    padding: 0.5em 1.5em 0.5em 1.5em;
+    margin: 0;
+    border-bottom: 3px solid #050;
+}
+
+DIV#fileHeader A {
+    background: inherit;
+    color: white;
+}
+
+DIV#bodyContent {
+    padding: 0 1.5em 0 1.5em;
+}
+
+DIV#description {
+    padding: 0.5em;
+    background: #efefef;
+    border: 1px dotted #999;
+}
+
+DIV#description H1,H2,H3,H4,H5,H6 {
+    color: black;
+    background: transparent;
+}
+
+DIV#copyright {
+    color: #333;
+    background: #efefef;
+    font: 0.9em sans-serif;
+}
+
+
+/* --- Classes ------------------------- */
+
+TABLE.header-table {
+    color: white;
+    font-size: small;
+}
+
+.typeNote {
+    font-size: small;
+    color: #DEDEDE;
+}
+
+.section-bar {
+    background: #008A09;
+    color: white;
+    padding: 0.5em;
+    border-width: 1px 2px 2px 1px;
+    border-style: solid;
+    border-color: #0A0 #050 #050 #0A0;
+}
+
+/* Attribute classes */
+.attr-rw { font-size: x-small; color: #448844; }
+.attr-name { font-family: monospace; font-weight: bold; color: black; }
+
+/* Method classes */
+.method-detail {
+    background: #EFEFEF;
+    padding: 0;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    border: 1px dotted #DDD;
+}
+.method-name { color: black; background: #AAA; border-bottom: 1px solid #666; padding: 0.2em 0.5em 0 0.5em; }
+.method-args { font-style: italic; }
+.method-description { padding: 0 0.5em 0 0.5em; }
+
+/* --- Source code sections -------------------- */
+
+DIV.source-code {
+    display: none;
+    background: #262626;
+    color: #ffdead;
+	margin: 1em;
+    padding: 0.5em;
+    border: 1px dashed #999;
+    overflow: hidden;
+}
+
+DIV.source-code PRE { color: #ffdead; overflow: hidden; }
+
+.ruby-constant	{ color: #7fffd4; background: transparent; }
+.ruby-keyword	{ color: #00ffff; background: transparent; }
+.ruby-ivar		{ color: #eedd82; background: transparent; }
+.ruby-operator	{ color: #00ffee; background: transparent; }
+.ruby-identifier { color: #ffdead; background: transparent; }
+.ruby-node		{ color: #ffa07a; background: transparent; }
+.ruby-comment	{ color: #b22222; font-weight: bold; background: transparent; }
+.ruby-regexp	{ color: #ffa07a; background: transparent; }
+.ruby-value		{ color: #7fffd4; background: transparent; }
