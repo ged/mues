@@ -10,7 +10,7 @@
 # 
 # == Rcsid
 # 
-# $Id: userevents.rb,v 1.11 2002/08/29 07:07:14 deveiant Exp $
+# $Id: userevents.rb,v 1.12 2002/09/12 12:19:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -98,9 +98,6 @@ module MUES
 
 	### CLASS: UserLogoutEvent < UserEvent
 	class UserLogoutEvent < UserEvent; end
-
-	### CLASS: UserSaveEvent < UserEvent
-	class UserSaveEvent < UserEvent; end
 
 end # module MUES
 
