@@ -1,24 +1,52 @@
 #!/usr/bin/ruby
 # 
-# Test case class
+# This is an abstract test case class for building Test::Unit unit tests for the
+# MUES. It consolidates most of the maintenance work that must be done to build
+# a test file by adjusting the $LOAD_PATH to include the lib/ and ext/
+# directories, as well as adding some other useful methods that make building
+# and maintaining the tests much easier (IMHO). See the docs for Test::Unit for
+# more info on the particulars of unit testing.
 # 
 # == Synopsis
 # 
-#   
-# 
-# == Author
-# 
-# Michael Granger <ged@FaerieMUD.org>
-# 
-# Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
-# 
-# This module is free software. You may use, modify, and/or redistribute this
-# software under the terms of the Perl Artistic License. (See
-# http://language.perl.com/misc/Artistic.html)
-# 
-# == Version
+#	# Allow the unit test to be run from the base dir, or from tests/mues/ or
+#	# similar:
+#	begin
+#		require 'tests/muesunittest'
+#	rescue
+#		require '../muesunittest'
+#	end
 #
-#  $Id: muestestcase.rb,v 1.2 2002/05/16 03:55:17 deveiant Exp $
+#	require 'mysomething'
+#
+#	class MySomethingTest < MUES::TestCase
+#		def set_up
+#			super()
+#			@foo = 'bar'
+#		end
+#
+#		def test_00_something
+#			obj = nil
+#			assert_nothing_raised { obj = MySomething::new }
+#			assert_instance_of MySomething, obj
+#			assert_respond_to :myMethod, obj
+#		end
+#	end
+# 
+# == Rcsid
+# 
+#  $Id: muestestcase.rb,v 1.3 2002/09/13 15:36:14 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 # 
 
 if File.directory? "lib"
