@@ -1,14 +1,14 @@
 #!/usr/bin/ruby
 #
 #	The default questionnaire script used to log in.
-#	$Id$
+#	$SvnId$
 #
 
 [
 	# Username
 	{
 		:name		=> "username",
-		:question   => "Username: ",
+		:question   => "Login: ",
 		:validator	=> lambda {|qnaire,answer|
 			qnaire.data[:tries] ||= 0
 			qnaire.data[:tries] += 1

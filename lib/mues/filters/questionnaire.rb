@@ -620,10 +620,18 @@ module MUES
 					if step.key?( :question )
 						if step[:question].kind_of? MUES::OutputEvent
 							event = step[:question].dup
-						elsif step[ :hidden ]
-							event = MUES::HiddenInputPromptEvent::new( step[:question] )
-						else
-							event = MUES::PromptEvent::new( step[:question].to_s )
+                        else
+                            if step[:question].respond_to? :call
+                                text = step[:question].call( self )
+                            else
+                                text = step[:question].to_s
+                            end
+
+                            if step[ :hidden ]
+                                event = MUES::HiddenInputPromptEvent::new( text )
+                            else
+                                event = MUES::PromptEvent::new( text )
+                            end
 						end
 					else
 						event = MUES::PromptEvent::new( step[:name].capitalize + ": " )

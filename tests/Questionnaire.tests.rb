@@ -59,10 +59,13 @@ class QuestionnaireTestCase < MUES::TestCase
 			:abortAnswers	=> [ '' ],
 		},
 
-		# Proc validator step
+		# Proc validator step and question
 		{
 			:name		=> 'question2',
-			:question	=> 'Question: ',
+            :question	=> lambda {|questionnaire|
+                questionnaire.message( "Ohhoho!  You made it this far, eh?" )
+                return 'Question: '
+            },
 			:validator	=> Proc::new {|questionnaire,answer|
 				if answer.empty? || answer == 'abort'
 					questionnaire.abort
@@ -117,7 +120,8 @@ class QuestionnaireTestCase < MUES::TestCase
 			:abortAnswers	=> [ '' ],
 		},
 
-
+        # Dynamic question test
+                 
 
 	]
 
