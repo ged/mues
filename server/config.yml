@@ -31,7 +31,9 @@ engine:
     memorymanager: Null
   listeners:
     shell:
+      name: telnet
       kind: telnet
+      filterDebug: 5
       params:
         useWrapper: false
         banner: >
@@ -41,19 +43,20 @@ engine:
 
           Contact: #{general.serverAdmin}
 
-
-        questionnaire:
-          name: login
+        bindAddress: 0.0.0.0
+        bindPort: 4848
+        loginsession:
+          kind: ''
           params:
             userPrompt: "Username: "
             passPrompt: "Password: "
-        bindAddress: 0.0.0.0
-        bindPort: 4848
     console:
+      name: console
       kind: console
+      filterDebug: 5
       params:
-        questionnaire:
-          name: login
+        loginsession:
+          kind: ''
           params:
             userPrompt: "Console: "
             passPrompt: "Password (echoed): "
@@ -64,8 +67,10 @@ login:
     Contact: *poc
   questionnaire: login
   params:
-    username prompt: 'Username: '
-    password prompt: 'Password: '
+    userPrompt: 'Username: '
+    passPrompt: 'Password: '
+    maxTries: 3
+    timeout: 600
 logging:
   MUES:
     level: debug
@@ -82,9 +87,3 @@ environments:
       kind: "Null"
       params: {}
       description: A testing environment without any surroundings.
-commandshell:
-  - shell class: MUES::CommandShell
-  - params:
-    reload interval: 50
-    default prompt: 'mues> '
-    command prefix: /
