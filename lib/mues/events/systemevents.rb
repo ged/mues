@@ -66,7 +66,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.13 2002/10/25 03:12:42 deveiant Exp $
+# $Id: systemevents.rb,v 1.14 2002/10/31 02:17:01 deveiant Exp $
 # 
 # == Authors
 # 
@@ -169,6 +169,11 @@ module MUES
 			super( listener )
 		end
 
+
+		######
+		public
+		######
+
 		# The error message that was detected
 		attr_reader :error
 
@@ -191,6 +196,7 @@ module MUES
 			super( listener )
 			@filter = filter
 		end
+
 
 		######
 		public
@@ -216,6 +222,7 @@ module MUES
 			super( listener )
 		end
 
+
 		######
 		public
 		######
@@ -229,13 +236,6 @@ module MUES
 	### An event class used to add an entry to the log. It derives from the
 	### MUES::SystemEvent class.
 	class LogEvent < SystemEvent
-
-		# The log message
-		attr_reader :message
-
-		# The log "severity" level
-		attr_reader :severity
-
 
 		# Create and return a new LogEvent with the specified <tt>severity</tt>
 		# (which must be one of <tt>"debug", "info", "notice", "error", "crit",
@@ -252,6 +252,18 @@ module MUES
 			@message = if message.empty? then "[Mark]" else message.join(" ") end
 			super()
 		end
+
+
+		######
+		public
+		######
+
+		# The log message
+		attr_reader :message
+
+		# The log "severity" level
+		attr_reader :severity
+
 
 		### Returns a stringified version of the event
 		def to_s
@@ -270,9 +282,6 @@ module MUES
 	### "heartbeat". It derives from the MUES::SystemEvent class.
 	class TickEvent < SystemEvent
 
-		# The sequence number of the tick
-		attr_accessor :tickNumber
-
 		### Create and return a new TickEvent with the sequence number specified
 		### by <tt>tickNumber</tt>, which must be a Fixnum.
 		def initialize( tickNumber )
@@ -282,6 +291,14 @@ module MUES
 			super()
 		end
 
+
+		######
+		public
+		######
+
+		# The sequence number of the tick
+		attr_accessor :tickNumber
+
 	end
 
 
@@ -289,16 +306,22 @@ module MUES
 	### derives from the MUES::SystemEvent class.
 	class EngineShutdownEvent < SystemEvent
 
-		# The agent of the shutdown (ie., the User or system requesting the
-		# shutdown).
-		attr_accessor :agent
-
 		# Create and return a new EngineShutdownEvent with the specified object
 		# registered as the agent.
 		def initialize( anObject )
 			@agent = anObject
 			super()
 		end
+
+
+		######
+		public
+		######
+
+		# The agent of the shutdown (ie., the User or system requesting the
+		# shutdown).
+		attr_accessor :agent
+
 	end
 
 
@@ -319,9 +342,6 @@ module MUES
 	### the MUES::SystemEvent class.
 	class ExceptionEvent < SystemEvent
 
-		# The exception object
-		attr_accessor :exception
-
 		### Create and return a new ExceptionEvent with the specified +exception+.
 		def initialize( exception )
 			checkType( exception, ::Exception )
@@ -329,6 +349,14 @@ module MUES
 			@exception = exception
 			super()
 		end
+
+		######
+		public
+		######
+
+		# The exception object
+		attr_accessor :exception
+
 	end
 
 
@@ -355,12 +383,6 @@ module MUES
 	### MUES::SystemEvent class.
 	class CallbackEvent < SystemEvent
 
-		# The callback (a Proc or Method object).
-		attr_accessor :callback
-
-		# The callback's argument array.
-		attr_accessor :args
-
 		### Create and return a new CallbackEvent with the specified +callback+
 		### (a Proc or a Method object), which will be called with the specified
 		### arguments.
@@ -370,6 +392,17 @@ module MUES
 			@args = args
 			super()
 		end
+
+
+		######
+		public
+		######
+
+		# The callback (a Proc or Method object).
+		attr_accessor :callback
+
+		# The callback's argument array.
+		attr_accessor :args
 
 		### Call the callback with the args given at instantiation.
 		def call
@@ -395,6 +428,11 @@ module MUES
 			@message = message || "Caught a '#{@signal}' signal."
 			super()
 		end
+
+
+		######
+		public
+		######
 
 		# The name of the signal that was trapped
 		attr_reader :signal
