@@ -174,7 +174,7 @@ FILE_PAGE = %{
 		<H1>%short_name%</H1>
 		<TABLE class="header-table">
 		<TR valign="top"><TD><STRONG>Path:</STRONG></TD><TD>%full_path%</TD></TR>
-		<TR valign="top"><TD><STRONG>Last<BR>Update:</STRONG></TD><TD>%dtm_modified%</TD></TR>
+		<TR valign="top"><TD><STRONG>Last Update:</STRONG></TD><TD>%dtm_modified%</TD></TR>
 		</TABLE>
 	</DIV>
 }
