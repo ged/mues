@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.11 2002/10/23 02:07:39 deveiant Exp $
+# $Id: mixins.rb,v 1.12 2002/10/23 18:29:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -94,12 +94,12 @@ module MUES
 	###
 	### The methods which it requires be implemented are:
 	###
-	### <tt>atEngineStartup( <em>engineObject</em> )</tt>::
+	### [<tt>atEngineStartup( <em>engineObject</em> )</tt>]
 	###   This method will be called during engine startup, immediately after the
 	###   event subsystem is started. Any returned events will be dispatched from
 	###   the Engine.
 	###
-	### <tt>atEngineShutdown( <em>engineObject</em> )</tt>::
+	### [<tt>atEngineShutdown( <em>engineObject</em> )</tt>]
 	###   This method will be called just before the engine shuts down, and can be
 	###   used to queue critical cleanup events that need to be executed before
 	###   the event subsystem is shut down.
