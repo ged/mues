@@ -2,27 +2,50 @@
 #
 # This file contains the MUES::IOEventFilter class, which is an abstract base
 # class for filter objects in a MUES::IOEventStream. The filters act as links in
-# a Chain of Responsibility([Design Patterns]), acting on the contents of
-# MUES::IOEvent objects which are passed up and down the stream, modifying them,
-# creating events based on them, changing their own internal state or the state
-# of an associated object based on them, or ignoring them, depending on the task
-# which the filter is supposed to accomplish.
+# a Chain of Responsibility
+# (http://patterndigest.com/patterns/ChainOfResponsibili.html), acting on the
+# contents of MUES::IOEvent objects which are passed up and down the stream,
+# modifying them, creating other events based on them, changing their own
+# internal state or the state of an associated object based on them, or ignoring
+# them, depending on the task which the filter is supposed to accomplish.
 # 
-# The IOEventFilter class and the IOEventStream also use the Observer pattern to
-# avoid the need to poll each filter for pending events.
+# This class also fulfills the <tt>Subject</tt> role of the
+# <strong>Observer</strong> design pattern
+# (http://patterndigest.com/patterns/Observer.html), with the
+# MUES::IOEventStream as the <tt>Observer</tt> part. Filters notify the streams
+# they are associated with when they have pending events.
+#
+# When you define a derivative of IOEventFilter, you will need to define a class
+# constant called 'DefaultSortPosition', which is a number between 0 and 1000,
+# inclusive. This number is used by the Comparable interface to determine the
+# order in which filters should be sorted, and therefore the order in which they
+# are given the IOEvents which have entered the stream. Lower values means the
+# filter will sort more towards the <strong>output</strong> side of the stream,
+# higher values sort towards the <strong>input</strong> side, and middle values
+# generally act as modifying, macro, or duplicative filters.
+#
+# You can also pass a different sort order value for a specific instance to this
+# class's #initialize method via <tt>super()</tt>.
 #
 # == Synopsis
 # 
 #   require "mues/filters/IOEventFilter"
 # 
 #   class MyFilter < MUES::IOEventFilter
-#     @@SortDisposition = 750
+#     DefaultSortPosition = 550
 #     ...
+#	  def handleInputEvents( *events )
+#	    ...
+#	  end
+#
+#	  def handleOutputEvents( *events )
+#	    ...
+#	  end
 #   end
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.13 2002/08/02 20:03:43 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.14 2002/08/29 07:19:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,6 +61,7 @@
 require "observer"
 
 require "mues/Object"
+require "mues/Mixins"
 require "mues/Events"
 require "mues/Exceptions"
 
@@ -51,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.13 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.14 2002/08/29 07:19:17 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -111,7 +135,7 @@ module MUES
 		### the filter will not notify the stream when events are pending.
 		def start( streamObject )
 			add_observer( streamObject )
-			true
+			[]
 		end
 
 
@@ -125,7 +149,7 @@ module MUES
 		def stop( streamObject )
 			delete_observer( streamObject )
 			@isFinished = true if count_observers.zero?
-			true
+			[]
 		end
 
 
