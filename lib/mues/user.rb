@@ -21,7 +21,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.16 2002/07/09 15:01:34 deveiant Exp $
+# $Id: user.rb,v 1.17 2002/08/01 03:06:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -52,8 +52,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.16 2002/07/09 15:01:34 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.17 2002/08/01 03:06:08 deveiant Exp $
 
 		# User AccountType constants module. Contains the following constants:
 		# 
@@ -83,9 +83,20 @@ module MUES
 		AccountType.freeze
 
 
-		### Create a new user object with the hash (or hash-like object) of
-		### attributes specified
-		def initialize( attributes )
+		### Create a new user object with the hash of attributes specified The
+		### valid attributes are:
+		###
+		### [<tt>:username</tt>]
+		###   The login name of the user. Defaults to 'guest'.
+		### [<tt>:realname</tt>]
+		###   The real name of the user. Defaults to 'Guest User'.
+		### [<tt>:emailAddress</tt>]
+		###   The user's email address. Defaults to 'guestAccount@localhost'.
+		### [<tt>:lastLoginDate</tt>]
+		###   The date of the user's last connection.
+		### [<tt>:lastHost</tt>]
+		###   The hostname or IP of host the user last connected from.
+		def initialize( attributes={} )
 			checkResponse( attributes, '[]', '[]=', 'has_key?' )
 			super()
 
@@ -97,8 +108,8 @@ module MUES
 			@username			= attributes[:username]		|| 'guest'
 			@realname			= attributes[:realname]		|| 'Guest User'
 			@emailAddress		= attributes[:emailAddress] || 'guestAccount@localhost'
-			@lastLogin			= attributes[:lastLogin]	|| ''
-			@lastHost			= attributes[:lastHost]		|| ''
+			@lastLoginDate		= attributes[:lastLoginDate]
+			@lastHost			= attributes[:lastHost]
 
 			@timeCreated		= Time.now
 			@firstLoginTick		= 0
@@ -134,7 +145,7 @@ module MUES
 		attr_accessor :emailAddress
 
 		# The Date the user last logged in
-		attr_accessor :lastLogin
+		attr_accessor :lastLoginDate
 
 		# The host the user last logged in from
 		attr_accessor :lastHost
@@ -233,15 +244,15 @@ module MUES
 
 		### Activate the user, set up their environment with the given stream,
 		### and output the specified 'message of the day', if given.
-		def activate( stream, motd=nil )
+		def activate( stream, cshell, motd=nil )
 			checkType( stream, MUES::IOEventStream )
+			checkType( cshell, MUES::CommandShell )
 
 			# Create the command shell and macro filters and add them
-			shell = CommandShell.new( self )
 			macros = MacroFilter.new( self )
-			stream.addFilters( shell, macros )
+			stream.addFilters( cshell, macros )
 
-			shell.debugLevel = 3
+			cshell.debugLevel = 3
 
 			# Set the stream attribute and flag the object as activated
 			@ioEventStream = stream
@@ -281,6 +292,8 @@ module MUES
 
 			results = []
 
+			### :FIXME: This shouldn't explicitly refer to the output filter
+			### class, since it may not even be a SocketOutputFilter at all.
 			newFilter = stream.removeFiltersOfType( SocketOutputFilter )[0]
 			raise RuntimeError, "Cannot reconnect from a stream with no SocketOutputFilter" unless newFilter
 			newFilter.puts( "Reconnecting..." )
@@ -305,7 +318,7 @@ module MUES
 		#########
 
 		### IO event handler method
-		def _handleIOEvent( event )
+		def handleIOEvent( event )
 			@ioEventStream.addEvents( event )
 		end
 
