@@ -1,26 +1,26 @@
 #!/usr/bin/ruby
 # 
-# A collection of classes used by the MUES::LoginSession class to communicate
-# with the MUES::Engine.
+# A collection of classes that can be used by the login questionnaire to
+# communicate with the Engine.
 #
 # This file contains the definitions for the following event classes:
 #
-# [MUES::LoginSessionEvent]
-#	Abstract base class for MUES::LoginSession events.
+# [MUES::LoginEvent]
+#	Abstract base class for MUES::LoginEvent objects.
 # 
-# [MUES::LoginSessionFailureEvent]
-#	A LoginSession event class for indicating a failed login session.
+# [MUES::LoginFailureEvent]
+#	A LoginEvent class for indicating a failed login session.
 # 
-# [MUES::LoginSessionEvent]
-#	A LoginSession event class for indicating a successful login session.
+# [MUES::LoginAuthEvent]
+#	A LoginEvent class for indicating a successful login session.
 # 
 # == Synopsis
 # 
-#   require 'mues/events/loginsessionevents'
+#   require 'mues/events/loginevents'
 # 
 # == Rcsid
 # 
-# $Id: loginevents.rb,v 1.12 2003/10/13 04:02:15 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -34,8 +34,6 @@
 #
 
 
-require "weakref"
-
 require 'mues/object'
 require 'mues/exceptions'
 require 'mues/events/privilegedevent'
@@ -46,22 +44,31 @@ module MUES
 	###	A B S T R A C T   E V E N T   C L A S S E S
 	#################################################################
 
-	### Abstract base class for LoginSession events.
-	class LoginSessionEvent < PrivilegedEvent ; implements MUES::AbstractClass
+	### Abstract base class for LoginEvent object classes.
+	class LoginEvent < PrivilegedEvent ; implements MUES::AbstractClass
 
-		include MUES::TypeCheckFunctions
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# The MUES::LoginSession this event is associated with.
-		attr_reader	:session
+		# SVN Id
+		SVNId = %q$Id$
 
-		### Initialize a new LoginSession event with the specified
-		### MUES::LoginSession object. This method should be called by
-		### derivative classes from their initializers.
-		def initialize( aLoginSession ) # :notnew:
-			checkType( aLoginSession, LoginSession )
-			@session = WeakRef.new( aLoginSession )
+		# SVN URL
+		SVNURL = %q$URL$
+
+
+		### Initialize a new LoginEvent for the given +stream+.
+		def initialize( stream )
+			@stream = stream
 			super()
 		end
+
+		######
+		public
+		######
+
+		# The stream which belongs to the authenticating user.
+		attr_reader :stream
 	end
 
 
@@ -72,17 +79,31 @@ module MUES
 	### A LoginSession event class for indicating a failed login session. This
 	### happens after the user has made too many attempts to authenticate, or
 	### when a connection has been denied due to being blacklisted, etc.
-	class LoginSessionFailureEvent < LoginSessionEvent
+	class LoginFailureEvent < LoginEvent
 
-		# A message String indicating why the session failed
-		attr_reader :reason
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create and return a new event with the specified +session+ (a
 		### MUES::LoginSession object) and reason (a String).
-		def initialize( session, reason )
-			super( session )
+		def initialize( stream, reason )
+			super( stream )
 			@reason = reason
 		end
+
+		######
+		public
+		######
+
+		# A message String indicating why the session failed
+		attr_reader :reason
 
 		### Returns a stringified version of the event
 		def to_s
@@ -91,49 +112,41 @@ module MUES
 	end
 
 
-	### A LoginSession event for passing the information from an authentication
+	### A LoginEvent class for passing the information from an authentication
 	### attempt to the MUES::Engine for confirmation. It contains the
 	### authentication information and two callbacks: one for a successful
 	### authentication, and one for failed authentication.
-	class LoginSessionAuthEvent < LoginSessionEvent
+	class LoginAuthEvent < LoginEvent
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create a new authorization event with the specified values and
-		### return it. The <tt>session</tt> argument is the
-		### <tt>LoginSession</tt> that contains the socket connection, the
-		### <tt>user</tt> and <tt>pass</tt> arguments are the username and
-		### password that has been given by the connecting client, the
-		### <tt>filter</tt> is the output filter containing the client
-		### connection, and the <tt>sCall</tt> and <tt>fCall</tt> are
-		### <tt>String</tt>, <tt>Method</tt>, or <tt>Proc</tt> objects which
-		### specify a function to call to indicate successful or failed
-		### authentication. If the callback is a <tt>String</tt>, it is assumed
-		### to be the name of the method to call on the specified
-		### <tt>LoginSession</tt> object.
-		def initialize( session, user, pass, filter, sCall, fCall )
-			checkEachType( [user,pass], ::String )
-			checkType( filter, MUES::OutputFilter )
-			checkEachType( [sCall,fCall], ::String, ::Method, ::Proc )
+		### return it. The +stream+ specifies the IOEventStream belonging
+		### to the authenticating user. The +user+ and +pass+
+		### arguments are the username and password that have been offered by
+		### the connecting user, the +filter+ is the output filter
+		### containing the client connection, and the +sCall+ and
+		### +fCall+ are <tt>String</tt>, <tt>Method</tt>, or
+		### <tt>Proc</tt> objects which specify a function to call to indicate
+		### successful or failed authentication. If the callback is a
+		### <tt>String</tt>, it is assumed to be the name of the method to call
+		### on the specified <tt>IOEventStream</tt> object.
+		def initialize( stream, user, pass, filter, sCall, fCall )
+			super( stream )
 
-			successCallback = case sCall
-							  when String
-								  session.method( sCall )
-							  when Method, Proc
-								  sCall
-							  end
-
-			failureCallback = case fCall
-							  when String
-								  session.method( fCall )
-							  when Method, Proc
-								  fCall
-							  end
-
-			super( session )
 			@username			= user
 			@password			= pass
-			@filter				= filter
-			@successCallback	= successCallback
-			@failureCallback	= failureCallback
+			@filter				= filter or raise ArgumentError, "No filter"
+			@successCallback	= sCall or raise ArgumentError, "No success callback"
+			@failureCallback	= fCall or raise ArgumentError, "No failure callback"
 		end
 
 
@@ -147,22 +160,14 @@ module MUES
 		# The unencrypted password entered by the user
 		attr_reader :password
 
-		# The MUES::OutputFilter that contains the user's connection
-		attr_reader :filter
-
 		# The callback (a Method object) for indicating a successful attempt
 		attr_reader :successCallback
 
 		# The callback (a Method object) for indicating a failed attempt
 		attr_reader :failureCallback
 
-
-		### Returns the 'peer name' of the MUES::OutputFilter that contains the
-		### authenticating user's connection.
-		def peerName
-			@filter.peerName
-		end
-		deprecate_method :remoteHost, :peerName
+		# The IOEventFilter created for the remote client by the Listener.
+		attr_reader :filter
 
 
 		### METHOD: to_s
