@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.17 2003/06/06 22:22:08 deveiant Exp $
+# $Id: exceptions.rb,v 1.18 2003/08/04 02:37:50 deveiant Exp $
 # 
 # == Authors
 # 
@@ -132,7 +132,7 @@ module MUES
 	### with the specified <tt>message</tt>. The new exception class will
 	### inherit from the specified <tt>superclass</tt>, if specified, or
 	### <tt>StandardError</tt> if not specified.
-	def MUES.def_exception( name, message, superclass=StandardError )
+	def MUES.def_exception( name, message, superclass=MUES::Exception )
 		name = name.id2name if name.kind_of?( Fixnum )
 		eClass = Class.new( superclass )
 		eClass.module_eval %Q{
