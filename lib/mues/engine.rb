@@ -6,8 +6,8 @@
 # 
 # * Load, configure, and maintain one or more MUES::Environment objects.
 # 
-# * Handle system IO though an IO abstraction (MUES::IOEventStream) and a
-#   polling loop.
+# * Handle multiplexed IO through one or more stream abstractions
+#   (MUES::IOEventStream objects) attached to an IO::Reactor.
 #
 # * Provide object persistance for user objects and environments
 #   (MUES::ObjectStore).
@@ -53,7 +53,7 @@
 # loops in the #mainThreadRoutine method, marking each loop by dispatching a
 # MUES::TickEvent, and then sleeping for a duration of time set in the main
 # configuration file. The #ioThreadRoutine method polls any socket added to the
-# engine's poll object and calls the appropriate callback when an IO event
+# engine's reactor object and calls the appropriate callback when an IO event
 # occurs. This includes IO for both the MUES::Listener objects and (by default)
 # MUES::OutputFilter objects in a MUES::IOEventStream.
 #
@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.42 2003/08/04 02:36:51 deveiant Exp $
+# $Id: engine.rb,v 1.43 2003/09/12 02:09:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -124,7 +124,7 @@
 require "thread"
 require "sync"
 require "digest/md5"
-require "poll"
+require "io/reactor"
 require "timeout"
 
 require "mues/Mixins"
@@ -142,7 +142,7 @@ require "mues/Environment"
 require "mues/LoginSession"
 require "mues/Service"
 require "mues/Listener"
-require "mues/PollProxy"
+require "mues/ReactorProxy"
 
 module MUES
 
@@ -178,23 +178,18 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.42 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.42 2003/08/04 02:36:51 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.43 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.43 2003/09/12 02:09:44 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
 		DefaultAdmin		= 'MUES Admin <mues@localhost>'
-		DefaultPollInterval	= 0.25
 
 		### Prototype for scheduled events hash (duped before use)
 		ScheduledEventsHash = { :timed => {}, :ticked => {}, :repeating => {} }
 
 		### Class variables
 		@@Instance		= nil
-
-		### Callback passed to the poll object for listeners (defined the first
-		### time #registerListener is called).
-		@@ListenerConnectCallback = nil
 
 
 		### Make the new and allocate methods private, as this class is a
@@ -221,7 +216,7 @@ module MUES
 
 			@ioThread				= nil
 			@ioMutex				= Sync::new
-			@pollObj				= Poll::new
+			@reactor				= IO::Reactor::new
 			@listeners				= {}
 
 			@eventQueue				= nil
@@ -878,7 +873,7 @@ module MUES
 			debugMsg( 1, "Starting IO thread." )
 
 			@ioThread = Thread.new { ioThreadRoutine() }
-			@ioThread.desc = "IO polling thread"
+			@ioThread.desc = "IO reactor thread"
 			@ioThread.abort_on_exception = true
 
 			self.log.notice( "IO thread started: #{@ioThread.id}" )
@@ -1014,7 +1009,7 @@ module MUES
 
 
 		### Add the specified listeners to the engine's hash of listeners and
-		### register them with the poll object.
+		### register them with the reactor object.
 		def addListeners( *listeners )
 			checkEachType( listeners, MUES::Listener )
 
@@ -1033,7 +1028,7 @@ module MUES
 
 		### Remove the specified listeners (which may be either MUES::Listener
 		### objects, or the names they're registered as) from the Engine's hash
-		### of listeners, and unregister them from the poll object. Returns the
+		### of listeners, and unregister them from the reactor object. Returns the
 		### array of listeners which were removed.
 		def removeListeners( *listeners )
 			checkEachType( listeners, MUES::Listener, ::String )
@@ -1072,51 +1067,56 @@ module MUES
 		end
 
 
-		### Register the specified listener with the Engine's Poll object.
+		### Listener IO event handler method
+		def handleListenerConnect( sock, event, listener )
+			case event
+
+			# Normal readable event
+			when :read
+				MUES::Log.notice( "Connect event for #{listener.to_s}." )
+
+				filter = listener.createOutputFilter( @reactor )
+				self.dispatchEvents( ListenerConnectEvent::new(listener, filter) )
+
+			# Error events
+			when :error
+				self.dispatchEvents( ListenerErrorEvent::new(listener, @reactor) )
+				@reactor.unregister( listener.io )
+
+			# Everything else
+			else
+				self.log.error( "Unhandled Listener reactor event #{event.inspect}" )
+			end
+		end
+
+
+		### Register the specified listener with the Engine's IO::Reactor
+		### object.
 		def registerListener( listener )
 			checkType( listener, MUES::Listener )
 
 			self.log.info( "Registering listener: %s " % listener.to_s )
 
-			# Define the callback Proc used for all Listeners if it isn't already defined
-			@@ListenerConnectCallback ||= Proc::new {|sock,mask,listener|
-				case mask
 
-				# Normal readable event
-				when Poll::IN
-					MUES::Log.notice( "Connect event for #{listener.to_s}." )
-
-					filter = listener.createOutputFilter( @pollObj )
-					self.dispatchEvents( ListenerConnectEvent::new(listener, filter) )
-
-				# Error events
-				when Poll::ERR|Poll::HUP|Poll::NVAL
-					self.dispatchEvents( ListenerErrorEvent::new(listener, @pollObj, mask) )
-					@pollObj.unregister( listener.io )
-
-				# Everything else
-				else
-					self.log.error( "Unhandled Listener poll event #{mask.inspect}" )
-				end
-			}
-
-			# Now register the listener with the poll object
+			# Now register the listener with the reactor object
 			@ioMutex.synchronize( Sync::EX ) {
-				@pollObj.register( listener.io, Poll::IN, @@ListenerConnectCallback, listener )
+				@reactor.register listener.io, :read, listener,
+					&method(:handleListenerConnect)
 			}
 
 			return true
 		end
 
 
-		### Un-register the specified listener with the Engine's Poll object
+		### Un-register the specified listener with the Engine's IO::Reactor
+		### object
 		def unregisterListener( listener )
 			checkType( listener, MUES::Listener )
 
 			self.log.info( "Unregistering listener: %s " % listener.to_s )
 
 			@ioMutex.synchronize( Sync::EX ) {
-				@pollObj.unregister( listener.io )
+				@reactor.unregister( listener.io )
 			}
 		end
 
@@ -1233,36 +1233,21 @@ module MUES
 			while running? do
 				begin
 
-					if @config.engine.has_item? 'poll_interval'
-						interval = @config.engine.poll_interval.to_f
-					else
-						interval = DefaultPollInterval
-					end
-
-					self.log.info( "Poll interval is #{interval} seconds" )
-
 					### :TODO: Fix race condition: If a connection comes in after stop()
 					### has been called, but before the Shutdown exception has been
 					### dispatched.
 
 					# Poll loop
 					while running? do
-
-						startTime = Time::now
-						Thread.pass
-
 						begin
-							@ioMutex.synchronize( Sync::SH ) {
-								@pollObj.poll( 0.01 )
-							}
+							# Timeout so changes/additions to the reactor take
+							# effect
+							@reactor.poll( 1 )
 						rescue StandardError => e
 							dispatchEvents( UntrappedExceptionEvent.new(e) )
 							next
 						end
-
-						remainder = (interval - (Time::now - startTime)).to_f
-						sleep remainder if remainder > 0.0
-
+						Thread.pass
 					end
 				rescue Reload
 					self.log.notice( "IO thread: Got notice of configuration reload." )
@@ -1273,7 +1258,7 @@ module MUES
 				rescue StandardError => e
 					dispatchEvents( UntrappedExceptionEvent.new(e) )
 					next
-				rescue Interrupt, SignalException => e
+				rescue SignalException => e
 					dispatchEvents( UntrappedSignalEvent.new(e) )
 					next
 				end
@@ -1405,7 +1390,7 @@ module MUES
 
 		### Handle disconnections on filters created by listeners.
 		def handleListenerCleanupEvent( event )
-			results = event.listener.releaseOutputFilter( @pollObj, event.filter ) || []
+			results = event.listener.releaseOutputFilter( @reactor, event.filter ) || []
 			return *results
 		end
 
