@@ -144,12 +144,12 @@ module MUES
 	### Object store class
 	class ObjectStore < Object ; implements Debuggable
 
+		autoload :Adapter, "mues/adapters/Adapter"
 		include Event::Handler
-		autoload "MUES::ObjectStore::Adapter", "mues/adapters/Adapter"
 
 		### Class Constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: ObjectStore.rb,v 1.10 2001/11/01 17:14:13 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: ObjectStore.rb,v 1.11 2001/12/05 18:07:41 deveiant Exp $
 
 		AdapterSubdir = 'mues/adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/
@@ -241,7 +241,7 @@ module MUES
 		### loaded, an (({UnknownAdapterError})) exception is raised.
 		def initialize( config )
 			super()
-			@dbAdapter = self.class.getAdapter( config )
+			@dbAdapter = ObjectStore::getAdapter( config )
 		end
 
 		### METHOD: fetchObjects( *objectIds ) { |obj| block } -> objects=Array
