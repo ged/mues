@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.31 2002/08/02 20:03:44 deveiant Exp $
+#  $Id: objectstore.rb,v 1.32 2002/09/12 12:09:27 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.31 $
-		RcsId	= %q$Id: objectstore.rb,v 1.31 2002/08/02 20:03:44 deveiant Exp $
+		Version	= %q$Revision: 1.32 $
+		RcsId	= %q$Id: objectstore.rb,v 1.32 2002/09/12 12:09:27 deveiant Exp $
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -192,26 +192,6 @@ module MUES
 		end
 
 
-		### Assemble an ObjectStores according to the specified <tt>config</tt>
-		### object, which must be a MUES::Config::ObjectStoreSection.
-		def self.createFromConfig( config )
-			MUES::TypeCheckFunctions::checkType( config, MUES::Config::ObjectStoreSection )
-
-			# Make a Hash out of all the construction arguments
-			configHash = {
-				:name => config['name'],
-				:backend => config.backend,
-				:memmgr => config.memoryManager,
-				:config => config.argHash,
-			}
-
-			# Visitor element is optional, so don't add it if it's not defined.
-			configHash[:visitor] = config.visitor if config.has_item?( "visitor" )
-
-			return self.create( configHash )
-		end
-
-
 		### Initializes a new ObjectStore
 		###
         ### [name]
@@ -282,9 +262,9 @@ module MUES
 		### that matches all of the specified pairs.
 		def lookup( indexPairs )
 			self.log.debug {"Looking up objects with #{indexPairs.length} search terms."}
-			objs = @backend.lookup( indexPairs )
+			objs = @backend.lookup( indexPairs ) || []
 			self.log.debug {"Lookup found #{objs.length} objects."}
-			return *self.restore( *objs )
+			return self.restore( *objs )
 		end
 
 
@@ -377,6 +357,13 @@ module MUES
 		end
 
 
+		### Add the specified <tt>indexes</tt>, which can be either Strings or
+		### Symbols, to the objectstore.
+		def addIndexes( *indexes )
+			@backend.addIndexes( *indexes )
+		end
+
+
 
 		#########
 		protected
@@ -385,6 +372,7 @@ module MUES
 		### Restores objects to the active objectspace, awakening and then
 		### registering each object with the memory manager.
 		def restore( *objs )
+			return objs if objs.empty?
 			self.log.debug {"Restoring #{objs.length} objects."}
 			checkEachType( objs, MUES::StorableObject )
 
@@ -395,7 +383,7 @@ module MUES
 			}
 
 			@memmgr.register( *(objs.compact) )
-			return *objs
+			return objs
 		end
 
 
