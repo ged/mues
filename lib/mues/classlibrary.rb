@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 # 
 # This file contains the MUES::ClassLibrary class, which is an AbstractFactory
-# class for environment metaclass libraries. It's purpose is to contain
+# class for environment metaclass libraries. Its purpose is to contain
 # libraries of Environment classes which can be instantiated outside of the main
 # Ruby namespace, and can be recombined and manipulated at runtime with greater
 # ease.
@@ -26,7 +26,7 @@
 #   
 # == Rcsid
 # 
-# $Id: classlibrary.rb,v 1.6 2002/05/16 03:52:06 deveiant Exp $
+# $Id: classlibrary.rb,v 1.7 2002/07/07 18:24:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,7 +43,7 @@ require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 
-require "metaclass/Class"
+require "metaclasses"
 
 module MUES
 
@@ -53,8 +53,8 @@ module MUES
 	### An AbstractFactory class for environment metaclass libraries
 	class ClassLibrary < Object
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.6 2002/05/16 03:52:06 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.7 2002/07/07 18:24:18 deveiant Exp $
 
 		### Return a new ClassLibrary object with the specified name.
 		def initialize( libraryName )
