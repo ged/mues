@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
 =BdbAdapter.rb
@@ -30,7 +30,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "bdb"
 require "thread"
@@ -49,12 +49,12 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.5 2001/07/18 02:01:44 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.6 2001/07/30 12:03:55 deveiant Exp $
 			DirectoryName = 'objectstore-bdb'
 
 			### Class variables
-			@@Sections = %w{object player ban allow}
+			@@Sections = %w{object user ban allow}
 
 			### METHOD: new( db, host, user, password )
 			### Creates a new BerkeleyDB ObjectStore adapter. Only the 'db'
@@ -112,6 +112,7 @@ module MUES
 			### Fetch objects with the specified ids from the database and return them
 			def fetchObjects( *oids )
 				objects = []
+				rawObj = nil
 
 				### Iterate over each id, re-instantiating each corresponding
 				### object
@@ -137,60 +138,60 @@ module MUES
 			end
 
 
-			### METHOD: storePlayerData( username, playerDataHash )
-			### Store the specified hash of player data for the specified user
-			def storePlayerData( username, data )
+			### METHOD: storeUserData( username, userDataHash )
+			### Store the specified hash of user data for the specified user
+			def storeUserData( username, data )
 				checkType( username, String )
 				checkType( data, Hash )
 
 				data['username'] = username
 				frozenData = Marshal.dump( data )
-				@lock['player'].synchronize(Sync::EX) {
-					@dbh['player'].store( username, frozenData )
+				@lock['user'].synchronize(Sync::EX) {
+					@dbh['user'].store( username, frozenData )
 				}
 
 				return data
 			end
 
 
-			### METHOD: fetchPlayerData( username )
-			### Fetch the hash of player data for the specified user
-			def fetchPlayerData( username )
+			### METHOD: fetchUserData( username )
+			### Fetch the hash of user data for the specified user
+			def fetchUserData( username )
 				checkType( username, String )
 
-				frozenData = @lock['player'].synchronize(Sync::SH) {
-					@dbh['player'].fetch( username )
+				frozenData = @lock['user'].synchronize(Sync::SH) {
+					@dbh['user'].fetch( username )
 				}
 				return nil if frozenData.nil?
 				return Marshal.restore( frozenData )
 			end
 
 
-			### METHOD: createPlayerData( username )
-			### Create a new hash of player data with the specified username
-			def createPlayerData( username )
+			### METHOD: createUserData( username )
+			### Create a new hash of user data with the specified username
+			def createUserData( username )
 				checkType( username, String )
 
-				@lock['player'].synchronize(Sync::SH) {
-					raise AdapterError, "A player with the name '#{username}' already exists." if
-						@dbh['player'].has_key?( username )
+				@lock['user'].synchronize(Sync::SH) {
+					raise AdapterError, "A user with the name '#{username}' already exists." if
+						@dbh['user'].has_key?( username )
 
-					storePlayerData( username, MUES::Player::DefaultDbInfo.dup )
+					storeUserData( username, MUES::User::DefaultDbInfo.dup )
 				}
 			end
 
 
-			### METHOD: deletePlayerData( username )
-			### Delete the hash of player data for the specified username
-			def deletePlayerData( username )
+			### METHOD: deleteUserData( username )
+			### Delete the hash of user data for the specified username
+			def deleteUserData( username )
 				checkType( username, String )
 
-				@lock['player'].synchronize(Sync::SH) {
-					raise AdapterError, "No player with the name '#{username}' exists." unless
-						@dbh['player'].has_key?( username )
+				@lock['user'].synchronize(Sync::SH) {
+					raise AdapterError, "No user with the name '#{username}' exists." unless
+						@dbh['user'].has_key?( username )
 
-					@lock['player'].synchronize(Sync::EX) {
-						@dbh['player'].delete( username )
+					@lock['user'].synchronize(Sync::EX) {
+						@dbh['user'].delete( username )
 					}
 				}
 			end
