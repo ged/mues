@@ -57,8 +57,8 @@ module MUES
 		include AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.3 2001/05/15 02:13:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.4 2001/05/22 04:40:17 deveiant Exp $
 		DefaultSortPosition = 500
 
 		### Class methods
@@ -115,23 +115,24 @@ module MUES
 		attr_reader		:queuedInputEvents, :queuedOutputEvents, :isFinished
 
 		### METHOD: shutdown
-		### Shut the filter down
+		### Shut the filter down, returning any events which should be
+		### dispatched on behalf of the filter.
 		def shutdown
 			_debugMsg( 1, "In shutdown." )
 			@isFinished = true
 			delete_observers()
-			return @queuedInputEvents + @queuedOutputEvents
+			return []
 		end
 
 		### METHOD: start( streamObject )
-		### Start up the filter for the specified stream
+		### Start up the filter for the specified stream. Returns true on success.
 		def start( streamObject )
 			add_observer( streamObject )
 			true
 		end
 
 		### METHOD: stop( streamObject )
-		### Stop the filter for the specified stream
+		### Stop the filter for the specified stream. Returns true on success.
 		def stop( streamObject )
 			delete_observer( streamObject )
 			true
