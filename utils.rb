@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.18 2003/10/13 04:08:19 deveiant Exp $
+#	$Id: utils.rb,v 1.19 2003/11/21 22:14:18 stillflame Exp $
 #
 #	Copyright (c) 2001-2003, The FaerieMUD Consortium.
 #
@@ -180,20 +180,35 @@ module UtilityFunctions
 	end
 
 	### Output the specified <tt>promptString</tt> as a prompt (in green) and
-	### return the user's input with leading and trailing spaces removed.
-	def prompt( promptString )
+	### return the user's input with leading and trailing spaces removed.  If a
+	### test is provided, the prompt will repeat until the test returns true.
+	### An optional failure message can also be passed in.
+	def prompt( promptString, failure_msg="Try again.", &test )
 		promptString.chomp!
-		return readline( ansiCode('bold', 'green') + "#{promptString}: " + ansiCode('reset') ).strip
+		response = readline( ansiCode('bold', 'green') +
+			"#{promptString}: " + ansiCode('reset') ).strip
+		until test.call(response)
+			errorMessage(failure_msg)
+			message("\n")
+			response = prompt( promptString )
+		end if test
+		return response
 	end
 
 	### Prompt the user with the given <tt>promptString</tt> via #prompt,
 	### substituting the given <tt>default</tt> if the user doesn't input
-	### anything.
-	def promptWithDefault( promptString, default )
+	### anything.  If a test is provided, the prompt will repeat until the test
+	### returns true.  An optional failure message can also be passed in.
+	def promptWithDefault( promptString, default, failure_msg="Try again.", &test )
 		response = prompt( "%s [%s]" % [ promptString, default ] )
 		if response.empty?
 			return default
 		else
+			until test.call(response)
+				errorMessage(faiure_msg)
+				message("\n")
+				response = promptWithDefault( promptString, default )
+			end if test
 			return response
 		end
 	end
