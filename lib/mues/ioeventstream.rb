@@ -103,35 +103,77 @@ module MUES
 			checkEachType( filters, MUES::IOEventFilter )
 			super()
 
-			### Start the stack out with default filters and the ones specified in
-			### the constructor ones
+			### Filter stack
 			@filters = [ DefaultInputFilter.new, filters, DefaultOutputFilter.new ].flatten
 			@filterMutex = Sync.new
 
+			### Event arrays
 			@inputEvents = []
 			@inputEventMutex = Sync.new
 			@outputEvents = []
 			@outputEventMutex = Sync.new
 
+			### IO signalling attributes
+			@notificationMutex		= Mutex.new
+			@notification			= ConditionVariable.new
+			@notifyingInputObjects	= []
+			@notifyingOutputObjects = []
+
+			### Stream state attributes
 			@state = RUNNING
 			@paused = false
 			@sleepTime = 0.0
-			@streamCond = ConditionVariable.new
 			@streamThread = Thread.new { _streamThreadRoutine }
 			@streamThread.abort_on_exception = true
 		end
+
+
+		### METHOD: update( subject, which )
+		### Notify the stream that the subject specified has pending events.
+		def update( subject, which )
+			checkType( which, String )
+
+			_debugMsg( 4, "Got '#{which}' notification from a #{subject.class.name}." )
+
+			@notificationMutex.synchronize {
+				case which
+				when /input/i
+					@notifyingInputObjects	|= [ subject ]
+
+				when /output/i
+					@notifyingOutputObjects	|= [ subject ]
+
+				else
+					raise ArgumentError, 
+						"Second argument of update must be one of 'input' or 'output', was '#{which}'"
+				end
+
+				_debugMsg( 5, "Signalling for this update." )
+				@notification.signal unless @paused
+			}
+		end
+
 
 		### METHOD: addFilters( *filters)
 		### Add the specified filters to the stream
 		def addFilters( *filters )
 			_debugMsg( 1, "Adding #{filters.size} filters to stream #{self.id}" )
 
+			filtersToStart = []
+
+			### Add each filter that isn't already in the stream, adding it to
+			### the array of filters, and notifying each one that it should
+			### start notifying this stream
 			@filterMutex.synchronize(Sync::EX) {
-				@filters |= filters
+				nonMemberSet = (filters - @filters)
+
+				@filters += nonMemberSet
+				nonMemberSet.each {|f| f.start( self ) }
 			}
 
 			_debugMsg( 2, "Stream now has #{@filters.size} filters." )
 		end
+
 
 		### METHOD: removeFilters( *filters )
 		### Remove the specified filters from the stream
@@ -140,8 +182,12 @@ module MUES
 
 			returnFilters = []
 
+			### Remove each filter that is actually in the stream, notifying
+			### each one that it should stop notifying this stream
 			@filterMutex.synchronize(Sync::EX) {
 				returnFilters = @filters & filters
+				returnFilters.each {|f| f.stop( self ) }
+
 				@filters -= filters
 			}
 
@@ -155,7 +201,9 @@ module MUES
 		### default handlers cannot be removed, however.
 		def removeFiltersOfType( aClass )
 			checkType( aClass, ::Class )
-			removeFilters( @filters.find_all {|filter| filter.is_a?( aClass )} )
+			@filterMutex.synchronize( Sync::SH ) {
+				removeFilters( @filters.find_all {|filter| filter.is_a?( aClass )} )
+			}
 		end
 
 
@@ -202,6 +250,7 @@ module MUES
 			@outputEventMutex.synchronize(Sync::EX) {
 				@outputEvents += events
 			}
+			update( self, 'output' )
 		end
 
 
@@ -228,6 +277,7 @@ module MUES
 			@inputEventMutex.synchronize(Sync::EX) {
 				@inputEvents += events
 			}
+			update( self, 'input' )
 		end
 
 
@@ -253,8 +303,18 @@ module MUES
 				@state = SHUTDOWN
 
 				### Shut each filter down and clear them
-				@filters.reverse.each {|filter| filter.shutdown}
+				@filters.reverse.each {|f|
+					f.stop( self )
+					f.shutdown
+				}
 				@filters.clear
+			}
+
+			unpause()
+
+			@notificationMutex.synchronize {
+				_debugMsg( 5, "Signalling for shutdown." )
+				@notification.signal
 			}
 
 			### Join on the stream's thread
@@ -275,7 +335,7 @@ module MUES
 		### METHOD: pause
 		### Stop processing events until unpause() is called.
 		def pause
-			@filterMutex.synchronize( Sync::EX ) {
+			@notificationMutex.synchronize {
 				@paused = true
 			}
 		end
@@ -284,8 +344,10 @@ module MUES
 		### METHOD: unpause
 		### Stop processing events until unpause() is called.
 		def unpause
-			@filterMutex.synchronize( Sync::EX ) {
+			@notificationMutex.synchronize {
 				@paused = false
+				_debugMsg( 5, "Signalling for unpause." )
+				@notification.signal unless ( @notifyingInputObjects + @notifyingOutputObjects ).empty?
 			}
 		end
 
@@ -300,25 +362,36 @@ module MUES
 		### the stream as they are generated/added.
 		def _streamThreadRoutine
 
+			### While the stream is running, filter IOEvents through it,
+			### stopping and waiting for the notification signal if there aren't
+			### any objects with pending events
 			while @state == RUNNING do
 
-				startTime = Time.now
-
 				@filterMutex.synchronize( Sync::SH ) {
-					unless @paused
+					if ! @notifyingInputObjects.empty?
+						_debugMsg( 4, "#{@notifyingInputObjects.length} input notifications." )
 						_filterInputEvents()
+					end
+
+					if ! @notifyingOutputObjects.empty?
+						_debugMsg( 4, "#{@notifyingOutputObjects.length} output notifications." )
 						_filterOutputEvents()
 					end
 				}
 
-				### Calculate how much time we have left in this loop, and catch a
-				### quick nap if there's time
-				sleepTime = @@IoLoopInterval - ( Time.now - startTime )
-				@sleepTime = sleepTime
-				sleep sleepTime if sleepTime > 0
+				@notificationMutex.synchronize {
+					if ( @notifyingInputObjects + @notifyingOutputObjects ).empty?
+						_debugMsg( 3, "No pending IO. Waiting on notification (#{@notification.inspect}) for #{@notificationMutex.inspect}." )
+						begin @notification.wait( @notificationMutex ) end until ! @paused
+						_debugMsg(3, "Got notification. %s notifying objects." % [
+									  ( @notifyingInputObjects + @notifyingOutputObjects ).length
+								  ])
+					end
+				}
 			end
 			
 		end
+
 
 		### (PROTECTED) METHOD: _filterInputEvents
 		### Filter any input events that are currently queued through the stream's
@@ -330,6 +403,10 @@ module MUES
 			events = fetchInputEvents()
 			events.flatten!
 			_debugMsg( 2, ">>> Starting input cycle: #{events.size} input events to filter." )
+
+			### Clear out the notifying objects, so we can use it to check for
+			### objects that notify while we're running.
+			@notificationMutex.synchronize { @notifyingInputObjects.clear }
 
 			### Delegate the list of events to each filter in turn, and catch any
 			### that are returned for the next filter
@@ -344,7 +421,7 @@ module MUES
 						removeFilters( filter )
 						oev = filter.queuedOutputEvents
 						_debugMsg( 2, "Adding #{oev.size} output events from finished filter to queue for next cycle." )
-						addOutputEvents( oev )
+						addOutputEvents( *oev )
 						events = filter.queuedInputEvents
 						next
 					end
@@ -368,6 +445,10 @@ module MUES
 			events = fetchOutputEvents()
 			_debugMsg( 2, "<<< Starting output cycle: #{events.size} output events to filter." )
 
+			### Clear out the notifying objects, so we can use it to check for
+			### objects that notify while we're running.
+			@notificationMutex.synchronize { @notifyingOutputObjects.clear }
+
 			### Delegate the list of events to each filter in turn, and catch any
 			### that are returned for the next filter
 			@filterMutex.synchronize(Sync::SH) {
@@ -384,8 +465,8 @@ module MUES
 						_debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
 						removeFilters( filter )
 						iev = filter.queuedInputEvents
-						_debugMsg( 2, "Adding #{iov.size} input events from finished filter to queue for next cycle." )
-						addInputEvents( iev )
+						_debugMsg( 2, "Adding #{iev.size} input events from finished filter to queue for next cycle." )
+						addInputEvents( *iev )
 						events = filter.queuedOutputEvents
 						next
 					end
