@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/29 07:45:18 $">
+#	<muesconfig version="1.1" time-stamp="$Date: 2002/09/12 10:09:13 $">
 #	
 #	  <!-- General server configuration -->
 #	  <general>
@@ -135,9 +135,9 @@
 #		<param name="reload-interval">50</param>
 #		<param name="default-prompt">mues&gt; </param>
 #		<param name="command-prefix">/</param>
-#		<commandspath>
+#		<commandpath>
 #		  <directory>server/commands</directory>
-#		</commandspath>
+#		</commandpath>
 #	  </commandshell>
 #	  
 #	</muesconfig>
@@ -173,7 +173,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.12 2002/08/29 07:45:18 deveiant Exp $
+# $Id: config.rb,v 1.13 2002/09/12 10:09:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -193,6 +193,12 @@ require 'rexml/document'
 require 'mues/Mixins'
 require 'mues/Exceptions'
 
+# Configuration-instantiation dependencies
+require 'mues/Object'
+require 'mues/ObjectStore'
+require 'mues/Environment'
+require 'mues/filters/CommandShell'
+require 'mues/EventQueue'
 
 module MUES
 
@@ -200,11 +206,11 @@ module MUES
 	### values from a String (after potentially having first read it in from an
 	### IO object), and creates one or more MUES::Config::Section objects to
 	### represent the configured values.
-	class Config
+	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.12 2002/08/29 07:45:18 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.13 2002/09/12 10:09:13 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -323,6 +329,93 @@ module MUES
 			method( methodName ).call( *args )
 		end
 
+
+		### Configuration constructors
+		
+		# This is a collection of methods designed to created
+		# properly-configured MUES objects from a configuration object.
+		
+		### Instantiate the MUES::Engine's objectstore from the configured
+		### values.
+		def createEngineObjectstore
+			config = self.engine.objectstore
+
+			# Make a Hash out of all the construction arguments
+			configHash = {
+				:name => config['name'],
+				:backend => config.backend,
+				:memmgr => config.memoryManager,
+				:config => config.argHash,
+			}
+
+			# Visitor element is optional, so don't add it if it's not defined.
+			configHash[:visitor] = config.visitor if config.has_item?( "visitor" )
+
+			return MUES::ObjectStore::create( configHash )
+		end
+
+		### Instantiate the primary event queue (a MUES::EventQueue object) from
+		### the config values.
+		def createEventQueue
+			qconfig = self.engine.eventqueue
+			return MUES::EventQueue::new( qconfig.minworkers,
+										  qconfig.maxworkers,
+										  qconfig.threshold,
+										  qconfig.safelevel,
+										  "Primary Event Queue" )
+		end
+		
+		### Instantiate the privileged event queue (a MUES::EventQueue object)
+		### from the config values.
+		def createPrivilegedEventQueue
+			qconfig = self.engine.privilegedeventqueue
+			return MUES::EventQueue::new( qconfig.minworkers,
+										  qconfig.maxworkers,
+										  qconfig.threshold,
+										  qconfig.safelevel,
+										  "Privileged Event Queue" )
+		end
+
+		### Instantiate a new MUES::CommandShell::Factory from the configured
+		### values.
+		def createCommandShellFactory
+			config = self.commandshell
+			MUES::CommandShell::Factory::new( config['shell-class'],
+											  config['table-class'],
+											  config['parser-class'],
+											  config.commandPath,
+											  config.parameters )
+		end
+
+		### Instantiate and return one or more MUES::Environment objects from
+		### the configuration.
+		def createConfiguredEnvironments
+			return self.environments.collect {|name,confighash|
+				MUES::Environment::create( confighash['class'],
+										   name,
+										   confighash['description'],
+										   confighash['parameters'] )
+			}
+		end
+
+		### Instantiate and return one or more MUES::Listener objects from the
+		### configuration.
+		def createConfiguredListeners
+			self.log.info( "Creating listeners from configuration." )
+			listeners = self.engine.listeners.collect {|name,lconfig|
+				self.log.info( "Calling create for a '%s' listener named '%s': parameters => %s." % [
+								  lconfig['class'], name, lconfig['parameters'].inspect ])
+				listener = MUES::Listener.create( lconfig['class'], name, lconfig['parameters'] )
+				self.log.info( "Back from create with: #{listener.to_s}" )
+				listener
+			}
+
+			self.log.info( "Returning %d listeners from createFromConfig." % listeners.length )
+			return listeners
+		end
+		
+
+		
 
 		#########
 		protected
@@ -620,9 +713,9 @@ module MUES
 				checkType( element, REXML::Element )
 				name = element.name.gsub( /-/, '_' )
 
-				# Create a new item for whichever section is appropriate
-				# based on whether or not it has sub-elements, and set the
-				# target hash to the correct one.
+				# If there is a section class with the same name as the one
+				# we're looking at, instantiate a subsection from it and add
+				# it. Otherwise, just add a subitem.
 				typeName = name.downcase
 				if @@SectionTypes.key?( typeName )
 					self.addSubsection( MUES::Config::Section::create(element, self), name )
@@ -724,41 +817,48 @@ module MUES
 
 		### The base configuration section class -- this section contains all of
 		### the other sections.
-		class MuesConfigSection < MUES::Config::Section
+		class MuesConfigSection < MUES::Config::Section # :nodoc:
 		end # class MuesConfigSection
 
 
 		### The general configuration section class -- this section contains
 		### things like the server name, admin name and email, the server
 		### description offered at connect-time, and the server root directory.
-		class GeneralSection < MUES::Config::Section
+		class GeneralSection < MUES::Config::Section # :nodoc:
 		end # class GeneralSection 
 
 
 		### The engine configuration section class -- this section contains
 		### configuration items for the MUES::Engine.
-		class EngineSection < MUES::Config::Section
+		class EngineSection < MUES::Config::Section # :nodoc:
 		end # class EngineSection 
 
 
 		### The EventQueue configuration section class -- this section contains
 		### configuration items for the MUES::EventQueue that runs in the
 		### Engine.
-		class EventQueueSection < MUES::Config::Section
+		class EventQueueSection < MUES::Config::Section # :nodoc:
 		end # class EventQueueSection 
+
+
+		### The EventQueue configuration section class -- this section contains
+		### configuration items for the MUES::EventQueue that runs in the
+		### Engine.
+		class PrivilegedEventQueueSection < MUES::Config::EventQueueSection # :nodoc:
+		end # class PrivilegedEventQueueSection 
 
 
 		### The Login configuration section class -- this section contains
 		### configuration items for controlling user login via
 		### MUES::LoginSession objects.
-		class LoginSection < MUES::Config::Section
+		class LoginSection < MUES::Config::Section # :nodoc:
 		end # class LoginSection
 
 
 		### The logging configuration section class -- this section contains a
 		### Log4R-style XML configuration for configuring the server's internal
 		### logging.
-		class LoggingSection < MUES::Config::Section
+		class LoggingSection < MUES::Config::Section # :nodoc:
 
 			### Create and return a new <tt>logging</tt> section object from the
 			### specified element and parent element.
@@ -791,7 +891,7 @@ module MUES
 
 		### Environments configuration section class -- this section specifies
 		### MUES::Environment objects to load at server startup.
-		class EnvironmentsSection < MUES::Config::EnumerableSection
+		class EnvironmentsSection < MUES::Config::EnumerableSection # :nodoc:
 
 			#########
 			protected
@@ -828,7 +928,7 @@ module MUES
 		### Generic ObjectStore configuration section -- this section is used as
 		### a way of specifying configuration for an objectstore for some other
 		### section.
-		class ObjectStoreSection < MUES::Config::Section
+		class ObjectStoreSection < MUES::Config::Section # :nodoc:
 
 			### Create and return a new MUES::Config::ObjectStoreSection object.
 			def initialize( element, parent )
@@ -921,7 +1021,7 @@ module MUES
 		### Listeners configuration -- this section specifies types and
 		### configuration data for the listeners the Engine should load at
 		### startup. See MUES::Listener for more information about listeners.
-		class ListenersSection < MUES::Config::EnumerableSection
+		class ListenersSection < MUES::Config::EnumerableSection # :nodoc:
 
 			#########
 			protected
@@ -956,7 +1056,7 @@ module MUES
 		### CommandShell configuration section. This section contains the
 		### configuration values for the MUES::CommandShell, or an alternative
 		### class to use instead.
-		class CommandShellSection < MUES::Config::Section
+		class CommandShellSection < MUES::Config::Section # :nodoc:
 
 			### Create and return a new MUES::Config::CommandShellSection object.
 			def initialize( element, parent )
@@ -994,10 +1094,10 @@ module MUES
 
 				case elem.name
 
-				when 'commandspath'
+				when 'commandpath'
 					elem.each_element {|dir|
 						raise MUES::ConfigError,
-							"Unknown element #{dir.name} in commandshell/commandspath" unless
+							"Unknown element #{dir.name} in commandshell/commandpath" unless
 							dir.name = 'directory'
 						@commandPath << dir.text
 					}
@@ -1029,7 +1129,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/08/29 07:45:18 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/09/12 10:09:13 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
@@ -1043,6 +1143,7 @@ __END__
 	<server-description>An experimental MUES server.</server-description>
 	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
 	<root-dir>.</root-dir>
+	<motd>== Message of the day ==</motd>
   </general>
 
 
@@ -1060,20 +1161,27 @@ __END__
 	<debug-level>0</debug-level>
 	<poll-interval>0.05</poll-interval>
 
-	<!-- Engine's EventQueue configuration:
+	<!-- Engine's EventQueues configuration:
 		minworkers:		Minimum number of worker threads running
 		maxworkers:		Maximum number of worker threads running
 		threshold:		Number of floating point seconds between changes to
 						the worker thread count.
 		safelevel:		What worker threads will set their $SAFE to when
-						starting up.
+						starting up (defaults to 2).
 	 -->
 	<eventqueue>
 	  <minworkers>5</minworkers>
 	  <maxworkers>50</maxworkers>
-	  <threshold>1.5</threshold>
+	  <threshold>0.5</threshold>
 	  <safelevel>2</safelevel>
 	</eventqueue>
+
+	<privilegedeventqueue>
+	  <minworkers>1</minworkers>
+	  <maxworkers>5</maxworkers>
+	  <threshold>1.5</threshold>
+	  <safelevel>1</safelevel>
+	</privilegedeventqueue>
 
 	<!-- Engine objectstore config -->
 	<objectstore name="engine">
@@ -1121,27 +1229,6 @@ __END__
   <!-- Logging system configuration (Log4R format) -->
   <logging>
 	<log4r_config>
-<!-- 	  <\!-- Log4R pre-config -\-> -->
-<!-- 	  <pre_config> -->
-<!-- 		<parameter name="logpath" value="server/log" /> -->
-<!-- 		<parameter name="mypattern" value="%l [%d] %m" /> -->
-<!-- 	  </pre_config> -->
-	  
-<!-- 	  <\!-- Log Outputters -\-> -->
-<!-- 	  <outputter type="IOOutputter" name="console" fdno="2" /> -->
-<!-- 	  <outputter type="FileOutputter" name="serverlog" -->
-<!-- 		filename="#{logpath}/server.log" trunc="false" /> -->
-<!-- 	  <outputter type="FileOutputter" name="errorlog" -->
-<!-- 		filename="#{logpath}/error.log" trunc="true" /> -->
-<!-- 	  <outputter type="FileOutputter" name="environmentlog" -->
-<!-- 		filename="#{logpath}/environments.log" trunc="false" /> -->
-<!-- 	  <outputter type="EmailOutputter" name="mailadmin" server="localhost" -->
-<!-- 		port="25" from="mueslogs@localhost" to="muesadmin@localhost" /> -->
-
-<!-- 	  <\!-- Loggers -\-> -->
-<!-- 	  <logger name="MUES"   level="INFO"  outputters="serverlog" /> -->
-<!-- 	  <logger name="error"  level="WARN"  outputters="errorlog,console" /> -->
-<!-- 	  <logger name="dire"   level="ERROR" outputters="errorlog,console,mailadmin" /> -->
 	</log4r_config>
   </logging>
 
@@ -1153,15 +1240,15 @@ __END__
   
   <!-- MUES::CommandShell configuration:
 	shell-class:	Which class to instantiate for users' command shells.
-	commandspath:	A list of directories to search for command definitions.
+	commandpath:	A list of directories to search for command definitions.
 
     Parameters are specific to the configured class.
   -->
   <commandshell shell-class="MUES::CommandShell">
-	<commandspath>
-	  <directory>server/commands</directory>
+	<commandpath>
+	  <directory>server/shellCommands</directory>
 	  <directory>/some/other/directory/with/commands</directory>
-	</commandspath>
+	</commandpath>
 	<param name="reload-interval">50</param>
 	<param name="default-prompt">mues&gt; </param>
 	<param name="command-prefix">/</param>
