@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.39 2003/03/05 21:56:21 deveiant Exp $
+# $Id: engine.rb,v 1.40 2003/04/19 08:15:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.39 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.39 2003/03/05 21:56:21 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.40 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.40 2003/04/19 08:15:26 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1084,7 +1084,7 @@ module MUES
 
 				# Normal readable event
 				when Poll::IN
-					self.log.notice( "Connect event for #{listener.to_s}." )
+					MUES::Log.notice( "Connect event for #{listener.to_s}." )
 
 					filter = listener.createOutputFilter( @pollObj )
 					self.dispatchEvents( ListenerConnectEvent::new(listener, filter) )
