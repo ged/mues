@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 ###########################################################################
-=begin 
+=begin  
 
 = Engine
 
@@ -169,12 +169,6 @@ the working copy at:
 
     Shuts the engine/server down.
 
---- MUES::Engine#registerHandlerForEvents( handlerObject, *eventClasses )
-
-    Register ((|handlerObject|)) to receive events of the specified
-    ((|eventClasses|)) or any of their derivatives. See the docs for MUES::Event
-    for how to handle events.
-
 --- MUES::Engine#dispatchEvents( *events )
 
     Queue the given ((|events|)) for dispatch.
@@ -252,6 +246,7 @@ http://language.perl.com/misc/Artistic.html)
 
 require "socket"
 require "thread"
+require "sync"
 require "md5"
 
 require "mues/Namespace"
@@ -265,6 +260,7 @@ require "mues/IOEventFilters"
 require "mues/ObjectStore"
 require "mues/World"
 require "mues/LoginSession"
+require "mues/Debugging"
 
 module MUES
 
@@ -280,10 +276,11 @@ module MUES
 		end
 
 		include Event::Handler
+		include Debuggable
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.5 2001/04/06 08:19:20 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.6 2001/05/14 11:29:07 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -295,13 +292,14 @@ module MUES
 		### Make the new method private, as this class is a singleton
 		private_class_method :new
 
-		### (PROTECTED) METHOD: initialize
+		### Initialization method
 		protected
 		def initialize
 			@config = nil
 			@log = nil
-			@listener = nil
+
 			@listenerThread = nil
+			@listenerMutex = Sync.new
 
 			@hostname = DefaultHost
 			@port = DefaultPort
@@ -309,17 +307,17 @@ module MUES
 			@admin = DefaultAdmin
 
 			@eventQueue = nil
-			@scheduledEvents = { 'timed' => [], 'ticked' => [], 'repeating' => {} }
-			@scheduledEventsMutex = Mutex.new
+			@scheduledEvents = { 'timed' => {}, 'ticked' => {}, 'repeating' => {} }
+			@scheduledEventsMutex = Sync.new
 
 			@players = {}
-			@playersMutex = Mutex.new
+			@playersMutex = Sync.new
 
 			@loginSessions = []
-			@loginSessionsMutex = Mutex.new
+			@loginSessionsMutex = Sync.new
 
 			@exceptionStack = []
-			@exceptionStackMutex = Mutex.new
+			@exceptionStackMutex = Sync.new
 
 			@state = State::STOPPED
 			@startTime = nil
@@ -351,13 +349,13 @@ module MUES
 		### METHOD: start( aConfig )
 		### Start the server using the specified configuration
 		def start( config )
-			checkType( config, Config )
+			checkType( config, MUES::Config )
 
 			@state = State::STARTING
 			@config = config
 
 			### Change working directory to that specified by the config file
-			Dir.chdir( @config["rootdir"] )
+			#Dir.chdir( @config["rootdir"] )
 			
 			# Set the server name to the one specified by the config
 			@name = @config["name"]
@@ -388,7 +386,7 @@ module MUES
 									  LogEvent, 
 									  UntrappedSignalEvent,
 									  PlayerEvent,
-									  LoginEvent
+									  LoginSessionEvent
 									 )
 			
 			### :TODO: Register other event handlers
@@ -398,16 +396,15 @@ module MUES
 			@eventQueue = EventQueue.new( @config["eventqueue"]["minworkers"], 
 										  @config["eventqueue"]["maxworkers"],
 										  @config["eventqueue"]["threshold"] )
-			# @eventQueue.debugLevel = true
+			@eventQueue.debugLevel = 1
 			@eventQueue.start
-			
+
 			### Set up a listener socket on the specified port
-			@listener = _setupListenerSocket( @config["engine"]["bindaddress"], 
-											  @config["engine"]["bindport"],
-											  @config["engine"]["tcpwrapper"] )
 			@log.info( "Starting listener thread." )
-			@listenerThread = Thread.new { _listenerThreadRoutine }
-			@listenerThread.abort_on_exception = true
+			@listenerMutex.synchronize( Sync::EX ) {
+				@listenerThread = Thread.new { _listenerThreadRoutine }
+				@listenerThread.abort_on_exception = true
+			}
 
 			# Reset the state to indicate we're running
 			@state = State::RUNNING
@@ -436,20 +433,26 @@ module MUES
 		### METHOD: stop()
 		### Shut the server down
 		def stop()
+			cleanupEvents = []
+
+			$stderr.puts "In stop()"
 			@log.notice( "Stopping engine" )
 			@state = State::SHUTDOWN
 
 			### Shut down the listener socket
 			@listenerThread.raise( Shutdown )
-			@listener.close
 
 			### Disconnect all players
 			### :TODO: This should be more graceful, perhaps using PlayerLogoutEvents?
-			@playersMutex.synchronize {
+			@playersMutex.synchronize(Sync::EX) {
 				@players.each_key do |player|
-					player.disconnect
+					cleanupEvents << player.disconnect
 				end
 			}
+
+			### Now queue up any cleanup events and dispatch 'em
+			cleanupEvents.flatten!
+			@eventQueue.priorityEnqueue( *cleanupEvents ) unless cleanupEvents.empty?
 
 			### Shut down the event queue
 			@log.info( "Shutting down and cleaning up event queue" )
@@ -459,25 +462,12 @@ module MUES
 		end
 
 
-		### METHOD: registerHandlerForEvents( anObject, *eventClasses )
-		### Register the specified object as being interested in events of the
-		### type/s specified by ((|eventClasses|)).
-		def registerHandlerForEvents( handlerObject, *eventClasses )
-			checkResponse( handlerObject, "handleEvent" )
-
-			eventClasses.each do |eventClass|
-				eventClass.RegisterHandlers( handlerObject )
-			end
-		end
-
-
 		### METHOD: dispatchEvents( *events )
 		### Queue the given events for dispatch
 		def dispatchEvents( *events )
-			checkEachType( events, Event )
-
-			events.unshift LogEvent.new( 'debug', "Dispatching #{events.length} events." )
-			@eventQueue.enqueue( events )
+			checkEachType( events, MUES::Event )
+			@log.debug( "Dispatching #{events.length} events." )
+			@eventQueue.enqueue( *events )
 		end
 
 
@@ -490,8 +480,8 @@ module MUES
 		### If ((|time|)) is a negative (({Integer})), it is assumed to be a
 		### repeating event which requires dispatch every (({time.abs})) ticks.
 		def scheduleEvents( time, *events )
-			checkType( time, Time, Integer )
-			checkEachType( events, Event )
+			checkType( time, ::Time, ::Integer )
+			checkEachType( events, MUES::Event )
 
 			# Schedule the events based on what kind of thing 'time' is. In any
 			# case, if the time specified has already passed, dispatch the
@@ -500,10 +490,12 @@ module MUES
 
 			# Time-fired events
 			when Time
+				@log.debug( "Scheduling #{events.length} events for #{time} (Time)" )
+
 				if time <= Time.now()
 					dispatchEvents( *events )
 				else
-					@scheduledEventsMutex.synchronize {
+					@scheduledEventsMutex.synchronize(Sync::EX) {
 						@scheduledEvents['timed'][ time ] ||= []
 						@scheduledEvents['timed'][ time ] += events
 					}
@@ -518,7 +510,9 @@ module MUES
 				if time < 0
 					tickInterval = time.abs
 					nextTick = @tick + interval
-					@scheduledEventsMutex.synchronize {
+					@log.debug( "Scheduling #{events.length} events to repeat every " +
+							    "#{tickInterval} ticks (next at #{nextTick})" )
+					@scheduledEventsMutex.synchronize(Sync::EX) {
 						@scheduledEvenst['repeating'][[ nextTick, tickInterval ]] ||= []
 						@scheduledEvenst['repeating'][[ nextTick, tickInterval ]] += events
 					}
@@ -527,7 +521,8 @@ module MUES
 				elsif time > 0
 					time = time.abs
 					time += @tick
-					@scheduledEventsMutex.synchronize {
+					@log.debug( "Scheduling #{events.length} events for tick #{time}" )
+					@scheduledEventsMutex.synchronize(Sync::EX) {
 						@scheduledEvents['ticked'][ time ] ||= []
 						@scheduledEvents['ticked'][ time ] += events
 					}
@@ -548,18 +543,18 @@ module MUES
 		### METHOD: cancelScheduledEvents( *events )
 		### Removes and returns the specified scheduled events, if found.
 		def cancelScheduledEvents( *events )
-			checkEachType( events, Event )
+			checkEachType( events, MUES::Event )
 			removedEvents = []
 
 			# If no events were given, remove all scheduled events
 			if events.length == 0
-				@scheduledEventsMutex.synchronize {
+				@scheduledEventsMutex.synchronize(Sync::EX) {
 					@scheduledEvents = { 'timed' => [], 'ticked' => [], 'repeating' => {} }
 				}
 
 			# Remove just the events specified
 			else
-				@scheduledEventsMutex.synchronize {
+				@scheduledEventsMutex.synchronize(Sync::EX) {
 					@scheduledEvents.each {|type,eventHash|
 						eventHash.each {|time,eventArray|
 							eventArray -= events
@@ -578,12 +573,14 @@ module MUES
 			status +=	" MUES Engine %s\n" % [ Version ]
 			status +=	" Up %.2f seconds at tick %s " % [ Time.now - @startTime, @tick ]
 			status +=	" %d players logging in\n" % [ @loginSessions.length ]
-			status +=	" %d players active, %d linkdead\n\n" % 
-				[ @players.find_all {|pl,st| st["status"] == "active"}.size,
-				  @players.find_all {|pl,st| st["status"] == "linkdead"}.size ]
-			status +=	"\n Players:\n"
-			@players.keys.each {|player|
-				status += "  #{player.to_s}\n"
+			@playersMutex.synchronize(Sync::SH) {
+				status +=	" %d players active, %d linkdead\n\n" % 
+					[ @players.find_all {|pl,st| st["status"] == "active"}.size,
+					  @players.find_all {|pl,st| st["status"] == "linkdead"}.size ]
+				status +=	"\n Players:\n"
+				@players.keys.each {|player|
+					status += "  #{player.to_s}\n"
+				}
 			}
 
 			status += "\n"
@@ -620,13 +617,13 @@ module MUES
 		### Returns an (({Array})) of events which are pending execution for the
 		### tick specified.
 		def _getPendingEvents( currentTick )
-			checkType( tick, Integer )
+			checkType( currentTick, ::Integer )
 
 			pendingEvents = []
 			currentTime = Time.now
 
 			# Find and remove pending events, adding them to pendingEvents
-			@scheduledEventsMutex.synchronize {
+			@scheduledEventsMutex.synchronize(Sync::EX) {
 
 				# Time-fired events
 				@scheduledEvents['timed'].keys.sort.each {|time|
@@ -673,7 +670,7 @@ module MUES
 			@tick = 0
 
 			### Start the event loop until the engine stops running
-			dispatchEvents( LogEvent.new("notice", "Starting event loop.") )
+			@log.notice( "Starting event loop." )
 			while running? do
 				begin
 					@tick += 1
@@ -688,24 +685,30 @@ module MUES
 					dispatchEvents( UntrappedSignalEvent.new(e) )
 				end
 			end
-			dispatchEvents( LogEvent.new("notice", "Exiting event loop.") )
+			@log.notice( "Exiting event loop." )
 
 			return @tick
 		end
 
 
 		### (PROTECTED) METHOD: _listenerThreadRoutine()
-		### The routine executed by the thread associated with the listen socket
+		### Routine for the thread that sets up and maintains the listener
+		### socket.
 		def _listenerThreadRoutine
+			@log.debug( "In _listenerThreadRoutine" )
 			sleep 1 until running?
-			dispatchEvents( LogEvent.new("notice", "Accepting connections on #{@listener.addr[2]} port #{@listener.addr[1]}.") )
+			listener = _setupListenerSocket( @config["engine"]["bindaddress"], 
+											 @config["engine"]["bindport"],
+											 @config["engine"]["tcpwrapper"] )
+			@log.notice( "Accepting connections on #{listener.addr[2]} port #{listener.addr[1]}." )
 
 			### :TODO: Fix race condition: If a connection comes in after stop()
 			### has been called, but before the Shutdown exception has been
 			### dispatched.
 			while running? do
 				begin
-					playerSock = @listener.accept
+					playerSock = listener.accept
+					@log.info( "Connect from #{playerSock.addr[2]}" )
 					dispatchEvents( SocketConnectEvent.new(playerSock) )
 				rescue Errno::EPROTO
 					dispatchEvents( LogEvent.new("error", "Accept failed (EPROTO).") )
@@ -722,6 +725,9 @@ module MUES
 				end
 			end
 
+			listener.shutdown( 2 )
+			listener.close
+
 			@log.notice( "Listener thread exiting." )
 		end
 
@@ -733,8 +739,8 @@ module MUES
 		### (PROTECTED) METHOD: _handleSocketConnectEvent( event )
 		### Handle connections to the listener socket.
 		def _handleSocketConnectEvent( event )
-
-			dispatchEvents( LogEvent.new("Socket connect event from '#{event.socket.addr[2]}'.") )
+			results = []
+			results.push LogEvent.new("Socket connect event from '#{event.socket.addr[2]}'.")
 
 			### :TODO: Handle bans here
 
@@ -745,15 +751,17 @@ module MUES
 
 			### Create the event stream, add the new filters to the stream
 			ios = IOEventStream.new
+			ios.debugLevel = 5
 			ios.addFilters( soFilter )
 
 			### Create the login session and add it to our collection
-			session = LoginSession.new( ios )
-			@loginSessionsMutex.synchronize {
+			session = LoginSession.new( @config, ios, sock.addr[2] )
+			session.debugLevel = 5
+			@loginSessionsMutex.synchronize(Sync::EX) {
 				@loginSessions.push session
 			}
 
-			return []
+			return results
 		end
 
 
@@ -762,63 +770,134 @@ module MUES
 		def _handlePlayerEvent( event )
 			player = event.player
 
+			results = []
+
 			### Handle the player status change events by changing the contents of the players hash
 			case event
 
 			when PlayerLoginEvent
-				dispatchEvents( LogEvent.new("notice", "Player #{player.name} logged in.") )
-				@playersMutex.synchronize {	@players[ player ]["status"] = "active" }
+
+				### If the player object is already active (ie., already
+				### connected and has a shell), remove the old socket connection
+				### and re-connect with the new one. Otherwise, just activate
+				### the player object.
+				if player.activated?
+					results << "Player "
+
+					newFilter = session.ioEventStream.removeFiltersOfType( SocketOutputFilter )[0]
+					raise RuntimeError, "Cannot reconnect from a stream with no SocketOutputFilter" unless newFilter
+					results << player.reconnect( newFilter )
+				else
+					results << LogEvent.new( "notice", "Login succeeded for user '#{username}'." )
+					results << player.activate( session.ioEventStream )
+				end
+
+				### Ensure the player is marked as active
+				@playersMutex.synchronize(Sync::EX) {
+					@players[ player ]['status'] = 'active';
+				}
+
+				@playersMutex.synchronize(Sync::EX) { @players[ player ]["status"] = "active" }
 
 			when PlayerDisconnectEvent
-				dispatchEvents( LogEvent.new("notice", "Player #{player.name} went link-dead.") )
+				results << LogEvent.new("notice", "Player #{player.name} went link-dead.")
 				# :TODO: Once reconnect works: 
 				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
-				@playersMutex.synchronize {	@players.delete( player ) }
+				@playersMutex.synchronize(Sync::EX) { @players.delete( player ) }
 				player.disconnect
 
 			when PlayerIdleTimeoutEvent
-				dispatchEvents( LogEvent.new("notice", "Player #{player.name} disconnected due to idle timeout.") )
+				results << LogEvent.new("notice", "Player #{player.name} disconnected due to idle timeout.")
 				# :TODO: Once reconnect works: 
 				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
-				@playersMutex.synchronize {	@players.delete( player ) }
+				@playersMutex.synchronize(Sync::EX) { @players.delete( player ) }
 				player.disconnect
 
 			when PlayerLogoutEvent
-				dispatchEvents( LogEvent.new("notice", "Player #{player.name} disconnected.") )
-				@playersMutex.synchronize {	@players.delete( player ) }
+				results << LogEvent.new("notice", "Player #{player.name} disconnected.")
+				@playersMutex.synchronize(Sync::EX) { @players.delete( player ) }
 				player.disconnect
+
+			when PlayerSaveEvent
+				results << LogEvent.new("info", "Saving record for player #{player.name}.")
+				begin
+					@engineObjectStore.storePlayer( player )
+				rescue Exception => e
+					results << LogEvent.new("error", "Exception while storing player record for #{player.name}")
+					### :TODO: Perhaps dump to a rescue file or something?
+				end
 
 			else
 				_handleUnknownEvent( event )
 			end
 
-			return []
+			return results
 		end
+
 
 		### (PROTECTED) METHOD: _handleLoginSessionAuthEvent( event )
 		### Handle a user authentication attempt event
 		def _handleLoginSessionAuthEvent( event )
 			session = event.session
-			playerRecord = _getPlayerRecord( event.username )
+			remoteHost = event.remoteHost
+			username = event.username
+			password = event.password
+			player = nil
 
-			if ! playerRecord.nil?
-				event.failureCallback.call( "No such user" )
+			results = []
+			results << LogEvent.new( "info", "Authentication event from session %s for %s@%s" % [
+											session.id,
+											username,
+											remoteHost ])
 
-			elsif playerRecord.password != MD5.new( event.password ).hexdigest
-				event.failureCallback.call( "Bad password" )
+			### :TODO: Check player bans
 
+			### Look for a player with the same name as the one logging in...
+			@playersMutex.synchronize(Sync::SH) {
+				player = @players.keys.find {|p| player.username == username }
+			}
+			player ||= @engineObjectStore.fetchPlayer( username )
+
+			### Fail if no player was found by the name specified...
+			if player.nil?
+				results << LogEvent.new( "notice", "Authentication failed for user '#{username}': No such user." )
+				results << event.failureCallback.call( "No such user" )
+
+			### ...or if the passwords don't match
+			elsif player.cryptedPass != MD5.new( event.password ).hexdigest
+				results << LogEvent.new( "notice", "Authentication failed for user '#{username}': Bad password." )
+				results << event.failureCallback.call( "Bad password" )
+
+			### Otherwise succeed
 			else
-				event.successCallback.call( player )
+				results << LogEvent.new( "notice", "User '#{username}' authenticated successfully." )
+				player.remoteIp = remoteHost
+				results << event.successCallback.call( player )
 			end
 
-			return []
+			return results.flatten
+		end
+
+
+		### (PROTECTED) METHOD: _handleLoginSessionFailureEvent( event )
+		### Handle a user authentication failure event
+		def _handleLoginSessionFailureEvent( event )
+			session = event.session
+			logEvent = LogEvent.new("notice", "Login session #{session.id} failed. Terminating.")
+
+			session.terminate
+			@loginSessionsMutex.synchronize(Sync::EX) {
+				@loginSessions -= session
+			}
+
+			return [ logEvent ]
 		end
 
 
 		### (PROTECTED) METHOD: _handleUntrappedExceptionEvent( event )
 		### Handle untrapped exceptions.
 		def _handleUntrappedExceptionEvent( event )
-			@exceptionStackMutex.synchronize {
+			@exceptionStackMutex.synchronize(Sync::EX) {
 				@exceptionStack.push event.exception
 			}
 			[ LogEvent.new( "error", "Untrapped exception: ",
@@ -833,7 +912,7 @@ module MUES
 			if event.exception.is_a?( Interrupt ) then
 				stop()
 			else
-				@exceptionStackMutex.synchronize {
+				@exceptionStackMutex.synchronize(Sync::EX) {
 					@exceptionStack.push event.exception
 				}
 				[ LogEvent.new( "error", "Untrapped signal: ",
@@ -847,14 +926,25 @@ module MUES
 		### Handle any reconfiguration events by re-reading the config
 		### file and then reconnecting the listen socket 
 		def _handleReconfigEvent( event )
-			@config.reload
-			if @config.host != @listener.addr[2] || @config.port != @listener.addr[1] then
-				@listenerThread.raise Reload
-				@listener = _setupListenerSocket( @config["engine"]["bindaddress"], 
-												 @config["engine"]["bindport"],
-												 @config["engine"]["tcpwrapper"] )
-				@listenerThread = Thread.new { _listenerThreadRoutine }
+			results = []
+
+			begin
+				Thread.critical = true
+				@config.reload
+			rescue StandardError => e
+				results.push LogEvent.new("error", "Exception encountered while reloading: #{e.to_s}")
+			ensure
+				Thread.critical = false
 			end
+
+			@listenerMutex.synchronize( Sync::EX ) {
+				oldListenerThread = @listenerThread
+				oldListenerThread.raise Reload
+				oldListenerThread.join
+
+				@listenerThread = Thread.new { _listenerThreadRoutine }
+				@listenerThread.abort_on_exception = true
+			}
 
 			return []
 		end
@@ -863,24 +953,25 @@ module MUES
 		### (PROTECTED) METHOD: _handleSystemEvent( event )
 		### Handle any system events that don't have explicit handlers
 		def _handleSystemEvent( event )
+			results = []
 
 			case event
 			when EngineShutdownEvent
-				dispatchEvents( LogEvent.new("notice",
-											 "Engine shut down by #{event.agent.to_s}.") )
+				@log.notice( "Engine shut down by #{event.agent.to_s}." )
 				stop()
 			else
-				dispatchEvents( LogEvent.new("notice", 
-											 "Got a system event (a #{event.class.name}) " +
-											 "that is not yet handled.") )
+				results.push LogEvent.new("notice", 
+										  "Got a system event (a #{event.class.name}) " +
+										  "that is not yet handled.")
 			end
 
-			return []
+			return results
 		end
 
 		### (PROTECTED) METHOD: _handleLogEvent( event )
 		### Handle logging events by writing their content to the syslog
 		def _handleLogEvent( event )
+			@log.debug( "Handling a log event (#{event.severity}: #{event.message})." )
 			@log.send( event.severity, event.message )
 			return []
 		end
@@ -889,7 +980,8 @@ module MUES
 		### (PROTECTED) METHOD: _handleUnknownEvent( event )
 		### Handle events which we get sent for which we don't have an explicit handler
 		def _handleUnknownEvent( event )
-			[ LogEvent.new( "error", "Engine received unhandled event type '#{event.class.name}'." ) ]
+			@log.error( "Engine received unhandled event type '#{event.class.name}'." )
+			return []
 		end
 
 	end # class Engine
