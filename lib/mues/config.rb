@@ -98,13 +98,7 @@ module MUES
 
 			:environments => {
 				:envPath	=> ["server/environments"],
-				:autoload	=> {
-					'null' => {
-						:kind => 'Null',
-						:description => "A testing environment without any surroundings.",
-						:params => {},
-					},
-				}
+				:autoload	=> {},
 			},
 
 			:commandShell => {
@@ -427,7 +421,7 @@ module MUES
 				self.log.info "Calling create for a '%s' listener named '%s': parameters: %s." %
 					[ lconfig[:kind], name, lconfig[:params].inspect ]
 
-				MUES::Listener::create( *(lconfig[:kind, :name, :params]) )
+				MUES::Listener::create( lconfig[:kind], name, lconfig[:params] )
 			}
 		end
 
