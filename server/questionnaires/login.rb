@@ -44,36 +44,36 @@
 
 			# Success callback
 			success = lambda {|user|
+				MUES::Logger[self].debug "In the success callback"
 				cancelScheduledEvents( qnaire.data[:timeoutEvent] )
 				user.lastLoginDate = Time::now
 				user.lastHost = qnaire.data[:filter].peerName
+				qnaire.answers[:user] = user
 
-				cshell = @commandShellFactory.createShellForUser( user )
-				cshell.debugLevel = 1
-
-				qnaire.stream.addFilters( cshell )
 				qnaire.restart( true )
+				[]
 			}
 
 			# Failure callback
 			failure = lambda {|user|
+				MUES::Logger[self].debug "In the failure callback"
 				qnaire.stream.addEvents OutputEvent::new("\nAuthentication failure.\n")
 
 				tries = qnaire.data[:tries]
 				if tries >= 3
-					self.log.notice "Max login tries (%d) exceeded for %s" %
+					MUES::Logger[self].notice "Max login tries (%d) exceeded for %s" %
 						[ tries, qnaire.stream ]
 					qnaire.stream.addEvents OutputEvent::new( ">>> Max tries exceeded. <<<" )
-					dispatchEvents( LoginFailureEvent::new("Too many attempts.") )
 					qnaire.finish
+					return LoginFailureEvent::new("Too many attempts.")
 
 				else
-					self.log.notice "Failed login attempt %d from %s" %
+					MUES::Logger[self].notice "Failed login attempt %d from %s" %
 						[ tries, qnaire.stream ]
 					qnaire.undoSteps(1) # :FIXME: This might be 2...
 					qnaire.restart( false )
 				end
-
+				return []
 			}
 
 			# Authentication event
@@ -84,6 +84,7 @@
 				qnaire.data[:filter],
 				success,
 				failure )
+			MUES::Logger[self].debug "Dispatching a login auth event: %p" % laevent
 			dispatchEvents( laevent )
 
 
