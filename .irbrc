@@ -16,7 +16,7 @@ IRB.conf[:PROMPT][:MUES] = { # name of prompt mode
  	:PROMPT_I => colored( "%N(%m):%03n:%i>", %w{bold white on_blue} ) + " ",
  	:PROMPT_S => colored( "%N(%m):%03n:%i%l", %w{white on_blue} ) + " ",
  	:PROMPT_C => colored( "%N(%m):%03n:%i*", %w{white on_blue} ) + " ",
-    :RETURN => "    ==>%s\n"      # format to return value
+    :RETURN => "    ==> %s\n\n"      # format to return value
 }
 IRB.conf[:PROMPT_MODE] = :MUES
 
