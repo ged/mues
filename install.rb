@@ -38,9 +38,6 @@ RequiredLibraries = [
 	[ 'pluginfactory', "PluginFactory", 
 		'http://raa.ruby-lang.org/list.rhtml?name=pluginfactory',
 		'http://www.devEiate.org/code/PluginFactory-0.01.tar.gz' ],
-	[ 'rexml/document', 'REXML',
-		'http://raa.ruby-lang.org/list.rhtml?name=REXML',
-		'http://www.germane-software.com/archives/rexml_2.5.2.tgz' ],
 	[ 'forwardable', "Forwardable",
 		'http://raa.ruby-lang.org/list.rhtml?name=forwardable',
 		'ftp://ftp.ruby-lang.org/pub/ruby/contrib/forwardable-1.1.tgz' ],
@@ -50,9 +47,6 @@ RequiredLibraries = [
 	[ 'pp', 'PrettyPrinter',
 		'http://raa.ruby-lang.org/list.rhtml?name=pp',
 		'http://cvs.m17n.org/~akr/pp/download.html' ],
-	[ 'log4r', 'Log4R',
-		'http://raa.ruby-lang.org/list.rhtml?name=log4r',
-		'http://prdownloads.sourceforge.net/log4r/log4r-1.0.4.tgz?download' ],
 ]
 
 class Installer
