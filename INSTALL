@@ -20,26 +20,26 @@ Versions listed are the ones I've tested with. Earlier versions may work, but
 your mileage may vary.
 
 * Ruby (>= 1.6.5)
-  Home page: http://www.ruby-lang.org/
-  Download: ftp://ftp.ruby-lang.org/pub/ruby/ruby-1.6.5.tar.gz
+  Home page:: http://www.ruby-lang.org/
+  Download::  ftp://ftp.ruby-lang.org/pub/ruby/ruby-1.6.5.tar.gz
 
 * pp - Ruby pretty-printer (>=0.4)
-  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=pp
-  Download: http://cvs.m17n.org/~akr/pp/download.html
+  RAA::      http://www.ruby-lang.org/en/raa-list.rhtml?name=pp
+  Download:: http://cvs.m17n.org/~akr/pp/download.html
 
 === Optional libraries:
 
 * Test::Unit (>= 0.1.4)- For running unit tests
-  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=Test%3A%3AUnit
-  Download: http://testunit.talbott.ws/packages/testunit-0.1.4.tar.gz
+  RAA::      http://www.ruby-lang.org/en/raa-list.rhtml?name=Test%3A%3AUnit
+  Download:: http://testunit.talbott.ws/packages/testunit-0.1.4.tar.gz
 
 * ruby-tcpwrap (>=0.3) - Config option
-  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap
-  Download: http://www.shugo.net/archive/ruby-tcpwrap/ruby-tcpwrap-0.3.tar.gz
+  RAA::      http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap
+  Download:: http://www.shugo.net/archive/ruby-tcpwrap/ruby-tcpwrap-0.3.tar.gz
 
 * RDoc (>= beta-1) - Documentation generator
-  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=RDoc
-  Home page: http://rdoc.sourceforge.net
+  RAA::       http://www.ruby-lang.org/en/raa-list.rhtml?name=RDoc
+  Home page:: http://rdoc.sourceforge.net
 
 
 == Installation
