@@ -39,6 +39,8 @@ def main
 	config = MUES::Config.new( ConfigFile )
 	engine = MUES::Engine.instance
 
+	engine.debugLevel = 5
+
 	### Start up and run the server
 	puts "Starting up...\n"
 	engine.start( config )
