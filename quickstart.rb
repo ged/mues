@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.4 2002/09/27 13:54:34 deveiant Exp $
+#	$Id: quickstart.rb,v 1.5 2002/09/28 12:56:41 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -20,6 +20,8 @@ include UtilityFunctions
 # Set interrupt handler to restore tty before exiting
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
+
+$Ruby = File::join( CONFIG["bindir"], CONFIG["ruby_install_name"] )
 
 # Define required libraries
 RequiredLibraries = [
@@ -97,8 +99,7 @@ def main
 
 	message ">>> Starting server...\n\n"
 
-	rubypath = File::join( CONFIG["bindir"], CONFIG["ruby_install_name"] )
-	exec( rubypath, "-I", "lib", "-I", "ext", "server/bin/mues.rb", '--init', "server/config.xml" )
+	exec( $Ruby, "-I", "lib", "-I", "ext", "server/bin/mues.rb", '--init', "server/config.xml" )
 
 end
 
