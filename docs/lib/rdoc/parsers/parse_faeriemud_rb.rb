@@ -14,54 +14,73 @@
 #
 
 require "rdoc/rdoc"
+require "rdoc/code_objects"
+require "rdoc/parsers/parse_rb"
+require "rdoc/parsers/parserfactory"
 
-module FaerieMUDRDoc
+module RDoc
 
-	MY_MODIFIERS =  + [ 'todo' ]
+	### Override the ParserFactory's method for adding new parsers so we can
+	### override defaults.
+	module ParserFactory
+		def parse_files_matching(regexp)
+			@@parsers.unshift Parsers.new(regexp, self)
+		end
+	end
 
-	class Parser < RDoc::Parser
+	MY_MODIFIERS = [ 'todo' ]
+
+	class MyRubyParser < RubyParser
 		include RDoc::RubyToken
 		include RDoc::TokenStream
 
+		extend ParserFactory
+		parse_files_matching /\.rbw?$/
+
 		def read_documentation_modifiers(context, allow)
-			allow += MY_MODIFIERS
-			dir = read_directive(allow)
+			dir = read_directive(allow + MY_MODIFIERS) or return
 
 			case dir[0]
+			when "notnew", "not_new", "not-new"
+				context.dont_rename_initialize = true
 
+			when "nodoc"
+				context.document_self = false
+				if dir[1].downcase == "all"
+					context.document_children = false
+				end
+
+			when "yield", "yields"
+				context.block_params = dir[1]
 			when "todo"
-
+				context.todolist << dir[1]
+			when "refactor"
+				context.refactorlist << dir[1]
 			else
 				super( context, allow )
 			end
 		end
 
-    
-		# Look for directives in a normal comment block:
-		#
-		#   #--       - don't display comment from this point forward
-		#  
-		#   # :include: name
-		#             - include the contents of file 'name' here
-		#
-		# This routine modifies it's parameter
+	end # class MyRubyParser
 
-		def look_for_directives_in(context, comment)
-			
-			comment.gsub!(/^(\s*#\s*):(\w+):\s*(\S+)?\s*\n/) do 
-				case $2.downcase
-					
-				when "todo"
-					
-					
-				else
-					super( context, comment )
-				end
-			end
-			
-			remove_private_comments(comment)
+
+	### Add 'todolist' and 'refactorlist' attributes to the CodeObject and
+	### AnyMethod classes.
+	class CodeObject
+		def todolist
+			@todolist ||= []
 		end
-		
-	end # class Parser
+		def refactorlist
+			@refactorlist ||= []
+		end
+	end
+	class AnyMethod
+		def todolist
+			@todolist ||= []
+		end
+		def refactorlist
+			@refactorlist ||= []
+		end
+	end
 
-end # module FaerieMUDRDoc
+end # module RDoc
