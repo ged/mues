@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 00:48:05 $">
+#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 06:07:27 $">
 #	
 #	  <!-- General server configuration -->
 #	  <general>
@@ -173,7 +173,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.9 2002/08/01 00:48:05 deveiant Exp $
+# $Id: config.rb,v 1.10 2002/08/01 06:07:27 deveiant Exp $
 # 
 # == Authors
 # 
@@ -203,8 +203,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.9 2002/08/01 00:48:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.10 2002/08/01 06:07:27 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -551,7 +551,7 @@ module MUES
 			### the specified <tt>name</tt>. <EM>Aliases:</EM>
 			### <tt>item?</tt>.
 			def has_item?( name )
-				key = name.downcase.gsub('-', '_')
+				key = name.downcase.gsub(/-/, '_')
 				@items.has_key?( key ) && @items[ key ].kind_of?( MUES::Config::Item )
 			end
 			alias :item? :has_item?
@@ -1024,7 +1024,7 @@ __END__
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN" "../docs/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 00:48:05 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 06:07:27 $">
   <general>
 	<server-name>FaerieMUD</server-name>
 	<server-description>This is an experimental MUES server.</server-description>
