@@ -1,7 +1,7 @@
 #
 # MUES::CommandShell environment manipulation commands.
-# Time-stamp: <14-Sep-2002 08:01:25 deveiant>
-# $Id: environments.cmd,v 1.3 2002/09/15 07:44:37 deveiant Exp $
+# Time-stamp: <12-Oct-2002 06:18:17 deveiant>
+# $Id: environments.cmd,v 1.4 2002/10/12 15:37:01 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -127,21 +127,17 @@ Connect to the specified environment in the specified role.
 	  ### environment, returning the new filter object if we find
 	  ### it. Catch any problems as exceptions, and turn them into
 	  ### error messages for output.
-	  begin
-		  env = MUES::ServerFunctions::getEnvironment( envName ) or
-			  raise CommandError, "No such environment '#{envName}'."
-		  role = env.getAvailableRoles( context.user ).find {|role|
-			  role.name == roleName
-		  }
-		  raise CommandError, "Role '#{roleName}' is not currently available to you." unless
-			  role.is_a?( MUES::Role )
+	  env = MUES::ServerFunctions::getEnvironmentByName( envName ) or
+		  raise CommandError, "No such environment '#{envName}'."
+	  role = env.getAvailableRoles( context.user ).find {|role|
+		  role.name == roleName
+	  }
+	  raise CommandError, "Role '#{roleName}' is not currently available to you." unless
+		  role.is_a?( MUES::Role )
 
-		  results << OutputEvent.new( "Connecting..." )
-		  results << env.getParticipantProxy( context.user, role )
-		  results << OutputEvent.new( "connected.\n\n" )
-	  rescue CommandError, SecurityViolation => e
-		  results << OutputEvent.new( e.message )
-	  end
+	  results << OutputEvent.new( "Connecting..." )
+	  results << env.getParticipantProxy( context.user, role )
+	  results << OutputEvent.new( "connected.\n\n" )
   else
 	  results << OutputEvent.new( usage() )
   end
@@ -176,20 +172,16 @@ Disconnect from the specified role in the specified environment.
   end
 
   ### Look for a proxy from the specified environment
-  begin
-	  targetEnv = MUES::ServerFunctions::getEnvironment( envName ) or
-		  raise CommandError, "No such environment '#{envName}'."
-	  targetProxy = context.stream.findFiltersOfType( MUES::ParticipantProxy ).find {|f|
-		  f.env == targetEnv && ( roleName.nil? || f.role.name == roleName )
-	  } or raise CommandError, "Not connected to #{envName} #{roleName ? 'as ' + roleName : ''}"
+  targetEnv = MUES::ServerFunctions::getEnvironmentByName( envName ) or
+	  raise CommandError, "No such environment '#{envName}'."
+  targetProxy = context.stream.findFiltersOfType( MUES::ParticipantProxy ).find {|f|
+	  f.env == targetEnv && ( roleName.nil? || f.role.name == roleName )
+  } or raise CommandError, "Not connected to #{envName} #{roleName ? 'as ' + roleName : ''}"
 
-	  results << OutputEvent.new( "Disconnecting from #{envName}..." )
-	  targetEnv.removeParticipantProxy( targetProxy )
-	  context.stream.removeFilters( targetProxy )
-	  results << OutputEvent.new( " disconnected.\n\n" )
-  rescue CommandError, SecurityViolation => e
-	  results << OutputEvent.new( e.message )
-  end
+  results << OutputEvent.new( "Disconnecting from #{envName}..." )
+  targetEnv.removeParticipantProxy( targetProxy )
+  context.stream.removeFilters( targetProxy )
+  results << OutputEvent.new( " disconnected.\n\n" )
 
   return results.flatten
 
@@ -224,17 +216,13 @@ List available roles in the specified environments.
 	  ### Look for the roles in the requested environment. Catch any
 	  ### problems as exceptions, and turn them into error messages
 	  ### for output.
-	  begin
-		  env = MUES::ServerFunctions::getEnvironment( envName ) or
-			  raise CommandError, "No such environment '#{envName}'."
-		  list << "%s (%s)\n" % [ envName, env.class.name ]
-		  env.getAvailableRoles( context.user ).each {|role|
-			  list << "    #{role.to_s}\n"
-			  roleCount += 1
-		  }
-	  rescue CommandError, SecurityViolation => e
-		  list << e.message + "\n"
-	  end
+	  env = MUES::ServerFunctions::getEnvironmentByName( envName ) or
+		  raise CommandError, "No such environment '#{envName}'."
+	  list << "%s (%s)\n" % [ envName, env.class.name ]
+	  env.getAvailableRoles( context.user ).each {|role|
+		  list << "    #{role.to_s}\n"
+		  roleCount += 1
+	  }
 
 	  list << "\n"
   }
