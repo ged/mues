@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.11 2002/10/29 07:36:41 deveiant Exp $
+#	$Id: utils.rb,v 1.12 2002/10/29 16:49:28 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -49,10 +49,14 @@ module UtilityFunctions
 		'white'      => 37,   'on_white'   => 47
 	}
 
+	ErasePreviousLine = "\033[A\033[K"
+
+
 	###############
 	module_function
 	###############
 
+	# Create a string that contains the ANSI codes specified and return it
 	def ansiCode( *attributes )
 		attr = attributes.collect {|a| AnsiAttributes[a] ? AnsiAttributes[a] : nil}.compact.join(';')
 		if attr.empty? 
@@ -61,12 +65,14 @@ module UtilityFunctions
 			return "\e[%sm" % attr
 		end
 	end
-	ErasePreviousLine = "\033[A\033[K"
 
-	def testForLibrary( lib, nicename=nil )
-		nicename ||= "'lib'"
+	# Test for the presence of the specified <tt>library</tt>, and output a
+	# message describing the test using <tt>nicename</tt>. If <tt>nicename</tt>
+	# is <tt>nil</tt>, the value in <tt>library</tt> is used to build a default.
+	def testForLibrary( library, nicename=nil )
+		nicename ||= library
 		message( "Testing for the #{nicename} library..." )
-		if $:.detect {|dir| File.exists?(File.join(dir,"#{lib}.rb")) || File.exists?(File.join(dir,"#{lib}.so"))}
+		if $:.detect {|dir| File.exists?(File.join(dir,"#{library}.rb")) || File.exists?(File.join(dir,"#{library}.so"))}
 			message( "found.\n" )
 			return true
 		else
@@ -75,33 +81,50 @@ module UtilityFunctions
 		end
 	end
 
-	def testForRequiredLibrary( lib, nicename=nil, raaUrl=nil, downloadUrl=nil, fatal=true )
-		nicename ||= "'lib'"
-		unless testForLibrary( lib, nicename )
+	# Test for the presence of the specified <tt>library</tt>, and output a
+	# message describing the problem using <tt>nicename</tt>. If
+	# <tt>nicename</tt> is <tt>nil</tt>, the value in <tt>library</tt> is used
+	# to build a default. If <tt>raaUrl</tt> and/or <tt>downloadUrl</tt> are
+	# specified, they are also use to build a message describing how to find the
+	# required library. If <tt>fatal</tt> is <tt>true</tt>, a missing library
+	# will cause the program to abort.
+	def testForRequiredLibrary( library, nicename=nil, raaUrl=nil, downloadUrl=nil, fatal=true )
+		nicename ||= library
+		unless testForLibrary( library, nicename )
 			msgs = [ "You are missing the required #{nicename} library.\n" ]
 			msgs << "RAA: #{raaUrl}\n" if raaUrl
 			msgs << "Download: #{downloadUrl}\n" if downloadUrl
-			abort( msgs.join('') ) if fatal
-			
+			if fatal
+				abort msgs.join('')
+			else
+				errorMessage msgs.join('')
+			end
 		end
 		return true
 	end
 
+	### Output <tt>msg</tt> as a ANSI-colored program/section header (white on
+	### blue).
 	def header( msg )
 		msg.chomp!
-		$stdout.puts ansiCode( 'bold', 'white', 'on_blue' ) + msg + ansiCode( 'reset' )
-		$stdout.flush
+		$stderr.puts ansiCode( 'bold', 'white', 'on_blue' ) + msg + ansiCode( 'reset' )
+		$stderr.flush
 	end
 
+	### Output <tt>msg</tt> to STDERR and flush it.
 	def message( msg )
-		$stdout.print msg
-		$stdout.flush
+		$stderr.print msg
+		$stderr.flush
 	end
 
+	### Output the specified <tt>msg</tt> as an ANSI-colored error message
+	### (white on red).
 	def errorMessage( msg )
 		message ansiCode( 'bold', 'white', 'on_red' ) + msg + ansiCode( 'reset' )
 	end
 
+	### Output the specified <tt>msg</tt> as an ANSI-colored debugging message
+	### (yellow on blue).
 	def debugMsg( msg )
 		return unless $DEBUG
 		msg.chomp!
@@ -109,25 +132,36 @@ module UtilityFunctions
 		$stderr.flush
 	end
 
-	def replaceMessage( *msg )
+	### Erase the previous line (if supported by your terminal) and output the
+	### specified <tt>msg</tt> instead.
+	def replaceMessage( msg )
 		print ErasePreviousLine
-		message( *msg )
+		message( msg )
 	end
 
-	def writeLine( length=75 )
+	### Output a divider made up of <tt>length</tt> hyphen characters.
+	def divider( length=75 )
 		puts "\r" + ("-" * length )
 	end
+	alias :writeLine :divider
 
+	### Output the specified <tt>msg</tt> colored in ANSI red and exit with a
+	### status of 1.
 	def abort( msg )
 		print ansiCode( 'bold', 'red' ) + "Aborted: " + msg.chomp + ansiCode( 'reset' ) + "\n\n"
 		Kernel.exit!( 1 )
 	end
 
+	### Output the specified <tt>promptString</tt> as a prompt (in green) and
+	### return the user's input with leading and trailing spaces removed.
 	def prompt( promptString )
 		promptString.chomp!
 		return readline( ansiCode('bold', 'green') + "#{promptString}: " + ansiCode('reset') ).strip
 	end
 
+	### Prompt the user with the given <tt>promptString</tt> via #prompt,
+	### substituting the given <tt>default</tt> if the user doesn't input
+	### anything.
 	def promptWithDefault( promptString, default )
 		response = prompt( "%s [%s]" % [ promptString, default ] )
 		if response.empty?
@@ -137,6 +171,9 @@ module UtilityFunctions
 		end
 	end
 
+	### Search for the program specified by the given <tt>progname</tt> in the
+	### user's <tt>PATH</tt>, and return the full path to it, or <tt>nil</tt> if
+	### no such program is in the path.
 	def findProgram( progname )
 		ENV['PATH'].split(File::PATH_SEPARATOR).each {|d|
 			file = File.join( d, progname )
@@ -145,6 +182,9 @@ module UtilityFunctions
 		return nil
 	end
 
+	### Using the CVS log for the given <tt>file</tt> attempt to guess what the
+	### next release version might be. This only works if releases are tagged
+	### with tags like 'RELEASE_x_y'.
 	def extractNextVersionFromTags( file )
 		message "Attempting to extract next release version from CVS tags for #{file}...\n"
 		raise RuntimeError, "No such file '#{file}'" unless File.exists?( file )
@@ -170,15 +210,20 @@ module UtilityFunctions
 		return "%d.%02d" % release
 	end
 
+	### Extract the project name (CVS Repository name) for the given directory.
 	def extractProjectName
 		File.open( "CVS/Repository", "r").readline.chomp
 	end
 
-	def readManifest( manifestName="MANIFEST" )
+	### Read the specified <tt>manifestFile</tt>, which is a text file
+	### describing which files to package up for a distribution. The manifest
+	### should consist of one or more lines, each containing one filename or
+	### shell glob pattern.
+	def readManifest( manifestFile="MANIFEST" )
 		message "Building manifest..."
-		raise "Missing #{manifestName}, please remake it" unless File.exists? manifestName
+		raise "Missing #{manifestFile}, please remake it" unless File.exists? manifestFile
 
-		manifest = IO::readlines( manifestName ).collect {|line|
+		manifest = IO::readlines( manifestFile ).collect {|line|
 			line.chomp
 		}.select {|line|
 			line !~ /^(\s*(#.*)?)?$/
@@ -194,6 +239,9 @@ module UtilityFunctions
 		return filelist
 	end
 
+	### Given a <tt>filelist</tt> like that returned by #readManifest, remove
+	### the entries therein which match the Regexp objects in the given
+	### <tt>antimanifest</tt> and return the resultant Array.
 	def vetManifest( filelist, antimanifest=ANITMANIFEST )
 		origLength = filelist.length
 		message "Vetting manifest..."
@@ -210,15 +258,21 @@ module UtilityFunctions
 		return filelist
 	end
 
-	def getVettedManifest( manifestName="MANIFEST", antimanifest=ANTIMANIFEST )
-		vetManifest( readManifest(manifestName), antimanifest )
+	### Combine a call to #readManifest with one to #vetManifest.
+	def getVettedManifest( manifestFile="MANIFEST", antimanifest=ANTIMANIFEST )
+		vetManifest( readManifest(manifestFile), antimanifest )
 	end
 
-	def findRdocableFiles
+	### Given a documentation <tt>catalogFile</tt>, which is in the same format
+	### as that described by #readManifest, read and expand it, and then return
+	### a list of those files which appear to have RDoc documentation in
+	### them. If <tt>catalogFile</tt> is nil or does not exist, the MANIFEST
+	### file is used instead.
+	def findRdocableFiles( catalogFile="docs/CATALOG" )
 		startlist = []
-		if File.exists? "docs/CATALOG"
-			message "Using CATALOG file.\n"
-			startlist = getVettedManifest( "docs/CATALOG" )
+		if File.exists? catalogFIle
+			message "Using CATALOG file (%s).\n" % catalogFile
+			startlist = getVettedManifest( catalogFile )
 		else
 			message "Using default MANIFEST\n"
 			startlist = getVettedManifest()
@@ -242,10 +296,16 @@ module UtilityFunctions
 		}
 	end
 
-	def editInPlace( file )
+	### Open a file and filter each of its lines through the given block a
+	### <tt>line</tt> at a time. The return value of the block is used as the
+	### new line, or omitted if the block returns <tt>nil</tt> or
+	### <tt>false</tt>.
+	def editInPlace( file ) # :yields: line
 		raise "No block specified for editing operation" unless block_given?
 
-		File::open( "#{file}.#{$$}", File::RDWR|File::CREAT, 0600 ) {|tempfile|
+		tempName = "#{file}.#{$$}"
+		File::open( tempName, File::RDWR|File::CREAT, 0600 ) {|tempfile|
+			File::unlink( tempName )
 			File::open( file, File::RDONLY ) {|fh|
 				fh.each {|line|
 					newline = yield( line ) or next
@@ -261,6 +321,8 @@ module UtilityFunctions
 		}
 	end
 
+	### Execute the specified shell <tt>command</tt>, read the results, and
+	### return them. Like a %x{} that returns an Array instead of a String.
 	def shellCommand( *command )
 		raise "Empty command" if command.empty?
 
