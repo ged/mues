@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.8 2002/06/04 06:52:34 deveiant Exp $
+# $Id: class.rb,v 1.9 2002/06/16 06:14:19 scotus Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module Metaclass
 	### to build other classes.
 	class Class
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: class.rb,v 1.8 2002/06/04 06:52:34 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: class.rb,v 1.9 2002/06/16 06:14:19 scotus Exp $
 
 		# Mix in comparison methods
 		include Comparable
@@ -171,8 +171,11 @@ module Metaclass
 		end
 
 
-		### Return an array of the ancestor classes of the receiver (including
-		### the receiver itself).
+		### Return an array of the ancestor classes of the
+		### receiver (including the receiver itself) in the
+		### same order as the standard Ruby Module#ancestors
+		### method (0=class itself; 1=immediate superclass;
+		### continuing to the most general).
 		def ancestors
 			if @superclass
 				[ self, *@superclass.ancestors ].flatten
