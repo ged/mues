@@ -5,6 +5,7 @@ server/environments/*
 server/shellCommands/*.cmd
 server/shellCommands/TODO
 README
+HACKING
 INSTALL
 QUICKSTART
 CONFIGURATION

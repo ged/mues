@@ -1,7 +1,7 @@
 # -*- default-generic -*-
 #
-# Time-stamp: <30-Oct-2002 22:25:20 deveiant>
-# $Id: MANIFEST,v 1.3 2002/10/31 05:28:06 deveiant Exp $
+# Time-stamp: <31-Oct-2002 00:21:51 deveiant>
+# $Id: MANIFEST,v 1.4 2002/10/31 07:24:57 deveiant Exp $
 #
 # This is the list of files that belong in distributions. It is used by
 # makedist.rb and a few other utilities. It is read by functions in utils.rb.
@@ -11,6 +11,7 @@
 Artistic
 ChangeLog
 CONFIGURATION
+HACKING
 INSTALL
 QUICKSTART
 README
