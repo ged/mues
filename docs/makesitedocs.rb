@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Documentation Generation Script
-#	$Id: makesitedocs.rb,v 1.8 2002/08/02 20:12:14 deveiant Exp $
+#	$Id: makesitedocs.rb,v 1.9 2002/10/04 05:23:21 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -31,11 +31,13 @@ opts = GetoptLong.new
 opts.set_options(
 	[ '--debug',	'-d',	GetoptLong::NO_ARGUMENT ],
 	[ '--verbose',	'-v',	GetoptLong::NO_ARGUMENT ],
-	[ '--upload',	'-u',	GetoptLong::OPTIONAL_ARGUMENT ]
+	[ '--upload',	'-u',	GetoptLong::OPTIONAL_ARGUMENT ],
+	[ '--diagrams', '-D',	GetoptLong::NO_ARGUMENT ]
 )
 
 $docsdir = "docs/html"
 $libdirs = %w{lib ext/mues server README INSTALL QUICKSTART CONFIGURATION}
+$diagrams = false
 opts.each {|opt,val|
 	case opt
 
@@ -52,6 +54,9 @@ opts.each {|opt,val|
 					  'ssh://oberon/www/mues.FaerieMUD.org/public/rdoc'
 				  end
 		debugMsg "Setting upload arg to #$upload"
+
+	when '--diagrams'
+		$diagrams = true
 
 	end
 }
@@ -72,6 +77,7 @@ flags = [
 ]
 
 flags += [ '--quiet' ] unless $verbose
+flags += [ '--diagram' ] if $diagrams
 message "Running 'rdoc #{flags.join(' ')} #{$libdirs.join(' ')}'\n" if $verbose
 
 
