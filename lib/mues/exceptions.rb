@@ -95,7 +95,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.11 2002/06/04 06:59:45 deveiant Exp $
+# $Id: exceptions.rb,v 1.12 2002/07/07 18:30:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -154,6 +154,7 @@ module MUES
 	def_exception :EventQueueException,		"Event queue error",							Exception
 	def_exception :LogError,				"Error in log handle",							Exception
 	def_exception :SecurityViolation,		"Security violation",							Exception
+	def_exception :ConfigError,				"Configuration error",							Exception
 
 	# Environment exceptions
 	# (Moved to Environment.rb - [Ged])
