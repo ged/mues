@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.21 2002/10/06 07:45:54 deveiant Exp $
+# $Id: user.rb,v 1.22 2002/10/12 11:27:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.21 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.21 2002/10/06 07:45:54 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.22 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.22 2002/10/12 11:27:43 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -193,6 +193,7 @@ module MUES
 
 		# The username of the user
 		attr_accessor	:username
+		alias :login :username
 
 		# The real name of the player
 		attr_accessor	:realname
@@ -369,6 +370,16 @@ module MUES
 			@ioEventStream.addEvents( MUES::InputEvent.new("") )
 
 			return results
+		end
+
+
+		### Lull the user for storage (MUES::StorableObject interface).
+		def lull!( objStore )
+			@remoteHost			= nil
+			@ioEventStream		= nil
+			@activated			= false
+
+			return true
 		end
 
 
