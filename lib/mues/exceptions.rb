@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-###########################################################################
+#######################################################
 =begin 
 
 = Exceptions.rb
@@ -28,7 +28,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#######################################################
 
 require "e2mmap"
 
@@ -62,14 +62,23 @@ module MUES
 		const_set( name, eClass )
 	end
 
-	def_exception :EngineException,		"Engine error",						Exception
-	def_exception :EventQueueException,	"Event queue error",				Exception
-	def_exception :LogError,			"Error in log handle",				Exception
-	def_exception :SecurityViolation,	"Security violation",				Exception
+	# System exceptions
+	def_exception :EngineException,			"Engine error",						Exception
+	def_exception :EventQueueException,		"Event queue error",				Exception
+	def_exception :LogError,				"Error in log handle",				Exception
+	def_exception :SecurityViolation,		"Security violation",				Exception
 
-	def_exception :Reload,				"Configuration out of date",		Exception
-	def_exception :Shutdown,			"Server shutdown",					Exception
+	# Environment exceptions
+	def_exception :EnvironmentError,		"Generic environment error",		Exception
+	def_exception :EnvironmentLoadError,	"Could not load environment",		EnvironmentError
+	def_exception :EnvironmentUnloadError,	"Could not unload environment",		EnvironmentError
 
+	# Signal exceptions
+	def_exception :Reload,					"Configuration out of date",		Exception
+	def_exception :Shutdown,				"Server shutdown",					Exception
+
+
+	### Event exceptions
 	class UnhandledEventError < Exception
 		def initialize( error_message = "Unhandled event" )
 			if ( error_message.is_a? Event ) then
@@ -91,10 +100,13 @@ module MUES
 		end
 	end
 
+	# General exceptions
 	def_exception :VirtualMethodError,	"Unimplemented virtual method",					TypeError
 	def_exception :InstantiationError,	"Instantiation attempted of abstract class",	TypeError
 	def_exception :SocketIOError,		"Error condition on socket.",					IOError
 	def_exception :ParseError,			"Error while parsing.",							SyntaxError
+
+
 end
 
 
