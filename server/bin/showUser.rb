@@ -1,31 +1,42 @@
 #!/usr/bin/ruby -w
 
+if $0 =~ /server#{File::Separator}bin#{File::Separator}/
+	baseDir = $0.gsub( /server#{File::Separator}bin#{File::Separator}.*/, '' )
+	baseDir = '.' if baseDir.empty?
+	$: << File.join( baseDir, "lib" )
+	DefaultConfigFile = File.join( baseDir, "MUES.cfg" )
+else
+	DefaultConfigFile = "MUES.cfg"
+end
+
 require "mues/ObjectStore"
 require "mues/User"
+require "mues/Config"
 
-RoleDescriptions = [
+TypeDescriptions = [
 	"a regular user",
 	"a Creator",
 	"an Implementor",
 	"an Admin"
 ]
 
-DefaultDriver = 'Mysql'
 
 
 if ARGV.length > 1
 	user = ARGV.shift
-	driver = ARGV.shift || DefaultDriver
+	configFile = ARGV.shift || "MUES.cfg"
+	config = MUES::Config.new( configFile )
+	driver = config['objectstore']['driver']
 
 	puts "Fetching user record for '#{user}' from a #{driver} objectstore."
-	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
+	os = MUES::ObjectStore.new( config )
 	userObj = os.fetchUser( user )
 
 	if userObj.nil?
 	puts "No such user '#{user}'."
 	else
 	puts "User record for user '#{userObj.username}':\n" +
-		"\t#{userObj.username.capitalize} is #{RoleDescriptions[userObj.role.to_i]}.\n" +
+		"\t#{userObj.username.capitalize} is #{TypeDescriptions[userObj.accounttype.to_i]}.\n" +
 		"\tCreated: #{userObj.timeCreated.to_s}\n" +
 		"\tCrypted password: #{userObj.cryptedPass}\n" +
 		"\tReal name: #{userObj.realname}\n" +
@@ -38,8 +49,9 @@ if ARGV.length > 1
 	end
 
 else
-	driver = ARGV.shift || DefaultDriver
-	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
+	configFile = ARGV.shift || "MUES.cfg"
+	config = MUES::Config.new( configFile )
+	os = MUES::ObjectStore.new( config )
 
 	list = os.getUserList
 
