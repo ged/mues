@@ -36,14 +36,18 @@ require "mues/filters/IOEventFilter"
 module MUES
 	class DefaultInputFilter < IOEventFilter
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: defaultinputfilter.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
+		### Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: defaultinputfilter.rb,v 1.2 2001/05/14 12:24:30 deveiant Exp $
+		DefaultSortPosition = 1000
 
-		@@DefaultSortPosition = 1000
+		### Class attributes
 		@@ErrorMessages = [ 
 			"Huh?", 
 			"I'm afraid I don't understand you.", 
-			"What exactly am I supposed to do with '%s'?"
+			"What exactly am I supposed to do with '%s'?",
+			"Hmmm... I'm not sure I know how to '%s'.",
+			"%s: Command not found."
 		]
 
 		### METHOD: initialize
@@ -56,15 +60,17 @@ module MUES
 		def handleInputEvents( *events )
 			events.flatten.each do |e|
 				Thread.critical = true
-				begin
-					msg = e.data
-					@errorIndex += 1
-					@errorIndex = 0 if @errorIndex > @@ErrorMessages.length - 1
+				if e.data =~ /\w/
+					begin
+						msg = e.data
+						@errorIndex += 1
+						@errorIndex = 0 if @errorIndex > @@ErrorMessages.length - 1
 
-					errmsg = @@ErrorMessages[ @errorIndex ] % msg
-					queueOutputEvents( OutputEvent.new(errmsg + "\n") )
-				ensure
-					Thread.critical = false
+						errmsg = @@ErrorMessages[ @errorIndex ] % msg
+						queueOutputEvents( OutputEvent.new(errmsg + "\n") )
+					ensure
+						Thread.critical = false
+					end
 				end
 			end
 
