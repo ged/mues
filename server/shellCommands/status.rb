@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: status.rb,v 1.5 2002/04/01 16:31:24 deveiant Exp $
+# $Id: status.rb,v 1.6 2002/06/04 13:02:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -45,6 +45,8 @@ module MUES
 
 		### 'status' command
 		class StatusCommand < CreatorCommand
+
+			require MUES::ServerFunctions
 
 			### Initialize a new StatusCommand object
 			def initialize # :nodoc:
@@ -176,6 +178,8 @@ module MUES
 
  		### 'filters' command
 		class FiltersCommand < ImplementorCommand
+
+			include MUES::ServerFunctions
 
 			### Initialize a new FiltersCommand object
 			def initialize
