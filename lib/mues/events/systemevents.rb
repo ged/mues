@@ -59,7 +59,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.6 2002/04/01 16:27:30 deveiant Exp $
+# $Id: systemevents.rb,v 1.7 2002/05/16 03:53:19 deveiant Exp $
 # 
 # == Authors
 # 
@@ -139,10 +139,10 @@ module MUES
 				@severity = $1
 			else
 				@severity = "info"
-				args.push( severity )
+				message.unshift( severity )
 			end
 
-			@message = args.size > 0 ? args.to_s : "[Mark]"
+			@message = if message.empty? then "[Mark]" else message.join(" ") end
 			super()
 		end
 
