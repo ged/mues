@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.42 2004/03/03 16:06:50 aidan Exp $
+#  $Id$
 # 
 # == Authors
 #
@@ -81,10 +81,14 @@ module MUES
 
 		include MUES::TypeCheckFunctions
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.42 $} )[1]
-		Rcsid = %q$Id: objectstore.rb,v 1.42 2004/03/03 16:06:50 aidan Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
 
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -159,7 +163,7 @@ module MUES
 		def self.create( args )
 			TypeCheckFunctions::checkType( args, Hash )
 
-			config = args[:config].hash || {}
+			config = args[:config] || {}
 
 			# Check the name argument
 			name = args[:name].to_s
