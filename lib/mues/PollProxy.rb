@@ -15,7 +15,7 @@
 # 
 # == Rcsid
 # 
-# $Id: PollProxy.rb,v 1.3 2002/10/26 19:00:56 deveiant Exp $
+# $Id: PollProxy.rb,v 1.4 2002/10/29 19:28:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,6 +38,11 @@ module MUES
 
 		include MUES::TypeCheckFunctions
 		
+		### Class constants
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
+		Rcsid = %q$Id: PollProxy.rb,v 1.4 2002/10/29 19:28:14 deveiant Exp $
+
+
 		### Instantiate and return a new PollProxy for the specified
 		### <tt>poll</tt> (a Poll object) and ioObject (an IO object).
 		def initialize( poll, ioObject )
