@@ -123,12 +123,11 @@ module MUES
 
 			# Get the timeout from the config, and if there is one, create a
 			# scheduled event to kill us after the timeout expires
-			timeout = @timeout || DefaultTimeout
 			if timeout > 0 
 				@timeoutEvent = 
 					MUES::LoginFailureEvent::new( self,
-					"Timeout (#{timeout} seconds)." )
-				scheduleEvents( Time.now + timeout, @timeoutEvent )
+					"Timeout (#{@timeout} seconds)." )
+				scheduleEvents( Time.now + @timeout, @timeoutEvent )
 			end
 
 			# Now queue the login banner and the first username prompt output
@@ -154,67 +153,125 @@ module MUES
 		### InputEvent handler: Get username and password information from input
 		### events.
 		def handleInputEvents( *newEvents )
-			returnEvents = []
+			returnEvents = nil
 
 			debugMsg( 3, "Handling input events." )
-			
-			# Combine the events we've been saving with the new ones and put
-			# them through our little state-machine thingie.
 			@authMutex.synchronize {
 				events = ( @queuedInput | newEvents )
 				@queuedInput.clear
 
-				while ! events.empty?
-
-					# If we've finished authentication and we're just waiting
-					# around to be cleaned up, just return any events we're given.
-					if @isFinished
-						debugMsg 4, "Session is finished. Giving events back to caller."
-						returnEvents = events
-						break
-
-					# If we've waiting on a pending authevent, queue all events
-					elsif @waitingOnEngine
-						debugMsg 4, "Session is waiting on engine. Queueing events for later."
-						@queuedInput += events
-						returnEvents.clear
-						break
-
-					# If we've not gotten a username yet, this event's data is the username
-					elsif ! @username
-						username = untaintString( events.shift.data, UsernameUntaintPattern ).to_s
-						debugMsg( 4, "Setting username to '#{username}'." )
-						@username = username
-						event = HiddenInputPromptEvent::new( @passPrompt )
-						self.queueOutputEvents( event )
-						next
-
-					# If we've got a username already, and we're not finished or
-					# waiting for an auth event to return, then this input event
-					# contains the password, so do authentication
-					else
-						pass = untaintString( events.shift.data, PasswordUntaintPattern ).to_s
-
-						debugMsg 4, "Setting password to '#{pass}', and dispatching " \
-							"a LoginSessionAuthEvent."
-						authEvent = MUES::LoginAuthEvent::new(
-							@stream,
-							@username,
-							pass,
-							self,
-							method(:authSuccessCallback),
-							method(:authFailureCallback) )
-
-						authEvent.debugLevel = 3
-						dispatchEvents( authEvent )
-
-						@waitingOnEngine = true
-						@username = nil
-					end
-				end
+				returnEvents = self.inputHandler( events )
 			}
 
 			return returnEvents
+		end
+
+
+		### Terminate the session and clean up.
+		def terminate
+			debugMsg( 1, "Terminating login session." )
+			@authMutex.synchronize {
+				@stream.shutdown if @stream
+				@stream = nil
+
+				# Cancel the timeout event if it hasn't fired yet
+				if @timeoutEvent
+					cancelScheduledEvents( @timeoutEvent )
+				end
+
+				# Clear up circular references
+				@stream = nil
+				@timeoutEvent = nil
+			}
+		end
+
+		
+
+		#########
+		protected
+		#########
+
+
+		### Default input event handler -- override this to handle login
+		### sessions that are more complex than just username + password.
+		def inputHandler( events )
+			returnEvents = []
+
+			while ! events.empty?
+
+				# If we've finished authentication and we're just waiting
+				# around to be cleaned up, just return any events we're given.
+				if @isFinished
+					debugMsg 4, "Session is finished. Giving events back to caller."
+					returnEvents = events
+					break
+
+				# If we've waiting on a pending authevent, queue all events
+				elsif @waitingOnEngine
+					debugMsg 4, "Session is waiting on engine. Queueing events for later."
+					@queuedInput += events
+					returnEvents.clear
+					break
+
+				# If we've not set a username yet, this event's data is the username
+				elsif ! @username
+					returnEvents << self.setUsername( events.shift )
+					next
+
+				# If we've got a username already, and we're not finished or
+				# waiting for an auth event to return, then this input event
+				# contains the password, so do authentication
+				else
+					returnEvents << self.setPassword( events.shift )
+					next
+				end
+			end
+
+			return returnEvents.flatten
+		end
+
+
+		### Use the specified input +event+ to set the session's
+		### username. Returns true if the username was successfully set, or
+		### false if not.
+		def setUsername( event )
+			@authMutex.synchronize {
+				username = untaintString( event.data, UsernameUntaintPattern ).to_s
+				debugMsg( 4, "Setting username to '#{username}'." )
+				@username = username
+				event = HiddenInputPromptEvent::new( @passPrompt )
+				self.queueOutputEvents( event )
+			}
+
+			return []
+		end
+
+
+		### Use the specified input +event+ to set the session's password and
+		### dispatch a LoginAuthEvent. Returns true if the password was set
+		### successfully, false otherwise.
+		def setPassword( event )
+			@authMutex.synchronize {
+				pass = untaintString( event.data, PasswordUntaintPattern ).to_s
+
+				debugMsg 4, "Setting password to '#{pass}', and dispatching " \
+					"a LoginSessionAuthEvent."
+				authEvent = MUES::LoginAuthEvent::new(
+					@stream,
+					@username,
+					pass,
+					self,
+					method(:authSuccessCallback),
+					method(:authFailureCallback) )
+
+				authEvent.debugLevel = 3
+				dispatchEvents( authEvent )
+
+				@waitingOnEngine = true
+				@username = nil
+			}
+
+			return []
 		end
 
 
@@ -266,30 +323,6 @@ module MUES
 
 		end
 
-
-		### Terminate the session and clean up.
-		def terminate
-			debugMsg( 1, "Terminating login session." )
-			@authMutex.synchronize {
-				@stream.shutdown if @stream
-				@stream = nil
-
-				# Cancel the timeout event if it hasn't fired yet
-				if @timeoutEvent
-					cancelScheduledEvents( @timeoutEvent )
-				end
-
-				# Clear up circular references
-				@stream = nil
-				@timeoutEvent = nil
-			}
-		end
-
-		
-
-		#########
-		protected
-		#########
 
 
 	end # class LoginSession
