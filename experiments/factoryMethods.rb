@@ -15,7 +15,7 @@ require 'mues'
 
 puts "Defining base class"
 module Base
-	class Foo
+	class Service
 		include MUES::FactoryMethods
 
 		def self.beforeCreation( backendClass, *args )
@@ -26,24 +26,23 @@ module Base
 			puts "   afterCreation: Instance is '#{instance.inspect}'."
 		end
 
-		def self.derivativeDir
-			puts "   derivativeDir: Setting to 'experiments'"
-			return "experiments"
+		def self.derivativeDirs
+			puts "   derivativeDirs: Setting to ['experiments', '.']"
+			return ["experiments", "."]
 		end
 	end
 
 	puts "Defining subclasses"
-	class SubFoo < Foo
+	class SubService < Service
 	end
 
-	class OtherFoo < Foo
+	class OtherService < Service
 	end
 
-	class SubSubFoo < SubFoo
+	class SubSubService < SubService
 	end
 end
 
-Base::Foo::getSubclass( 'Foo' )
 
 # Test three already-defined subtypes, one externally-loadable one, and one that
 # doesn't exist (which should raise a LoadError)
@@ -51,7 +50,7 @@ Base::Foo::getSubclass( 'Foo' )
 	puts "\n---\nInstantiating '#{klass}' object:"
 
 	begin
-		obj = Base::Foo::create( "#{klass}" )
+		obj = Base::Service::create( "#{klass}" )
 	rescue LoadError => e
 		if klass == 'Breakage'
 			puts "Error while creating (expected): #{e.message}"
