@@ -15,7 +15,7 @@
 # 
 # == Rcsid
 # 
-# $Id: attribute.rb,v 1.9 2002/10/04 05:06:43 deveiant Exp $
+# $Id: attribute.rb,v 1.10 2002/10/04 09:54:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -47,8 +47,8 @@ module MUES
 			DEFAULT_SCOPE = Scope::INSTANCE
 			DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
-			Rcsid = %q$Id: attribute.rb,v 1.9 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+			Rcsid = %q$Id: attribute.rb,v 1.10 2002/10/04 09:54:49 deveiant Exp $
 
 			### Create and return a new attribute with the specified name. If the
 			### optional <tt>validTypes</tt> argument is specified, the attribute
@@ -62,8 +62,9 @@ module MUES
 
 				# Test to be sure that validTypes is either a Class, a
 				# Metaclass::Class, or an array of either
+				validTypes ||= []
 				validTypes = [ validTypes ] unless validTypes.is_a?( Array )
-				checkEachType( validTypes, ::Class, Metaclass::Class )
+				checkEachType( validTypes, ::Class, Metaclass::Class, ::String )
 
 				raise TypeError, "Illegal value for scope." unless
 					scope == Scope::INSTANCE || scope == Scope::CLASS
@@ -214,8 +215,7 @@ module MUES
 				### operation objects will be added as well. Returns true if the
 				### attribute was successfully added.
 				def addAttribute( attribute, name=nil, readOnly=false )
-					raise ArgumentError, "Illegal argument 1: Metaclass::Attribute object." unless
-						attribute.kind_of?( Metaclass::Attribute )
+					MUES::TypeCheckFunctions::checkType( attribute, Metaclass::Attribute )
 
 					# Normalize the name
 					name ||= attribute.name
@@ -271,9 +271,7 @@ module MUES
 				### those too will be removed. Returns the removed attribute on success,
 				### or <tt>nil</tt> if the specified attribute was not found.
 				def removeAttribute( attribute )
-					raise ArgumentError,
-						"Expected a Metaclass::Attribute or a String, not a #{attribute.class.name}" unless
-						attribute.kind_of?( Metaclass::Attribute ) || attribute.kind_of?( String )
+					MUES::TypeCheckFunctions::checkType( attribute, Metaclass::Attribute, ::String )
 
 					# Look for and remove the specified attribute
 					rval = @attributes.find {|name,attrObj|

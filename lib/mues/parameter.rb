@@ -9,7 +9,7 @@
 # 
 # == Rcsid
 # 
-# $Id: parameter.rb,v 1.2 2002/10/04 05:06:43 deveiant Exp $
+# $Id: parameter.rb,v 1.3 2002/10/04 09:56:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -22,6 +22,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
+require 'mues/Mixins'
 require 'mues/metaclass/Constants'
 
 module MUES
@@ -31,9 +32,11 @@ module MUES
 		### or parameterized association.
 		class Parameter
 
+			include MUES::TypeCheckFunctions
+
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
-			Rcsid = %q$Id: parameter.rb,v 1.2 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
+			Rcsid = %q$Id: parameter.rb,v 1.3 2002/10/04 09:56:45 deveiant Exp $
 
 			### Create and return new Parameter object with the specified +name+. If
 			### <tt>validTypes</tt> is a Class, a Metaclass::Class, the name of a
@@ -47,12 +50,8 @@ module MUES
 
 				# Check to be sure the valid types array contains stuff we know how
 				# to deal with
-				validTypes = validTypes.to_a.flatten.uniq
-				validTypes.each {|validType|
-					raise TypeError, "validTypes argument must be one of "+
-						"[Class,String,Array], not a #{validType.inspect}" unless
-						[::Class, Metaclass::Class, String, NilClass].find {|k| k === validType}
-				}
+				validTypes = [ validTypes ] unless validTypes.is_a?( Array )
+				checkEachType( validTypes, ::Class, Metaclass::Class, String, NilClass )
 
 				@name = name
 				@validTypes = validTypes
@@ -92,7 +91,9 @@ module MUES
 							vtype.name
 
 						else
-							raise TypeError, "Unhandled parameter type '#{vtype.class.name}' specified for #{@name}"
+							raise TypeError,
+								"Unhandled parameter type '%s' specified for %s" %
+								[ vtype.class.name, @name ]
 						end
 					}
 
@@ -114,10 +115,13 @@ module MUES
 						typeName = @validTypes[0].name
 
 					else
-						raise TypeError, "Unhandled parameter type '#{@validTypes[0].class.name}' specified for #{@name}"
+						raise TypeError,
+							"Unhandled parameter type '%s' specified for %s" %
+							[ @validTypes[0].class.name, @name ]
 					end
 
-					code = "raise TypeError, \"argument '%s' must be a %s\" unless %s.kind_of?( %s )" % [
+					code = "raise TypeError, \"argument '%s' must be a %s\" "\
+						"unless %s.kind_of?( %s )" % [
 						@name,
 						typeName,
 						@name,
