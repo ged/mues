@@ -1,63 +1,82 @@
 #!/usr/bin/ruby -w
 
+if $0 =~ /server#{File::Separator}bin#{File::Separator}/
+	baseDir = $0.gsub( /server#{File::Separator}bin#{File::Separator}.*/, '' )
+	baseDir = '.' if baseDir.empty?
+	$: << File.join( baseDir, "lib" )
+	DefaultConfigFile = File.join( baseDir, "MUES.cfg" )
+else
+	DefaultConfigFile = "MUES.cfg"
+end
+
 require "readline"
 require "mues/User"
+require "mues/Config"
 require "mues/ObjectStore"
 
 include Readline
 
-def main
-	unless ARGV.length.nonzero? && ARGV[0] =~ /^\w{3,}$/
-		$stderr.puts "usage: #{$0} <username> [<driver>]"
-		exit 1
-	end
+class UserTool
 
-	user = ARGV.shift
-	driver = ARGV.shift || "Mysql"
+	def createUser( username, configFile )
+		config = MUES::Config.new( configFile )
 
-	puts "Creating user record for '#{user}' in a #{driver} objectstore."
-	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
-	user = os.createUser( user )
+		puts "Creating user record for '#{username}' in a #{config['ObjectStore']['Driver']} objectstore."
+		os = MUES::ObjectStore.new( config )
+		os.createUser( username ) {|user|
 
 	user.password = prompt( "Password" )
 	user.realname = prompt( "Real name" )
 	user.emailAddress = prompt( "Email" )
 
-	user.role = promptForRole()
+			user.accounttype = promptForType()
 
-	print "Storing new user record:"
-	os.storeUser( user )
+			puts user.inspect
+			print "\nStoring new user record:"
+		}
 	puts "done."
 
-	puts user.inspect
-end
+	end
 
-def prompt( promptString )
+	def prompt( promptString )
 	promptString.chomp!
 	return readline( "#{promptString}: " ).strip
-end
+	end
 
-def promptForRole
-	role = nil
-	roles = MUES::User::Role.constants.collect {|s| s.downcase}
+	def promptForType
+		type = nil
+		types = MUES::User::AccountType.constants.collect {|s| s.downcase}.reject {|s| s =~ /name/}
 	oldCp = Readline.completion_proc = Proc.new {|str|
-		roles.find_all {|rolename| rolename =~ /^#{str}/}
+			types.find_all {|typename| typename =~ /^#{str}/}
 	}
 	oldCf = Readline.completion_case_fold = true
 
-	until ! role.nil?
-		rname = prompt( "User role [#{roles.join(', ')}]" )
-		role = MUES::User::Role.const_get( rname.upcase.intern ) if
-			roles.detect {|str| str.downcase == rname.downcase}
-		if role.nil?
-			puts ">>> Invalid role '#{rname}'."
+		until ! type.nil?
+			rname = prompt( "User type [#{types.join(', ')}]" )
+			type = MUES::User::AccountType.const_get( rname.upcase.intern ) if
+				types.detect {|str| str.downcase == rname.downcase}
+			if type.nil?
+				puts ">>> Invalid type '#{rname}'."
 		end
 	end
 
 	Readline.completion_case_fold = oldCf
 	Readline.completion_proc = oldCp
 
-	return role
+		return type
+	end
 end
 
-main
+if $0 == __FILE__
+	unless ARGV.length.nonzero? && ARGV[0] =~ /^\w{3,}$/
+		$stderr.puts "usage: #{$0} <username> [<configFile>]"
+		exit 1
+	end
+
+	username = ARGV.shift
+	configFile = ARGV.shift || "MUES.cfg"
+
+	u = UserTool.new
+	u.createUser( username, configFile )
+
+end
