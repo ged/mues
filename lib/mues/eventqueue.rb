@@ -46,8 +46,8 @@ module MUES
 	class EventQueue < Object ; implements Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.7 2001/07/30 10:47:34 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.8 2001/09/26 12:43:59 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2
@@ -416,8 +416,15 @@ module MUES
 
 			### Dispatch events until we're told to exit
 			while ( ! event.is_a?( ThreadShutdownEvent ) )
-				consequences = _dispatchEvent( event )
-				enqueue( *consequences ) if consequences.size > 0
+
+				# Put consequences in their own scope so we don't hold on to their
+				# references after enqueuing them
+				begin
+					consequences = _dispatchEvent( event )
+					enqueue( *consequences ) if consequences.size > 0
+					event = nil
+				end
+
 				event = dequeue()
 				_debugMsg( 1, "Dequeued event (#{event.class.name}) #{event.to_s}" )
 			end
