@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: environmentevents.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
+# $Id: environmentevents.rb,v 1.8 2002/08/29 07:07:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -46,7 +46,7 @@
 require "mues/Object"
 require "mues/Exceptions"
 
-require "mues/events/BaseClass"
+require "mues/events/Event"
 
 module MUES
 
