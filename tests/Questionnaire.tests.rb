@@ -54,7 +54,7 @@ class QuestionnaireTestCase < MUES::TestCase
 			:validator	=> /correct answer/i,
 			:errorMsg	=> "Incorrect answer",
 
-			:failAnswers	=> [ '', 'correct', 'an answer' ],
+			:failAnswers	=> [ 'Waka-waka', 'correct', 'an answer' ],
 			:passAnswers	=> [ 'correct answer', 'a correct answer', 'CorrECT ANsweR' ],
 			:abortAnswers	=> [ '' ],
 		},
