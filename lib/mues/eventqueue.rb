@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.22 2003/08/03 19:00:11 deveiant Exp $
+# $Id: eventqueue.rb,v 1.23 2003/08/04 02:37:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.22 2003/08/03 19:00:11 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.23 2003/08/04 02:37:23 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -84,7 +84,8 @@ module MUES
 			@safeLevel	= safeLevel.to_i
 			@name		= name || "EventQueue %d" % self.id
 
-			debugMsg( 1, "Initializing #{@name}: max = #{@maxWorkers}, min = #{@minWorkers}, safe = #{safeLevel}" )
+			debugMsg( 1, "Initializing #{@name}: max = #{@maxWorkers}, "\
+				"min = #{@minWorkers}, safe = #{safeLevel}" )
 
 			### Flags
 			@running		= false			# Is the supervisor running?
@@ -473,7 +474,8 @@ module MUES
 				# references after enqueuing them
 				begin
 					consequences = dispatchEvent( event )
-					@consequenceHandler.call( *consequences )
+					@consequenceHandler.call( *consequences ) unless
+						consequences.empty?
 				end
 
 				event = dequeue()

@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.26 2002/10/31 02:15:31 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.27 2003/08/04 02:39:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.26 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.26 2002/10/31 02:15:31 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.27 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.27 2003/08/04 02:39:11 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
@@ -132,6 +132,7 @@ module MUES
 			@streamThread.abort_on_exception = true
 			@streamThread.desc = "IOEventStream thread [Stream #{self.id}]"
 
+			# self.debugLevel = 5
 		end
 
 
@@ -569,6 +570,7 @@ module MUES
 
 			results = filter.send( "handle%sEvents" % direction.capitalize, *events ) unless
 				filter.isFinished?
+			debugMsg 4, "%s returned results: %s" % [ filter.class.name, results.inspect ]
 
 			# Normalize the results into an Array, removing any filters that
 			# were returned.
@@ -595,18 +597,20 @@ module MUES
 
 				debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
 				consequences = stopFilters( filter )
-				results.push( *consequences ) if consequences.is_a?( Array ) && ! consequences.empty?
+				results.push( *consequences ) if
+					consequences.is_a?( Array ) && ! consequences.empty?
 
 				opposite = (direction == "input" ? "Output" : "Input")
 
 				requeuedEvents = filter.send( "queued%sEvents" % opposite )
-				debugMsg( 2, "Adding %d %sEvents from finished filter to queue for next cycle." % [
-							 requeuedEvents.size, opposite ])
+				debugMsg( 2, "Adding %d %sEvents from finished filter to queue "\
+					"for next cycle." % [ requeuedEvents.size, opposite ])
 				self.send( "add%sEvents" % opposite, *requeuedEvents )
 
 				# Add any pending events to the array of results.
 				consequences = filter.send("queued%sEvents" % direction.capitalize)
-				results.push( *consequences ) if consequences.is_a?( Array ) && ! consequences.empty?
+				results.push( *consequences ) if
+					consequences.is_a?( Array ) && ! consequences.empty?
 			end
 
 			debugMsg( 3, "#{results.size} events left after filtering." )
