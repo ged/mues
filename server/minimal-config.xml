@@ -2,7 +2,7 @@
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/27 18:16:27 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/28 00:11:10 $">
 
   <!--
 
@@ -11,7 +11,7 @@
   without any argument. For the actual defaults, see the end of
   lib/mues/Config.rb.
 
-  $Id: minimal-config.xml,v 1.5 2002/10/27 18:16:27 deveiant Exp $
+  $Id: minimal-config.xml,v 1.6 2002/10/28 00:11:10 deveiant Exp $
 
   -->
 
@@ -21,6 +21,9 @@
 	server-admin:		The email address of the primary contact for the server.
     root-dir:			The directory the server should consider its root. All
 						relative paths will have this path prepended.
+	motd:				The "message of the day" -- the text printed after a
+						user logs in. Leading tab characters will be stripped,
+						but leading spaces will not.
   -->
   <general>
 	<server-name>Experimental MUD</server-name>
@@ -51,7 +54,11 @@
 	<debug-level>0</debug-level>
 	<poll-interval>0.05</poll-interval>
 
-	<!-- Engine's EventQueue configuration:
+	<!-- Engine's EventQueues configuration:
+
+		The regular event queue handles most kinds of events, and the privileged
+		one handles events which require a less restricted $SAFE level.
+
 		minworkers:		Minimum number of worker threads running
 		maxworkers:		Maximum number of worker threads running
 		threshold:		Number of floating point seconds between changes to
@@ -67,19 +74,34 @@
 	</eventqueue>
 
 	<privilegedeventqueue>
-	  <minworkers>1</minworkers>
+	  <minworkers>2</minworkers>
 	  <maxworkers>5</maxworkers>
 	  <threshold>1.5</threshold>
 	  <safelevel>1</safelevel>
 	</privilegedeventqueue>
 
-	<!-- Engine objectstore config -->
+	<!-- Engine objectstore config:
+
+		This objectstore stores persistant engine data like user accounts, ban
+		tables, tick count, etc. See lib/mues/os-extensions and the
+		documentation for MUES::ObjectStore for more on these parameters.
+
+		backend:		The name of the backing store to use.
+		memorymanager:	The name of the memory manager to use.
+
+	-->
 	<objectstore name="engine">
-	  <backend class="Flatfile" />
+	  <backend class="BerkeleyDB" />
 	  <memorymanager class="Null" />
 	</objectstore>
 
-	<!-- List of MUES::Listener objects to create on startup -->
+	<!-- Engine Listener config:
+	
+		A list of "listener" objects to create on startup. The class
+		parameter specifies what MUES::Listener derivative to load, and the name
+		serves as a unique key for each instance.
+
+	-->
 	<listeners>
 
 	  <!-- Telnet listener: MUES::TelnetOutputFilter -->
@@ -95,7 +117,8 @@
   <!-- MUES::LoginSession configuration:
 		maxtries:	Maximum number of login attempts before disconnecting.
 		timeout:	Number of seconds to allow for login before disconnecting.
-		banner:		Text to display before first login attempt
+		banner:		Text to display before first login attempt. Leading tab
+					characters will be stripped; leading spaces will not.
 		userprompt:	The text used to prompt for the username
 		passprompt:	The text used to prompt for the password
 	 -->
@@ -155,6 +178,7 @@
 
   
   <!-- MUES::Environments which are to be loaded at startup:
+    envpath:    One or more directories to search for environment class files.
 	name:		The name of the environment instance in the Engine. This is the
 				name that will be used to connect or refer to the environment
 				from the command shell.
@@ -168,7 +192,7 @@
   -->
   <environments>
 	<envpath>
-	  <directory>server/environments</directory>
+	  <directory><?config general.root-dir?>/server/environments</directory>
 	</envpath>
 	<environment name="null" class="Null">
 	  <description>A testing environment without any surroundings.</description>
@@ -177,17 +201,17 @@
 
   
   <!-- MUES::CommandShell configuration:
+	commandpath:	A list of directories to search for command definitions.
 	shell-class:	Which class to instantiate for users' command shells.
     table-class:	Which class to instantiate for the users' command shell
 					command lookup table.
     parser-class:	Which class to instantiate to parse command files.
-	commandspath:	A list of directories to search for command definitions.
 
     Parameters are specific to the configured class.
   -->
   <commandshell shell-class="MUES::CommandShell">
 	<commandpath>
-	  <directory>server/shellCommands</directory>
+	  <directory><?config general.root-dir?>/server/shellCommands</directory>
 	</commandpath>
 	<param name="reload-interval">50</param>
 	<param name="default-prompt">mues&gt; </param>
