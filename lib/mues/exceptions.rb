@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.15 2002/09/12 11:35:46 deveiant Exp $
+# $Id: exceptions.rb,v 1.16 2002/09/14 18:03:31 stillflame Exp $
 # 
 # == Authors
 # 
@@ -166,6 +166,7 @@ module MUES
 	def_exception :EnvironmentLoadError,	"Environment load error",						EnvironmentError
 	def_exception :EnvironmentNameConflictError, "Environment name conflict error",			EnvironmentError
 	def_exception :EnvironmentRoleError,	"Environment role error",						EnvironmentError
+	def_exception :EnvironmentUnloadError,	"Environment unloading error",					EnvironmentError
 
 	# Signal exceptions
 	def_exception :Reload,					"Configuration out of date",					Exception
