@@ -45,6 +45,11 @@ module MUES #:nodoc:
 
 		include MUES::TypeCheckFunctions
 
+		### Class constants
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.28 2002/10/30 00:38:28 deveiant Exp $
+
+
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
 		# attributes to it. Any arguments passed are ignored.
 		def initialize( *ignored )
@@ -149,6 +154,12 @@ module MUES #:nodoc:
 
 		include MUES::TypeCheckFunctions
 
+		### Class constants
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.28 2002/10/30 00:38:28 deveiant Exp $
+
+
+		# Methods to not remove from the instances of this class
 		@@PreservedMethods = %w{become polymorph muesid __send__ __id__}
 
 		### This undefines all instance methods for this class so that any call
