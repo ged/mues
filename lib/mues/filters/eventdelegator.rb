@@ -1,19 +1,34 @@
 #!/usr/bin/ruby
 #
-# This file contains the MUES::LoginProxy class which is a class that connects a
-# MUES::LoginSession with a MUES::IOEventStream for the purposes of authentication
-# and login for a connecting user. 
+# This file contains the MUES::EventDelegator class, instances of which connect
+# the stream of events in a MUES::IOEventStream to another object. It allows an
+# object to interact with a stream and receive input and/or output events from
+# it without having to be a filter itself.
+#
+# When the EventDelegator is created, it is given a <b>delegate</b>, which is
+# the object that will be doing the IOEvent processing for it. The delegate
+# should answer either the #handleInputEvents or #handleOutputEvents methods, or
+# both. Each method will be called with the delegator as the first argument and
+# any events that need to be handled as the remaining arguments, like so:
+#
+#	delegate.handleInputEvents( delegator, *events )
+#
+# Any events returned from this call will be passed along in the stream. You can
+# inject your own events into the stream outside of an I/O cycle via the
+# #queueOutputEvents and #queueInputEvents methods inherited from IOEventFilter,
+# but the events passed to the handlers will include events which have been
+# queued for the delegator.
 #
 # == Synopsis
 #
-#	require "mues/filters/LoginProxy"
+#	require "mues/filters/EventDelegator"
 #
-#	proxy = MUES::LoginProxy.new( self )
-#   proxy.queueOutputEvents( PromptEvent.new("Login: ") )
+#	delegator = MUES::EventDelegator::new( self )
+#   delegator.queueOutputEvents( MUES::PromptEvent::new )
 #
 # == Rcsid
 # 
-# $Id: eventdelegator.rb,v 1.10 2002/08/02 20:03:43 deveiant Exp $
+# $Id: eventdelegator.rb,v 1.11 2002/09/28 12:11:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -33,24 +48,27 @@ require "mues/filters/IOEventFilter"
 
 module MUES
 
-	### A MUES::IOEventFilter class that acts as an IO proxy for a
-	### MUES::LoginSession. The proxy acts as a blockade for input and output --
-	### it only passes on events to and from the LoginSession until the user is
-	### authenticated.
-	class LoginProxy < IOEventFilter ; implements MUES::Debuggable
+	class EventDelegator < IOEventFilter ; implements MUES::Debuggable
 
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.10 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.11 2002/09/28 12:11:23 deveiant Exp $
 		DefaultSortPosition = 600
 
-		### Create and return a LoginProxy object for the given +session+ (a
-		### MUES::LoginSession object).
-		def initialize( session )
-			super()
-			@session = session
+		### Create and return a EventDelegator object for the given client. The
+		### object must respond to the #handleInputEvents method.
+		def initialize( delegate, sortPosition=DefaultSortPosition )
+			super( sortPosition )
+
+			unless delete.respond_to?(:handleInputEvents) ||
+					delegate.respond_to?(:handleOutputEvents)
+				raise ArgumentError, "Delegate must respond to either :handleInputEvents, "
+					":handleOutputEvents, or both"
+			end
+
+			@delegate = delegate
 		end
 
 
@@ -62,21 +80,29 @@ module MUES
 		def handleInputEvents( *events )
 			events.flatten!
 			checkEachType( events, MUES::InputEvent )
-			returnEvents = @session.handleInputEvents( *events )
-			return returnEvents
+			
+			events = super( *events )
+			if @delegate.respond_to?( :handleInputEvents )
+				events = @delegate.handleInputEvents( self, *events )
+			end
+
+			return events
 		end
 
 
 		### OutputEvent handler.
 		def handleOutputEvents( *events )
-			debugMsg( 1, "I have #{@queuedOutputEvents.length} pending output events." )
-			ev = super()
-			ev.flatten!
-			debugMsg( 1, "Parent class's handleOutputEvents() returned #{ev.size} events." )
+			events.flatten!
+			checkEachType( events, MUES::OutputEvent )
+			
+			events = super( *events )
+			if @delegate.respond_to?( :handleOutputEvents )
+				events = @delegate.handleOutputEvents( self, *events )
+			end
 
-			return ev
+			return events
 		end
 
 
-	end # class LoginProxy
+	end # class EventDelegator
 end # module MUES
