@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.4 2001/11/01 22:17:11 deveiant Exp $
+#	$Id: makedist.rb,v 1.5 2001/12/05 18:02:08 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -16,13 +16,19 @@ require "./utils.rb"
 include UtilityFunctions
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.4 2001/11/01 22:17:11 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.5 2001/12/05 18:02:08 deveiant Exp $
 ReleaseVersion = 0.01
 
 # Set interrupt handler to restore tty before exiting
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
+
+@@Programs = {
+	'tar'	=> nil,
+	'rm'	=> nil,
+	'zip'	=> nil
+}
 
 # Define the manifest of files to include, globs okay
 MANIFEST = %w{
@@ -61,6 +67,48 @@ ANTIMANIFEST = [
 	/^TEMPLATE/
 ]
 
+Distros = [
+
+	# Tar+gzipped
+	{
+		'type'		=> 'Tar+Gzipped',
+		'makeProc'	=> Proc.new {|distName|
+			gzArchiveName = "%s.tar.gz" % distName
+			if FileTest.exists?( gzArchiveName )
+				message "Removing old archive #{gzArchiveName}..."
+				File.delete( gzArchiveName )
+			end
+			system( @@Programs['tar'], '-czf', gzArchiveName, distName ) or abort( "tar+gzip failed: #{$?}" )
+		}
+	},
+
+	# Tar+bzipped
+	{
+		'type'		=> 'Tar+Bzipped',
+		'makeProc'	=> Proc.new {|distName|
+			bzArchiveName = "%s.tar.bz2" % distName
+			if FileTest.exists?( bzArchiveName )
+				message "Removing old archive #{bzArchiveName}..."
+				File.delete( bzArchiveName )
+			end
+			system( @@Programs['tar'], '-cjf', bzArchiveName, distName ) or abort( "tar failed: #{$?}" )
+		}
+	},
+
+	{
+		'type'		=> 'Zipped',
+		'makeProc'	=> Proc.new {|distName|
+			zipArchiveName = "%s.zip" % distName
+			if FileTest.exists?( zipArchiveName )
+				message "Removing old archive #{zipArchiveName}..."
+				File.delete( zipArchiveName )
+			end
+			system( @@Programs['zip'], '-lrq9', zipArchiveName, distName ) or abort( "zip failed: #{$?}" )
+		}
+	},
+]
+
+
 ### Main function
 def main
 	filelist = []
@@ -68,8 +116,11 @@ def main
 	header "MUES Distribution Maker"
 
 	message "Finding necessary programs...\n"
-	tarProg = findProgram( 'tar' ) or abort( "Cannot find the 'tar' program in your path." )
-	rmProg = findProgram( 'rm' ) or abort( "Cannot find the 'rm' program in your path." )
+	for prog in @@Programs.keys
+		message "  #{prog}: "
+		@@Programs[ prog ] = findProgram( prog )
+		message( (@@Programs[prog] || '(not found)') + "\n" )
+	end
 
 	message "Building manifest..."
 	for pat in MANIFEST
@@ -88,21 +139,7 @@ def main
 	#puts "Filelist:\n\t" + filelist.join("\n\t")
 
 	version = promptWithDefault( "Distribution version [#{ReleaseVersion}]", ReleaseVersion )
-
 	distName = "MUES-%s" % version
-	gzArchiveName = "%s.tar.gz" % distName
-	bzArchiveName = "%s.tar.bz2" % distName
-	
-	if FileTest.exists?( gzArchiveName )
-		message "Removing old archive #{gzArchiveName}..."
-		File.delete( gzArchiveName )
-		message "done.\n"
-	end
-	if FileTest.exists?( bzArchiveName )
-		message "Removing old archive #{bzArchiveName}..."
-		File.delete( bzArchiveName )
-		message "done.\n"
-	end
 
 	message "Making distribution directory #{distName}..."
 	Dir.mkdir( distName ) unless FileTest.directory?( distName )
@@ -110,13 +147,20 @@ def main
 		File.makedirs( File.dirname(File.join(distName,file)) )
 		File.link( file, File.join(distName,file) )
 	end
-	message "Making tarball #{gzArchiveName}..."
-	system( tarProg, '-czf', gzArchiveName, distName ) or abort( "tar failed: #{$?}" )
-	message "Making tarball #{bzArchiveName}..."
-	system( tarProg, '-cjf', bzArchiveName, distName ) or abort( "tar failed: #{$?}" )
-	message "removing dist build directory..."
-	system( rmProg, '-rf', distName )
-	message "done.\n\n"
+
+	for distro in Distros
+		message "Making #{distro['type']} distribution..."
+		distro['makeProc'].call( distName )
+		message "done.\n"
+	end
+
+	if @@Programs['rm']
+		message "removing dist build directory..."
+		system( @@Programs['rm'], '-rf', distName )
+		message "done.\n\n"
+	else
+		message "Cannot clean dist build directory: no 'rm' program was found."
+	end
 end
 
 main	
