@@ -1,10 +1,11 @@
 /*
- *	polymorphic.c - A polymorphic object class for Ruby
- *	$Id: storable.c,v 1.1 2002/05/28 15:55:09 stillflame Exp $
+ *	polymorphic.c - Polymorphic backend for MUES::StorableObject
+ *	$Id: storable.c,v 1.2 2002/05/28 16:46:46 deveiant Exp $
  *
- *	This module defines a StorableObject class which is capable of exchanging its
- *	identity with another StorableObject by calling its #become() method. It is
- *	based on code by Mathieu Bouchard <matju@cam.org>.
+ *	This module defines the part of the MUES::StorableObject class which allows
+ *	it to exchange its identity with another StorableObject by calling its
+ *	#become() method. It is based on PolymorphicObject, which in turn is based
+ *	on code by Mathieu Bouchard <matju@cam.org>.
  *
  *	Authors:
  *		Martin Chase <stillflame@FaerieMUD.org>
@@ -12,20 +13,14 @@
  *
  *	Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
  *
- *	This library is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU Lesser General Public License as published by the
- *	Free Software Foundation; either version 2.1 of the License, or (at your
- *	option) any later version.
- *
- *	This library is distributed in the hope that it will be useful, but WITHOUT
- *	ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *	FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
- *	for more details.
- *
- *	You should have received a copy of the GNU Lesser General Public License
- *	along with this library (see the file LICENSE.TXT); if not, write to the
- *	Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *	02111-1307 USA.
+ *  This module is free software. You may use, modify, and/or redistribute this
+ *  software under the terms of the Perl Artistic License. (See
+ *  http://language.perl.com/misc/Artistic.html)
+ *  
+ *  THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED
+ *  WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+ *  MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * 
  *
  */
 
@@ -33,26 +28,42 @@
 
 // Global class object
 VALUE cStorableObject;
-VALUE cMUES;
+
 
 /*
  * become( other ) -> anObject
  * ---
  * Cause the receiver to switch itself with the specified +other+ object. The
- * +other+ object must also be a StorableObject. Returns the new receiver.
+ * +other+ object must also be a MUES::StorableObject. Swapping tainted and
+ * untainted objects is forbidden if $SAFE is greater than 0, and if $SAFE is 4
+ * or greater, #become will not work for tainted objects at all. Returns the new
+ * receiver.
  */
-VALUE
+static VALUE
 polyobj_become( self, other ) 
 	 VALUE self, other;
 {
   long t[5];
 
-  // Check to make sure the other object is also polymorphic
+  // Restrict what self can become in $SAFE >= 1.
+  if ( rb_safe_level() >= 1 ) {
+	if ( OBJ_TAINTED(self) && !OBJ_TAINTED(other) )
+	  rb_raise( rb_eSecurityError, "Insecure: can't become untainted object." );
+	if ( !OBJ_TAINTED(self) && OBJ_TAINTED(other) )
+	  rb_raise( rb_eSecurityError, "Insecure: can't become tainted object." );
+
+	// Objects can't polymorph at all in $SAFE >= 4.
+	if ( rb_safe_level() >= 4 && (OBJ_TAINTED(self)||OBJ_TAINTED(other)) )
+	  rb_raise( rb_eSecurityError, "Insecure: cannot polymorph tainted object." );
+  }
+
+  // Check to make sure the other object is also storable
   if (!rb_obj_is_kind_of( other, cStorableObject ))
 	rb_raise(rb_eTypeError, "%s is not a storable object class",
 			 rb_class2name(CLASS_OF(other)));
 
-  // ?
+  // Make sure both objects are real objects (this shouldn't be a concern, as
+  // they should all be StorableObjects, but better safe than sorry).
   if (IMMEDIATE_P(self))
 	rb_raise(rb_eTypeError, "%s is not boxed",
 			 rb_class2name(CLASS_OF(self)));
@@ -67,13 +78,23 @@ polyobj_become( self, other )
   return self;
 }
 
-// MUES initializer
-void Init_MUES() {
-  cMUES = rb_define_module("MUES");
-}
 
-// StorableObject Initializer
-void Init_StorableObject() {
-  cStorableObject = rb_define_class_under(cMUES, "StorableObject", rb_cObject );
-  rb_define_method( cStorableObject, "become", polyobj_become, 1 );
+/*
+ *	Initializer
+ */
+void
+Init_StorableObject()
+{
+  VALUE mMUES;
+
+  // Load the Ruby half of the StorableObject class
+  rb_require( "mues/StorableObject.rb" );
+
+  // Now fetch the class object from the MUES module so we can add methods to
+  // it.
+  mMUES = rb_const_get( rb_cObject, rb_intern("MUES") );
+  cStorableObject = rb_const_get( mMUES, rb_intern("StorableObject") );
+
+  // Add the become method
+  rb_define_method( cStorableObject, "become", storable_become, 1 );
 }
