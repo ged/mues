@@ -166,6 +166,23 @@ module MUES
 	### listener's associated IO object. It is a derivative of
 	### MUES::ListenerEvent.
 	class ListenerConnectEvent < ListenerEvent
+
+		### Create and return a new ListenerConnectEvent for the specified
+		### +listener+ and +outputFilter+, which should be a MUES::OutputFilter
+		### created by the listener using the Engine's IO::Reactor.
+		def initialize( listener, outputFilter )
+			super( listener )
+			@outputFilter = filter
+		end
+
+
+		######
+		public
+		######
+
+		# The MUES::OutputFilter that was created from the incoming connection.
+		attr_reader :outputFilter
+
 	end
 
 	

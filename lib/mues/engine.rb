@@ -1084,7 +1084,11 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		when :read
 			self.log.notice "Connect event for #{listener.to_s}."
 
-			# Fire off an event with the new filters
+			# Ask the listener for an appropriate output event filter for the
+			# connection event.
+			ofilter = listener.createOutputFilter( @reactor )
+
+			# Dispatch an event with the new filter
 			self.dispatchEvents( ListenerConnectEvent::new(listener) )
 
 		# Error events
@@ -1395,9 +1399,8 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	### MUES::Listener by creating a MUES::Questionnaire for it.
 	def handleListenerConnectEvent( event )
 		listener = event.listener
+		ofilter = event.outputFilter
 
-		# Ask the listener for an appropriate output event filter
-		ofilter = listener.createOutputFilter( @reactor )
 		self.log.notice "Handling new connection on %s: from %s" %
 			[ofilter.class.name, listener.to_s, ofilter.peerName]
 
