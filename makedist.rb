@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.2 2001/11/01 19:50:46 deveiant Exp $
+#	$Id: makedist.rb,v 1.3 2001/11/01 21:25:09 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -16,8 +16,8 @@ require "./utils.rb"
 include UtilityFunctions
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.2 2001/11/01 19:50:46 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.3 2001/11/01 21:25:09 deveiant Exp $
 ReleaseVersion = 0.01
 
 # Set interrupt handler to restore tty before exiting
@@ -26,26 +26,27 @@ trap("INT") { system "stty", stty_save; exit }
 
 # Define the manifest of files to include, globs okay
 MANIFEST = %w{
-  t/**/*
-  lib/**/*
-  sql/*
-  docs/stylesheets/rd.css
-  docs/MUES.rd
-  docs/makedocs.rb
-  docs/TableAdapter.rd
-  README
-  QUICKSTART
-  install.rb
   Artistic
+  ChangeLog
+  INSTALL
+  QUICKSTART
+  README
+  docs/MUES.rd
+  docs/TableAdapter.rd
+  docs/makedocs.rb
+  docs/stylesheets/rd.css
+  install.rb
+  lib/**/*
   quickstart.rb
+  server/MUES.cfg.example
+  server/bin/createUser.rb
   server/bin/deleteUser.rb
   server/bin/mues.rb
   server/bin/showUser.rb
-  server/bin/createUser.rb
   server/environments/*
   server/shellCommands/**/*
-  server/MUES.cfg.example
-  INSTALL
+  sql/*
+  t/**/*
   utils.rb
 }
 
