@@ -47,6 +47,7 @@ require "mues/filters/LoginProxy"
 require "mues/filters/MacroFilter"
 require "mues/filters/SnoopFilter"
 require "mues/filters/SocketOutputFilter"
+require "mues/filters/TelnetOutputFilter"
 require "mues/filters/ConsoleOutputFilter"
 require "mues/filters/ParticipantProxy"
 
