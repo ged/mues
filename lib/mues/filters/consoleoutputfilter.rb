@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.10 2002/10/25 03:13:16 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.11 2002/10/26 19:03:24 deveiant Exp $
 # 
 # == Authors
 # 
@@ -26,6 +26,7 @@
 #
 
 require "sync"
+require "thread"
 
 require "mues/Object"
 require "mues/Events"
@@ -39,9 +40,19 @@ module MUES
 	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.10 2002/10/25 03:13:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.11 2002/10/26 19:03:24 deveiant Exp $
 		DefaultSortPosition = 300
+
+		### A container module for MUES::SocketOutputFilter state contants.
+		module State
+			STARTING = 0
+			RUNNING = 1
+			SHUTDOWN = 2
+		end
+
+		# The Poll events to react to
+		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN
 
 		# Legibility constants
 		NULL = "\000"
@@ -49,33 +60,33 @@ module MUES
 		LF   = "\012"
 		EOL  = CR + LF
 
+		MTU	 = 4096
+
 		### Class attributes
-		@@MTU = 4096				# Maximum Transmissable Unit
-		@@SelectTimeout = 0.75		# How long to wait on select() before looping
-		@@Instance = nil			# The singleton instance
+		@instance = nil				# The singleton instance
 
-		### Make the new method private, as this class is a singleton
-		private_class_method :new
-
-		### Return the console output filter instance, creating it if necessary.
-		def ConsoleOutputFilter.instance
-			@@Instance ||= new()
-		end
 
 		### Initialize the console output filter.
-		def initialize( io, pollProxy, sortOrder=DefaultSortPosition ) # :no-new:
-			checkType( io, IO )
+		def initialize( pollProxy, originListener=MUES::Listener, sortOrder=DefaultSortPosition )
 			checkType( pollProxy, MUES::PollProxy )
+			checkType( originListener, MUES::Listener )
 
-			@io = io
-			@pollProxy = pollProxy
+			@pollProxy		= pollProxy
 
-			@readBuffer = ''
-			@writeBuffer = ''
-			@writeMutex = Sync.new
+			@readBuffer		= ''
+			@writeBuffer	= ''
 
-			@shutdown = false
-			super( "Console (fd=%d)" % io.fileno, sortOrder )
+			@writeMutex		= Mutex.new
+			@writeCond		= ConditionVariable.new
+
+			self.debugLevel = 5
+
+			@state = State::STARTING
+			super( "Console", originListener, sortOrder )
+
+			self.log.info "Starting write thread."
+			@outputThread = Thread::new { outputThreadRoutine() }
+			@outputThread.desc = "Console IO filter write thread"
 		end
 
 
@@ -92,9 +103,21 @@ module MUES
 
 		### Handle the specified input <tt>events</tt> (MUES::InputEvent objects).
 		def handleInputEvents( *events )
-			return events if @shutdown
-			return nil unless @pollProxy.registered?
 
+			debugMsg( 3, "Handling #{events.size} input events." )
+
+			# If the filter's finished, queue away the events and return the
+			# signal to dispose of this filter.
+			if self.finished? || @state == State::SHUTDOWN
+				self.queueInputEvents( *events )
+				debugMsg 4, "Finished filter returning nil."
+				return nil
+			end
+
+			# If the filter's not in a connected state, just return the event array
+			return events if @state == State::STARTING
+
+			debugMsg( 3, "Passing #{events.length} input events to the superclass." )
 			return super( *events )
 		end
 
@@ -106,17 +129,22 @@ module MUES
 
 			debugMsg( 3, "Handling #{events.size} output events." )
 
-			# If we're not in a connected state, just return the array we're given
-			return events if @shutdown
+			# If the filter's finished, queue away the events and return the
+			# signal to dispose of this filter.
+			if self.finished? || @state == State::SHUTDOWN
+				self.queueOutputEvents( *events )
+				debugMsg 4, "Finished filter returning nil."
+				return nil
+			end
 
-			# If we're no longer registered with the Poll object, we're finished.
-			return nil unless @pollProxy.registered?
+			# If the filter's not in a connected state, just return the event array
+			return events if @state == State::STARTING
 
-			# Lock the output event queue and add the events we've been given to it
+			# Lock the output event queue and add the events
 			debugMsg( 5, "Appending '" + events.collect {|e| e.data }.join("") + "' to the output buffer." )
 			appendToWriteBuffer( events.collect {|e| e.data }.join("") )
 
-			# We're snarfing up all outbound events, so just return an empty array
+			# Handle all outbound events, so just return an empty array
 			return []
 		end
 
@@ -138,55 +166,178 @@ module MUES
 		### Start the filter
 		def start( stream )
 			super( stream )
-			@writeMutex.synchronize( Sync::EX ) {
-				@poll.register( Poll::IN, method(:handlePollEvent) )
-				@poll.addMask( Poll::OUT ) unless @writeBuffer.empty?
-			}
-			@state = State::CONNECTED
+			@pollProxy.register( Poll::IN, method(:handlePollEvent) )
+			@state = State::RUNNING
 		end
+
 
 		### Shut the filter down, disconnecting from the remote host.
 		def stop( stream )
-			self.sendShutdownMessage if @pollObj.registered?
+			debugMsg 1, "Stopping %s" % self.to_s
+			self.sendShutdownMessage if @pollProxy.registered?
 			self.shutdown
-			@state = State::DISCONNECTED
-			super( stream )
+			rval = super( stream )
+			debugMsg 3, "Stopping console filter, returning: %s" % rval.to_s
+
+			@outputThread.join( 1.5 )
+
+			return rval
 		end
+
 
 
 		#########
 		protected
 		#########
 
-		### The thread routine for the filter's IO thread.
-		def inputThreadRoutine
-			begin
-				$stdin.each {|line|
-					queueInputEvents( InputEvent.new(line.strip) )
+		### Routine for the thread that manages writes to STDOUT
+		def outputThreadRoutine
+			Thread.current.abort_on_exception = true
+
+			# Wait for the filter to start
+			debugMsg 2, "Waiting on running state"
+			Thread::pass until @state == State::RUNNING
+
+			# Start outputting the write buffer until shutdown
+			while @state == State::RUNNING
+				debugMsg 4, "Filter state is %d" % @state
+
+				@writeMutex.synchronize {
+					until @writeBuffer.empty?
+						debugMsg 5, "Writing %d bytes" % @writeBuffer.length
+						bytesWritten = $stdout.write( @writeBuffer )
+						@writeBuffer.slice!( 0 .. (bytesWritten-1) )
+					end
+
+					$stdout.flush
+
+					debugMsg 4, "Write buffer is empty. Waiting on output."
+					@writeCond.wait( @writeMutex )
+					debugMsg 3, "Got notification. Checking filter state."
 				}
-
-			### Handle EOF on the socket by setting the state and 
-			rescue EOFError => e
-				engine.dispatchEvents( LogEvent.new("info", "ConsoleOutputFilter shutting down: #{e.message}") )
-
-			### Shutdown
-			rescue Shutdown
-				$stderr.print( "\n\n>>> Disconnecting <<<\n\n" )
-
-			### Just log any other caught exceptions (for now)
-			rescue StandardError => e
-				debugMsg( 1, "EXCEPTION: ", e )
-				engine.dispatchEvents( LogEvent.new("error","Error in ConsoleOutputFilter input routine: #{e.message}") )
-
-			### Make sure that the handler is set to the disconnected state and
-			### clean up the socket when we're leaving
-			ensure
-				$stdout.flush
-				debugMsg( 1, "In console input thread routine's cleanup (#{$@.to_s})." )
 			end
 
-			@shutdown = true
+			debugMsg 2, "State was %d. Exiting write loop." % @state
+			
+		rescue ::Exception => err
+			self.log.error "%s caught an untrapped exception: %s\n\t%s" %
+				[ self.to_s, err.message, err.backtrace.join("\n\t") ]
 		end
+
+
+		### Shut the filter down.
+		def shutdown
+
+			debugMsg 1, "Shutting filter down."
+
+			# Set the state to shutdown and notify the writing thread
+			@state = State::SHUTDOWN
+			debugMsg 2, "Notifying write thread; State = %d" % @state
+			@writeMutex.synchronize { @writeCond.signal }
+
+			# Unregister the input IO
+			self.log.info( "Filter #{self.to_s} shutting down." )
+			@pollProxy.unregister
+
+			# Flag the filter as finished and notify the controlling stream
+			self.finish
+			notify_observers( self, 'input' )
+		end
+
+
+		### Send a shutdown message to STDOUT
+		def sendShutdownMessage
+			$stdout.write( @writeBuffer )
+			$stdout.write( "\n>>> Disconnecting <<<\n\n" )
+		end
+
+
+		### Append the specified <tt>strings</tt> to the output buffer and mask
+		### the Poll object to receive writable condition events.
+		def appendToWriteBuffer( *strings )
+			data = strings.join("")
+			return if data.empty?
+
+			@writeMutex.synchronize {
+				@writeBuffer << data
+				@writeCond.signal unless @writeBuffer.empty?
+			}
+		end
+
+
+		### Handler routine for Poll events. Reads data from queued
+		### output events, sends it to the remote client, and creates new input
+		### events from user input via the io.
+		def handlePollEvent( io, mask )
+			debugMsg( 5, "Got poll event: #{mask.class.name}: %x" % mask )
+
+			### Handle invalid file descriptor
+			if (mask & (Poll::NVAL|Poll::HUP)).nonzero?
+				err = (mask == Poll::NVAL ? "Invalid file descriptor" : "Hangup")
+				self.log.error( "#{err} for #{io.inspect}" )
+				self.shutdown
+			end
+
+			### Handle io errors
+			if (mask & Poll::ERR).nonzero?
+				self.log.error( "IO error (unknown)" )
+			end
+
+			### Read any input from the io if it's ready
+			if (mask & Poll::IN).nonzero?
+				readData = io.sysread( MTU )
+				debugMsg( 5, "Read %d bytes in poll event handler (readData = %s)." %
+						[ readData.length, readData.inspect ] )
+				handleRawInput( readData )
+			end
+
+			# If the mask contains bits we don't handle, log them
+			if ( (mask ^ HandledBits) & mask ).nonzero?
+				self.log.notice( "Unhandled Poll event in #{self.class.name}: %o" %
+								 ((mask ^ HandledBits) & mask) )
+			end
+
+		rescue => e
+			self.log.error( "Error on #{io.inspect}: #{e.message}. Shutting filter down." )
+			self.shutdown
+		end
+
+
+		### Handle the given raw input <tt>data</tt> which has just been read
+		### from the client socket.
+		def handleRawInput( data )
+			@readBuffer += data
+			debugMsg( 5, "Handling raw input (@readBuffer = #{@readBuffer.inspect}, " +
+					  "length = #{@readBuffer.length})." )
+
+			unless @readBuffer.empty?
+				debugMsg( 4, "Read buffer is non-empty. Trying to get input events from it." )
+				@readBuffer = parseInputBuffer( @readBuffer )
+			end
+		end
+
+		
+		### Parse input events from the given raw <tt>inputBuffer</tt> and
+		### return the (possibly) modified buffer after queueing any input
+		### events created.
+		def parseInputBuffer( inputBuffer )
+			newInputEvents = []
+
+			# Split input lines by CR+LF and strip whitespace before
+			# creating an event
+			inputBuffer.gsub!( /^([^#{CR}#{LF}]*)(?:#{CR}|#{LF})+/ ) {|s|
+				debugMsg( 5, "Read a line: '#{s}' (#{s.length} bytes)." )
+
+				debugMsg( 4, "Creating an input event for input = '#{s.strip}'" )
+				newInputEvents.push( InputEvent.new("#{s.strip}") )
+				
+				""
+			}
+
+			queueInputEvents( *newInputEvents )
+			return inputBuffer
+		end
+
 
 		
 	end # class ConsoleOutputFilter
