@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.22 2002/10/12 11:27:43 deveiant Exp $
+# $Id: user.rb,v 1.23 2002/10/12 14:01:54 stillflame Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.22 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.22 2002/10/12 11:27:43 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.23 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.23 2002/10/12 14:01:54 stillflame Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -113,6 +113,42 @@ module MUES
 				user = MUES::User::new( qnaire.answers )
 				MUES::ServerFunctions::registerUser( user )
 			}
+			qnaire.debugLevel = 5
+			return qnaire
+		end
+
+		### Return a MUES::Questionnaire IOEventFilter object suitable for
+		### insertion into a user's IOEventStream to query for a new password.
+		def self.getPasswordQuestionnaire( user, isOther )
+			setPass = Proc::new {|qnaire| user.password = qnaire.answers[:newPassword]}
+			if isOther
+				qnaire = Questionnaire::new( "Change password", *ChangeOtherPasswordQuestions, &setPass )
+			else # have to create one of the questions with the user object in
+				# the scope of its validator.
+				old_pass_question = {
+					:name		=> 'oldPassword',
+					:hidden		=> true,
+					:question   => "Old passowrd: ",
+					:validator	=> Proc::new {|qnaire, answer|
+						callcc {|rval|
+							if answer.empty?
+								if user.cryptedPass == '*'
+									rval.call(true)
+								else
+									qnaire.abort
+								end
+							elsif user.passwordMatches?(answer)
+								rval.call(true)
+							else
+								qnaire.error("Old password does not match.\n\n")
+								rval.call(false)
+							end
+						} # callcc
+					} # Proc
+				}
+				qnaire = Questionnaire::new( "Change password", old_pass_question, 
+											 *ChangeOtherPasswordQuestions, &setPass )
+			end
 			qnaire.debugLevel = 5
 			return qnaire
 		end
@@ -230,7 +266,7 @@ module MUES
 
 
 		### Returns true if the engine has activated this user object
-		def activated?
+		def activated? 
 			@activated
 		end
 
@@ -245,25 +281,25 @@ module MUES
 
 
 		### Returns true if this user has creator permissions
-		def isCreator?
+		def isCreator? 
 			return @accountType >= AccountType::CREATOR
 		end
 
 
 		### Returns true if this user has implementor permissions
-		def isImplementor?
+		def isImplementor? 
 			return @accountType >= AccountType::IMPLEMENTOR
 		end
 
 
 		### Returns true if this user has admin permissions
-		def isAdmin?
+		def isAdmin? 
 			return @accountType >= AccountType::ADMIN
 		end
 
 
 		### Returns a stringified version of the user object
-		def to_s
+		def to_s 
 			if self.isCreator?
 				return "%s - %s <%s> (%s)" % [
 					@realname,
@@ -283,7 +319,10 @@ module MUES
 
 		### Comparison operator
 		def <=>( otherUser )
-			( @accountType <=> otherUser.accounttype ).nonzero? ||
+			# :MC: changed to always return something of class Numeric
+			acType = @accountType <=> otherUser.accounttype 
+			acType.nonzero? ?
+			acType :
 			@username <=> otherUser.username
 		end
 
@@ -522,7 +561,7 @@ module MUES
 
 						elsif answer !~ /\W/
 							questionnaire.error( "Invalid password: Must have at "\
-												 "least one alphanumeric character.\n\n" )
+												 "least one non-alphanumeric character.\n\n" )
 							rval.call( false )
 
 						else
@@ -557,6 +596,62 @@ module MUES
 
 		]
 
+		# The list of questions for admin password changing questionnaire.
+		ChangeOtherPasswordQuestions = [
+
+			# Password
+			{
+				:name		=> 'newPassword',
+				:hidden		=> true,
+				:question	=> "New password: ",
+				:validator	=> Proc::new {|qnaire, answer|
+
+					# 'return' isn't allowed in an anonymous Proc, so we have to
+					# use continuations to allow the return value to be
+					# decided in more than one place.
+					callcc {|rval|
+						if answer.empty?
+							qnaire.abort
+
+						elsif answer.length < 6
+							qnaire.error( "Invalid password: Must be at "\
+												 "least 6 characters.\n\n" )
+							rval.call( false )
+
+						elsif answer !~ /\W/
+							qnaire.error( "Invalid password: Must have at "\
+												 "least one non-alphanumeric character.\n\n" )
+							rval.call( false )
+
+						else
+							rval.call( true )
+						end
+					} # callcc
+				} # Proc::new
+			},
+
+			# Password confirmation
+			{
+				:name		=> 'passwordConfirm',
+				:hidden		=> true,
+				:question	=> "     (again): ",
+				:validator	=> Proc::new {|questionnaire,answer|
+					
+					# 'return' isn't allowed in an anonymous Proc, so we have to
+					# use continuations to allow the return value to be
+					# decided in more than one place.
+					callcc {|rval|
+						if answer != questionnaire.answers[:newPassword]
+							questionnaire.error( "Passwords didn't match.\n\n" )
+							questionnaire.undoSteps( 1 )
+							rval.call( false )
+						else
+							rval.call( true )
+						end
+					} # callcc
+				}, # Proc
+			}
+		]
 		
 
 	end #class User
