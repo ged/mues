@@ -1,8 +1,12 @@
 #!/usr/bin/ruby
 # 
-# This file contains Metaclass::Association, an class-association metaclass. It
+# This file contains Metaclass::Association, a class-association metaclass. It
 # is used to encapsulate information about the association between two classes
 # in a class model.
+#
+# This class is currently just a placeholder; it isn't used by the other
+# metaclasses, but exists here for possible future experimentation with further
+# levels of abstraction.
 # 
 # == Synopsis
 # 
@@ -10,7 +14,7 @@
 # 
 # == Rcsid
 #
-# $Id: association.rb,v 1.3 2002/03/31 18:26:32 deveiant Exp $
+# $Id: association.rb,v 1.4 2002/04/06 16:59:23 deveiant Exp $
 #
 # == Authors
 # 
@@ -29,12 +33,14 @@ module Metaclass
 
 	autoload :Class, 'metaclass/Class'
 
-	# Class-association metaclass.
+	# A class-association metaclass. This class is currently just a placeholder;
+	# it isn't used by the other metaclasses, but exists here for possible
+	# future experimentation with further levels of abstraction.
 	class Association
 
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: association.rb,v 1.3 2002/03/31 18:26:32 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: association.rb,v 1.4 2002/04/06 16:59:23 deveiant Exp $
 
 		# This is an abstract class, so prevent it from being instantiated
 		private_class_method :new
