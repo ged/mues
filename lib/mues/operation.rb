@@ -27,7 +27,7 @@
 # 
 # == Rcsid
 # 
-# $Id: operation.rb,v 1.5 2002/06/04 06:55:40 deveiant Exp $
+# $Id: operation.rb,v 1.6 2002/06/23 04:47:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -81,8 +81,8 @@ module Metaclass
 
 		COMMENT_WRAP_WIDTH		= 77
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: operation.rb,v 1.5 2002/06/04 06:55:40 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: operation.rb,v 1.6 2002/06/23 04:47:33 deveiant Exp $
 
 		
 		### Return a new Operation with the specified name. If the code argument
@@ -92,7 +92,11 @@ module Metaclass
 		### visibility argument specifies from where it can be called.
 		def initialize( name, code=DEFAULT_CODE, scope=DEFAULT_SCOPE, visibility=DEFAULT_VISIBILITY )
 			@name = name
-			@code = ' ' * 4 + code.squeeze("\n").strip
+			if code == DEFAULT_CODE
+				@code = code
+			else
+				@code = ' ' * 4 + code.squeeze("\n").strip
+			end
 			@visibility = visibility
 			@scope = scope
 			@arguments = []
@@ -259,6 +263,11 @@ module Metaclass
 			return desc.collect {|str| "# " + str}.join("\n")
 		end
 
+
+		### Returns true if this method is virtual (ie., has no definition).
+		def virtual?
+			return @code == DEFAULT_CODE
+		end
 
 
 		#########
