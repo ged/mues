@@ -8,11 +8,11 @@
 # 
 # == Rcsid
 # 
-# $Id: TEMPLATE.rb.tpl,v 1.4 2002/05/26 00:29:49 deveiant Exp $
+# $Id: TEMPLATE.rb.tpl,v 1.5 2002/05/26 00:34:58 deveiant Exp $
 # 
 # == Authors
 # 
-# * (>>>AUTHOR<<<)
+# * (>>>USER_NAME<<<) <(>>>AUTHOR<<<)>
 # 
 #:include: COPYRIGHT
 #
@@ -30,8 +30,8 @@ module MUES
 	class (>>>FILE_SANS<<<) < (>>>superclass<<<)
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.4 2002/05/26 00:29:49 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.5 2002/05/26 00:34:58 deveiant Exp $
 
 		### Create a new (>>>FILE_SANS<<<) object.
 		def initialize
