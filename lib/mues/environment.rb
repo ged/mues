@@ -45,7 +45,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.9 2002/04/01 16:12:30 deveiant Exp $
+# $Id: environment.rb,v 1.10 2002/05/16 03:50:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -80,16 +80,17 @@ module MUES
 
 
 	### Environment abstract base class
-	class Environment < Object ; implements MUES::AbstractClass, Notifiable, MUES::Debuggable
+	class Environment < Object ; implements MUES::AbstractClass, MUES::Notifiable, MUES::Debuggable, MUES::Event::Handler
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.9 2002/04/01 16:12:30 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.10 2002/05/16 03:50:31 deveiant Exp $
 
 		### Class variables
 		@@ChildClasses = {}
 		@@EnvMutex = Sync.new
 		@@EnvLoadTime = Time.at(0) # Set initial load time to epoch
+
 
 		### Initialize the environment with the specified name and
 		### description. This method should be called from derivatives'
@@ -103,6 +104,7 @@ module MUES
 
 			super()
 		end
+
 
 		### Class methods
 		class << self
@@ -143,10 +145,12 @@ module MUES
 				}
 			end
 
+
 			### Return an array of environment classes which have been loaded
 			def listEnvClasses
 				return @@ChildClasses.keys.sort
 			end
+
 
 			### Load and instantiate the environment class specified by
 			### <tt>className</tt> and return it.
@@ -167,13 +171,16 @@ module MUES
 				return env
 			end
 
+
 			### Initialize subsystems after engine startup (stub).
 			def atEngineStartup( theEngine )
 			end
 
+
 			### Clean up subsystems before engine shutdown (stub).
 			def atEngineShutdown( theEngine )
 			end
+
 
 			### Register the specified class <tt>aSubClass</tt> with the list of
 			### available child classes.
@@ -191,8 +198,10 @@ module MUES
 		# The name of the environment object
 		attr_reader :name
 
+
 		# The user-readable description of the object
 		attr_reader :description
+
 
 		### Virtual methods
 		abstract	:getParticipantProxy, :getAvailableRoles, :start, :stop
