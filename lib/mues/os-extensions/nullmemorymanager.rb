@@ -1,8 +1,8 @@
 #!/usr/bin/ruby
 # 
-# This file contains the MUES::ObjectStore::NullGarbageCollector class: This is
-# a simple garbage collector class that doesn't collect. It can be used for
-# small or highly volatile stores that don't need collection.
+# This file contains the MUES::ObjectStore::NullMemoryManager class: This is a
+# simple memory manager class that doesn't do anything. It can be used for small
+# or highly volatile stores that don't need collection.
 # 
 # == Synopsis
 # 
@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: nullmemorymanager.rb,v 1.1 2002/05/28 03:21:29 deveiant Exp $
+# $Id: nullmemorymanager.rb,v 1.2 2002/07/09 15:09:53 deveiant Exp $
 # 
 # == Authors
 # 
@@ -27,32 +27,36 @@
 #
 
 require 'mues'
+require 'mues/ObjectStore'
+require 'mues/StorableObject'
 
+require 'mues/os-extensions/MemoryManager'
 
 module MUES
 	class ObjectStore
 
-		### This is a simple garbage collector class that doesn't collect. It can be
-		### used for small or highly volatile stores that don't need collection.
-		class NullGarbageCollector < MUES::ObjectStore::GarbageCollector
+		### This is a simple memory-manager class that doesn't do anything. It
+		### can be used for small or highly volatile stores that don't need
+		### collection.
+		class NullMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-			Rcsid = %q$Id: nullmemorymanager.rb,v 1.1 2002/05/28 03:21:29 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+			Rcsid = %q$Id: nullmemorymanager.rb,v 1.2 2002/07/09 15:09:53 deveiant Exp $
 
 
 			######
 			public
 			######
 
-			### Start the garbage collector. Such as it is.
+			### Start the memory manager, Such as it is.
 			def start( visitor )
 				@running = true
 			end
 
-			### Stop the garbage collector.
+			### Stop the memory manager.
 			def shutdown
-				self._collect_all
+				self.collectAll
 				@running = false
 			end
 
@@ -62,15 +66,14 @@ module MUES
 			#########
 
 			### Collects all the (non-shallow) objects.
-			### may take arguments from the same hash _collect doesct
-			def _collect_all
-				@active_objects.each_value {|o|
-					@objectStore.store(o) unless o.shallow?
+			def collectAll
+				@activeObjects.each_value {|o|
+					@backend.store(o) unless o.shallow?
 				}
-				@active_objects.clear
+				@activeObjects.clear
 			end
 
-		end # class NullGarbageCollector
+		end # class NullMemoryManager
 
 	end # class ObjectStore
 end # module MUES
