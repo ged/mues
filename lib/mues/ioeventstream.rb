@@ -7,19 +7,24 @@
 # mutable I/O abstraction. It is modelled after the <b>Chain of Responsibility</b>
 # pattern from the [Design Patterns] book.
 # 
-# The stream itself is only a container; it is essentially just a stack of filter
-# objects, each of which can potentially act upon the input and output events
-# flowing through the stream. A filter may act on the I/O events in the stream in
-# many different ways, depending on its purpose and configuration. It can
-# redirect, modify, duplicate, and/or inject new events based on the contents of
-# each event.
+# The stream itself is only a container; it is essentially just a stack of
+# filters (MUES::IOEventFilter objects), each of which can potentially act upon
+# the events flowing through the stream. A filter may act on the I/O events in
+# the stream in many different ways, depending on its purpose and
+# configuration. It can redirect, modify, duplicate, and/or inject new events
+# based on the contents of each event.
 # 
 # The stream is bi-directional, meaning that all filters contained in the stream
-# see both input and output events. This allows a single filter to act on events
-# flowing in both directions.
+# are given both input and output events. This allows a single filter to act on
+# events flowing in both directions. If a filter is not interested in one
+# direction, it can simply return the events it is given unchanged.
 # 
-# The stream also has its own thread so that I/O in it is processed independently
-# of the main EventQueue.
+# The stream starts its own Ruby thread at creation so that I/O in it is
+# processed independently of the main EventQueue. It implements the
+# <tt>Observer</tt> role of the Observer design pattern
+# (http://patterndigest.com/patterns/Observer.html) so that filters with pending
+# events may notify the stream they are associated with without the need to poll
+# each filter constantly.
 # 
 # == Synopsis
 # 
@@ -44,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.17 2002/08/26 16:30:51 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.18 2002/09/12 11:42:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -90,7 +95,9 @@ module MUES
 
 
 		### Instantiate and return a stream object with the specified +filters+,
-		### if any. Also adds default filters to the top and bottom of the stack.
+		### if any. Default filters (MUES::DefaultInputFilter and
+		### MUES::DefaultOutputFilter) are automatically added to the ends of
+		### the stack.
 		def initialize( *filters )
 			checkEachType( filters, MUES::IOEventFilter )
 			super()
@@ -201,56 +208,65 @@ module MUES
 		end
 
 
-		### Remove and return the specified +filters+ from the stream.
+		### Remove the specified <tt>filters</tt> from the stream, returning any
+		### consequential events. The default filters cannot be removed. If no
+		### <tt>filters</tt> are specified, all but the default filters are
+		### removed.
 		def removeFilters( *filters )
-			filters.flatten!
-			filters.compact!
-			return [] unless filters.length.nonzero?
-			checkEachType( filters, MUES::IOEventFilter )
-			debugMsg( 1, "Removing #{filters.size} filters from stream #{self.id}" )
+			if filters.empty?
+				filters = @filters - [ @doFilter, @diFilter ]
+			else
+				checkEachType( filters, MUES::IOEventFilter )
+				raise MUES::Exception, "Cannot remove the default input filter" if
+					filters.include?( @diFilter )
+				raise MUES::Exception, "Cannot remove the default output filter" if
+					filters.include?( @doFilter )
+			end
 
-			filters -= [ @diFilter, @doFilter ]
-			returnFilters = []
+			results = []
+			debugMsg( 1, "Removing #{filters.size} filters from stream #{self.id}" )
 
 			### Remove each filter that is actually in the stream, notifying
 			### each one that it should stop notifying this stream
 			@filterMutex.synchronize(Sync::EX) {
-				returnFilters = @filters & filters
-				returnFilters.each {|f| f.stop( self )}
+				(@filters & filters).each {|f|
+					results << f.stop( self )
+				}
 
 				@filters -= filters
 			}
 
 			debugMsg( 2, "Stream now has #{@filters.size} filters." )
-			return returnFilters
+			return results.flatten
 		end
 
 
-		### Remove all filters of the type specified by <tt>aClass</tt> from the
-		### IOEventStream. The default filters cannot be removed.
-		def removeFiltersOfType( aClass )
-			checkType( aClass, ::Class )
+		### Remove all filters of the type specified by <tt>filterClass</tt> (a
+		### Class object) from the IOEventStream, returning any consequential
+		### events. The default filters cannot be removed.
+		def removeFiltersOfType( filterClass )
+			checkType( filterClass, ::Class )
 			@filterMutex.synchronize( Sync::SH ) {
-				removeFilters( @filters.find_all {|filter| filter.kind_of?( aClass )}.flatten )
+				removeFilters( findFiltersOfType(filterClass) )
 			}
 		end
 
 
 		### Find and return an Array of all handlers of the type specified by
-		### <tt>aClass</tt> from the IOEventStream. If a block is given, it is
+		### <tt>filterClass</tt> from the IOEventStream. If a block is given, it is
 		### passed each matching filter, and the result is substituted for the
 		### filter in the return value.
-		def findFiltersOfType( aClass ) # :yields: filter
-			checkType( aClass, ::Class )
+		def findFiltersOfType( filterClass ) # :yields: filter
+			checkType( filterClass, ::Class )
 			values = []
 
 			@filterMutex.synchronize( Sync::SH ) {
 				if block_given?
-					@filters.find_all {|filter| filter.kind_of?( aClass )}.each {|f|
+					@filters.find_all {|filter| filter.kind_of?(filterClass) }.each {|f|
 						values << yield( f )
 					}
 				else
-					values = @filters.find_all {|filter| filter.kind_of?( aClass )}.flatten
+					values = @filters.find_all {|filter| filter.kind_of?(filterClass) }
 				end
 			}
 
@@ -340,33 +356,27 @@ module MUES
 		def shutdown
 			results = []
 
+			# Set the state flag and remove all filters
 			debugMsg( 1, "Shutting down event stream #{self.id}." )
 			@filterMutex.synchronize(Sync::EX) {
 				@state = SHUTDOWN
-
-				### Shut each filter down and clear them
-				@filters.reverse.each {|f|
-					results << f.stop( self )
-				}
+				results << self.removeFilters
 				@filters.clear
 			}
 
+			# Now unpause the stream and signal the stream's thread so it exits
+			# (which it does when the state is set to anything but RUNNING).
 			unpause()
-
 			@notificationMutex.synchronize {
 				debugMsg( 5, "Signalling for shutdown." )
 				@notification.signal
 			}
 
-			### Join on the stream's thread
-			unless @streamThread == Thread.current
-				begin
-					timeout( 2.0 ) do
-						@streamThread.join
-					end
-				rescue TimeoutError
-					@streamThread.kill
-				end
+			### Join on the stream's thread with a timeout of 2 seconds
+			if @streamThread != Thread.current
+				@streamThread.join( 2 ) || @streamThread.kill
+			elsif Thread.current != Thread.main
+				Thread.current.exit
 			end
 
 			return results.flatten
@@ -375,9 +385,7 @@ module MUES
 
 		### Stop processing events until #unpause is called.
 		def pause
-			@notificationMutex.synchronize {
-				@paused = true
-			}
+			@notificationMutex.synchronize { @paused = true }
 		end
 
 
@@ -421,7 +429,7 @@ module MUES
 						debugMsg( 3, "No pending IO. Waiting on notification " +
 								   "(#{@notification.inspect}) for #{@notificationMutex.inspect}." )
 						@idle = true
-						begin @notification.wait( @notificationMutex ) end until ! @paused
+						begin @notification.wait( @notificationMutex ) end while self.paused?
 						@idle = false
 						debugMsg(3, "Got notification. %s notifying objects." % [
 									  ( @notifyingInputObjects + @notifyingOutputObjects ).length
@@ -451,7 +459,7 @@ module MUES
 			### that are returned for the next filter
 			@filterMutex.synchronize(Sync::SH) {
 				@filters.sort.each {|filter|
-					results = callFilterHandler( filter, "input", *events )
+					events = callFilterHandler( filter, "input", *events )
 				}
 			}
 
@@ -517,21 +525,24 @@ module MUES
 			# If the filter returned nil or its isFinished flag is set,
 			# get all of its queued events and remove it from the stream.
 			if ( results.nil? || filter.isFinished? )
+				results ||= []
 
 				debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
-				removeFilters( filter )
+				consequences = removeFilters( filter )
+				results.push( *consequences ) if consequences.is_a?( Array ) && ! consequences.empty?
 
 				opposite = (direction == "input" ? "Output" : "Input")
 
-				requeuedEvents = filter.send( "queue%sEvents" % opposite )
+				requeuedEvents = filter.send( "queued%sEvents" % opposite )
 				debugMsg( 2, "Adding %d %sEvents from finished filter to queue for next cycle." % [
 							 requeuedEvents.size, opposite ])
 				self.send( "add%sEvents" % opposite, *requeuedEvents )
 
-				# Make results into an array again if it's nil, then Add any
-				# pending events to it.
-				results ||= []
-				results.push( *filter.send("queued%sEvents" % direction.capitalize) )
+				# Add any pending events to the array of results.
+				consequences = filter.send("queued%sEvents" % direction.capitalize)
+				results.push( *consequences ) if consequences.is_a?( Array ) && ! consequences.empty?
+			elsif ( ! results.is_a? Array )
+				results = [ results ]
 			end
 
 			debugMsg( 3, "#{results.size} events left after filtering." )
