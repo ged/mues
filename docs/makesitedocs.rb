@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES RDoc Documentation Generation Script
-#	$Id: makesitedocs.rb,v 1.10 2002/10/17 14:48:02 deveiant Exp $
+#	$Id: makesitedocs.rb,v 1.11 2002/10/22 18:17:55 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -34,8 +34,6 @@ opts.set_options(
 	[ '--output',	'-o',	GetoptLong::REQUIRED_ARGUMENT ]
 )
 
-debug = false
-verbose = false
 upload = nil
 diagrams = false
 template = 'mues'
@@ -45,13 +43,13 @@ opts.each {|opt,val|
 	case opt
 
 	when '--debug'
-		debug = true
+		$DEBUG = true
 
 	when '--verbose'
-		verbose = true
+		$VERBOSE = true
 
 	when '--upload'
-		upload = val ? val : 'ssh:///www/mues.FaerieMUD.org/public/rdoc'
+		upload = val.empty? ? 'ssh://oberon/www/mues.FaerieMUD.org/public/rdoc' : val
 
 	when '--diagrams'
 		diagrams = true
@@ -60,8 +58,5 @@ opts.each {|opt,val|
 		docsdir = val
 	end
 }
-
-$DEBUG = true if debug
-$VERBOSE = true if verbose
 
 makeDocs( docsdir, template, upload, diagrams )
