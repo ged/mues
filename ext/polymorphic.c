@@ -1,11 +1,11 @@
 /*
  *	polymorphic.c - Polymorphic backend for MUES::StorableObject
- *	$Id: polymorphic.c,v 1.9 2002/06/04 06:46:31 deveiant Exp $
+ *	$Id: polymorphic.c,v 1.10 2002/06/05 15:33:20 deveiant Exp $
  *
- *	This module defines the part of the MUES::StorableObject class which allows
- *	it to exchange its identity with another StorableObject by calling its
- *	#become() method. It is based on PolymorphicObject, which in turn is based
- *	on code by Mathieu Bouchard <matju@cam.org>.
+ *	This module defines the MUES::PolymorphicObject class which is a derivative
+ *	of MUES::Object that allows it to exchange its identity with another
+ *	PolymorphicObject via its #become() method. It is based on code suggested by
+ *	Mathieu Bouchard <matju@cam.org>.
  *
  *	Authors:
  *		Martin Chase <stillflame@FaerieMUD.org>
