@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.9 2002/10/17 14:44:10 deveiant Exp $
+#	$Id: utils.rb,v 1.10 2002/10/22 18:15:28 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -212,16 +212,16 @@ module UtilityFunctions
 	def findRdocableFiles
 		startlist = []
 		if File.exists? "docs/CATALOG"
-			message "Using docs/CATALOG\n"
+			message "Using CATALOG file.\n"
 			startlist = getVettedManifest( "docs/CATALOG" )
 		else
 			message "Using default MANIFEST\n"
 			startlist = getVettedManifest()
 		end
 
-		message "Looking for RDoc comments in:\n"
+		message "Looking for RDoc comments in:\n" if $VERBOSE
 		startlist.select {|fn|
-			message "  #{fn}: "
+			message "  #{fn}: " if $VERBOSE
 			found = false
 			File::open( fn, "r" ) {|fh|
 				fh.each {|line|
@@ -232,7 +232,7 @@ module UtilityFunctions
 				}
 			}
 
-			message( (found ? "yes" : "no") + "\n" )
+			message( (found ? "yes" : "no") + "\n" ) if $VERBOSE
 			found
 		}
 	end
