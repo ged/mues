@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilters.rb,v 1.7 2002/09/12 11:36:58 deveiant Exp $
+# $Id: ioeventfilters.rb,v 1.8 2002/09/28 12:14:32 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,7 +43,7 @@ require "mues/filters/TelnetOutputFilter"
 require "mues/filters/ConsoleOutputFilter"
 
 require "mues/filters/CommandShell"
-require "mues/filters/LoginProxy"
+require "mues/filters/EventDelegator"
 require "mues/filters/MacroFilter"
 require "mues/filters/SnoopFilter"
 require "mues/filters/ParticipantProxy"
