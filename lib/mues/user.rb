@@ -1,22 +1,81 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin 
-= Player.rb
+= User.rb
 == Name
 
-MUES::Player - a user connection class for the MUES Engine
+MUES::User - a user connection class for the MUES Engine
 
 == Synopsis
 
-  require "mues/Player"
+  require "mues/User"
 
 == Description
 
-This class encapsulates a remote socket connection to a client. It contains the
-raw socket object, an IOEventStream object which is used to manipulate and
-direct input and output between the remote user and the player object, an array
-of characters which are currently being controlled, and some miscellaneous
-information about the client.
+Instances of this class represent a remote client who has connected to the
+MUES. It contains an IOEventStream object which distributes input and output
+between the remote client and the objects with which the user object is
+associated, and information about the client.
+
+== Methods
+=== Protected Instants Methods
+
+--- MUES::User#initialize( dbInfo )
+
+	Initialize the user object with the given ((|dbInfo|)) object. The dbInfo
+	object must either be a Hash or an object which behaves like one in that it
+	must respond to the (({[]})), (({[]=})), and (({has_key?})) methods.
+
+--- MUES::User#activate( stream )
+
+	Activate the user object with the given ((|stream|)), which must be an
+	instance of ((<MUES::IOEventStream>)) or one of its subclasses.
+
+--- MUES::User#activated?
+
+	Returns (({true})) if the user has been activated (ie., has a connected IO
+	stream).
+
+--- MUES::User#remoteIp
+
+	Return the user^s remote IP address.
+
+--- MUES::User#remoteIp=( newIp )
+
+	Set the user^s remote IP address to ((|newIp|)).
+
+--- MUES::User#isCreator?
+
+	Returns (({true})) if the user has ((<creator>)) permissions.
+
+--- MUES::User#isImplementor?
+
+	Returns (({true})) if the user has ((<implementor>)) permissions.
+
+--- MUES::User#isAdmin?
+
+	Returns (({true})) if the user has ((<admin>)) permissions.
+
+--- MUES::User#to_s
+
+	Returns a stringified version of the user.
+
+--- MUES::User#password=( newPassword )
+
+	Set the user^s password to ((|newPassword|)).
+
+--- MUES::User#deactivate
+
+	Deactivate the user, shutting down her IO stream.
+
+--- MUES::User#reconnect( stream )
+
+	
+
+--- MUES::User#method_missing( aSymbol, *args )
+
+
+
 
 == Author
 
@@ -29,7 +88,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "date"
 require "md5"
@@ -40,11 +99,13 @@ require "mues/Exceptions"
 require "mues/IOEventFilters"
 
 module MUES
-	class Player < Object ; implements Debuggable, Event::Handler
+	class User < Object ; implements Debuggable
+
+		include Event::Handler
 
 		### Class constants
 		module Role
-			PLAYER		= 0
+			USER		= 0
 			CREATOR		= 1
 			IMPLEMENTOR	= 2
 			ADMIN		= 3
@@ -52,7 +113,7 @@ module MUES
 		Role.freeze
 
 		### :SYNC: Changes in this structure should be accompanied by changes in
-		### the corresponding table definition in '../sql/mues.player.sql'
+		### the corresponding table definition in '../sql/mues.user.sql'
 		### :FIXME: Obviously, manually keeping these two the same is non-optimal...
 		DefaultDbInfo = {
 			'username'			=> 'guest',
@@ -65,14 +126,14 @@ module MUES
 			'timeCreated'		=> Time.now,
 			'firstLoginTick'	=> 0,
 
-			'role'				=> Role::PLAYER,
+			'role'				=> Role::USER,
 			'flags'				=> 0,
 			'preferences'		=> {},
 			'characters'		=> []
 		}
 
-		### METHOD: new( playerDataHash )
-		### Initialize a new player object with the hash of attributes specified
+		### METHOD: new( userDataHash )
+		### Initialize a new user object with the hash of attributes specified
 		protected
 		def initialize( dbInfo )
 			checkResponse( dbInfo, '[]', '[]=', 'has_key?' )
@@ -85,17 +146,16 @@ module MUES
 			@dbInfo = dbInfo
 		end
 
-		#############################################################################
+		###################################################################
 		###	P U B L I C   M E T H O D S
-		#############################################################################
+		###################################################################
 		public
 
 		### Accessors
-		attr_accessor	:ioEventStream
-		attr_accessor	:dbInfo
+		attr_accessor	:ioEventStream, :dbInfo
 
 		### METHOD: activated?
-		### Returns true if the engine has activated this player object
+		### Returns true if the engine has activated this user object
 		def activated?
 			@activated
 		end
@@ -108,7 +168,7 @@ module MUES
 
 		### METHOD: remoteIp=( newIp )
 		### Sets the remote IP that the client is connected from, and sets the
-		### player's 'lastHost' attribute.
+		### user's 'lastHost' attribute.
 		def remoteIp=( newIp )
 			checkType( newIp, ::String )
 
@@ -116,28 +176,28 @@ module MUES
 		end
 
 		### METHOD: isCreator?
-		### Returns true if this player has creator permissions
+		### Returns true if this user has creator permissions
 		def isCreator?
 			return @dbInfo['role'] >= Role::CREATOR
 		end
 
 
 		### METHOD: isImplementor?
-		### Returns true if this player has implementor permissions
+		### Returns true if this user has implementor permissions
 		def isImplementor?
 			return @dbInfo['role'] >= Role::IMPLEMENTOR
 		end
 
 
 		### METHOD: isAdmin?
-		### Returns true if this player has admin permissions
+		### Returns true if this user has admin permissions
 		def isAdmin?
 			return @dbInfo['role'] >= Role::ADMIN
 		end
 
 
 		### METHOD: to_s
-		### Returns a stringified version of the player object
+		### Returns a stringified version of the user object
 		def to_s
 			if @remoteIp
 				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> [connected from #{@remoteIp}]"
@@ -147,8 +207,15 @@ module MUES
 		end
 
 
+		### METHOD: <=>( anotherUser )
+		### Comparison operator
+		def <=>( otherUser )
+			( @dbInfo['role'] <=> otherUser.role ).nonzero? ||
+			@dbInfo['username'] <=> otherUser.username
+		end
+
 		### METHOD: password=( newPassword )
-		### Reset the player's password to ((|newPassword|)).
+		### Reset the user's password to ((|newPassword|)).
 		def password=( newPassword )
 			checkType( newPassword, String )
 
@@ -156,8 +223,8 @@ module MUES
 		end
 
 
-		### METHOD: activate( anIOEventStream )
-		### Activate the player and set up their environment with the given stream
+		### METHOD: activate( stream=MUES::IOEventStream )
+		### Activate the user and set up their environment with the given stream
 		def activate( stream )
 			checkType( stream, MUES::IOEventStream )
 
@@ -165,6 +232,8 @@ module MUES
 			shell = CommandShell.new( self )
 			macros = MacroFilter.new( self )
 			stream.addFilters( shell, macros )
+
+			shell.debugLevel = 3
 
 			# Set the stream attribute and flag the object as activated
 			@ioEventStream = stream
@@ -177,9 +246,9 @@ module MUES
 		end
 
 
-		### METHOD: disconnect( )
-		### Disconnect our IOEventStream and prepare to be destroyed
-		def disconnect
+		### METHOD: deactivate( )
+		### Deactivate our IOEventStream and prepare to be destroyed
+		def deactivate
 			results = []
 
 			### Unregister all our handlers
@@ -189,7 +258,7 @@ module MUES
 			### Shut down the IO event stream
 			@activated = false
 			results << @ioEventStream.shutdown if @ioEventStream
-			results << PlayerSaveEvent.new(self)
+			results << UserSaveEvent.new(self)
 			
 			### Return any events that need dispatching
 			return results.flatten
@@ -223,7 +292,7 @@ module MUES
 
 
 		### METHOD: method_missing( aSymbol, *args )
-		### Create and call methods that are the same as player data keys
+		### Create and call methods that are the same as user data keys
 		def method_missing( aSymbol, *args )
 			origMethName = aSymbol.id2name
 			methName = origMethName.sub( /=$/, '' )
@@ -256,9 +325,9 @@ module MUES
 		end
 
 
-		#############################################################################
+		###################################################################
 		###	P R O T E C T E D   M E T H O D S
-		#############################################################################
+		###################################################################
 		protected
 
 		### (PROTECTED) METHOD: _handleIOEvent( anEvent )
@@ -284,5 +353,5 @@ module MUES
 		end
 
 
-	end #class Player
+	end #class User
 end #module MUES
