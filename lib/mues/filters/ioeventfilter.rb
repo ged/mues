@@ -52,21 +52,9 @@ module MUES
 	class IOEventFilter < Object ; implements Observable, Comparable, Debuggable, AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.6 2001/07/18 02:23:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.7 2001/07/27 04:15:12 deveiant Exp $
 		DefaultSortPosition = 500
-
-		### Class methods
-		class << self
-
-			### (CLASS) METHOD: defaultSortPosition
-			### Returns the integer that indicates what order the filter should
-			### naturally sort to
-			def defaultSortPosition
-				@@DefaultSortPosition
-			end
-		end # class << self
-
 
 		### Initializer
 
@@ -101,9 +89,9 @@ module MUES
 		end
 
 
-		#######################################################################
+		###################################################
 		###	P U B L I C   M E T H O D S
-		#######################################################################
+		###################################################
 		public
 
 		### Accessors
@@ -175,7 +163,8 @@ module MUES
 		### to, or lower than the specified object, respectively.
 		def <=>( anObject )
 			checkType( anObject, MUES::IOEventFilter )
-			return @sortPosition <=> anObject.sortPosition
+			return ( @sortPosition <=> anObject.sortPosition ).nonzero? ||
+				@muesid <=> anObject.muesid
 		end
 
 		### (VIRTUAL) METHOD: handleInputEvents( *events )
