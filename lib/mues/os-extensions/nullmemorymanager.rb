@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: nullmemorymanager.rb,v 1.5 2002/10/04 05:25:51 deveiant Exp $
+# $Id: nullmemorymanager.rb,v 1.6 2002/10/14 09:45:59 deveiant Exp $
 # 
 # == Authors
 # 
@@ -41,8 +41,8 @@ module MUES
 		class NullMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: nullmemorymanager.rb,v 1.5 2002/10/04 05:25:51 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: nullmemorymanager.rb,v 1.6 2002/10/14 09:45:59 deveiant Exp $
 
 
 			######
@@ -57,9 +57,7 @@ module MUES
 			### Stop the memory manager.
 			def shutdown
 				@running = false
-				self.log.debug {"Active objects %s: %s" % [ @activeObjects.class.name, @activeObjects.inspect ]}
-				# @activeObjects.rehash
-				return @activeObjects.values.reject {|o| o.shallow?}
+				return self.unswappedObjects
 			end
 
 			### Restart the memory manager.
