@@ -34,8 +34,8 @@ module MetaClass
 
 	class Association < Object
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: association.rb,v 1.1 2001/03/15 02:24:22 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: association.rb,v 1.2 2001/05/14 12:36:59 deveiant Exp $
 
 
 	end
