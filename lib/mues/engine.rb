@@ -26,10 +26,9 @@
 # 
 #   #!/usr/bin/ruby
 # 
-#   require "mues/Config"
-#   require "mues/Engine"
+#   require "mues"
 # 
-#   $ConfigFile = "MUES.cfg"
+#   $ConfigFile = "/opt/mues/server/config.xml"
 # 
 #   ### Instantiate the configuration and the server objects
 #   config = MUES::Config::new( $ConfigFile )
@@ -41,27 +40,21 @@
 #   puts "Shut down...\n"
 # 	
 # === Subsystems
-# 
-# The Engine contains five basic kinds of functionality: system startup and
-# shutdown, connections and IO, user authentication/authorization, event
-# dispatch and handling, and environment maintenance functions.
-# 
 # ==== System Startup and Shutdown
 # 
-# The Engine is started by means of its #start method, and can be shut down
-# either gracefully with the #shutdown method, allowing for its subsystems to
-# save their state and clean up, or forcefully with the #halt method, which
-# kills all threads immediately.
+# The Engine is started by means of its #start method, and is shut down either
+# from inside the server with a MUES::EngineShutdownEvent or from outside by
+# calling the #stop method.
 # 
 # ==== Threads and Thread Routines
 # 
-# There are currently two thread routines in the Engine: the routines for the
-# main thread of execution and the thread which drives IO. The main thread loops in the
-# #mainThreadRoutine method, marking each loop by dispatching a
+# There are currently two thread routines in the Engine: the routine for the
+# main thread of execution and the routine which drives IO. The main thread
+# loops in the #mainThreadRoutine method, marking each loop by dispatching a
 # MUES::TickEvent, and then sleeping for a duration of time set in the main
 # configuration file. The #ioThreadRoutine method polls any socket added to the
 # engine's poll object and calls the appropriate callback when an IO event
-# occurs. This includes IO for both the MUES::Listener objects and
+# occurs. This includes IO for both the MUES::Listener objects and (by default)
 # MUES::OutputFilter objects in a MUES::IOEventStream.
 #
 # ==== User Authentication/Authorization
@@ -86,7 +79,20 @@
 # queue, which executes most events in the system, and a "privileged" queue,
 # which executes events that require greater privileges (MUES::PrivilegedEvent
 # objects). It fills these queues itself from the events that are given to its
-# #dispatchEvents method.
+# #dispatchEvents method, which is typically accessed via the like-named
+# #function in MUES::ServerFunctions (in MUES::Mixins).
+#
+# Once an event has been given to one queue or the other, it will be picked up
+# by a worker thread, which will then consult the registry of handlers to
+# determine how to dispatch the event. Objects register themselves as being
+# interested in receiving certain kinds of events either through that event
+# class's #registerHandlers method, or by mixing in the MUES::Event::Handler
+# mixin and then using the #registerHandlerForEvents method.
+#
+# See the documentation in lib/mues/EventQueue.rb (MUES::EventQueue),
+# lib/mues/Events.rb (MUES::Event and MUES::Event::Handler), and
+# lib/mues/Mixins.rb (MUES::ServerFunctions) for more information on the event
+# system.
 #
 # ==== Environments
 #
@@ -100,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.25 2002/10/17 14:48:41 deveiant Exp $
+# $Id: engine.rb,v 1.26 2002/10/23 02:01:02 deveiant Exp $
 # 
 # == Authors
 # 
@@ -170,8 +176,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.25 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.25 2002/10/17 14:48:41 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.26 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.26 2002/10/23 02:01:02 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -189,8 +195,9 @@ module MUES
 		@@ListenerConnectCallback = nil
 
 
-		### Make the new method private, as this class is a singleton
-		private_class_method :new
+		### Make the new and allocate methods private, as this class is a
+		### singleton
+		private_class_method :new, :allocate
 
 		### Initialize the Engine instance.
 		def initialize # :nodoc:
@@ -208,6 +215,7 @@ module MUES
 
 			@startTime 				= nil
 			@tick 					= 0
+			@mainThread				= nil
 
 			@ioThread				= nil
 			@ioMutex				= Sync::new
@@ -330,6 +338,7 @@ module MUES
 		### was turned off, and false if it was already off.
 		def cancelInitMode
 			return false if @initMode.frozen?
+			self.log.notice( "Cancelling init mode." )
 			@initMode = false
 			@initMode.freeze
 			return true
@@ -344,7 +353,7 @@ module MUES
 
 		### Shut the server down.
 		def stop()
-			self.log.notice( "Entering shutdown cycle" )
+			self.log.notice( "Setting state to SHUTDOWN." )
 			@state = State::SHUTDOWN
 		end
 
@@ -1092,6 +1101,7 @@ module MUES
 		def mainThreadRoutine
 
 			Thread.current.desc = "[Main]"
+			@mainThread = Thread.current
 			tickLength = @config.engine.tick_length.to_f
 
 			### Start the event loop until the engine stops running
@@ -1194,17 +1204,16 @@ module MUES
 					else
 						interval = DefaultPollInterval
 					end
-					halfInterval = interval / 2
 
-					self.log.info( "Half-interval is #{halfInterval}" )
+					self.log.info( "Poll interval is #{interval} seconds" )
 
 					### :TODO: Fix race condition: If a connection comes in after stop()
 					### has been called, but before the Shutdown exception has been
 					### dispatched.
 					while running? do
 
+						startTime = Time::now
 						Thread.pass
-						sleep halfInterval
 
 						begin
 							@ioMutex.synchronize( Sync::SH ) {
@@ -1212,12 +1221,11 @@ module MUES
 							}
 						rescue StandardError => e
 							dispatchEvents( UntrappedExceptionEvent.new(e) )
-							Thread.pass
 							next
 						end
 
-						Thread.pass
-						sleep halfInterval
+						remainder = (interval - (Time::now - startTime)).to_f
+						sleep remainder if remainder > 0.0
 
 					end
 				rescue Reload
