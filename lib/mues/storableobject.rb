@@ -32,7 +32,8 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues.so'
+require 'rbconfig'
+require "mues.#{Config::CONFIG['DLEXT']}"
 
 module MUES #:nodoc:
 
@@ -46,8 +47,8 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.29 2003/04/19 06:59:11 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.30 2003/06/06 22:34:29 deveiant Exp $
 
 
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -162,8 +163,8 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.29 2003/04/19 06:59:11 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.30 2003/06/06 22:34:29 deveiant Exp $
 
 
 		# Methods to not remove from the instances of this class
@@ -272,3 +273,4 @@ module MUES #:nodoc:
     end # class ShallowReference
 
 end # module MUES
+

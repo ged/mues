@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.8 2003/03/05 21:26:00 deveiant Exp $
+# $Id: object.rb,v 1.9 2003/06/06 22:34:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -92,8 +92,8 @@ module MUES
 		include Comparable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.8 2003/03/05 21:26:00 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.9 2003/06/06 22:34:13 deveiant Exp $
 
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
@@ -158,8 +158,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.8 2003/03/05 21:26:00 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.9 2003/06/06 22:34:13 deveiant Exp $
 
 
 		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -318,4 +318,5 @@ end # module MUES
 
 
 # Load the C part of MUES::Object
-require "mues.so"
+require 'rbconfig'
+require "mues.#{Config::CONFIG['DLEXT']}"
