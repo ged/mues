@@ -1,7 +1,7 @@
 # -*- default-generic -*-
 # User-related MUES::CommandShell commands.
-# Time-stamp: <12-Oct-2002 09:55:38 deveiant>
-# $Id: users.cmd,v 1.3 2002/10/12 16:04:07 deveiant Exp $
+# Time-stamp: <13-Oct-2002 16:44:01 deveiant>
+# $Id: users.cmd,v 1.4 2002/10/13 23:27:38 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -186,5 +186,75 @@ if the invoking user has admin privileges.
 	end
 
 	# The MUES::User class has a factory method for creating Questionnaire objects
-	# for changing an instance's password.
+	# for changing a user's password.
 	return [MUES::User::getPasswordQuestionnaire(user, (context.user != user))]
+
+
+### Change a user's attributes
+= usermod
+
+== Abstract
+Change an attribute of a user.
+
+== Synonyms
+moduser
+
+== Description
+Allows a user to change their account information, or the account information of
+another user if the invoking user has admin priviledges.
+
+== Usage
+
+	usermod <attribute> [<username>]
+
+== Code
+
+	modableAttr = %w[realname emailAddress]
+	adminModableAttr = modableAttr + %w[username]
+	user = nil
+
+	# attribute + user
+	if argString =~ /(\S+)\s+(\S+)/
+		attribute = $1
+		username = $2
+		if username == context.user.login
+			user = context.user
+		elsif ! context.user.isAdmin?
+			raise CommandError, "You cannot alter other users' accounts."
+		else
+			user = MUES::ServerFunctions::getUserByName( username ) or
+				raise CommandError, "No such user '#{username}'"
+		end
+
+	# attribute only
+	elsif argString =~ /(\S+)/
+		user = context.user
+		attribute = $1
+
+	else
+		raise CommandError, self.usage
+	end
+
+	# Match the attribute to change against the list of modifiable ones.
+	if context.user.isAdmin?
+		attributes = adminModableAttr.find_all {|attr| attr.match(attribute)}
+	else
+		attributes = modableAttr.find_all {|attr| attr.match(attribute)}
+	end
+
+	# Handle attribute not found
+	if attributes.nil? or attributes.empty?
+		raise CommandError, "Invalid attribute '%s'.  Must be one of: %s" % [
+			attribute, (context.user.isAdmin? ?
+				adminModableAttr :
+				modableAttr).join(", ") 
+		]
+
+	# Handle ambiguous attribute
+	elsif attributes.length > 1
+		raise CommandError, "Ambiguous attribute: %s" % attributes.join(" ")
+	end
+	
+	# The MUES::User class has a factory method for creating Questionnaire
+	# objeccts for changing a user's attributes.
+	return [MUES::User::getAttributeQuestionnaire(user, attributes[0])]
