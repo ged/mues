@@ -193,6 +193,7 @@ class ClassTestCase < MUES::TestCase
 
 			# Add a 'name' attribute
 			myClass << Metaclass::Attribute::new( "name" )
+			myClass << Metaclass::Attribute::new( "count", Integer, Metaclass::Scope::CLASS )
 
 			# Add an 'inspect' method
 			myClass << Metaclass::Operation::new( "inspect", <<-"EOF" )
@@ -217,7 +218,9 @@ class ClassTestCase < MUES::TestCase
 		# and support the inspect method...
 		assert_nothing_raised { rval = instance.inspect }
 		assert_equal "[test object someName #{instance.id}]", rval
-		
+
+		# And the class object should support the 'count' method
+		assert_respond_to myClass.classObj, :count
 	end
 
 end # class ClassTestCase
