@@ -12,7 +12,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.30 2003/11/27 06:01:01 deveiant Exp $
+# $Id: config.rb,v 1.31 2004/02/29 04:24:03 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		extend Forwardable
 
 		### Class constants/methods
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
-		Rcsid = %q$Id: config.rb,v 1.30 2003/11/27 06:01:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
+		Rcsid = %q$Id: config.rb,v 1.31 2004/02/29 04:24:03 deveiant Exp $
 
 		def self::debugMsg( *msgs )
 			$stderr.puts msgs.join
@@ -63,6 +63,7 @@ module MUES
 				:serverDescription	=> "An experimental MUES server",
 				:serverAdmin		=> "MUES ADMIN <muesadmin@localhost>",
 				:rootDir			=> ".",
+				:includePath		=> [],
 			},
 
 			:engine => {
@@ -319,6 +320,17 @@ module MUES
 		end
 
 
+		### Reload the configuration from the original source if it has
+		### changed. Returns +true+ if it was reloaded and +false+ otherwise.
+		def reload
+			return false unless @loader && @name
+			confighash = @loader.load( @name )
+			ihash = self.class.internifyKeys( self.class.untaintValues(confighash) )
+			mergedhash = Defaults.merge( ihash, &MUES::HashMergeFunction )
+			@struct = ConfigStruct::new( mergedhash )
+		end
+
+
 		#########################################################
 		###	C O N F I G U R A T I O N   C O N S T R U C T O R S
 		#########################################################
@@ -394,7 +406,7 @@ module MUES
 
 			return self.environments.autoload.collect {|env|
 				self.log.debug "Loading a %s env as '%s'" %
-					[ env.kind, env.name ]
+ 					[ env.kind, env.name ]
 				MUES::Environment::create(
 					env.kind,
 					env.name,
