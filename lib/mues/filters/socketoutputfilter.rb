@@ -33,7 +33,6 @@ require "thread"
 require "sync"
 
 require "mues/Namespace"
-require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
@@ -48,8 +47,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.4 2001/06/25 14:11:07 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.5 2001/07/18 02:24:05 deveiant Exp $
 		DefaultSortPosition = 300
 
 		NULL = "\000"
@@ -64,6 +63,7 @@ module MUES
 		### Initialize the filter
 		protected
 		def initialize( aSocket )
+			checkType( aSocket, IPSocket )
 			super()
 
 			@readBuffer = ''
@@ -75,6 +75,7 @@ module MUES
 			@mode = ''
 
 			@socketThread = Thread.new { _ioThreadRoutine(aSocket) }
+			@socketThread.desc = "SocketOutputFilter IO thread [fd: #{aSocket.fileno}, peer: #{aSocket.peeraddr[2]}]"
 		end
 
 
