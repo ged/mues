@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.12 2002/10/29 16:49:28 deveiant Exp $
+#	$Id: utils.rb,v 1.13 2002/10/31 07:45:44 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -23,7 +23,8 @@ module UtilityFunctions
 		%r{docs/html},
 		%r{docs/man},
 		/^TEMPLATE/,
-		/\.cvsignore/
+		/\.cvsignore/,
+		/\.s?o$/
 	]
 
 	# Set some ANSI escape code constants (Shamelessly stolen from Perl's
