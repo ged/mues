@@ -11,19 +11,30 @@ require 'mues/Engine.rb'
 module MUES
 	class EngineTestCase < MUES::TestCase
 
-		def set_up
-			@engine = MUES::Engine.instance
+
+		#############################################################
+		###	T E S T S
+		#############################################################
+
+		# Test Engine class
+		def test_00_Class
+			printTestHeader "Engine: Class"
+			assert_instance_of Class, MUES::Engine
 		end
 
-		def tear_down
-			$Engine = nil
-		end
 
-		def test_00_Instantiate
-			assert_instance_of MUES::Engine, @engine
-			assert_equal @engine, MUES::Engine.instance
-		end
+		# Test instantiation and singleton-ness
+		def test_10_Instantiation
+			printTestHeader "Engine: Instantiation/Singleton"
+			rval = nil
+			
+			assert_nothing_raised {
+				rval = MUES::Engine::instance
+			}
 
+			assert_instance_of MUES::Engine, rval
+			assert_same MUES::Engine::instance, rval
+		end
 	end
 end
 

@@ -7,44 +7,57 @@ rescue
 end
 
 require 'mues/ClassLibrary'
+require 'mues/Metaclasses'
 
 ### Log tests
 module MUES
 	class ClassLibraryTestCase < MUES::TestCase
 
-		CLASSLIB_NAME = "testLibrary"
+		TestData = {
+			:libname	=> "testLibrary",
+			:classname	=> "TestClass",
+		}
 
-		@classLibrary = nil
 
-		def set_up
-			@classLibrary = MUES::ClassLibrary.new( CLASSLIB_NAME )
+		#############################################################
+		###	T E S T S
+		#############################################################
+
+		def test_00_Class
+			printTestHeader "ClassLibrary: Class"
+			assert_instance_of Class, MUES::ClassLibrary
 		end
 
-		def tear_down
-			@classLibrary = nil
-		end
+		def test_01_Instantiation
+			printTestHeader "ClassLibrary: Instantiation"
+			rval = nil
 
-		def test_Instance
-			assert_not_nil @classLibrary
-			assert_instance_of MUES::ClassLibrary, @classLibrary
-		end
-
-		def test_Name
-			assert_equal CLASSLIB_NAME, @classLibrary.name
-		end
-
-		def test_GetClassDefinition
-			classCode = nil
 			assert_nothing_raised {
-				classCode = @classLibrary.getClassDefinition( "TestClass" )
+				rval = MUES::ClassLibrary::new( TestData[:libname] )
+			}
+			assert_instance_of MUES::ClassLibrary, rval
+
+			addSetupBlock {
+				@clib = MUES::ClassLibrary::new( TestData[:libname] )
+			}
+			addTeardownBlock {
+				@clib = nil
 			}
 		end
 
-		def test_GetClassAncestry
-			heir = nil
+		def test_02_Name
+			printTestHeader "ClassLibrary: Instantiation"
+			assert_equal TestData[:libname], @clib.name
+		end
+
+		def test_10_CreateClass
+			printTestHeader "ClassLibrary: Instantiation"
+			rval = nil
+
 			assert_nothing_raised {
-				heir = @classLibrary.getClassAncestry( "TestClass" )
+				rval = @clib.createClass( TestData[:classname] )
 			}
+			assert_instance_of MUES::Metaclass::Class, rval
 		end
 
 	end

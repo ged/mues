@@ -12,7 +12,7 @@ require 'mues/Config'
 module MUES
 	class ConfigTestCase < MUES::TestCase
 
-		@@MethodTests = {
+		MethodTests = {
 			# Method chain								# Expected value
 			[ :general, :server_name ]					=> "Experimental MUD",
 			[ :general, :server_admin ]					=> "MUES Admin <muesadmin@localhost>",
@@ -23,15 +23,9 @@ module MUES
 			[ :engine,	:objectstore, :memorymanager]	=> "Null",
 		}
 
-		@@AttributeTests = {
+		AttributeTests = {
 			[ [:commandshell],			"shell-class"]	=> "MUES::CommandShell",
 		}
-
-		@@SetupFunctions = []
-
-		def set_up
-			@@SetupFunctions.each {|func| func.call(self) }
-		end
 
 
 		def test_00_NoArgInstantiation
@@ -41,10 +35,8 @@ module MUES
 			assert_nothing_raised { res = MUES::Config::new }
 			assert_instance_of MUES::Config, res
 
-			@@SetupFunctions.push Proc::new {|test|
-				test.instance_eval {
-					@config = MUES::Config::new
-				}
+			addSetupBlock {
+				@config = MUES::Config::new
 			}
 		end
 
@@ -72,7 +64,7 @@ module MUES
 
 
 		def test_10_MethodChain
-			@@MethodTests.each {|chain,expectedResult|
+			MethodTests.each {|chain,expectedResult|
 				debugMsg "Calling #{chain.join('.')}, expecting #{expectedResult.inspect}"
 
 				lastRes = @config
@@ -84,7 +76,7 @@ module MUES
 		end
 
 		def test_20_Attributes
-			@@AttributeTests.each {|chainAttr,expectedResult|
+			AttributeTests.each {|chainAttr,expectedResult|
 				debugMsg "Calling %s[%s], expecting %s" %
 					[ chainAttr[0].join('.'), chainAttr[1].inspect, 
 					  expectedResult.inspect ]

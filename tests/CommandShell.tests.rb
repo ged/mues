@@ -4,7 +4,7 @@
 #
 # == Rcsid
 # 
-#  $Id: CommandShell.tests.rb,v 1.4 2003/08/04 02:46:44 deveiant Exp $
+#  $Id: CommandShell.tests.rb,v 1.5 2003/09/12 04:34:41 deveiant Exp $
 # 
 # == Authors
 # 
@@ -35,15 +35,16 @@ module MUES
 		MUES::User::AccountType::Map.each {|name,type|
 			@@Users[name.intern] = MUES::User::new( :accountType => type, :username => "#{name}TestUser" )
 		}
-		@@SetupFunctions = []
 
 		# Initial setup method. Overridden later after testing setup stuff
-		def set_up
-			super()
-			@shellFactory = nil
+		def setup
 			@shells = {}
+			super
+		end
 
-			@@SetupFunctions.each {|func| func.call(self) }
+		def teardown
+			super
+			@shells = nil
 		end
 
 
@@ -59,14 +60,14 @@ module MUES
 			}
 			assert_instance_of MUES::CommandShell::Factory, shellFactory
 
-			# Redefine the setup method now that factory instantiation has been
+			# Add the setup method now that factory instantiation has been
 			# tested
-			debugMsg "Adding factory constructor to set_up procedures"
-			@@SetupFunctions << Proc::new {|test|
-				test.instance_eval {
-					@shellFactory = MUES::CommandShell::Factory::
-						new(["server/shellCommands", "../server/shellCommands"])
-				}
+			addSetupBlock {
+				@shellFactory = MUES::CommandShell::Factory::
+					new(["server/shellCommands", "../server/shellCommands"])
+			}
+			addTeardownBlock {
+				@shellFactory = nil
 			}
 		end
 
@@ -143,11 +144,9 @@ module MUES
 
 			# Redefine the setup method now that both factory and shell
 			# instantiation have been tested
-			@@SetupFunctions << Proc::new {|test|
-				test.instance_eval {
-					@@Users.each {|sym,user|
-						@shells[sym] = @shellFactory.createShellForUser( user )
-					}
+			addSetupBlock {
+				@@Users.each {|sym,user|
+					@shells[sym] = @shellFactory.createShellForUser( user )
 				}
 			}
 		end

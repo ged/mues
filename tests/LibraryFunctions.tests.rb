@@ -34,15 +34,19 @@ class LibraryFunctionsTestCase < MUES::TestCase
 	### Test instantiation with various arguments
 	def test_checkSafeLevel
 
-		# Run this in a thread so we can reduce our $SAFE temporarily
-		t = Thread.new {
-			$SAFE = 3
-			checkSafeLevel()
-			raise StandardError, "Failed."
-		}
+		# Run this in a thread so we can reduce our $SAFE temporarily. Don't do
+		# this in $DEBUG mode, as exceptions in threads abort under $DEBUG ==
+		# true.
+		unless $DEBUG
+			t = Thread.new {
+				$SAFE = 3
+				checkSafeLevel()
+				raise StandardError, "Failed."
+			}
 
-		assert_raises( SecurityError ) { t.join }
-		assert_nothing_raised { checkSafeLevel() }
+			assert_raises( SecurityError ) { t.join }
+			assert_nothing_raised { checkSafeLevel() }
+		end
 	end
 
 	def test_checkType

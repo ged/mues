@@ -42,7 +42,7 @@ module MUES
 		end
 
 		def handleInputEvents( *events )
-			myEvents = events.select {|e| e.data =~ @name}
+			myEvents = events.select {|e| e.data =~ /#@name/}
 			@inputEvents.push( myEvents )
 			@inputEvents.flatten!
 			events -= myEvents
@@ -50,7 +50,7 @@ module MUES
 		end
 
 		def handleOutputEvents( *events )
-			myEvents = events.select {|e| e.data =~ @name}
+			myEvents = events.select {|e| e.data =~ /#@name/}
 			@outputEvents.push( myEvents )
 			@outputEvents.flatten!
 			events -= myEvents
@@ -94,18 +94,24 @@ module MUES
 	class MockOutputEvent < OutputEvent
 	end
 
+
+
 	### Stream test case
 	class IOEventStreamTestCase < MUES::TestCase
 
 		### Test case set_up method
-		def set_up
+		def setup
 			@stream = TestingStream::new
 		end
 
-		def tear_down
+		def teardown
 			@stream.shutdown
 		end
 
+
+		#############################################################
+		###	T E S T S
+		#############################################################
 
 		### Test to be sure instantiation works, and that the object has all the
 		### expected attributes in the state we expect them
@@ -339,15 +345,3 @@ module MUES
 
 end
 
-
-if $0 == __FILE__
-	if ARGV.size == 0
-		suite = MUES::IOEventStreamTestCase.suite
-	else
-		suite = RUNIT::TestSuite.new
-		ARGV.each do |testmethod|
-			suite.add_test(MUES::IOEventStreamTestCase.new(testmethod))
-		end
-	end
-	RUNIT::CUI::TestRunner.run(suite)
-end

@@ -10,32 +10,24 @@ require 'mues/filters/Questionnaire'
 require 'mues/IOEventStream'
 
 class MockStream < Test::Unit::MockObject( MUES::IOEventStream )
-
 	def initialize( *filters )
 		super
-
 		@inputEvents	= []
 		@outputEvents	= []
 	end
-
 	attr_reader :inputEvents, :outputEvents
 end
 
 class MockInputEvent < Test::Unit::MockObject( MUES::InputEvent )
 	def initialize( data )
 		super
-
 		@data = data
 	end
-
 	attr_reader :data
 end
 
 
 class QuestionnaireTestCase < MUES::TestCase
-
-	@@Stream = MUES::IOEventStream::new
-	@@SetupFunctions = []
 
 	TestSteps = [
 
@@ -123,17 +115,25 @@ class QuestionnaireTestCase < MUES::TestCase
 
 
 	# Setup method
-	def set_up
-		super()
-		@qaire = nil
+	def setup
+		super
 		@mockStream = MockStream::new
+	end
 
-		@@SetupFunctions.each {|func| func.call(self) }
+
+	#################################################################
+	###	T E S T S
+	#################################################################
+
+	### Test classes
+	def test_00_Classes
+		printTestHeader "Questionnaire: Classes"
+		assert_instance_of Class, MUES::Questionnaire
 	end
 
 
 	### Test instantiation with various arguments
-	def test_00_InstantiateWithoutSteps
+	def test_10_InstantiateWithoutSteps
 		qnaire = nil
 
 		# A questionnaire requires at least a name.
@@ -156,16 +156,18 @@ class QuestionnaireTestCase < MUES::TestCase
 
 		assert_nothing_raised { qnaire = MUES::Questionnaire::new( *TestSteps ) }
 		assertValidQuestionnaire( qnaire )
-		
+
+		assert_respond_to @mockStream, :update
 		assert_nothing_raised { qnaire.start( @mockStream ) }
 		assert qnaire.inProgress?
 
 		# We'll need a questionnaire from now on, so instantiate one in set_up
-		@@SetupFunctions << Proc::new {|test|
-			test.instance_eval {
-				@qnaire = MUES::Questionnaire::new( "Test Quest" )
-				@qnaire.debugLevel = 5 if $DEBUG
-			}
+		addSetupBlock {
+			@qnaire = MUES::Questionnaire::new( "Test Quest" )
+			@qnaire.debugLevel = 5 if $DEBUG
+		}
+		addTeardownBlock {
+			@qnaire = nil
 		}
 	end
 
@@ -197,15 +199,10 @@ class QuestionnaireTestCase < MUES::TestCase
 			end
 
 			if step.key?( :passAnswers )
-				step[:passAnswers].each do |ans|
+				step[:passAnswers].each do |*ans|
 					assert_nothing_raised { @qnaire.handleOutputEvents() }
 
-					if ans.is_a?( Array )
-						assertInputPasses( @qnaire, step, *ans )
-					else
-						assertInputPasses( @qnaire, step, ans )
-					end
-
+					assertInputPasses( @qnaire, step, *ans )
 					@qnaire.reset
 				end
 			end
@@ -256,8 +253,8 @@ class QuestionnaireTestCase < MUES::TestCase
 		if step.key?( :errorMsg )
 			assert_equal step[:errorMsg], revs[0].data
 		else
-			assert_match /Invalid input\. Must (match|be one of)/,
-				revs[0].data
+			assert_match( /Invalid input\. Must (match|be one of)/,
+				revs[0].data )
 		end
 	end
 
