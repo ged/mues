@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES RDoc Documentation Generation Script
-#	$Id: makedocs.rb,v 1.7 2002/10/22 18:15:53 deveiant Exp $
+#	$Id: makedocs.rb,v 1.8 2002/10/23 18:28:27 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -28,12 +28,13 @@ require 'rdoc/rdoc'
 require 'utils'
 include UtilityFunctions
 
-def makeDocs( docsdir, template='css2', upload=nil, diagrams=false )
+def makeDocs( docsdir, template='css2', upload=nil, diagrams=false, ridocs=false )
 
 	docs = findRdocableFiles()
 
 	header "Making documentation in #{docsdir}."
 	header "Will upload to '#{upload}'\n" if upload
+	header "Will also create/install 'ri' source"
 
 	flags = [
 		'--all',
@@ -51,6 +52,7 @@ def makeDocs( docsdir, template='css2', upload=nil, diagrams=false )
 
 	buildDocs( flags, docs )
 	uploadDocs( upload, docsdir ) if upload
+	buildRi( docs ) if ridocs
 end
 
 
@@ -118,6 +120,20 @@ def uploadDocs( url, docsdir )
 	end
 end
 
+def buildRi( docs )
+	message "Running 'rdoc #{flags.join(' ')} #{docs.join(' ')}'\n" if $VERBOSE
+	unless $DEBUG
+		begin
+			r = RDoc::RDoc.new
+			r.document([ '-i', 'docs', '-f', 'xml', 'lib', 'ext' ])
+		rescue RDoc::RDocError => e
+			$stderr.puts e.message
+			exit(1)
+		end
+	end
+	
+end
+
 
 if $0 == __FILE__
 	opts = GetoptLong.new
@@ -128,6 +144,7 @@ if $0 == __FILE__
 		[ '--diagrams', '-D',	GetoptLong::NO_ARGUMENT ],
 		[ '--template',	'-T',	GetoptLong::REQUIRED_ARGUMENT ],
 		[ '--output',	'-o',	GetoptLong::REQUIRED_ARGUMENT ]
+		#[ '--ri',		'-r',	GetoptLong::NO_ARGUMENT ],
 	)
 
 	debug = false
@@ -136,6 +153,7 @@ if $0 == __FILE__
 	diagrams = false
 	template = 'mues'
 	docsdir = "docs/html"
+	rimode = false
 
 	opts.each {|opt,val|
 		case opt
@@ -154,11 +172,15 @@ if $0 == __FILE__
 
 		when '--output'
 			docsdir = val
+
+ 		when '--ri'
+ 			rimode = true
+
 		end
 	}
 
 	$DEBUG = true if debug
 	$VERBOSE = true if verbose
 
-	makeDocs( docsdir, template, upload, diagrams )
+	makeDocs( docsdir, template, upload, diagrams, rimode )
 end
