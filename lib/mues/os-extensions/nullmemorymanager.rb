@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: nullmemorymanager.rb,v 1.2 2002/07/09 15:09:53 deveiant Exp $
+# $Id: nullmemorymanager.rb,v 1.3 2002/08/01 01:23:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -41,8 +41,8 @@ module MUES
 		class NullMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-			Rcsid = %q$Id: nullmemorymanager.rb,v 1.2 2002/07/09 15:09:53 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+			Rcsid = %q$Id: nullmemorymanager.rb,v 1.3 2002/08/01 01:23:15 deveiant Exp $
 
 
 			######
@@ -56,21 +56,18 @@ module MUES
 
 			### Stop the memory manager.
 			def shutdown
-				self.collectAll
 				@running = false
+				self.log.debug {"Active objects %s: %s" % [ @activeObjects.type.name, @activeObjects.inspect ]}
+				# @activeObjects.rehash
+				return @activeObjects.values.reject {|o| o.shallow?}
 			end
 
-
-			#########
-			protected
-			#########
-
-			### Collects all the (non-shallow) objects.
-			def collectAll
-				@activeObjects.each_value {|o|
-					@backend.store(o) unless o.shallow?
-				}
+			### Restart the memory manager.
+			def restart( visitor )
+				objs = self.shutdown
 				@activeObjects.clear
+				self.start( visitor )
+				self.register( *objs )
 			end
 
 		end # class NullMemoryManager
