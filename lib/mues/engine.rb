@@ -11,6 +11,45 @@ Engine.rb - The server class for the MUES system
 
 == DESCRIPTION
 
+== METHODS
+
+private methods:
+initialize - set the defaults for the object.
+
+public read-only accessors:
+hostname - the hostname of the engine???
+port - the port to bind to???
+name - the name of the engine?
+log - the error log?
+players - how many players are acceptable?
+state - ???
+
+public methods:
+instance - singleton object creation method.
+start - start the engine
+started? - true if the engine has started.
+running? - true if the engine is running.
+stop - shut the engine/server down.
+registerHandlerForEvents - register a handler object for a specific type of event.
+dispatchEvents - not sure, could be putting events into the queue?
+statusString - returns a multi-line string indicating the current status of the engine.
+authenticatePlayer - eventually will check the username/password against existing players.
+
+protected methods:
+_eventLoop - the main event loop.
+thread routines:
+_listenerThreadRoutine - will listen to the socket for a connection.
+_setupListenerSocket - set up and return a listener socket (TCPServer) object on the specified host and port,
+    optionally wrappered in a TCPWrapper object that uses tcp_wrappers.
+_handleSocketConnectEvent - handles connections to the listener socket.
+_handlePlayerEven - handles changes to player status.
+_handleUntrappedExceptoinEvent - handle any untrapped exceptions.
+_handleUntrappedSignalEven - handle any untrapped signals.
+_handleReconfigEvent - handle any reconfiguration events by re-reading the config file and then reconnecting the listen socket.
+_handleSystemEvent - handle any system events that we don't have explicit handlers for.
+_handleLogEven - handles logging events by writing their content to the syslog.
+_handleUnknownEvent - Handle events which we get sent for which we don't have an explicit handler.
+
 == AUTHOR
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -54,8 +93,8 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= %q$Revision: 1.1 $
-		RcsId			= %q$Id: engine.rb,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+		Version			= %q$Revision: 1.2 $
+		RcsId			= %q$Id: engine.rb,v 1.2 2001/03/21 23:21:36 phaedrus Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -436,7 +475,7 @@ module MUES
 
 
 		### (PROTECTED) METHOD: _handleUntrappedSignalEvent( event )
-		### Handle untrapped exceptions.
+		### Handle untrapped signals.
 		def _handleUntrappedSignalEvent( event )
 			if event.exception.is_a?( Interrupt ) then
 				stop()
