@@ -6,7 +6,7 @@
 # == Synopsis
 # 
 #   require "mues/Exceptions"
-#   raise MUES::Exception "Something went wrong."
+#   raise MUES::Exception, "Something went wrong."
 # 
 # == Exception Classes
 # 
@@ -76,7 +76,7 @@
 # [<b><tt>MUES::VirtualMethodError</tt></b>]
 # 
 #   An error class used to indicate a call to an unimplemented virtual
-#   method. Inherits from (({TypeError})).
+#   method. Inherits from (({NoMethodError})).
 # 
 # [<b><tt>MUES::InstantiationError</tt></b>]
 # 
@@ -95,7 +95,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.10 2002/05/16 03:49:17 deveiant Exp $
+# $Id: exceptions.rb,v 1.11 2002/06/04 06:59:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -143,22 +143,29 @@ module MUES
 		const_set( name, eClass )
 	end
 
+	# General exceptions
+	def_exception :VirtualMethodError,		"Unimplemented virtual method",					NoMethodError
+	def_exception :InstantiationError,		"Instantiation attempted of abstract class",	TypeError
+	def_exception :SocketIOError,			"Error condition on socket.",					IOError
+	def_exception :ParseError,				"Error while parsing.",							SyntaxError
+
 	# System exceptions
-	def_exception :EngineException,			"Engine error",						Exception
-	def_exception :EventQueueException,		"Event queue error",				Exception
-	def_exception :LogError,				"Error in log handle",				Exception
-	def_exception :SecurityViolation,		"Security violation",				Exception
+	def_exception :EngineException,			"Engine error",									Exception
+	def_exception :EventQueueException,		"Event queue error",							Exception
+	def_exception :LogError,				"Error in log handle",							Exception
+	def_exception :SecurityViolation,		"Security violation",							Exception
 
 	# Environment exceptions
 	# (Moved to Environment.rb - [Ged])
 
 	# Signal exceptions
-	def_exception :Reload,					"Configuration out of date",		Exception
-	def_exception :Shutdown,				"Server shutdown",					Exception
+	def_exception :Reload,					"Configuration out of date",					Exception
+	def_exception :Shutdown,				"Server shutdown",								Exception
 
 	# Command shell/macro shell exceptions
-	def_exception :CommandError,			"Command error",					Exception
-	def_exception :MacroError,				"Macro error",						Exception
+	def_exception :CommandError,			"Command error",								Exception
+	def_exception :MacroError,				"Macro error",									Exception
+
 
 	### Event exceptions
 	class UnhandledEventError < Exception
@@ -183,11 +190,6 @@ module MUES
 	end
 end
 
-# General exceptions
-MUES::def_exception :VirtualMethodError,	"Unimplemented virtual method",					NoMethodError
-MUES::def_exception :InstantiationError,	"Instantiation attempted of abstract class",	TypeError
-MUES::def_exception :SocketIOError,			"Error condition on socket.",					IOError
-MUES::def_exception :ParseError,			"Error while parsing.",							SyntaxError
 
 
 
