@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.38 2002/10/31 07:59:13 deveiant Exp $
+# $Id: engine.rb,v 1.39 2003/03/05 21:56:21 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.38 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.38 2002/10/31 07:59:13 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.39 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.39 2003/03/05 21:56:21 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -719,11 +719,15 @@ module MUES
 			self.log.info( "Starting Engine setup." )
 			setupEvents = []
 
-			### Change working directory to that specified by the config file
+			# Change working directory to that specified by the config file
 			self.log.info( "Changing to root dir: %s" % @config.general.root_dir )
 			Dir.chdir( @config.general.root_dir )
+
+			# Add any includepath dirs to $LOAD_PATH
+			$LOAD_PATH.unshift( *(@config.general.includepath) ) unless
+				@config.general.includepath.empty?
 			
-			### Set up subsystems
+			# Set up subsystems
 			setupEvents += setupLogging( config )
 			setupEvents += setupObjectStore( config )
 			setupEvents += setupEventHandlers( config )
