@@ -1,7 +1,7 @@
 #!/usr/bin/ruby -w
 
 begin
-	require 'muesunittest'
+	require 'tests/muesunittest'
 rescue
 	require '../muesunittest'
 end
