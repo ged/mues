@@ -41,8 +41,18 @@ $: << ".."
 
 require "PolymorphicObject"
 require "ObjectStore"
+require "MD5"
 
-class StorableObject < PolymorphicObject
+class StorableObject < PolymorphicObject; implements AbstractClass
+
+  def objectStoreID
+    raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
+    return MD5.new( raw ).hexdigest
+  end
+
+end
+
+class ShallowReference < PolymorphicObject
 
   ### This undefines all the methods for this object, so that any call to it will
   ###   envoke #method_missing.
@@ -56,12 +66,16 @@ class StorableObject < PolymorphicObject
   protected
   #########
 
-  ### Creates a new StorableObject object
+  ### Creates a new ShallowReference object
   def initialize(an_id, an_obj_store)
     @id = an_id
     @obj_store = an_obj_store
   end
-  
+
+  ######
+  public
+  ######
+
   ### Allows momentary access to the object from the database, by calling this method
   ###   and supplying a block.
   def read_only(&block)
