@@ -3,24 +3,14 @@
 
 This is an informal list of tasks yet to be done for the MUES.
 
-* Update CommandShell and commands to use a less-verbose means of
-  command-creation. They should probably just be instances of the same class
-  with singleton methods that implement the actual command functionality:
+* Update docs in the Engine to reflect changes (partially done already).
 
-    quitCommand = UserCommand::create({
-		:name		=> 'quit',
-		:synonyms	=> %w{logout},
-		:shortDesc	=> %Q{Disconnect from the server},
-		:longDesc	=> %Q{Disconnect from the server, saving any connected } +
-					   %Q{characters and the state of your shell.},
-		:usage		=> 'quit',
-	}) {|context, args|
-		return [ MUES::UserSaveEvent ]
-	}
+* Change the 'pp' command to use YAML if it's loaded, and fall back to 'pp' if
+  not.
 
-* Finish updating Engine with new Listeners code -- still need to hook up the
-  disconnect cycle to allow the listener to re-register itself with the engine's
-  poll object, or whatever else it might need to do.
+* Figure out the mysteriously disappearing class problem that sometimes happens
+  in the FactoryMethods with MUES::Environment.
 
-* Update docs in the Engine to reflect changes.
+* Write the user maintenance commands.
+
 
