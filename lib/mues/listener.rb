@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.6 2002/10/28 00:03:43 deveiant Exp $
+# $Id: listener.rb,v 1.7 2003/04/19 06:56:29 deveiant Exp $
 # 
 # == Authors
 # 
@@ -58,6 +58,8 @@
 #
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
+
+require 'rbconfig'
 
 require 'mues/Object'
 require 'mues/PollProxy'
@@ -71,13 +73,13 @@ module MUES
 		include MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: listener.rb,v 1.6 2002/10/28 00:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: listener.rb,v 1.7 2003/04/19 06:56:29 deveiant Exp $
 
 		### Class methods
 
 		# The directories to search for derivative classes
-		@derivativeDirs = []
+		@derivativeDirs = [ File::join(::Config::CONFIG['sitelibdir'], "mues/listeners") ]
 		class << self
 			attr_accessor :derivativeDirs
 		end
