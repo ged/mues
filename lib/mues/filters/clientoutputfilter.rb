@@ -6,7 +6,7 @@
 
 == Name
 
-ClientOutputFilter - a player client output filter class
+ClientOutputFilter - a user client output filter class
 
 == Synopsis
 
@@ -14,7 +14,7 @@ ClientOutputFilter - a player client output filter class
 
 == Description
 
-This is a filter used to process the I/O stream appropriately for a player game client.
+This is a filter used to process the I/O stream appropriately for a user game client.
 
 == Author
 
@@ -35,8 +35,8 @@ require "mues/filters/IOEventFilter"
 module MUES
 	class ClientOutputFilter < IOEventFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: clientoutputfilter.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: clientoutputfilter.rb,v 1.3 2001/07/27 04:08:27 deveiant Exp $
 		DefaultSortPosition = 101
 
 	end # class ClientOutputFilter
