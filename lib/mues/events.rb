@@ -32,7 +32,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.11 2002/08/01 01:08:52 deveiant Exp $
+# $Id: events.rb,v 1.12 2002/09/12 11:34:37 deveiant Exp $
 # 
 # == Authors
 # 
@@ -46,7 +46,8 @@
 #
 
 
-require "mues/events/BaseClass"
+require "mues/events/Event"
+require "mues/events/PrivilegedEvent"
 require "mues/events/IOEvents"
 require "mues/events/LoginSessionEvents"
 require "mues/events/UserEvents"
