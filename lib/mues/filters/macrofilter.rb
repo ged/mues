@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: macrofilter.rb,v 1.7 2002/08/02 20:03:43 deveiant Exp $
+# $Id: macrofilter.rb,v 1.8 2002/09/12 12:37:50 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,8 +39,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.7 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.8 2002/09/12 12:37:50 deveiant Exp $
 		DefaultSortPosition = 650
 
 		### Class variables
@@ -86,8 +86,6 @@ module MUES
 		### and performing them on the data contained in the
 		### <tt>events</tt>. Returns the given array with expansions performed.
 		def handleInputEvents( *events )
-			events.flatten!
-			events.compact!
 			checkEachType( events, MUES::InputEvent )
 
 			### For each event we get, search for patterns we know about,
@@ -108,7 +106,7 @@ module MUES
 				end
 			}
 
-			return *events
+			return events
 		end
 
 	end # class MacroFilter
