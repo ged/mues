@@ -15,7 +15,7 @@ LoginProxy - A login proxy class for IOEventStreams
 == Description
 
 Instances of this class are used in IOEventStreams to do authentication and
-login for a player.
+login for a user.
 
 == Author
 
@@ -39,8 +39,8 @@ module MUES
 	class LoginProxy < IOEventFilter ; implements Debuggable
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: LoginProxy.rb,v 1.4 2001/07/18 02:23:33 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: LoginProxy.rb,v 1.5 2001/07/30 12:25:04 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### (PROTECTED) METHOD: initialize( session )
