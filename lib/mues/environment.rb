@@ -3,7 +3,6 @@
 =begin
 
 =World.rb
-
 == Name
 
 World - MUES World object class
@@ -11,13 +10,16 @@ World - MUES World object class
 == Synopsis
 
   require "mues/World"
+  require "mues/Config"
+  require "mues/ObjectStore"
 
-  world = World.new( "testworld" )
-  
+  worldConf = MUES::Config.new( "world.conf" )
+  world = World.new( "testworld", worldConf )
+  world.begin( tickNumber )
 
 == Description
 
-
+This is an abstract factory class for MUES world objects.
 
 == Author
 
@@ -32,15 +34,16 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
-require "mues/MUES"
+require "mues/Namespace"
 
 module MUES
 	class World < Object
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: environment.rb,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+		Version = %q$Revision: 1.2 $
+		Rcsid = %q$Id: environment.rb,v 1.2 2001/03/29 02:33:48 deveiant Exp $
 
 
 	end
 end
+
 
