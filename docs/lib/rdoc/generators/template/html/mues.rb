@@ -8,7 +8,7 @@
 #
 # == CVSID
 #
-#   $Id: mues.rb,v 1.4 2002/08/02 20:07:00 deveiant Exp $
+#   $Id: mues.rb,v 1.5 2002/08/29 07:15:59 deveiant Exp $
 #
 # == Authors
 #
@@ -235,7 +235,7 @@ ENDIF:full_path_url
 IF:full_path_url
                 </a>
 ENDIF:full_path_url
-				&nbsp;(<a href="http://cvs.faeriemud.org/cgi/viewcvs.cgi/MUES/%full_path%">CVS</a>)
+				&nbsp;(<a href="http://cvs.faeriemud.org/cgi/viewcvs.cgi/MUES/%full_path%">CVS</a>)<br />
 END:infiles
             </td>
         </tr>
