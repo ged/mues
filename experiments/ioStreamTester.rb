@@ -4,6 +4,7 @@ require "mues/ObjectStore"
 require "mues/IOEventStream"
 require "mues/IOEventFilters"
 require "mues/Events"
+require "mues/Config"
 
 def main
 	unless ARGV.length.nonzero?
@@ -13,6 +14,10 @@ def main
 
 	user = ARGV.shift
 	driver = ARGV.shift || "Mysql"
+
+	config = MUES::Config.new( "MUES.cfg" )
+	engine = MUES::Engine.instance or raise Exception, "Failed to fetch engine instance"
+	engine.start( config )
 
 	puts "Fetching player record for '#{user}' from a #{driver} objectstore."
 	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
@@ -26,6 +31,8 @@ def main
 	ios = MUES::IOEventStream.new
 	ios.debugLevel = 0
 	ios.addFilters( consoleFilter )
+
+	puts "Activating player."
 
 	player.activate( ios )
 	consoleFilter.ioThread.join
@@ -42,23 +49,36 @@ module MUES
 		@@FakeEngineInstance = nil
 
 		private_class_method :new
+		attr_reader :config
 
 		def Engine.instance
 			$stderr.puts "Instantiating fake engine object." unless @@FakeEngineInstance
 			@@FakeEngineInstance ||= new()
 		end
 
-		def start
+		def start( config )
 			$stderr.puts "Faking engine startup."
+			@config = config
+			MUES::Notifiable.classes.each {|klass|
+				klass.atEngineStartup( self )
+			}
 		end
 
 		def stop
 			$stderr.puts "Faking engine shutdown."
+			MUES::Notifiable.classes.each {|klass|
+				klass.atEngineShutdown( self )
+			}
+		end
+
+		def initialize
+			@config = nil
 		end
 
 		def dispatchEvents( *events )
 			$stderr.puts "Got events to dispatch:"
 			events.each {|e|
+
 				case e
 				when PlayerLogoutEvent
 					$stderr.puts "--> Player logout event"
@@ -95,7 +115,7 @@ module MUES
 		def method_missing( aSymbol, *args )
 			methName = aSymbol.id2name
 			$stderr.puts "Method #{methName} called with #{args.length} args:" +
-				args.collect {|a| a.to_s}
+				args.collect {|a| a.to_s}.join(', ')
 
 			return true
 		end
