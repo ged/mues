@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: flatfilebackend.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
+# $Id: flatfilebackend.rb,v 1.5 2002/09/12 12:42:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,8 +43,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: flatfilebackend.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: flatfilebackend.rb,v 1.5 2002/09/12 12:42:14 deveiant Exp $
 
 			### Create a new BerkeleyDBBackend object.
 			def initialize( name, indexes=[], configHash={} )
@@ -56,18 +56,21 @@ module MUES
 				self.log.info( "Opening objectstore '#{@name}' in #{dir}" )
 				@store = PStore::new( @name )
 				@store.transaction {
-					@objects = @store['objects'] if @store.root? 'objects'
-					@indexes = @store['indexes'] if @store.root? 'indexes'
-				}
+					@store['objects'] = {} unless @store.root?( 'objects' ) &&
+						@store['objects'].is_a?( Hash )
+					@objects = @store['objects']
 
-				@objects ||= {}
-				@indexes ||= {}
-				indexes.each {|idx| @indexes[idx.to_s.intern] ||= {}}
+					@store['indexes'] = {} unless @store.root?( 'indexes' ) &&
+						@store['indexes'].is_a?( Hash )
+					@indexes = @store['indexes']
+				}
 
 				@opened = true
 				@mutex = Sync::new
 				self.log.info( "Objectstore '#{name}' opened: %d indexes on %d objects" % [
 								  @indexes.length, @objects.length] )
+
+				addIndexes( *indexes )
 			end
 
 
@@ -77,7 +80,7 @@ module MUES
 
 			### Drop the datastore under the backend
 			def drop
-				self.log.info( "Opening objectstore '#{@name}'" )
+				self.log.info( "Dropping objectstore '#{@name}'" )
 				@mutex.synchronize( Sync::EX ) {
 					self.close if self.open?
 					File::delete( @name )
@@ -102,7 +105,7 @@ module MUES
 							}
 							@objects[ o.objectStoreId ] = o
 						}
-						syncWithDisk()
+						sync()
 					}
 				}
 			end
@@ -121,10 +124,7 @@ module MUES
 
 			### retrieve_by_index
 			def retrieve_by_index( key, val )
-				@mutex.synchronize( Sync::SH ) {
-					checkOpened()
-					@indexes[ key.to_s.intern ][ val ] || []
-				}
+				lookup( key => val )
 			end
 
 
@@ -139,13 +139,17 @@ module MUES
 
 			### lookup
 			def lookup( indexValuePairs )
+				checkType( indexValuePairs, ::Hash )
 				rset = []
 
+				self.log.debug {""}
 				@mutex.synchronize( Sync::SH ) {
 					checkOpened()
 
 					indexValuePairs.each {|idx,val|
 						idx = idx.to_s.intern unless idx.is_a? Symbol
+						raise IndexError, "No such index '#{idx.to_s}'" unless
+							@indexes.key?( idx )
 						subset = []
 						
 						# OR each specified value together, taking the union of all
@@ -181,7 +185,7 @@ module MUES
 			def close
 				@mutex.synchronize( Sync::SH ) {
 					checkOpened()
-					syncWithDisk()
+					sync()
 					@opened = false
 				}
 			end
@@ -220,10 +224,40 @@ module MUES
 					@mutex.synchronize( Sync::EX ) {
 						@objects.clear
 						@indexes.each_key {|idx| @indexes[idx].clear}
-						syncWithDisk()
+						sync()
 					}
 				}
 			end
+
+
+			### Add the specified <tt>indexes</tt>, which are Strings or Symbols
+			### that represent methods to call on stored objects.
+			def addIndexes( *indexes )
+				@mutex.synchronize( Sync::SH ) {
+					checkOpened()
+
+					# Turn each index name into a symbol
+					syms = indexes.collect {|idx| idx.to_s.intern}
+
+					# Iterate over the keys; If the index hash doesn't already
+					# contain it, add a sub-hash for that key.
+					@mutex.synchronize( Sync::EX ) {
+						syms.each {|idx|
+							@indexes[ idx ] ||= Hash::new([])
+						}
+						
+						sync()
+					}
+				}
+			end
+
+			
+			### Returns <tt>true</tt> if the backing store has the specified
+			### <tt>index</tt>, which can be either a String or a Symbol.
+			def hasIndex?( index )
+				@indexes.key?( index.to_s.intern )
+			end
+
 
 
 			#########
@@ -239,7 +273,7 @@ module MUES
 
 			### Synchronize the objects in the in-memory table with the snapshot
 			### on disk
-			def syncWithDisk
+			def sync
 				self.log.info( "Syncing objectstore '#{@name}'" )
 				@mutex.synchronize( Sync::EX ) {
 					@store.transaction {|txn|
