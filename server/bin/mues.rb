@@ -60,14 +60,18 @@ def main
 
 	# Instantiate the server object
 	engine = MUES::Engine.instance
+	engine.debugLevel = config['engine']['debuglevel']
 
 	# Start up and run the server as a daemon
 	if config['startasdaemon']
 		puts "Starting the MUES server in the background...\n"
-		engine.debugLevel = 0
-		daemonize()
+
+		# Fully-qualify the root dir while we still have a cwd
+		config['rootdir'] = File.expand_path( config['rootdir'] )
+
+		# Fork into the background
+		daemonize( config )
 	else
-		engine.debugLevel = config['engine']['debuglevel']
 		puts "Starting the MUES server in the foreground...\n"
 	end
 
@@ -75,28 +79,41 @@ def main
 end
 
 ### Become a daemon process
-def daemonize
+def daemonize( config )
 
-	# First fork
-	if Process.fork then Process.exit!(0); end
+	raise RuntimeError, "Sorry... forking doesn't forking work yet. =:)"
+
+	# First fork (parent exits)
+	if Process.fork 
+		$stderr.puts "Parent exiting."
+		exit!(0)
+	end
 
 	# Become session leader
+	$stderr.puts "First child becoming session leader."
 	Process.setsid
 
-	# Second fork
-	if Process.fork then Process.exit!(0); end
+	# Second fork (first child exits)
+	if Process.fork
+		$stderr.puts "First child exiting."
+		exit!(0)
+	end
 
 	# Set CWD to the root dir and set umask
 	Dir.chdir( "/" )
 	File.umask( 0 )
 
-	# Close all our filehandles and reopen them to /dev/null
+	# Close STDIN and STDOUT and reopen them to /dev/null
 	File.open( "/dev/null", File::TRUNC|File::RDWR ) {|devnull|
 		$stdin.close	&& $stdin.reopen( devnull )
 		$stdout.close	&& $stdout.reopen( devnull )
-		$stderr.close	&& $stderr.reopen( devnull )
 	}
-	
+
+	# Close STDERR and reopen it to a debug log in the root directory
+	File.open( File.join(config['rootdir'],'MUES.debug'), File::TRUNC|File::WRONLY|File::CREAT ) {|debuglog|
+		$stderr.close && $stderr.reopen( debuglog )
+	}
+
 	return true
 end
 
