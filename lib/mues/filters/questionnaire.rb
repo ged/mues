@@ -106,7 +106,7 @@
 #		}
 #	]
 #
-#   questionnaire = MUES::Questionnaire::new( 'Set some stuff', steps ) {|questionnaire|
+#   questionnaire = MUES::Questionnaire::new( 'Configure your new Thingie', steps ) {|questionnaire|
 #		thingie = Thingie::new
 #
 #		thingie.height = questionnaire.answers[:height]
@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.10 2003/04/19 08:16:10 deveiant Exp $
+# $Id: questionnaire.rb,v 1.11 2003/10/13 03:22:01 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.10 2003/04/19 08:16:10 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.11 2003/10/13 03:22:01 deveiant Exp $
 
 		DefaultSortPosition = 600
 
