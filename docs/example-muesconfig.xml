@@ -2,7 +2,7 @@
 <!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 
 <muesconfig version="1.1">
-
+  
   <!-- General server configuration -->
   <general>
 	<server-name>Experimental MUD</server-name>
@@ -22,8 +22,10 @@
 
 	<!-- Engine objectstore config -->
 	<objectstore>
-	  <backend>ArunaDB</backend>
-	  <garbagecollector>Simple</garbagecollector>
+	  <backend class="BerkeleyDB"></backend>
+	  <garbagecollector class="Simple">
+		<param name="trash_rate">50</param>
+	  </garbagecollector>
 	</objectstore>
 
 	<!-- Listener objects -->
@@ -86,15 +88,19 @@
   <!-- Environments which are to be loaded at startup -->
   <environments>
 	<environment name="FaerieMUD" class="FaerieMUD::World">
-	  <param name="objectstore-backend">BerkeleyDB</param>
-	  <param name="objectstore-garbagecollector">PMOS</param>
-	  <param name="objectstore-name">FaerieMUD</param>
+	  <objectstore name="FaerieMUD">
+		<backend class="BerkeleyDB"></backend>
+		<garbagecollector class="PMOS"></garbagecollector>
+	  </objectstore>
 	</environment>
 
 	<environment name="testing" class="MUES::ObjectEnv">
-	  <param name="objectstore-driver">ArunaDB</param>
-	  <param name="objectstore-garbagecollector">Simple</param>
-	  <param name="objectstore-name">testing</param>
+	  <objectstore name="testing-objectenv">
+		<backend class="Flatfile" />
+		<garbagecollector class="Simple">
+		  <param name="trash_rate">100</param>
+		</garbagecollector>
+	  </objectstore>
 	</environment>
   </environments>
 
