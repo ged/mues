@@ -73,8 +73,8 @@ module MUES
 	class CommandShell < IOEventFilter ; implements Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.7 2001/07/30 12:22:00 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.8 2001/09/26 13:22:29 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -187,6 +187,11 @@ module MUES
 					results -= output
 					input = results.find_all {|e| e.kind_of?( MUES::InputEvent )}
 					results -= input
+					newFilters = results.find_all {|e| e.kind_of?( MUES::IOEventFilter )}
+					results -= newFilters
+
+					### Add any new filters to our parent event stream
+					@stream.addFilters( *newFilters ) unless newFilters.empty?
 
 					### Dispatch events
 					unhandledInputEvents << input unless input.empty?
@@ -202,7 +207,7 @@ module MUES
 
 				### No matter what the input, we're responsible for the prompt,
 				### so send it for each input event.
-				queueOutputEvents( OutputEvent.new(@vars["prompt"]) )
+				queueOutputEvents( OutputPromptEvent.new )
 			end
 
 			return unhandledInputEvents
@@ -302,8 +307,8 @@ module MUES
 		class Command < MUES::Object ; implements AbstractClass, Debuggable, Notifiable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.7 2001/07/30 12:22:00 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.8 2001/09/26 13:22:29 deveiant Exp $
 
 			### Class values
 			@@CommandRegistry	= {}
@@ -350,7 +355,7 @@ module MUES
 
 				### (CLASS) METHOD: loadCommands( config=MUES::Config )
 				### Iterate over each file in the shell commands directory, loading
-				### each one and recording its mtime so we can tell if it changes.
+				### each one if it's changed since last we loaded
 				def loadCommands( config )
 					checkType( config, MUES::Config )
 					cmdsdir = config["CommandShell"]["CommandsDir"] or
@@ -579,10 +584,10 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Invoke the quit command, which generates a new UserLogoutEvent.
 			def invoke( context, args )
-				return MUES::UserLogoutEvent.new( context.user )
+				return [ MUES::UserSaveEvent.new( context.user ), MUES::UserLogoutEvent.new( context.user ) ]
 			end
 		end # class QuitCommand
 
@@ -601,7 +606,7 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Invoke the quit command, which generates a new UserLogoutEvent.
 			def invoke( context, args )
 
@@ -635,26 +640,86 @@ module MUES
 		end # class QuitCommand
 
 
-		### 'Play' command
-		class PlayCommand < UserCommand
+		### 'Roles' command
+		class RolesCommand < UserCommand
 
 			### METHOD: initialize()
-			### Initialize a new PlayCommand object
+			### Initialize a new UnloadEnvironmentCommand object
 			def initialize
-				@name				= 'play'
-				@synonyms			= %w{}
-				@description		= 'Connect to the specified environment in the specified role.'
-				@usage				= 'play <environment> <role>'
+				@name			= 'roles'
+				@synonyms		= %w{}
+				@description	= 'List available roles in the specified environments.'
+				@usage			= 'roles [<environment names>]'
 
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
+			### Invoke the unloadenvironment command, which generates a
+			### UnloadEnvironmentEvent with the environment specifications.
+			def invoke( context, args )
+				results = []
+				envNames = []
+				list = nil
+
+				### If they passed at least one environment name, parse them out
+				### of the line.
+				if args =~ %r{\w}
+					envNames = args.scan(/\w+/)
+				else
+					envNames = engine().getEnvironmentNames
+				end
+
+				list = "\n"
+				roleCount = 0
+				envNames.each {|envName|
+
+					### Look for the roles in the requested environment. Catch any
+					### problems as exceptions, and turn them into error messages
+					### for output.
+					begin
+						env = engine().getEnvironment( envName ) or
+							raise CommandError, "No such environment '#{envName}'."
+						list << "%s (%s)\n" % [ envName, env.class.name ]
+						env.getAvailableRoles( context.user ).each {|role|
+							list << "    #{role.to_s}\n"
+							roleCount += 1
+						}
+					rescue CommandError, SecurityViolation => e
+						list << e.message + "\n"
+					end
+
+					list << "\n"
+				}
+
+				list << "(#{roleCount}) role/s currently available to you.\n\n"
+
+				results << OutputEvent.new( list )
+				return results.flatten
+			end
+		end
+
+
+		### 'Connect' command
+		class ConnectCommand < UserCommand
+
+			### METHOD: initialize()
+			### Initialize a new ConnectCommand object
+			def initialize
+				@name				= 'connect'
+				@synonyms			= %w{play}
+				@description		= 'Connect to the specified environment in the specified role.'
+				@usage				= 'connect [to] <environment> [as] <role>'
+
+				super
+			end
+
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Attempt to connect the user to the environment and role
 			### specified by the arguments.
 			def invoke( context, args )
 				results = []
-				if args =~ %r{(\w+)\s+(\w+)}
+				if args =~ %r{(?:\s*to\s*)?(\w+)\s+(?:as\s*)?(\w+)}
 					envName, roleName = $1, $2
 
 					### Look for the requested role in the requested
@@ -663,14 +728,16 @@ module MUES
 					### error messages for output.
 					begin
 						env = engine().getEnvironment( envName ) or
-							raise CommandError "No such environment '#{envName}'."
+							raise CommandError, "No such environment '#{envName}'."
 						role = env.getAvailableRoles( context.user ).find {|role|
 							role.name == roleName
 						}
-						raise CommandError "Role '#{roleName}' is not currently available to you." unless
+						raise CommandError, "Role '#{roleName}' is not currently available to you." unless
 							role.is_a?( MUES::Role )
 
+						results << OutputEvent.new( "Connecting..." )
 						results << env.getParticipantProxy( context.user, role )
+						results << OutputEvent.new( "connected.\n\n" )
 					rescue CommandError, SecurityViolation => e
 						results << OutputEvent.new( e.message )
 					end
@@ -680,7 +747,60 @@ module MUES
 
 				return results.flatten
 			end
-		end # class PlayCommand
+		end # class ConnectCommand
+
+
+		### 'Disconnect' command
+		class DisconnectCommand < UserCommand
+
+			### METHOD: initialize()
+			### Initialize a new DisconnectCommand object
+			def initialize
+				@name				= 'disconnect'
+				@synonyms			= %w{}
+				@description		= 'Disconnect from the specified role in the specified environment.'
+				@usage				= 'disconnect [<role> [in]] <environment>'
+
+				super
+			end
+
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
+			### Attempt to disconnect the user from the environment and role
+			### specified by the arguments.
+			def invoke( context, args )
+				results = []
+				roleName = nil
+				envName = nil
+
+				### Parse the arguments, returning a usage message if we can't
+				### parse
+				if args =~ %r{(\w+)\s+(?:in\s*)?(\w+)}
+					roleName, envName = $1, $2
+				elsif args =~ %r{(\w+)}
+					envName = $1
+				else
+					return [ OutputEvent.new( usage() ) ]
+				end
+
+				### Look for a proxy from the specified environment
+				begin
+					targetEnv = engine().getEnvironment( envName ) or
+						raise CommandError, "No such environment '#{envName}'."
+					targetProxy = context.stream.findFiltersOfType( MUES::ParticipantProxy ).find {|f|
+						f.env == targetEnv && ( roleName.nil? || f.role.name == roleName )
+					} or raise CommandError, "Not connected to #{envName} #{roleName ? 'as ' + roleName : ''}"
+					
+					results << OutputEvent.new( "Disconnecting from #{envName}..." )
+					targetEnv.removeParticipantProxy( targetProxy )
+					context.stream.removeFilters( targetProxy )
+					results << OutputEvent.new( " disconnected.\n\n" )
+				rescue CommandError, SecurityViolation => e
+					results << OutputEvent.new( e.message )
+				end
+				
+				return results.flatten
+			end
+		end # class DisconnectCommand
 
 
 		### 'Debug' command
@@ -697,7 +817,7 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Invoke the debug command
 			def invoke( context, args )
 				if args =~ /=\s*(\d)/
@@ -727,7 +847,7 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Evaluate the specified code in the shell's current object
 			### context. This obviously is a dangerous command.
 			def invoke( context, args )
@@ -760,7 +880,7 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Invoke the set command with either no args, a parameter name
 			### arg, or parameter name + new value args.
 			def invoke( context, args )
