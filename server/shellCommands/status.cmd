@@ -1,12 +1,14 @@
+# -*- default-generic -*-
 #
 # MUES::CommandShell server-status command.
-# Time-stamp: <14-Sep-2002 08:03:32 deveiant>
-# $Id: status.cmd,v 1.3 2002/09/15 07:44:37 deveiant Exp $
+# Time-stamp: <14-Oct-2002 00:46:38 deveiant>
+# $Id: status.cmd,v 1.4 2002/10/14 09:49:29 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
 #
 
+# Status command
 = status
 
 == Abstract
@@ -23,7 +25,23 @@ login sessions, and connected users.
 creator
 
 == Code
-  return MUES::OutputEvent.new( MUES::ServerFunctions::engineStatusString )
+  return MUES::OutputEvent::new( MUES::ServerFunctions::engineStatusString )
 
+
+# Scheduled events command
+= scheduled
+
+== Abstract
+Display a table of scheduled events.
+
+== Description
+This command prints a table listing each event that is scheduled with the engine
+for deferred execution.
+
+== Restriction
+implementor
+
+== Code
+  return MUES::OutputEvent::new( MUES::ServerFunctions::engineScheduledEventsString )
 
 
