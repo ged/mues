@@ -38,14 +38,16 @@
 #	subclass) if the operation is not possible for some other reason.
 #
 # [<b><tt>start()</tt></b>]
-#	Start the environment running.
+#	Start the environment running, returning any startup events which should be
+#	dispatched.
 #
 # [<b><tt>stop()</tt></b>]
-#	Stop/shut the environment down.
+#	Stop/shut the environment down, returning any cleanup events which should be
+#	dispatched.
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.11 2002/06/04 06:58:40 deveiant Exp $
+# $Id: environment.rb,v 1.12 2002/07/07 18:29:57 deveiant Exp $
 # 
 # == Authors
 # 
@@ -80,15 +82,18 @@ module MUES
 
 
 	### Environment abstract base class
-	class Environment < Object ; implements MUES::AbstractClass, MUES::Notifiable, MUES::Debuggable, MUES::Event::Handler
+	class Environment < Object ; implements MUES::AbstractClass,
+			MUES::Notifiable, MUES::Debuggable
 
-		include MUES::TypeCheckFunctions
+		include MUES::TypeCheckFunctions, MUES::Event::Handler, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.11 2002/06/04 06:58:40 deveiant Exp $
+		# Versioning stuff
+		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.12 2002/07/07 18:29:57 deveiant Exp $
 
-		### Class variables
+
+		### Class globals
 		@@ChildClasses = {}
 		@@EnvMutex = Sync.new
 		@@EnvLoadTime = Time.at(0) # Set initial load time to epoch
@@ -108,89 +113,22 @@ module MUES
 
 
 		### Class methods
-		class << self
 
-			### Iterate over each file in the environments directory specified by
-			### +config+ (a MUES::Config object), loading each one if it's changed
-			### since last we loaded.
-			def loadEnvClasses( config )
-				checkType( config, MUES::Config )
-				envdir = config["Environments"]["EnvironmentsDir"] or
-					raise Exception "No environments directory configured!"
-				if envdir !~ %r{^/}
-					debugMsg( 2, "Prepending rootdir '#{config['rootdir']}' to environments directory." )
-					envdir = File.join( config['rootdir'], envdir )
-				end
-
-				# Load all ruby source in the configured directory newer
-				# than our last load time. Each child will be registered
-				# in the @@ChildClasses array as it's loaded (assuming
-				# it's implemented correctly -- if it isn't, we don't much
-				# care).
-				@@EnvMutex.synchronize( Sync::EX ) {
-
-					# Get the old load time for comparison and set it to the
-					# current time
-					oldLoadTime = @@EnvLoadTime
-					@@EnvLoadTime = Time.now
-					
-					# Search top-down for ruby files newer than our last
-					# load time, loading any we find.
-					Find.find( envdir ) {|f|
-						Find.prune if f =~ %r{^\.} # Ignore hidden stuff
-
-						if f =~ %r{\.rb$} && File.stat( f ).file? && File.stat( f ).mtime > oldLoadTime
-							load( f ) 
-						end
-					}
-				}
-			end
+		### Return an array of environment class names which have been loaded
+		def self.listEnvClasses
+			return self.getDerivativeClasses.collect {|klass|
+				klass.name.sub( /Environment/ )
+			}
+		end
 
 
-			### Return an array of environment classes which have been loaded
-			def listEnvClasses
-				return @@ChildClasses.keys.sort
-			end
+		### Initialize subsystems after engine startup (stub).
+		def self.atEngineStartup( theEngine )
+		end
 
 
-			### Load and instantiate the environment class specified by
-			### <tt>className</tt>, assign the specified <tt>instanceName</tt>
-			### to it, and return it.
-			def create( className, instanceName )
-				checkType( className, ::String )
-				checkType( instanceName, ::String )
-
-				env = nil
-				@@EnvMutex.synchronize( Sync::SH ) {
-					if @@ChildClasses.has_key?( className )
-						env = @@ChildClasses[ className ].new( instanceName )
-					elsif @@ChildClasses.has_key?( "MUES::#{className}" )
-						env = @@ChildClasses[ "MUES::#{className}" ].new( instanceName )
-					else
-						raise EnvironmentLoadError, "The '#{className}' environment class is not loaded."
-					end
-				}
-
-				return env
-			end
-
-
-			### Initialize subsystems after engine startup (stub).
-			def atEngineStartup( theEngine )
-			end
-
-
-			### Clean up subsystems before engine shutdown (stub).
-			def atEngineShutdown( theEngine )
-			end
-
-
-			### Register the specified class <tt>aSubClass</tt> with the list of
-			### available child classes.
-			def inherited( aSubClass )
-				checkType( aSubClass, ::Class )
-				@@ChildClasses[ aSubClass.name ] = aSubClass
-			end
+		### Clean up subsystems before engine shutdown (stub).
+		def self.atEngineShutdown( theEngine )
 		end
 
 
