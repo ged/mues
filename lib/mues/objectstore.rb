@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.35 2002/10/23 02:09:31 deveiant Exp $
+#  $Id: objectstore.rb,v 1.36 2002/10/28 00:04:16 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.35 $
-		RcsId	= %q$Id: objectstore.rb,v 1.35 2002/10/23 02:09:31 deveiant Exp $
+		Version	= %q$Revision: 1.36 $
+		RcsId	= %q$Id: objectstore.rb,v 1.36 2002/10/28 00:04:16 deveiant Exp $
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -162,7 +162,7 @@ module MUES
 
 			# Check the name argument
 			name = args[:name].to_s
-			TypeCheckFunctions::checkType( name, String )
+			raise ArgumentError, "No name given." if name.empty?
 			return @@instances[ name ] if @@instances.has_key?( name )
 
 			# Check the indexes
