@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.4 2002/09/27 16:13:15 deveiant Exp $
+# $Id: mixins.rb,v 1.5 2002/10/04 05:17:37 deveiant Exp $
 # 
 # == Authors
 # 
@@ -371,7 +371,7 @@ module MUES
 		### parts it wishes returned.
 		def untaint( string, pattern )
 			match = pattern.match( string ) or return nil
-			parts = match.to_a[ 1 .. -1 ].collect{|part| part.untaint}
+			parts = match.to_ary[ 1 .. -1 ].collect{|part| part.untaint}
 		end
 
 	end
@@ -578,8 +578,8 @@ module MUES
 						MUES::Log.debug( "Registering the %s %s(%s) as %s (%s) for %s" % [
 											subClass.name,
 											factoryType,
-											subClass.type.name,
-											key, key.type.name,
+											subClass.class.name,
+											key, key.class.name,
 											self.name
 										])
 						@@typeRegistry[self][ key ] = subClass
