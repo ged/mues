@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: event.rb,v 1.10 2002/08/02 20:03:44 deveiant Exp $
+# $Id: event.rb,v 1.11 2002/09/12 12:16:32 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,6 +79,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
+require "mues/Mixins"
 require "mues/Object"
 require "mues/Exceptions"
 
@@ -87,14 +88,14 @@ module MUES
 	### Abstract base event class.
 	class Event < Object ; implements MUES::Debuggable, MUES::AbstractClass, Comparable
 
-		include MUES::TypeCheckFunctions
+		include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 		### Class constants
 		MaxPriority		= 64
 		MinPriority		= 1
 		DefaultPriority	= (MaxPriority / 2).to_i
 
-		### Class attributes
+		### Class globals
 		@@Handlers = { Event => [] }
 
 
