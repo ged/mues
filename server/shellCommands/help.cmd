@@ -1,6 +1,7 @@
 #
 # The help MUES::CommandShell command.
-# $Id: help.cmd,v 1.1 2002/09/12 12:54:42 deveiant Exp $
+# Time-stamp: <14-Sep-2002 08:02:18 deveiant>
+# $Id: help.cmd,v 1.2 2002/09/15 07:44:37 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>

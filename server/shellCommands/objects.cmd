@@ -1,6 +1,7 @@
 #
 # The objects MUES::CommandShell command.
-# $Id: objects.cmd,v 1.1 2002/09/05 04:07:11 deveiant Exp $
+# Time-stamp: <14-Sep-2002 08:02:24 deveiant>
+# $Id: objects.cmd,v 1.2 2002/09/15 07:44:37 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>

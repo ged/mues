@@ -1,6 +1,7 @@
 #
 # MUES::CommandShell environment manipulation commands.
-# $Id: environments.cmd,v 1.2 2002/09/12 12:53:28 deveiant Exp $
+# Time-stamp: <14-Sep-2002 08:01:25 deveiant>
+# $Id: environments.cmd,v 1.3 2002/09/15 07:44:37 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>

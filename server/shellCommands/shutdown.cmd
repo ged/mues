@@ -1,3 +1,12 @@
+#
+# The shutdown MUES::CommandShell command.
+# Time-stamp: <14-Sep-2002 08:03:12 deveiant>
+# $Id: shutdown.cmd,v 1.2 2002/09/15 07:44:37 deveiant Exp $
+#
+# == Authors:
+# * Michael Granger <ged@FaerieMUD.org>
+#
+
 = shutdown
 
 == Restriction

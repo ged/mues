@@ -1,6 +1,7 @@
 #
 # MUES::CommandShell server-status command.
-# $Id: status.cmd,v 1.2 2002/09/12 12:55:24 deveiant Exp $
+# Time-stamp: <14-Sep-2002 08:03:32 deveiant>
+# $Id: status.cmd,v 1.3 2002/09/15 07:44:37 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>

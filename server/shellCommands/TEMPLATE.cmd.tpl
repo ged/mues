@@ -1,6 +1,7 @@
 #
 # The (>>>FILE_SANS<<<) MUES::CommandShell command.
-# $Id: TEMPLATE.cmd.tpl,v 1.1 2002/09/05 04:07:11 deveiant Exp $
+# Time-stamp: <14-Sep-2002 08:01:09 deveiant>
+# $Id: TEMPLATE.cmd.tpl,v 1.2 2002/09/15 07:44:37 deveiant Exp $
 #
 # == Authors:
 # * (>>>USER_NAME<<<) <(>>>AUTHOR<<<)>
