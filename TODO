@@ -7,12 +7,7 @@ This is an informal list of tasks yet to be done for the MUES.
 
 These are tasks which should be completed before the next release.
 
-* Fix /eval CommandShell command by making it use an event that gets executed by
-  the privileged queue.
-
-* Fix the mysterious backspace-freezing bug in the TelnetOutputFilter.
-
-* Define a shutdown method for NullEnvironment.
+* (There are no more tasks for this release)
 
 == Planned Tasks
 
