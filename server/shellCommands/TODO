@@ -7,16 +7,19 @@
 
 * kickuser - boot a user from the server, implementor and above(?).
 
-* banuser - ban a user from being on the server, admin and above(?).
+* ban {user,ip} - ban a user, ip address, or ip range from logging in, admin and above(?).
 
-* banip - ban an ip set from logging onto the server, admin and above(?).
+	Both bans will need to have info about who is doing the banning. This will
+	also require some work on the Engine to get it to use the bans. Grep for
+	'handle (user|IP) bans here' in lib/mues/Engine.rb to find the necessary
+	places.
 
-	Both bans will need to have info about who is doing the banning.
+* banlist - a list of users/ips that are banned, the user that created the ban,
+  the date of creation, and the reason.
 
-* banlist - a list of users/ips that are banned.
+* promote - Increase a user's privilege level
 
-* setuser* - have mutators for all the mutatable user attributes (password is
-  done already).
+* demote - Decrease a user's privilege level
 
 * saveuser - commit a user object information to the database.
 
@@ -25,9 +28,5 @@
 * setdefault - set a default shell parameter.
 
 * restart - restart the server.
-
-* reload - reload the config file.
-
-* initmode - turn on/off init mode.
 
 * macro* - commands to deal with creating/editing/deleting macros.
