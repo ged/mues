@@ -77,7 +77,7 @@ module MUES
 		end
 
 		def test_StartWhileRunning()
-			$QueueObj.debugLevel = true
+			$QueueObj.debugLevel = false
 			$QueueObj.start
 			assert( $QueueObj.start )
 			$QueueObj.shutdown
