@@ -6,7 +6,7 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/filters/OutputFilter'
+#   require 'mues/filters/outputfilter'
 #
 #	module MUES
 #		class MyOutputFilter < MUES::OutputFilter
@@ -16,7 +16,7 @@
 # 
 # == Rcsid
 # 
-# $Id: outputfilter.rb,v 1.3 2002/10/26 19:04:23 deveiant Exp $
+# $Id: outputfilter.rb,v 1.4 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,7 +29,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/filters/IOEventFilter'
+require 'mues/filters/ioeventfilter'
 
 module MUES
 
@@ -37,8 +37,8 @@ module MUES
 	class OutputFilter < MUES::IOEventFilter ; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: outputfilter.rb,v 1.3 2002/10/26 19:04:23 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: outputfilter.rb,v 1.4 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 5
 
 		### Create a new OutputFilter object with the specified

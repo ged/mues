@@ -7,7 +7,7 @@
 # You probably shouldn't require this file directly unless you're subclassing
 # MUES::Event directly, as you can load all event classes with:
 #
-#   require 'mues/Events'
+#   require 'mues/events'
 #
 # Events in MUES are dispatched via the #dispatchEvents method of the Engine
 # (the MUES::Engine instance) to an event queue (a MUES::EventQueue
@@ -36,7 +36,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Events"
+#   require 'mues/events'
 # 
 #   module MUES
 #     class MyEvent < MUES::Event
@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: event.rb,v 1.15 2003/06/06 22:37:44 deveiant Exp $
+# $Id: event.rb,v 1.16 2003/10/13 04:02:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,9 +79,9 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Mixins"
-require "mues/Object"
-require "mues/Exceptions"
+require 'mues/mixins'
+require 'mues/object'
+require 'mues/exceptions'
 
 module MUES
 
@@ -90,8 +90,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Constants
-		Version			= /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
-		Rcsid			= %q$Id: event.rb,v 1.15 2003/06/06 22:37:44 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
+		Rcsid			= %q$Id: event.rb,v 1.16 2003/10/13 04:02:15 deveiant Exp $
 		MaxPriority		= 64
 		MinPriority		= 1
 		DefaultPriority	= (MaxPriority / 2).to_i

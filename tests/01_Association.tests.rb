@@ -6,7 +6,7 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Metaclasses'
+require 'mues/metaclasses'
 
 # Mock object
 class MockAssnSubclass < MUES::Metaclass::Association

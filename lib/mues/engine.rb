@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.44 2003/09/12 04:16:30 deveiant Exp $
+# $Id: engine.rb,v 1.45 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -127,22 +127,22 @@ require "digest/md5"
 require "io/reactor"
 require "timeout"
 
-require "mues/Mixins"
-require "mues/Object"
-require "mues/Config"
-require "mues/Log"
-require "mues/EventQueue"
-require "mues/Exceptions"
-require "mues/Events"
-require "mues/User"
-require "mues/IOEventStream"
-require "mues/IOEventFilters"
-require "mues/ObjectStore"
-require "mues/Environment"
-require "mues/LoginSession"
-require "mues/Service"
-require "mues/Listener"
-require "mues/ReactorProxy"
+require 'mues/mixins'
+require 'mues/object'
+require 'mues/config'
+require 'mues/log'
+require 'mues/eventqueue'
+require 'mues/exceptions'
+require 'mues/events'
+require 'mues/user'
+require 'mues/ioeventstream'
+require 'mues/ioeventfilters'
+require 'mues/objectstore'
+require 'mues/environment'
+require 'mues/loginsession'
+require 'mues/service'
+require 'mues/listener'
+require 'mues/reactorproxy'
 
 module MUES
 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.44 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.44 2003/09/12 04:16:30 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.45 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.45 2003/10/13 04:02:17 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'

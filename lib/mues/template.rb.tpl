@@ -9,7 +9,7 @@
 # 
 # == Rcsid
 # 
-# $Id: template.rb.tpl,v 1.2 2002/10/04 05:06:43 deveiant Exp $
+# $Id: template.rb.tpl,v 1.3 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -22,7 +22,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/metaclass/Constants'
+require 'mues/metaclass/constants'
 
 module MUES
 	module Metaclass
@@ -31,8 +31,8 @@ module MUES
 		class (>>>FILE_SANS<<<) < (>>>superclass<<<)
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
-			Rcsid = %q$Id: template.rb.tpl,v 1.2 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
+			Rcsid = %q$Id: template.rb.tpl,v 1.3 2003/10/13 04:02:13 deveiant Exp $
 
 			### Create a new (>>>FILE_SANS<<<) object.
 			def initialize

@@ -5,9 +5,9 @@
 # 
 # == Synopsis
 # 
-#   require "mues/IOEventFilters"
-#   require "mues/IOEventStream"
-#   require "mues/Events"
+#   require 'mues/ioeventfilters'
+#   require 'mues/ioeventstream'
+#   require 'mues/events'
 # 
 #   stream = MUES::IOEventStream.new
 #   soFilter = MUES::SocketOutputFilter( aSocket )
@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilters.rb,v 1.8 2002/09/28 12:14:32 deveiant Exp $
+# $Id: ioeventfilters.rb,v 1.9 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,20 +31,20 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/filters/IOEventFilter"
-require "mues/filters/OutputFilter"
-require "mues/filters/InputFilter"
-require "mues/filters/DefaultOutputFilter"
-require "mues/filters/DefaultInputFilter"
+require 'mues/filters/ioeventfilter'
+require 'mues/filters/outputfilter'
+require 'mues/filters/inputfilter'
+require 'mues/filters/defaultoutputfilter'
+require 'mues/filters/defaultinputfilter'
 
-require "mues/filters/ClientOutputFilter"
-require "mues/filters/SocketOutputFilter"
-require "mues/filters/TelnetOutputFilter"
-require "mues/filters/ConsoleOutputFilter"
+require 'mues/filters/clientoutputfilter'
+require 'mues/filters/socketoutputfilter'
+require 'mues/filters/telnetoutputfilter'
+require 'mues/filters/consoleoutputfilter'
 
-require "mues/filters/CommandShell"
-require "mues/filters/EventDelegator"
-require "mues/filters/MacroFilter"
-require "mues/filters/SnoopFilter"
-require "mues/filters/ParticipantProxy"
+require 'mues/filters/commandshell'
+require 'mues/filters/eventdelegator'
+require 'mues/filters/macrofilter'
+require 'mues/filters/snoopfilter'
+require 'mues/filters/participantproxy'
 

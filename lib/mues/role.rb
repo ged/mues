@@ -7,7 +7,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Role"
+#   require 'mues/role'
 # 
 #	class MyWorld < MUES::Environment
 #		...
@@ -22,7 +22,7 @@
 #
 # == Rcsid
 # 
-# $Id: role.rb,v 1.10 2003/08/04 02:40:45 deveiant Exp $
+# $Id: role.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,9 +36,9 @@
 #
 
 require 'mues'
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/Events'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/events'
 
 module MUES
 
@@ -48,8 +48,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: role.rb,v 1.10 2003/08/04 02:40:45 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: role.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
 
 		### Create and return a role object for the given <tt>environment</tt> with the
 		### <tt>name</tt> and <tt>description</tt> string specified.

@@ -6,14 +6,14 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/ObjectStore'
+#   require 'mues/objectstore'
 #
 #   os = MUES::ObjectStore::load( 'foo', [], nil, 'Null' )
 #	...
 # 
 # == Rcsid
 # 
-# $Id: nullmemorymanager.rb,v 1.6 2002/10/14 09:45:59 deveiant Exp $
+# $Id: nullmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -26,11 +26,11 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Object'
-require 'mues/ObjectStore'
-require 'mues/StorableObject'
+require 'mues/object'
+require 'mues/objectstore'
+require 'mues/storableobject'
 
-require 'mues/os-extensions/MemoryManager'
+require 'mues/os-extensions/memorymanager'
 
 module MUES
 	class ObjectStore
@@ -41,8 +41,8 @@ module MUES
 		class NullMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: nullmemorymanager.rb,v 1.6 2002/10/14 09:45:59 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: nullmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
 
 
 			######

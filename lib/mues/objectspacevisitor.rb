@@ -54,7 +54,7 @@
 # 
 # == Rcsid
 # 
-# $Id: objectspacevisitor.rb,v 1.7 2002/10/29 20:02:09 deveiant Exp $
+# $Id: objectspacevisitor.rb,v 1.8 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -68,8 +68,8 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Object'
-require 'mues/Mixins'
+require 'mues/object'
+require 'mues/mixins'
 
 module MUES
 
@@ -81,8 +81,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
-		Rcsid = %q$Id: objectspacevisitor.rb,v 1.7 2002/10/29 20:02:09 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
+		Rcsid = %q$Id: objectspacevisitor.rb,v 1.8 2003/10/13 04:02:16 deveiant Exp $
 
 
 		### Instantiate and return a new ObjectSpaceVisitor object.

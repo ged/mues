@@ -5,14 +5,14 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/ObjectStore'
+#   require 'mues/objectstore'
 #
 #   os = MUES::ObjectStore::create( :backend => 'flatfile', ... )
 #   ...
 # 
 # == Rcsid
 # 
-# $Id: flatfilebackend.rb,v 1.7 2003/04/24 14:59:36 deveiant Exp $
+# $Id: flatfilebackend.rb,v 1.8 2003/10/13 04:02:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,11 +28,11 @@
 require 'sync'
 require 'pstore'
 
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/ObjectStore'
-require 'mues/StorableObject'
-require 'mues/os-extensions/Backend'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/objectstore'
+require 'mues/storableobject'
+require 'mues/os-extensions/backend'
 
 module MUES
 	class ObjectStore
@@ -43,8 +43,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: flatfilebackend.rb,v 1.7 2003/04/24 14:59:36 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+			Rcsid = %q$Id: flatfilebackend.rb,v 1.8 2003/10/13 04:02:12 deveiant Exp $
 
 			### Create a new FlatfileBackend object.
 			def initialize( name, indexes=[], configHash={} )

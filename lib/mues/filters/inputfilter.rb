@@ -11,7 +11,7 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/filters/InputFilter'
+#   require 'mues/filters/inputfilter'
 #
 #	module MUES
 #		class MyInputFilter < MUES::InputFilter
@@ -21,7 +21,7 @@
 # 
 # == Rcsid
 # 
-# $Id: inputfilter.rb,v 1.1 2002/08/29 07:17:59 deveiant Exp $
+# $Id: inputfilter.rb,v 1.2 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -34,7 +34,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/filters/IOEventFilter'
+require 'mues/filters/ioeventfilter'
 
 module MUES
 
@@ -42,8 +42,8 @@ module MUES
 	class InputFilter < MUES::IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: inputfilter.rb,v 1.1 2002/08/29 07:17:59 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: inputfilter.rb,v 1.2 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 995
 
 

@@ -6,13 +6,13 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/ConsoleOutputFilter"
+#   require 'mues/filters/consoleoutputfilter'
 #   
 #   cof = MUES::ConsoleOutputFilter.instance
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.14 2003/09/12 04:18:37 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,11 +28,11 @@
 require "sync"
 require "thread"
 
-require "mues/Object"
-require "mues/Events"
-require "mues/Exceptions"
-require "mues/ReactorProxy"
-require "mues/filters/OutputFilter"
+require 'mues/object'
+require 'mues/events'
+require 'mues/exceptions'
+require 'mues/reactorproxy'
+require 'mues/filters/outputfilter'
 
 module MUES
 
@@ -40,8 +40,8 @@ module MUES
 	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.14 2003/09/12 04:18:37 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 15
 
 		### A container module for MUES::SocketOutputFilter state contants.

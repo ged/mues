@@ -7,13 +7,13 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/filters/TelnetOutputFilter'
+#   require 'mues/filters/telnetoutputfilter'
 # 
 #   tf = MUES::TelnetOutputFilter.new( socketObj )
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.15 2003/09/12 04:31:20 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.16 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -30,10 +30,10 @@ require "thread"
 require "hashslice"
 require "sync"
 
-require "mues/Object"
-require "mues/Exceptions"
-require "mues/filters/SocketOutputFilter"
-require "mues/filters/TelnetConstants"
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/filters/socketoutputfilter'
+require 'mues/filters/telnetconstants'
 
 module MUES
 
@@ -59,10 +59,10 @@ module MUES
 		include StateConstants
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
 
 		# CVS id tag
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.15 2003/09/12 04:31:20 deveiant Exp $
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.16 2003/10/13 04:02:14 deveiant Exp $
 
 		# List of supported options and whether we ask for or offer them
 		Supported = {

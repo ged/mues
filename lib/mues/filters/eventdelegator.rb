@@ -21,14 +21,14 @@
 #
 # == Synopsis
 #
-#	require "mues/filters/EventDelegator"
+#	require 'mues/filters/eventdelegator'
 #
 #	delegator = MUES::EventDelegator::new( self )
 #   delegator.queueOutputEvents( MUES::PromptEvent::new )
 #
 # == Rcsid
 # 
-# $Id: eventdelegator.rb,v 1.14 2002/10/31 02:18:11 deveiant Exp $
+# $Id: eventdelegator.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,10 +43,10 @@
 
 require 'sync'
 
-require "mues/Object"
-require "mues/Events"
-require "mues/Exceptions"
-require "mues/filters/IOEventFilter"
+require 'mues/object'
+require 'mues/events'
+require 'mues/exceptions'
+require 'mues/filters/ioeventfilter'
 
 module MUES
 
@@ -55,8 +55,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.14 2002/10/31 02:18:11 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
 
 		DefaultSortPosition	= 600
 		DefaultHandlers = {

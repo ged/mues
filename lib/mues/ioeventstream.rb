@@ -28,9 +28,9 @@
 # 
 # == Synopsis
 # 
-#   require "mues/IOEventStream"
-#   require "mues/IOEventFilters"
-#   require "mues/Events"
+#   require 'mues/ioeventstream'
+#   require 'mues/ioeventfilters'
+#   require 'mues/events'
 # 
 #   # Create a new stream
 #   stream = MUES::IOEventStream.new
@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.28 2003/09/12 02:10:39 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.29 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -65,10 +65,10 @@
 require "sync"
 require "timeout"
 
-require "mues/Object"
-require "mues/IOEventFilters"
-require "mues/Events"
-require "mues/WorkerThread"
+require 'mues/object'
+require 'mues/ioeventfilters'
+require 'mues/events'
+require 'mues/workerthread'
 
 module MUES
 
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.28 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.28 2003/09/12 02:10:39 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.29 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.29 2003/10/13 04:02:17 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and

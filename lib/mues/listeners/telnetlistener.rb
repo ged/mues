@@ -7,14 +7,14 @@
 #
 # == Synopsis
 # 
-#   require 'mues/Listener'
+#   require 'mues/listener'
 #   telnetListener = MUES::Listener::create( 'Telnet',
 #                                            'bind-port' => 23,
 #                                            'bind-addr' => '0.0.0.0' )
 # 
 # == Rcsid
 # 
-# $Id: telnetlistener.rb,v 1.5 2003/09/12 04:32:20 deveiant Exp $
+# $Id: telnetlistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -27,9 +27,9 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Exceptions'
-require 'mues/listeners/SocketListener'
-require 'mues/filters/TelnetOutputFilter'
+require 'mues/exceptions'
+require 'mues/listeners/socketlistener'
+require 'mues/filters/telnetoutputfilter'
 
 module MUES
 
@@ -38,8 +38,8 @@ module MUES
 	class TelnetListener < MUES::SocketListener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: telnetlistener.rb,v 1.5 2003/09/12 04:32:20 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: telnetlistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
 
 		### Create a new TelnetListener object. See
 		### MUES::SocketListener#initialize for the list of valid

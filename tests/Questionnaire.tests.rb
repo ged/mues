@@ -6,8 +6,8 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/filters/Questionnaire'
-require 'mues/IOEventStream'
+require 'mues/filters/questionnaire'
+require 'mues/ioeventstream'
 
 class MockStream < Test::Unit::MockObject( MUES::IOEventStream )
 	def initialize( *filters )

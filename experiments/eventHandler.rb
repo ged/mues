@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 
 
-require "mues/Events"
+require 'mues/events'
 include MUES
 
 class Handler < Object

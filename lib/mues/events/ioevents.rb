@@ -43,8 +43,8 @@
 #
 # == Synopsis
 #
-#	require "mues/Mixins"
-#   require "mues/Events"
+#	require 'mues/mixins'
+#   require 'mues/events'
 #
 #	include MUES::ServerFunctions
 #
@@ -65,7 +65,7 @@
 #
 # == Rcsid
 # 
-# $Id: ioevents.rb,v 1.12 2002/10/23 18:30:25 deveiant Exp $
+# $Id: ioevents.rb,v 1.13 2003/10/13 04:02:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -80,10 +80,10 @@
 
 require "strscan"
 
-require "mues/Object"
-require "mues/Exceptions"
+require 'mues/object'
+require 'mues/exceptions'
 
-require "mues/events/Event"
+require 'mues/events/event'
 
 module MUES
 

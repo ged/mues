@@ -18,9 +18,9 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Mixins"
-#   require "mues/Service"
-#   require "mues/Events"
+#   require 'mues/mixins'
+#   require 'mues/service'
+#   require 'mues/events'
 #   require "somethingElse"
 # 
 #   module MUES
@@ -35,7 +35,7 @@
 #
 # == Rcsid
 # 
-# $Id: service.rb,v 1.9 2002/08/02 20:03:44 deveiant Exp $
+# $Id: service.rb,v 1.10 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,9 +48,9 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Object"
-require "mues/Exceptions"
-require "mues/Events"
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/events'
 
 module MUES
 
@@ -64,8 +64,8 @@ module MUES
 		include MUES::Event::Handler, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.9 2002/08/02 20:03:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.10 2003/10/13 04:02:16 deveiant Exp $
 
 		### Class globals
 		@@ServiceDirectories = ["mues/services"]

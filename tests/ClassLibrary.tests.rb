@@ -6,8 +6,8 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/ClassLibrary'
-require 'mues/Metaclasses'
+require 'mues/classlibrary'
+require 'mues/metaclasses'
 
 ### Log tests
 module MUES

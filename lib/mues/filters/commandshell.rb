@@ -28,7 +28,7 @@
 #
 # == Synopsis
 #
-#  require "mues/filters/CommandShell"
+#  require 'mues/filters/commandshell'
 #
 #  cfactory = MUES::CommandShell::Factory::new( 'server/shellCommands' )
 #
@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
+# $Id: commandshell.rb,v 1.34 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -57,12 +57,12 @@ require "find"
 require "observer"
 #require "Soundex"
 
-require "mues/Object"
-require "mues/Mixins"
-require "mues/Events"
-require "mues/Exceptions"
-require "mues/User"
-require "mues/filters/InputFilter"
+require 'mues/object'
+require 'mues/mixins'
+require 'mues/events'
+require 'mues/exceptions'
+require 'mues/user'
+require 'mues/filters/inputfilter'
 
 module MUES
 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.34 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 990
 
 		### Class globals
@@ -288,8 +288,8 @@ module MUES
 			include MUES::User::AccountType, MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.34 2003/10/13 04:02:14 deveiant Exp $
 
 
 			### Instantiate and return a new Command object with the specified
@@ -518,8 +518,8 @@ module MUES
 		class Context < MUES::Object ; implements MUES::Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.34 2003/10/13 04:02:14 deveiant Exp $
 
 
 			### Create and return a new Context object with the specified shell
@@ -571,8 +571,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.34 2003/10/13 04:02:14 deveiant Exp $
 
 
 			### Instantiate and return a new <tt>CommandTable</tt> object which
@@ -730,8 +730,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.34 2003/10/13 04:02:14 deveiant Exp $
 
 
 			### Instantiate and return a parser object which will create command
@@ -915,8 +915,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.34 2003/10/13 04:02:14 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell

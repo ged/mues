@@ -23,7 +23,7 @@
 #   <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
 #        "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 #   
-#   <muesconfig version="1.1" time-stamp="$Date: 2003/08/10 17:43:50 $">
+#   <muesconfig version="1.1" time-stamp="$Date: 2003/10/13 04:02:17 $">
 #   
 #     <!--
 #   
@@ -32,7 +32,7 @@
 #     without any argument. For the actual defaults, see the end of
 #     lib/mues/Config.rb.
 #   
-#     $Id: config.rb,v 1.26 2003/08/10 17:43:50 deveiant Exp $
+#     $Id: config.rb,v 1.27 2003/10/13 04:02:17 deveiant Exp $
 #   
 #     -->
 #   
@@ -256,7 +256,7 @@
 #
 # == Synopsis
 # 
-#   require "mues/Config"
+#   require 'mues/config'
 # 
 #   config = MUES::Config::new( "muesconfig.xml" )
 #	config.subsections
@@ -270,7 +270,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.26 2003/08/10 17:43:50 deveiant Exp $
+# $Id: config.rb,v 1.27 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -287,16 +287,16 @@
 require 'forwardable'
 require 'rexml/document'
 
-require 'mues/Mixins'
-require 'mues/Exceptions'
+require 'mues/mixins'
+require 'mues/exceptions'
 
 # Configuration-instantiation dependencies
-require 'mues/Log'
-require 'mues/Object'
-require 'mues/ObjectStore'
-require 'mues/Environment'
-require 'mues/filters/CommandShell'
-require 'mues/EventQueue'
+require 'mues/log'
+require 'mues/object'
+require 'mues/objectstore'
+require 'mues/environment'
+require 'mues/filters/commandshell'
+require 'mues/eventqueue'
 
 module MUES
 
@@ -307,8 +307,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.26 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.26 2003/08/10 17:43:50 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.27 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.27 2003/10/13 04:02:17 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -1418,7 +1418,7 @@ __END__
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2003/08/10 17:43:50 $">
+<muesconfig version="1.1" time-stamp="$Date: 2003/10/13 04:02:17 $">
 
   <!-- General config -->
   <general>

@@ -5,7 +5,7 @@
 #
 # == Synopsis
 #
-#	require 'mues/Metaclasses'
+#	require 'mues/metaclasses'
 #	include MUES
 #
 #	myClass = Metaclass::Class.new( "MyClass" )
@@ -30,7 +30,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.15 2002/10/04 11:04:10 deveiant Exp $
+# $Id: class.rb,v 1.16 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -44,12 +44,12 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/Mixins'
+require 'mues/mixins'
 
-require 'mues/metaclass/Constants'
-require 'mues/metaclass/Attribute'
-require 'mues/metaclass/Operation'
-require 'mues/metaclass/Interface'
+require 'mues/metaclass/constants'
+require 'mues/metaclass/attribute'
+require 'mues/metaclass/operation'
+require 'mues/metaclass/interface'
 
 
 module MUES
@@ -63,8 +63,8 @@ module MUES
 		### to build other classes.
 		class Class
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
-			Rcsid = %q$Id: class.rb,v 1.15 2002/10/04 11:04:10 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
+			Rcsid = %q$Id: class.rb,v 1.16 2003/10/13 04:02:13 deveiant Exp $
 
 			# Mix in comparison methods
 			include Comparable
@@ -85,7 +85,7 @@ module MUES
 
 				# If the BaseClass class isn't loaded yet, load it
 				unless Metaclass.const_defined? :BaseClass
-					require 'mues/metaclass/BaseClass'
+					require 'mues/metaclass/baseclass'
 				end
 
 				@name		= name

@@ -5,13 +5,13 @@
 # 
 # == Synopsis
 # 
-#	require 'mues/Listener'
+#	require 'mues/listener'
 #
 #   cl = MUES::Listener::create( 'console' )
 # 
 # == Rcsid
 # 
-# $Id: consolelistener.rb,v 1.5 2003/09/12 04:31:33 deveiant Exp $
+# $Id: consolelistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,8 +24,8 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Object'
-require 'mues/Listener'
+require 'mues/object'
+require 'mues/listener'
 
 
 module MUES
@@ -34,8 +34,8 @@ module MUES
 	class ConsoleListener < MUES::Listener ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
-		Rcsid = %q$Id: consolelistener.rb,v 1.5 2003/09/12 04:31:33 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
+		Rcsid = %q$Id: consolelistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
 
 		### Create a new ConsoleListener object.
 		def initialize( name, parameters={} )

@@ -19,8 +19,8 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/Object'
-#   require 'mues/Log'
+#   require 'mues/object'
+#   require 'mues/log'
 # 
 #   logger = MUES::Log.new( 'MUES' )
 #	logger.outputters = Log4r::FileOutputter::new( :filename => 'mylog', :trunc => true )
@@ -41,7 +41,7 @@
 #
 # == Rcsid
 # 
-# $Id: log.rb,v 1.11 2002/10/25 00:24:33 deveiant Exp $
+# $Id: log.rb,v 1.12 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -80,7 +80,7 @@ BEGIN {
 require 'log4r/outputter/emailoutputter'
 require 'log4r/formatter/patternformatter'
 
-require 'mues/Mixins'
+require 'mues/mixins'
 
 module MUES
 
@@ -91,8 +91,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-		Rcsid = %q$Id: log.rb,v 1.11 2002/10/25 00:24:33 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid = %q$Id: log.rb,v 1.12 2003/10/13 04:02:17 deveiant Exp $
 
 
 		### Class methods

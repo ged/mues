@@ -6,11 +6,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/SnoopFilter"
+#   require 'mues/filters/snoopfilter'
 # 
 # == Rcsid
 # 
-# $Id: snoopfilter.rb,v 1.5 2002/10/31 02:18:47 deveiant Exp $
+# $Id: snoopfilter.rb,v 1.6 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -23,10 +23,10 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Mixins"
-require "mues/Object"
-require "mues/filters/IOEventFilter"
-require "mues/filters/EventDelegator"
+require 'mues/mixins'
+require 'mues/object'
+require 'mues/filters/ioeventfilter'
+require 'mues/filters/eventdelegator'
 
 module MUES
 
@@ -36,8 +36,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
-		Rcsid = %q$Id: snoopfilter.rb,v 1.5 2002/10/31 02:18:47 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
+		Rcsid = %q$Id: snoopfilter.rb,v 1.6 2003/10/13 04:02:14 deveiant Exp $
 
 		KeySigil = '@'
 		DefaultSortPosition = 300

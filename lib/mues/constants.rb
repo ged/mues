@@ -6,11 +6,11 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/metaclass/Constants'
+#   require 'mues/metaclass/constants'
 # 
 # == Rcsid
 # 
-# $Id: constants.rb,v 1.4 2002/10/04 05:06:43 deveiant Exp $
+# $Id: constants.rb,v 1.5 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 

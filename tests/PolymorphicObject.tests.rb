@@ -11,7 +11,7 @@ rescue
 end
 
 require "mues"
-require "mues/StorableObject"
+require 'mues/storableobject'
 
 
 ### Test classes

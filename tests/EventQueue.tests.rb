@@ -6,8 +6,8 @@ rescue
 	require '../muestestcase'
 end
 
-require "mues/EventQueue"
-require "mues/Events"
+require 'mues/eventqueue'
+require 'mues/events'
 
 
 module MUES

@@ -6,7 +6,7 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Metaclasses'
+require 'mues/metaclasses'
 
 class InterfaceTestCase < MUES::TestCase
 

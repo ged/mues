@@ -4,7 +4,7 @@
 #
 # == Rcsid
 # 
-#  $Id: CommandShell.tests.rb,v 1.5 2003/09/12 04:34:41 deveiant Exp $
+#  $Id: CommandShell.tests.rb,v 1.6 2003/10/13 04:02:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,8 +24,8 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/filters/CommandShell'
-require 'mues/User'
+require 'mues/filters/commandshell'
+require 'mues/user'
 
 module MUES
 	class CommandShellTestCase < MUES::TestCase

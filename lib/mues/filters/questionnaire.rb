@@ -89,7 +89,7 @@
 # 
 # == Synopsis
 #
-#	require 'mues/filters/Questionnaire'
+#	require 'mues/filters/questionnaire'
 #
 #	steps = [
 #		{
@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.11 2003/10/13 03:22:01 deveiant Exp $
+# $Id: questionnaire.rb,v 1.12 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -131,11 +131,11 @@
 
 require 'sync'
 
-require 'mues/Mixins'
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/Events'
-require 'mues/filters/IOEventFilter'
+require 'mues/mixins'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/events'
+require 'mues/filters/ioeventfilter'
 
 
 module MUES
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.11 2003/10/13 03:22:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.12 2003/10/13 04:02:14 deveiant Exp $
 
 		DefaultSortPosition = 600
 

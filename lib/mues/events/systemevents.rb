@@ -62,11 +62,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/events/SystemEvents"
+#   require 'mues/events/systemevents'
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.15 2003/08/05 17:48:16 deveiant Exp $
+# $Id: systemevents.rb,v 1.16 2003/10/13 04:02:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,9 +79,9 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Object"
-require "mues/Exceptions"
-require "mues/events/Event"
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/events/event'
 
 
 module MUES

@@ -2,8 +2,8 @@
 
 DRIVER = "Bdb"
 
-require "mues/Player"
-require "mues/ObjectStore"
+require 'mues/player'
+require 'mues/objectstore'
 
 p = MUES::Player.new( "localhost" )
 p.name( "Eduardo" )

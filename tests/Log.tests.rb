@@ -6,8 +6,8 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Log'
-require 'mues/Object'
+require 'mues/log'
+require 'mues/object'
 
 module MUES
 

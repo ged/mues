@@ -6,7 +6,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/metaclass/Namespace"
+#   require 'mues/metaclass/namespace'
 #	include MUES
 # 
 #   ns = MetaClass::Namespace.new( "SomeName" )
@@ -16,7 +16,7 @@
 # 
 # == Rcsid
 # 
-# $Id: namespace.rb,v 1.4 2002/10/04 05:06:43 deveiant Exp $
+# $Id: namespace.rb,v 1.5 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,7 +29,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/metaclass/Constants'
+require 'mues/metaclass/constants'
 
 module MUES
 	module Metaclass
@@ -37,8 +37,8 @@ module MUES
 		### A namespace metaclass
 		class Namespace
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
-			Rcsid = %q$Id: namespace.rb,v 1.4 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
+			Rcsid = %q$Id: namespace.rb,v 1.5 2003/10/13 04:02:13 deveiant Exp $
 
 			### Create and return a new namespace object with the specified +name+.
 			def initialize( name )

@@ -6,7 +6,7 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Engine.rb'
+require 'mues/engine.rb'
 
 module MUES
 	class EngineTestCase < MUES::TestCase

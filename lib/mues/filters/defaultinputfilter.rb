@@ -5,11 +5,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/DefaultInputFilter"
+#   require 'mues/filters/defaultinputfilter'
 # 
 # == Rcsid
 # 
-# $Id: defaultinputfilter.rb,v 1.7 2002/08/29 07:20:50 deveiant Exp $
+# $Id: defaultinputfilter.rb,v 1.8 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -23,7 +23,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/filters/InputFilter"
+require 'mues/filters/inputfilter'
 
 module MUES
 
@@ -33,8 +33,8 @@ module MUES
 	class DefaultInputFilter < MUES::InputFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: defaultinputfilter.rb,v 1.7 2002/08/29 07:20:50 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: defaultinputfilter.rb,v 1.8 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 1000
 
 

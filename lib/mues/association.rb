@@ -10,11 +10,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/metaclass/Association"
+#   require 'mues/metaclass/association'
 # 
 # == Rcsid
 #
-# $Id: association.rb,v 1.5 2002/10/04 05:06:43 deveiant Exp $
+# $Id: association.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
 #
 # == Authors
 # 
@@ -27,7 +27,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/metaclass/Constants'
+require 'mues/metaclass/constants'
 
 module MUES
 	module Metaclass
@@ -39,8 +39,8 @@ module MUES
 		class Association
 
 			# Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
-			Rcsid = %q$Id: association.rb,v 1.5 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
+			Rcsid = %q$Id: association.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
 
 			# This is an abstract class, so prevent it from being instantiated
 			private_class_method :new

@@ -9,11 +9,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/ParticipantProxy"
+#   require 'mues/filters/participantproxy'
 # 
 # == Rcsid
 # 
-# $Id: participantproxy.rb,v 1.9 2002/10/31 02:18:31 deveiant Exp $
+# $Id: participantproxy.rb,v 1.10 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -26,13 +26,13 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Mixins"
-require "mues/Exceptions"
-require "mues/Events"
-require "mues/filters/InputFilter"
-require "mues/User"
-require "mues/Role"
-require "mues/Environment"
+require 'mues/mixins'
+require 'mues/exceptions'
+require 'mues/events'
+require 'mues/filters/inputfilter'
+require 'mues/user'
+require 'mues/role'
+require 'mues/environment'
 
 module MUES
 
@@ -43,8 +43,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.9 2002/10/31 02:18:31 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: participantproxy.rb,v 1.10 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 850
 
 

@@ -6,8 +6,8 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Events"
-#	require "mues/Mixins"
+#   require 'mues/events'
+#	require 'mues/mixins'
 # 
 #   include MUES::Event::Handler
 #	include MUES::ServerFunctions
@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.17 2003/05/14 10:46:46 deveiant Exp $
+# $Id: events.rb,v 1.18 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,15 +49,15 @@
 #
 
 
-require "mues/events/Event"
-require "mues/events/PrivilegedEvent"
-require "mues/events/IOEvents"
-require "mues/events/LoginSessionEvents"
-require "mues/events/UserEvents"
-require "mues/events/SystemEvents"
-require "mues/events/EnvironmentEvents"
-require "mues/events/ServiceEvents"
-require "mues/events/CommandEvents"
+require 'mues/events/event'
+require 'mues/events/privilegedevent'
+require 'mues/events/ioevents'
+require 'mues/events/loginsessionevents'
+require 'mues/events/userevents'
+require 'mues/events/systemevents'
+require 'mues/events/environmentevents'
+require 'mues/events/serviceevents'
+require 'mues/events/commandevents'
 
 module MUES
 

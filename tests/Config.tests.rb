@@ -6,7 +6,7 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Config'
+require 'mues/config'
 
 
 module MUES

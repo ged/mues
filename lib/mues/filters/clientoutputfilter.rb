@@ -7,11 +7,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/ClientOutputFilter"
+#   require 'mues/filters/clientoutputfilter'
 # 
 # == Rcsid
 # 
-# $Id: clientoutputfilter.rb,v 1.6 2002/08/29 07:19:59 deveiant Exp $
+# $Id: clientoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,8 +24,8 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Object"
-require "mues/filters/OutputFilter"
+require 'mues/object'
+require 'mues/filters/outputfilter'
 
 module MUES
 
@@ -34,8 +34,8 @@ module MUES
 	### placeholder.</em>
 	class ClientOutputFilter < MUES::OutputFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: clientoutputfilter.rb,v 1.6 2002/08/29 07:19:59 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: clientoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 101
 
 	end # class ClientOutputFilter

@@ -5,14 +5,14 @@
 #
 # == Synopsis
 # 
-#   require 'mues/ObjectStore'
+#   require 'mues/objectstore'
 #
 #   os = MUES::ObjectStore::create( 'foo', [], 'BerkeleyDB' )
 #   ...
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.11 2003/09/12 04:32:46 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.12 2003/10/13 04:02:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,11 +28,11 @@
 require 'bdb'
 require 'sync'
 
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/ObjectStore'
-require 'mues/StorableObject'
-require 'mues/os-extensions/Backend'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/objectstore'
+require 'mues/storableobject'
+require 'mues/os-extensions/backend'
 
 
 module MUES
@@ -44,8 +44,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.11 2003/09/12 04:32:46 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.12 2003/10/13 04:02:12 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,

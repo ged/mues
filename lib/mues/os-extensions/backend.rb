@@ -10,7 +10,7 @@
 #
 # == Synopsis
 # 
-#   require 'mues/os-extensions/Backend'
+#   require 'mues/os-extensions/backend'
 #   class FooBackend < MUES::ObjectStore::Backend
 #       ...
 #   end
@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.9 2002/10/29 20:00:56 deveiant Exp $
+# $Id: backend.rb,v 1.10 2003/10/13 04:02:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -32,9 +32,9 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/ObjectStore'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/objectstore'
 
 module MUES
 	class ObjectStore
@@ -51,8 +51,8 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
-			Rcsid = %q$Id: backend.rb,v 1.9 2002/10/29 20:00:56 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+			Rcsid = %q$Id: backend.rb,v 1.10 2003/10/13 04:02:12 deveiant Exp $
 
 
 			# The directory in which file-based objectstores will be kept,

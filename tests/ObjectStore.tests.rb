@@ -6,7 +6,7 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/ObjectStore'
+require 'mues/objectstore'
 
 class ObjectStoreTestCase < MUES::TestCase
 

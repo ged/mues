@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 
-require "mues/EventQueue"
-require "mues/Events"
+require 'mues/eventqueue'
+require 'mues/events'
 
 class DebugOutputEventHandler < Object
 	def handleEvent( e )

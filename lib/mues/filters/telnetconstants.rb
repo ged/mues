@@ -5,12 +5,12 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/TelnetConstants"
+#   require 'mues/filters/telnetconstants'
 #   include MUES::TelnetConstants
 # 
 # == Rcsid
 # 
-# $Id: telnetconstants.rb,v 1.2 2002/04/01 16:27:29 deveiant Exp $
+# $Id: telnetconstants.rb,v 1.3 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,8 +29,8 @@
 module TelnetConstants
 
 	### Class constants
-	Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-	Rcsid = %q$Id: telnetconstants.rb,v 1.2 2002/04/01 16:27:29 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+	Rcsid = %q$Id: telnetconstants.rb,v 1.3 2003/10/13 04:02:14 deveiant Exp $
 
 	### Codes taken and reformatted from the standard library telnet module.
 	### Author: Wakou Aoyama <wakou@fsinet.or.jp>

@@ -22,14 +22,14 @@
 #
 # == Synopsis
 # 
-#   require 'mues/ObjectStore'
+#   require 'mues/objectstore'
 #
 #   os = MUES::ObjectStore::load( 'foo', [], nil, 'Simple' )
 #	...
 # 
 # == Version
 #
-#  $Id: simplememorymanager.rb,v 1.6 2002/10/13 23:25:54 deveiant Exp $
+#  $Id: simplememorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
 # 
 # == Authors
 #
@@ -51,8 +51,8 @@ module MUES
 		class SimpleMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: simplememorymanager.rb,v 1.6 2002/10/13 23:25:54 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: simplememorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
 
 			### The symbol of the default method to call to "mark" objects.
 			DefaultMarkMethod = :os_gc_mark

@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.8 2003/09/12 04:32:11 deveiant Exp $
+# $Id: socketlistener.rb,v 1.9 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -37,8 +37,8 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Listener'
-require 'mues/filters/SocketOutputFilter'
+require 'mues/listener'
+require 'mues/filters/socketoutputfilter'
 require 'socket'
 
 module MUES
@@ -47,8 +47,8 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.8 2003/09/12 04:32:11 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.9 2003/10/13 04:02:13 deveiant Exp $
 
 		### Create a new SocketListener object with the specified
 		### <tt>name</tt>. This listener understands the following

@@ -6,8 +6,8 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Exceptions'
-require 'mues/os-extensions/Backend'
+require 'mues/exceptions'
+require 'mues/os-extensions/backend'
 
 class ObjectStoreBackendTestCase < MUES::TestCase
 

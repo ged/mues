@@ -8,7 +8,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Metaclasses"
+#   require 'mues/metaclasses'
 #	include MUES
 # 
 #   # Instantiate the interface
@@ -25,7 +25,7 @@
 # 
 # == Rcsid
 # 
-# $Id: interface.rb,v 1.8 2002/10/04 09:56:31 deveiant Exp $
+# $Id: interface.rb,v 1.9 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,11 +38,11 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/Mixins'
+require 'mues/mixins'
 
-require 'mues/metaclass/Constants'
-require 'mues/metaclass/Operation'
-require 'mues/metaclass/Attribute'
+require 'mues/metaclass/constants'
+require 'mues/metaclass/operation'
+require 'mues/metaclass/attribute'
 
 module MUES
 	module Metaclass
@@ -57,8 +57,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			# Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
-			Rcsid = %q$Id: interface.rb,v 1.8 2002/10/04 09:56:31 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+			Rcsid = %q$Id: interface.rb,v 1.9 2003/10/13 04:02:13 deveiant Exp $
 
 
 			# Mix in instance vars, accessors, and methods for attributes and

@@ -6,7 +6,7 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/Object'
+#   require 'mues/object'
 #
 #   module MUES
 #     class MyClass < MUES::Object
@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.10 2003/08/04 02:39:58 deveiant Exp $
+# $Id: object.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,9 +79,9 @@ class Class
 end
 
 
-require 'mues/Exceptions'
-require 'mues/Mixins'
-require 'mues/Log'
+require 'mues/exceptions'
+require 'mues/mixins'
+require 'mues/log'
 
 module MUES
 
@@ -92,8 +92,8 @@ module MUES
 		include Comparable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.10 2003/08/04 02:39:58 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
 
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
@@ -158,8 +158,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.10 2003/08/04 02:39:58 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
 
 
 		#############################################################

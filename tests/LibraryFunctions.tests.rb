@@ -7,7 +7,7 @@ rescue
 end
 
 require 'mues'
-require 'mues/Exceptions'
+require 'mues/exceptions'
 require 'thread'
 
 

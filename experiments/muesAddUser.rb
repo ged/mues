@@ -1,6 +1,6 @@
 #!/usr/bin/ruby -w
 
-require "mues/Player"
+require 'mues/player'
 require "tableadapter/Mysql"
 require "md5"
 

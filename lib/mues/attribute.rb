@@ -5,7 +5,7 @@
 # 
 # == Synopsis
 #
-#	require 'mues/metaclass/Attribute'
+#	require 'mues/metaclass/attribute'
 #	include MUES::Metaclass
 # 
 #   locationAttr = Attribute.new( "location", LocationVector )
@@ -15,7 +15,7 @@
 # 
 # == Rcsid
 # 
-# $Id: attribute.rb,v 1.10 2002/10/04 09:54:49 deveiant Exp $
+# $Id: attribute.rb,v 1.11 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,11 +29,11 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/Mixins'
+require 'mues/mixins'
 
-require 'mues/metaclass/Constants'
-require 'mues/metaclass/AccessorOperation'
-require 'mues/metaclass/MutatorOperation'
+require 'mues/metaclass/constants'
+require 'mues/metaclass/accessoroperation'
+require 'mues/metaclass/mutatoroperation'
 
 module MUES
 	module Metaclass
@@ -47,8 +47,8 @@ module MUES
 			DEFAULT_SCOPE = Scope::INSTANCE
 			DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-			Rcsid = %q$Id: attribute.rb,v 1.10 2002/10/04 09:54:49 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+			Rcsid = %q$Id: attribute.rb,v 1.11 2003/10/13 04:02:13 deveiant Exp $
 
 			### Create and return a new attribute with the specified name. If the
 			### optional <tt>validTypes</tt> argument is specified, the attribute

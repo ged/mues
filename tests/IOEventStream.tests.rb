@@ -8,8 +8,8 @@ end
 
 require "thread"
 
-require "mues/IOEventStream"
-require "mues/IOEventFilters"
+require 'mues/ioeventstream'
+require 'mues/ioeventfilters'
 
 module MUES
 

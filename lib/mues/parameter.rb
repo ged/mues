@@ -9,7 +9,7 @@
 # 
 # == Rcsid
 # 
-# $Id: parameter.rb,v 1.3 2002/10/04 09:56:45 deveiant Exp $
+# $Id: parameter.rb,v 1.4 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -22,8 +22,8 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Mixins'
-require 'mues/metaclass/Constants'
+require 'mues/mixins'
+require 'mues/metaclass/constants'
 
 module MUES
 	module Metaclass
@@ -35,8 +35,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
-			Rcsid = %q$Id: parameter.rb,v 1.3 2002/10/04 09:56:45 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
+			Rcsid = %q$Id: parameter.rb,v 1.4 2003/10/13 04:02:13 deveiant Exp $
 
 			### Create and return new Parameter object with the specified +name+. If
 			### <tt>validTypes</tt> is a Class, a Metaclass::Class, the name of a

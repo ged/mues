@@ -16,11 +16,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/events/LoginSessionEvents"
+#   require 'mues/events/loginsessionevents'
 # 
 # == Rcsid
 # 
-# $Id: loginsessionevents.rb,v 1.11 2002/10/25 03:11:54 deveiant Exp $
+# $Id: loginsessionevents.rb,v 1.12 2003/10/13 04:02:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,9 +36,9 @@
 
 require "weakref"
 
-require "mues/Object"
-require "mues/Exceptions"
-require "mues/events/PrivilegedEvent"
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/events/privilegedevent'
 
 module MUES
 

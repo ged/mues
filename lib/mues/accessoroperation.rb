@@ -17,7 +17,7 @@
 # 
 # == Rcsid
 # 
-# $Id: accessoroperation.rb,v 1.4 2002/10/04 05:06:43 deveiant Exp $
+# $Id: accessoroperation.rb,v 1.5 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -30,7 +30,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/metaclass/Operation'
+require 'mues/metaclass/operation'
 
 module MUES
 	module Metaclass
@@ -40,8 +40,8 @@ module MUES
 		class AccessorOperation < Metaclass::Operation
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
-			Rcsid = %q$Id: accessoroperation.rb,v 1.4 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
+			Rcsid = %q$Id: accessoroperation.rb,v 1.5 2003/10/13 04:02:13 deveiant Exp $
 
 			### Create a new AccessorOperation object.
 			def initialize( name, scope=Operation::DEFAULT_SCOPE, visibility=Operation::DEFAULT_VISIBILITY )

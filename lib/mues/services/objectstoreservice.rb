@@ -5,7 +5,7 @@
 #
 # == Synopsis
 #
-#    require 'mues/services/ObjectStoreService'
+#    require 'mues/services/objectstoreservice'
 #
 #
 #
@@ -20,11 +20,11 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Object"
-require "mues/Service"
-require "mues/Events"
-require "mues/Exceptions"
-require "mues/ObjectStore"
+require 'mues/object'
+require 'mues/service'
+require 'mues/events'
+require 'mues/exceptions'
+require 'mues/objectstore'
 
 module MUES
 
@@ -32,8 +32,8 @@ module MUES
 	class ObjectStoreService < MUES::Service
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid = %q$Id: objectstoreservice.rb,v 1.13 2002/08/02 20:03:42 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid = %q$Id: objectstoreservice.rb,v 1.14 2003/10/13 04:02:11 deveiant Exp $
 
 		# Include the default event dispatcher method
 		include MUES::Event::Handler

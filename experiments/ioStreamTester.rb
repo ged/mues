@@ -1,11 +1,11 @@
 #!/usr/bin/ruby -w
 
-require "mues/ObjectStore"
-require "mues/adapters/Adapter"
-require "mues/IOEventStream"
-require "mues/IOEventFilters"
-require "mues/Events"
-require "mues/Config"
+require 'mues/objectstore'
+require 'mues/adapters/adapter'
+require 'mues/ioeventstream'
+require 'mues/ioeventfilters'
+require 'mues/events'
+require 'mues/config'
 
 def main
 	unless ARGV.length.nonzero?

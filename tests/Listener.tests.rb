@@ -9,7 +9,7 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Listener'
+require 'mues/listener'
 
 class MUES::ListenerTestCase < MUES::TestCase
 

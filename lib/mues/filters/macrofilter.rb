@@ -6,12 +6,12 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/MacroFilter"
+#   require 'mues/filters/macrofilter'
 #   filter = MUES::MacroFilter.new( aUser )
 # 
 # == Rcsid
 # 
-# $Id: macrofilter.rb,v 1.8 2002/09/12 12:37:50 deveiant Exp $
+# $Id: macrofilter.rb,v 1.9 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,10 +25,10 @@
 #
 
 
-require "mues/Object"
-require "mues/Exceptions"
-require "mues/Events"
-require "mues/filters/IOEventFilter"
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/events'
+require 'mues/filters/ioeventfilter'
 
 module MUES
 
@@ -39,8 +39,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.8 2002/09/12 12:37:50 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.9 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 650
 
 		### Class variables

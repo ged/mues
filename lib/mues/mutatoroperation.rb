@@ -6,14 +6,14 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/Metaclasses'
+#   require 'mues/metaclasses'
 #	include MUES
 #
 #	myClass << Metaclass::MutatorOperation.new( 'name' )
 # 
 # == Rcsid
 # 
-# $Id: mutatoroperation.rb,v 1.6 2002/10/04 05:06:43 deveiant Exp $
+# $Id: mutatoroperation.rb,v 1.7 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -26,7 +26,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/metaclass/Operation'
+require 'mues/metaclass/operation'
 
 module MUES
 	module Metaclass
@@ -36,8 +36,8 @@ module MUES
 		class MutatorOperation < Metaclass::Operation
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
-			Rcsid = %q$Id: mutatoroperation.rb,v 1.6 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
+			Rcsid = %q$Id: mutatoroperation.rb,v 1.7 2003/10/13 04:02:13 deveiant Exp $
 
 			### Create a new MutatorOperation object that sets the instance variable
 			### of the name specified by <tt>sym</tt> (a <tt>Symbol</tt> or

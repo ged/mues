@@ -13,14 +13,14 @@
 # 
 # == Synopsis
 # 
-#   require "mues/EventQueue"
+#   require 'mues/eventqueue'
 # 
 #   queue = MUES::EventQueue.new( 2, 10, 1.5, 2 )
 #   queue.enqueue( *events )
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.24 2003/09/12 02:10:18 deveiant Exp $
+# $Id: eventqueue.rb,v 1.25 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,10 +36,10 @@
 require "thread"
 #require "sync"	<-- ConditionVariable doesn't grok these
 
-require "mues/Object"
-require "mues/WorkerThread"
-require "mues/Exceptions"
-require "mues/Events"
+require 'mues/object'
+require 'mues/workerthread'
+require 'mues/exceptions'
+require 'mues/events'
 
 module MUES
 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.24 2003/09/12 02:10:18 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.25 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.25 2003/10/13 04:02:17 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2

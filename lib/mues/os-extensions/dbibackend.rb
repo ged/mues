@@ -5,14 +5,14 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/ObjectStore'
+#   require 'mues/objectstore'
 #
 #   os = MUES::ObjectStore::create( 'foo', [], 'DBI', :backend => 'dbi:mysql:objectstore' )
 #   ...
 # 
 # == Rcsid
 # 
-# $Id: dbibackend.rb,v 1.3 2003/08/04 02:41:46 deveiant Exp $
+# $Id: dbibackend.rb,v 1.4 2003/10/13 04:02:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,11 +28,11 @@
 require 'dbi'
 require 'sync'
 
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/ObjectStore'
-require 'mues/StorableObject'
-require 'mues/os-extensions/Backend'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/objectstore'
+require 'mues/storableobject'
+require 'mues/os-extensions/backend'
 
 
 module MUES
@@ -60,8 +60,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
-			Rcsid = %q$Id: dbibackend.rb,v 1.3 2003/08/04 02:41:46 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
+			Rcsid = %q$Id: dbibackend.rb,v 1.4 2003/10/13 04:02:12 deveiant Exp $
 
 			# The default settings to use when connecting.
 			DefaultConfig = {

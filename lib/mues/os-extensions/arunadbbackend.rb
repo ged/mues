@@ -7,7 +7,7 @@
 #
 # == Synopsis
 #
-#   require 'mues/ObjectStore'
+#   require 'mues/objectstore'
 #	$arunaOs = MUES::ObjectStore::new( 
 #
 # == Authors
@@ -30,8 +30,8 @@ require "a_catalog" #arunadb file
 require "a_table"   #arunadb file
 require "a_index"   #arunadb file
 
-require 'mues/ObjectStore'
-require 'mues/StorableObject'
+require 'mues/objectstore'
+require 'mues/storableobject'
 
 
 module MUES
@@ -41,8 +41,8 @@ module MUES
 	    class ArundaDBBackend < MUES::ObjectStore::Backend
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-			Rcsid = %q$Id: arunadbbackend.rb,v 1.3 2002/09/27 16:21:12 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: arunadbbackend.rb,v 1.4 2003/10/13 04:02:12 deveiant Exp $
 
 
 			include Sync_m

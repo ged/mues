@@ -11,7 +11,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Environment"
+#   require 'mues/environment'
 # 
 #   # Create a new environment object
 #   environment = MUES::Environment::new( "Faerith" )
@@ -57,7 +57,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.19 2003/09/12 04:13:23 deveiant Exp $
+# $Id: environment.rb,v 1.20 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,12 +72,12 @@
 
 require "sync"
 
-require "mues/Object"
-require "mues/Mixins"
-require "mues/Exceptions"
-require "mues/Events"
-require "mues/Role"
-require "mues/IOEventFilters"
+require 'mues/object'
+require 'mues/mixins'
+require 'mues/exceptions'
+require 'mues/events'
+require 'mues/role'
+require 'mues/ioeventfilters'
 
 module MUES
 
@@ -89,8 +89,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
-		Rcsid = %q$Id: environment.rb,v 1.19 2003/09/12 04:13:23 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
+		Rcsid = %q$Id: environment.rb,v 1.20 2003/10/13 04:02:17 deveiant Exp $
 
 
 		### Class variables and methods

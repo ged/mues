@@ -8,7 +8,7 @@
 #
 # == Synopsis
 #
-#   require "mues/StorableObject"
+#   require 'mues/storableobject'
 #
 #	class MyObject < MUES::StorableObject
 #	end
@@ -47,8 +47,8 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.30 2003/06/06 22:34:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.31 2003/10/13 04:02:16 deveiant Exp $
 
 
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -163,8 +163,8 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.30 2003/06/06 22:34:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.31 2003/10/13 04:02:16 deveiant Exp $
 
 
 		# Methods to not remove from the instances of this class

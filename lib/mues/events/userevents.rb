@@ -6,11 +6,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/events/UserEvents"
+#   require 'mues/events/userevents'
 # 
 # == Rcsid
 # 
-# $Id: userevents.rb,v 1.12 2002/09/12 12:19:49 deveiant Exp $
+# $Id: userevents.rb,v 1.13 2003/10/13 04:02:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,10 +24,10 @@
 #
 
 
-require "mues/Object"
-require "mues/Exceptions"
+require 'mues/object'
+require 'mues/exceptions'
 
-require "mues/events/Event"
+require 'mues/events/event'
 
 module MUES
 

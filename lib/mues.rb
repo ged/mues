@@ -16,7 +16,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.27 2003/04/21 03:32:42 deveiant Exp $
+# $Id: mues.rb,v 1.28 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,6 +39,6 @@ unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
 end
 
 require "mues.#{Config::CONFIG['DLEXT']}"
-require 'mues/Engine'
+require 'mues/engine'
 
 

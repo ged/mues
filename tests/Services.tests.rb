@@ -6,8 +6,8 @@ rescue
 	require '../muestestcase'
 end
 
-require 'mues/Service.rb'
-require 'mues/Exceptions.rb'
+require 'mues/service.rb'
+require 'mues/exceptions.rb'
 
 ### Adapter tests
 module MUES

@@ -6,11 +6,11 @@
 # 
 # == Synopsis
 # 
-#   require "mues/filters/DefaultOutputFilter"
+#   require 'mues/filters/defaultoutputfilter'
 # 
 # == Rcsid
 # 
-# $Id: defaultoutputfilter.rb,v 1.6 2002/08/29 07:22:31 deveiant Exp $
+# $Id: defaultoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,7 +24,7 @@
 #
 
 
-require "mues/filters/OutputFilter"
+require 'mues/filters/outputfilter'
 
 module MUES
 
@@ -34,8 +34,8 @@ module MUES
 	class DefaultOutputFilter < MUES::OutputFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.6 2002/08/29 07:22:31 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 0
 
 		### Create and return a new default output filter with a history of the

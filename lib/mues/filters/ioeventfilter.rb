@@ -29,7 +29,7 @@
 #
 # == Synopsis
 # 
-#   require "mues/filters/IOEventFilter"
+#   require 'mues/filters/ioeventfilter'
 # 
 #   class MyFilter < MUES::IOEventFilter
 #     DefaultSortPosition = 550
@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.20 2003/08/04 02:41:16 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.21 2003/10/13 04:02:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -60,10 +60,10 @@
 
 require "observer"
 
-require "mues/Object"
-require "mues/Mixins"
-require "mues/Events"
-require "mues/Exceptions"
+require 'mues/object'
+require 'mues/mixins'
+require 'mues/events'
+require 'mues/exceptions'
 
 
 module MUES
@@ -75,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.20 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.20 2003/08/04 02:41:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.21 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.21 2003/10/13 04:02:14 deveiant Exp $
 		DefaultSortPosition = 500
 
 

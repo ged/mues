@@ -4,7 +4,7 @@
 # interact with Environment objects in the MUES. It is included in the list of
 # files loaded by doing:
 # 
-#   require "mues/Events"
+#   require 'mues/events'
 #
 # The classes defined in this file are:
 #
@@ -23,14 +23,14 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Events"
+#   require 'mues/events'
 # 
 #   LoadEnvironmentEvent.new( environmentNameString )
 #   UnloadEnvironmentEvent.new( environmentNameString )  
 # 
 # == Rcsid
 # 
-# $Id: environmentevents.rb,v 1.9 2002/09/12 12:15:50 deveiant Exp $
+# $Id: environmentevents.rb,v 1.10 2003/10/13 04:02:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,10 +43,10 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Object"
-require "mues/Exceptions"
+require 'mues/object'
+require 'mues/exceptions'
 
-require "mues/events/PrivilegedEvent"
+require 'mues/events/privilegedevent'
 
 module MUES
 

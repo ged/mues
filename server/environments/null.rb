@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: null.rb,v 1.10 2002/10/31 08:10:33 deveiant Exp $
+# $Id: null.rb,v 1.11 2003/10/13 04:02:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,14 +48,14 @@
 require "sync"
 
 require "mues"
-require "mues/Mixins"
-require "mues/Exceptions"
-require "mues/Events"
-require "mues/Environment"
-require "mues/Role"
-require "mues/ObjectStore"
-require "mues/IOEventFilters"
-require "mues/ObjectSpaceVisitor"
+require 'mues/mixins'
+require 'mues/exceptions'
+require 'mues/events'
+require 'mues/environment'
+require 'mues/role'
+require 'mues/objectstore'
+require 'mues/ioeventfilters'
+require 'mues/objectspacevisitor'
 
 module MUES
 
@@ -65,8 +65,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.10 2002/10/31 08:10:33 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.11 2003/10/13 04:02:10 deveiant Exp $
 
 		DefaultDescription = %Q{
 		This is a barebones environment used in testing. It doesn't really contain any

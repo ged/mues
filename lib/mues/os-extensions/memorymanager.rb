@@ -5,7 +5,7 @@
 #
 # == Synopsis
 # 
-#   require 'mues/os-extensions/MemoryManager'
+#   require 'mues/os-extensions/memorymanager'
 #
 #   class MyMemoryManager < MUES::ObjectStore::MemoryManager
 #       ...
@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.8 2002/10/29 20:00:26 deveiant Exp $
+# $Id: memorymanager.rb,v 1.9 2003/10/13 04:02:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,9 +29,9 @@
 require 'hashslice'
 require 'sync'
 
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/ObjectSpaceVisitor'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/objectspacevisitor'
 
 module MUES
 	class ObjectStore
@@ -45,8 +45,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
-			Rcsid = %q$Id: memorymanager.rb,v 1.8 2002/10/29 20:00:26 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+			Rcsid = %q$Id: memorymanager.rb,v 1.9 2003/10/13 04:02:12 deveiant Exp $
 
 
 			### Class methods

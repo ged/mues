@@ -5,7 +5,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/Exceptions"
+#   require 'mues/exceptions'
 #   raise MUES::Exception, "Something went wrong."
 # 
 # == Exception Classes
@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.18 2003/08/04 02:37:50 deveiant Exp $
+# $Id: exceptions.rb,v 1.19 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 

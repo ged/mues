@@ -7,14 +7,14 @@
 # 
 # == Synopsis
 # 
-#   require "mues/ClassLibrary"
+#   require 'mues/classlibrary'
 # 
 #	lib = MUES::ClassLibrary::new( "FaerieMUD" )
 #	obj = lib.newObject( "MyClass" )
 #
 # == Rcsid
 # 
-# $Id: classlibrary.rb,v 1.11 2003/08/10 14:36:54 deveiant Exp $
+# $Id: classlibrary.rb,v 1.12 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,10 +28,10 @@
 #
 
 require "mues"
-require "mues/Object"
-require "mues/Events"
-require "mues/Exceptions"
-require "mues/Metaclasses"
+require 'mues/object'
+require 'mues/events'
+require 'mues/exceptions'
+require 'mues/metaclasses'
 
 module MUES
 
@@ -42,8 +42,8 @@ module MUES
 	class ClassLibrary < Object
 		include MUES::TypeCheckFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.11 2003/08/10 14:36:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.12 2003/10/13 04:02:17 deveiant Exp $
 
 		### Return a new ClassLibrary object with the specified name.
 		def initialize( libraryName="unnamed" )

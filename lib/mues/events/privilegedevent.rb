@@ -7,7 +7,7 @@
 # 
 # == Synopsis
 # 
-#   require 'mues/events/PriviledgedEvent'
+#   require 'mues/events/priviledgedevent'
 #
 #	class MyPrivilegedEvent < MUES::PrivilegedEvent
 #		...
@@ -15,7 +15,7 @@
 # 
 # == Rcsid
 # 
-# $Id: privilegedevent.rb,v 1.1 2002/09/12 12:17:07 deveiant Exp $
+# $Id: privilegedevent.rb,v 1.2 2003/10/13 04:02:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,9 +28,9 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Mixins'
-require 'mues/Object'
-require 'mues/events/Event'
+require 'mues/mixins'
+require 'mues/object'
+require 'mues/events/event'
 
 module MUES
 
@@ -42,8 +42,8 @@ module MUES
 		include MUES::SafeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: privilegedevent.rb,v 1.1 2002/09/12 12:17:07 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: privilegedevent.rb,v 1.2 2003/10/13 04:02:15 deveiant Exp $
 
 		### Create a new PrivilegedEvent object.
 		def initialize( priority=MUES::Event::DefaultPriority )

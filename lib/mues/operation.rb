@@ -5,8 +5,8 @@
 # 
 # == Synopsis
 # 
-#   require "mues/metaclass/Operation"
-#   require "mues/metaclass/Parameter"
+#   require 'mues/metaclass/operation'
+#   require 'mues/metaclass/parameter'
 #	include MUES
 # 
 #   op = Metaclass::Operation.new( "initialize", <<-'EOM' )
@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: operation.rb,v 1.7 2002/10/04 05:06:43 deveiant Exp $
+# $Id: operation.rb,v 1.8 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,10 +38,10 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/Mixins'
+require 'mues/mixins'
 
-require 'mues/metaclass/Constants'
-require 'mues/metaclass/Parameter'
+require 'mues/metaclass/constants'
+require 'mues/metaclass/parameter'
 
 module MUES
 	module Metaclass
@@ -84,8 +84,8 @@ module MUES
 
 			COMMENT_WRAP_WIDTH		= 77
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
-			Rcsid = %q$Id: operation.rb,v 1.7 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
+			Rcsid = %q$Id: operation.rb,v 1.8 2003/10/13 04:02:13 deveiant Exp $
 
 
 			### Return a new Operation with the specified name. If the code argument

@@ -37,7 +37,7 @@
 #
 # == Synopsis
 # 
-#   require "mues/Mixins"
+#   require 'mues/mixins'
 #
 #   class MyClass
 #   include MUES::AbstractClass, MUES::FactoryMethods, MUES::Debuggable,
@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.21 2003/09/12 02:19:37 deveiant Exp $
+# $Id: mixins.rb,v 1.22 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -60,7 +60,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Exceptions'
+require 'mues/exceptions'
 
 module MUES
 
@@ -140,7 +140,7 @@ module MUES
 		### Include callback that ensures 'mues/Log' is required before adding
 		### methods which depend on it.
 		def self::included( mod )
-			require "mues/Log"
+			require 'mues/log'
 			super
 		end
 

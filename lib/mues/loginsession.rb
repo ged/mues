@@ -12,9 +12,9 @@
 #
 # == Synopsis
 # 
-#   require "mues/LoginSession"
-#   require "mues/IOEventStream"
-#   require "mues/IOEventFilters"
+#   require 'mues/loginsession'
+#   require 'mues/ioeventstream'
+#   require 'mues/ioeventfilters'
 # 
 #   # ... later that night, in a SocketConnectEvent handler ...
 # 
@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.19 2002/10/31 02:16:31 deveiant Exp $
+# $Id: loginsession.rb,v 1.20 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -45,11 +45,11 @@
 require "timeout"
 require "thread"
 
-require "mues/Object"
-require "mues/Config"
-require "mues/Exceptions"
-require "mues/Events"
-require "mues/IOEventFilters"
+require 'mues/object'
+require 'mues/config'
+require 'mues/exceptions'
+require 'mues/events'
+require 'mues/ioeventfilters'
 
 module MUES
 
@@ -61,8 +61,8 @@ module MUES
 			MUES::FactoryMethods,
 			MUES::UtilityFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
-		Rcsid = %q$Id: loginsession.rb,v 1.19 2002/10/31 02:16:31 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
+		Rcsid = %q$Id: loginsession.rb,v 1.20 2003/10/13 04:02:16 deveiant Exp $
 
 		# Pattern for untainting user input for username and password
 		LoginUntaintPattern		= %r{([a-z]\w+)}

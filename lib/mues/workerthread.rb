@@ -6,7 +6,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/WorkerThread"
+#   require 'mues/workerthread'
 #
 #	thr = WorkerThread.new( args ) {|args| doSomething() }
 #
@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: workerthread.rb,v 1.12 2002/10/29 19:05:04 deveiant Exp $
+# $Id: workerthread.rb,v 1.13 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -27,8 +27,8 @@
 
 
 require "thread"
-require "mues/Object"
-require "mues/Mixins"
+require 'mues/object'
+require 'mues/mixins'
 
 
 ### Add a description attribute to the thread class for diagnostics
@@ -53,8 +53,8 @@ module MUES
 	class WorkerThread < Thread ; implements MUES::Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
-		Rcsid	= %q$Id: workerthread.rb,v 1.12 2002/10/29 19:05:04 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
+		Rcsid	= %q$Id: workerthread.rb,v 1.13 2003/10/13 04:02:16 deveiant Exp $
 
 
 		### Create and return the thread with the given arguments.
@@ -86,8 +86,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
-		Rcsid	= %q$Id: workerthread.rb,v 1.12 2002/10/29 19:05:04 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
+		Rcsid	= %q$Id: workerthread.rb,v 1.13 2003/10/13 04:02:16 deveiant Exp $
 
 		### Add a thread (a MUES::WorkerThread object) to the group. Adding any
 		### other kind of thread will result in an exception being raised.

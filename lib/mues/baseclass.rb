@@ -11,14 +11,14 @@
 # 
 # == Synopsis
 #
-#	require 'mues/Metaclasses'
+#	require 'mues/metaclasses'
 #	include MUES
 # 
 #   myClass = Metaclass::Class::new( "MyClass", Metaclass::BaseClass.instance )
 # 
 # == Rcsid
 #
-#  $Id: baseclass.rb,v 1.2 2002/10/04 05:06:43 deveiant Exp $
+#  $Id: baseclass.rb,v 1.3 2003/10/13 04:02:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,11 +31,11 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/Mixins'
-require 'mues/Object'
+require 'mues/mixins'
+require 'mues/object'
 
-require 'mues/metaclass/Constants'
-require 'mues/metaclass/Class'
+require 'mues/metaclass/constants'
+require 'mues/metaclass/class'
 
 module MUES
 	module Metaclass
@@ -47,8 +47,8 @@ module MUES
 		class BaseClass < Metaclass::Class
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
-			Rcsid = %q$Id: baseclass.rb,v 1.2 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
+			Rcsid = %q$Id: baseclass.rb,v 1.3 2003/10/13 04:02:13 deveiant Exp $
 
 			# Make the constructor private, as this is a singleton
 			private_class_method :new

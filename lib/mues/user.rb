@@ -6,7 +6,7 @@
 # 
 # == Synopsis
 # 
-#   require "mues/User"
+#   require 'mues/user'
 # 
 # == To Do
 #
@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.31 2002/10/28 00:06:17 deveiant Exp $
+# $Id: user.rb,v 1.32 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -34,12 +34,12 @@
 require "date"
 require "digest/md5"
 
-require "mues/Object"
-require "mues/StorableObject"
-require "mues/Events"
-require "mues/Exceptions"
-require "mues/filters/MacroFilter"
-require "mues/filters/Questionnaire"
+require 'mues/object'
+require 'mues/storableobject'
+require 'mues/events'
+require 'mues/exceptions'
+require 'mues/filters/macrofilter'
+require 'mues/filters/questionnaire'
 
 module MUES
 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.31 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.31 2002/10/28 00:06:17 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.32 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.32 2003/10/13 04:02:16 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:

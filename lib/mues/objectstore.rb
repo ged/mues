@@ -21,8 +21,8 @@
 #
 # == Synopsis
 #
-#   require "mues/ObjectStore"
-#   require "mues/StorableObject"
+#   require 'mues/objectstore'
+#   require 'mues/storableobject'
 #
 #   $store = MUES::ObjectStore::create(
 #		:backend	=> "BerkeleyDB",
@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.39 2003/09/12 02:20:21 deveiant Exp $
+#  $Id: objectstore.rb,v 1.40 2003/10/13 04:02:16 deveiant Exp $
 # 
 # == Authors
 #
@@ -67,10 +67,10 @@
 require 'forwardable'
 require 'sync'
 
-require 'mues/Object'
-require 'mues/Exceptions'
-require 'mues/StorableObject'
-require 'mues/ObjectSpaceVisitor'
+require 'mues/object'
+require 'mues/exceptions'
+require 'mues/storableobject'
+require 'mues/objectspacevisitor'
 
 module MUES
 
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.39 $} )[1]
-		Rcsid = %q$Id: objectstore.rb,v 1.39 2003/09/12 02:20:21 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.40 $} )[1]
+		Rcsid = %q$Id: objectstore.rb,v 1.40 2003/10/13 04:02:16 deveiant Exp $
 
 
 		# The default MemoryManager class
@@ -459,5 +459,5 @@ module MUES
 end # module MUES
 
 
-require 'mues/os-extensions/Backend'
-require 'mues/os-extensions/MemoryManager'
+require 'mues/os-extensions/backend'
+require 'mues/os-extensions/memorymanager'

@@ -28,8 +28,8 @@
 # 
 # == Synopsis
 #
-#	require "mues/ReactorProxy"
-#	require "mues/IOEventFilters"
+#	require 'mues/reactorproxy'
+#	require 'mues/ioeventfilters'
 # 
 #   class MySocketListener < MUES::Listener
 #
@@ -47,7 +47,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.8 2003/09/12 02:12:33 deveiant Exp $
+# $Id: listener.rb,v 1.9 2003/10/13 04:02:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -62,8 +62,8 @@
 
 require 'rbconfig'
 
-require 'mues/Object'
-require 'mues/ReactorProxy'
+require 'mues/object'
+require 'mues/reactorproxy'
 
 
 module MUES
@@ -74,10 +74,10 @@ module MUES
 		include MUES::FactoryMethods
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
 
 		# CVS id tag 
-		Rcsid = %q$Id: listener.rb,v 1.8 2003/09/12 02:12:33 deveiant Exp $
+		Rcsid = %q$Id: listener.rb,v 1.9 2003/10/13 04:02:17 deveiant Exp $
 
 		#############################################################
 		###	C L A S S   M E T H O D S
