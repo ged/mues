@@ -2,20 +2,20 @@
 ###########################################################################
 =begin
 
-=PlayerEvents.rb
+=UserEvents.rb
 
 == Name
 
-PlayerEvents - A collection of player event classes
+UserEvents - A collection of user event classes
 
 == Synopsis
 
-  require "mues/events/PlayerEvents"
+  require "mues/events/UserEvents"
 
 == Description
 
-A collection of player event classes for the MUES Engine. Player events are
-events which facilitate the interaction between player objects and the Engine.
+A collection of user event classes for the MUES Engine. User events are
+events which facilitate the interaction between user objects and the Engine.
 
 == Author
 
@@ -41,16 +41,16 @@ module MUES
 	###	A B S T R A C T   E V E N T   C L A S S E S
 	###########################################################################
 
-	### (ABSTRACT) CLASS: PlayerEvent < Event
-	class PlayerEvent < Event ; implements AbstractClass
-		autoload	:Player, "mues/Player"
-		attr_reader :player
+	### (ABSTRACT) CLASS: UserEvent < Event
+	class UserEvent < Event ; implements AbstractClass
+		autoload	:User, "mues/User"
+		attr_reader :user
 
-		### METHOD: new( aPlayer )
-		### Returns a new player event with the specified target player
-		def initialize( aPlayer )
-			checkType( aPlayer, Player )
-			@player = aPlayer
+		### METHOD: new( aUser )
+		### Returns a new user event with the specified target user
+		def initialize( aUser )
+			checkType( aUser, User )
+			@user = aUser
 			super()
 		end
 
@@ -59,44 +59,44 @@ module MUES
 		def to_s
 			return "%s: %s" % [
 				super(),
-				@player.to_s
+				@user.to_s
 			]
 		end
 	end
 
 
-	###########################################################################
+	#######################################################
 	###	C O N C R E T E   E V E N T   C L A S S E S
-	###########################################################################
+	#######################################################
 
-	### CLASS: PlayerLoginEvent < PlayerEvent
-	class PlayerLoginEvent < PlayerEvent
+	### CLASS: UserLoginEvent < UserEvent
+	class UserLoginEvent < UserEvent
 
 		autoload	'MUES::IOEventStream', "mues/IOEventStream"
 		attr_reader	:stream
 
-		### METHOD: new( aPlayer, anIOEventStream )
-		### Returns a new PlayerLoginEvent with the specified target player and
+		### METHOD: new( aUser, anIOEventStream )
+		### Returns a new UserLoginEvent with the specified target user and
 		### IOEventStream
-		def initialize( aPlayer, anIOEventStream )
-			super( aPlayer )
+		def initialize( aUser, anIOEventStream )
+			super( aUser )
 
 			checkType( anIOEventStream, MUES::IOEventStream )
 			@stream = anIOEventStream
 		end
 	end
 
-	### CLASS: PlayerIdleTimeoutEvent < PlayerEvent
-	class PlayerIdleTimeoutEvent < PlayerEvent; end
+	### CLASS: UserIdleTimeoutEvent < UserEvent
+	class UserIdleTimeoutEvent < UserEvent; end
 
-	### CLASS: PlayerDisconnectEvent < PlayerEvent
-	class PlayerDisconnectEvent < PlayerEvent; end
+	### CLASS: UserDisconnectEvent < UserEvent
+	class UserDisconnectEvent < UserEvent; end
 
-	### CLASS: PlayerLogoutEvent < PlayerEvent
-	class PlayerLogoutEvent < PlayerEvent; end
+	### CLASS: UserLogoutEvent < UserEvent
+	class UserLogoutEvent < UserEvent; end
 
-	### CLASS: PlayerSaveEvent < PlayerEvent
-	class PlayerSaveEvent < PlayerEvent; end
+	### CLASS: UserSaveEvent < UserEvent
+	class UserSaveEvent < UserEvent; end
 
 end # module MUES
 
