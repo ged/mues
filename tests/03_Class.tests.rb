@@ -25,7 +25,7 @@ class ClassTestCase < MUES::TestCase
 		assert_instance_of Metaclass::Class, obj
 
 		# 2-arg, illegal second arg
-		assert_raises( ArgumentError ) { Metaclass::Class::new("Tester", "notAClass") }
+		assert_raises( TypeError ) { Metaclass::Class::new("Tester", "notAClass") }
 
 		# 2-arg, legal second arg
 		parentClass = Metaclass::Class::new( "Super" )
