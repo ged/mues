@@ -92,10 +92,15 @@
 # 
 #   An error class used to indicate an error while parsing. Inherits from
 #   (({SyntaxError})).
+#
+# == To Do
+#
+# * Update the list of exception classes above to match what's actually here
+#   after it gels a bit more.
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.14 2002/08/01 01:09:28 deveiant Exp $
+# $Id: exceptions.rb,v 1.15 2002/09/12 11:35:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -158,6 +163,7 @@ module MUES
 
 	# Environment exceptions
 	def_exception :EnvironmentError,		"General environment error",					Exception
+	def_exception :EnvironmentLoadError,	"Environment load error",						EnvironmentError
 	def_exception :EnvironmentNameConflictError, "Environment name conflict error",			EnvironmentError
 	def_exception :EnvironmentRoleError,	"Environment role error",						EnvironmentError
 
@@ -170,8 +176,13 @@ module MUES
 	def_exception :MacroError,				"Macro error",									Exception
 
     # Exception class for ObjectStore errors
-    def_exception :ObjectStoreError,		"Objectstore internal error",					Exception
+    def_exception :ObjectStoreError,		"ObjectStore internal error",					Exception
 	def_exception :BackendError,			"ObjectStore Backend Error",					ObjectStoreError
+	def_exception :IndexError,				"ObjectStore index error",						ObjectStoreError
+
+	### Exception class for the CommandShell/Command objects
+	def_exception :CommandNameConflictError, "Command name conflict",						Exception
+	def_exception :CommandDefinitionError,	"Malformed command definition",					Exception
 
 	
 	### Event exceptions
