@@ -84,6 +84,32 @@ module MUES #:nodoc:
 		end
 
 
+		### Create and return a copy of the receiving object with its instance
+		### variables preserved.
+		def copy
+			ivarHash = {}
+
+			# Make a hash of the ivars => values since they're magically
+			# destroyed for us after the .dup.
+			self.instance_variables.each {|ivarName|
+				ivarHash[ivarName] = eval(ivarName)
+			}
+			
+			duplicate = self.dup
+
+			# Now eval each instance variable into the copy and back into
+			# ourselves.
+			ivarHash.each {|name,val|
+				$stderr.puts "Copying ivar %s = %s" %
+					[ name, val.inspect ]
+				duplicate.instance_eval("#{name} = val")
+				eval("#{name} = val")
+			}
+
+			return duplicate
+		end
+
+
 		### Callback method for prepping the object for storage in an
 		### ObjectStore. Should return a copy of itself suitable for
 		### serialization (eg., with references flattened, un-serializable data
@@ -93,9 +119,9 @@ module MUES #:nodoc:
 		### MUES::ObjectStore it is about to be stored in is given as the
 		### <tt>objStore</tt> argument.
 		def lull( objStore )
-			copy = Marshal::load( Marshal::dump(self) )
-			copy.lull!( objStore )
-			return copy
+			duplicate = self.copy
+			duplicate.lull!( objStore )
+			return duplicate
 		end
 
 
