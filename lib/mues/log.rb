@@ -1,9 +1,8 @@
 #!/usr/bin/ruby -w
 ###########################################################################
-
 =begin
 
-= Log
+= Log.rb
 == Name
 
 Log.rb - A log handle class for the MUES server
@@ -14,17 +13,54 @@ Log.rb - A log handle class for the MUES server
 
   log = Log.new( "/tmp/mud.log", "debug" )
   log.debug( "This log message will show up." )
-  log.level( "info" )
+  log.level = "info"
   log.debug( "This one won't." )
   log.info( "But this one will." )
   log.close
 
 == Description
 
-Log is a log handle class. Creating one will open a filehandle to the
-specified file, and any message sent to it at a level at or above the specified
-logging level will be appended to the file, along with a timestamp and an
-annotation of the level.
+Log is a log handle class. Creating one will open a filehandle to the specified
+file, and any message sent to it at a level at or above the specified logging
+level will be appended to the file, along with a timestamp and an annotation of
+the level.
+
+== Classes
+=== MUES::Log
+
+==== Public Methods
+
+--- MUES::Log#close
+
+    Close the log file.
+
+--- MUES::Log#closed?
+
+    Return true if the log^s filehandle is closed.
+
+--- MUES::Log#initialize( filename, level )
+
+    Open the log to the specified file name
+
+--- MUES::Log#level
+
+    Return the current log level
+
+--- MUES::Log#level=( levelName )
+
+    Set the log level to ((|levelName|)), which must be one of
+    (({debug})), (({info})), (({notice})), (({error})), (({crit})), or
+    (({fatal})).
+
+--- MUES::Log#method_missing( aSymbol, *args )
+
+    Generate log level write methods as they are used.
+
+==== Protected Methods
+
+--- MUES::Log#_write( *args )
+
+    Write a message composed of a timestamp and the joined stringified *args to the logfile
 
 == Author
 
@@ -37,7 +73,6 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-
 ###########################################################################
 
 require "tempfile"
@@ -81,37 +116,32 @@ module MUES
 		end
 
 
-		### METHOD: level( levelName )
-		### Set the log level to the given level. Log messages below the given level
-		###	will not be added to the log
-		def level( lvl=nil )
-
-			# If we got an arg, check to make sure we know about the requested level,
-			#	setting it if we do, and throwing an exception if we don't
-			unless lvl.nil?
-				raise ArgumentError "No such level '#{lvl}'" unless @@Levels.has_key?( lvl )
-				@level = @@Levels[ lvl ]
-			end
-
+		### METHOD: level
+		### Return the current log level
+		def level
 			return @level
 		end
 
 
 		### METHOD: level=( levelName )
-		### Set the log level
+		### Set the log level to ((|levelName|)), which must be one of
+		### (({debug})), ({{info})), (({notice})), (({error})), (({crit})), or
+		### (({fatal})).
 		def level=( lvl )
-			level( lvl )
+			raise ArgumentError "No such level '#{lvl}'" unless @@Levels.has_key?( lvl )
+			@level = @@Levels[ lvl ]
 		end
 
 
 		### METHOD: close
-		### Close the log file
+		### Close the log file.
 		def close
 			@fh.close
 		end
 
 
 		### METHOD: closed?
+		### Return true if the log's filehandle is closed.
 		def closed?
 			@fh.closed?
 		end
