@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.23 2002/10/12 14:01:54 stillflame Exp $
+# $Id: user.rb,v 1.24 2002/10/12 15:28:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.23 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.23 2002/10/12 14:01:54 stillflame Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.24 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.24 2002/10/12 15:28:44 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -87,18 +87,14 @@ module MUES
 			ADMIN		= 3		# Unrestricted access
 
 			Name = %w{User Creator Implementor Admin}
+			Default = Name.first
+			
 			Map = begin
 				hash = {}
 				Name.each_with_index {|name,i| hash[name.downcase] = i}
 				hash
 			end
 
-			# Pick out the name of the lowest-privileged account type, which
-			# becomes the default.
-			Default = Map.inject {|akvp,bkvp|
-				akvp[1] < bkvp[1] ? akvp : bkvp
-			}[0]
-			
 		end
 		AccountType.freeze
 
@@ -354,9 +350,8 @@ module MUES
 			# Set the stream, send the MOTD if it was specified, and flag the
 			# object as activated
 			@ioEventStream = stream
+			@ioEventStream.addEvents( MUES::OutputEvent::new("\n\n" + motd.strip + "\n\n") ) if motd
 			@ioEventStream.unpause
-			@ioEventStream.
-				addEvents( MUES::OutputEvent::new("\n\n" + motd.strip + "\n\n") ) if motd
 
 			@activated = true
 
