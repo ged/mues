@@ -41,10 +41,7 @@ require "mues/Exceptions"
 require "mues/IOEventFilters"
 
 module MUES
-	class Player < Object
-
-		include Debuggable
-		include Event::Handler
+	class Player < Object ; implements Debuggable, Event::Handler
 
 		### Class constants
 		module Role

@@ -42,10 +42,7 @@ require "mues/Debugging"
 module MUES
 
 	### (ABSTRACT BASE) CLASS: Event < Object
-	class Event < Object
-
-		include Debuggable
-		include AbstractClass
+	class Event < Object ; implements Debuggable, AbstractClass
 
 		### MODULE: Event::Handler
 		#  A useful default event handler module. Mixes in a handleEvent() method

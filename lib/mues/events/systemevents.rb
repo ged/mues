@@ -45,15 +45,12 @@ module MUES
 	###########################################################################
 
 	### (ABSTRACT) CLASS: SystemEvent < Event
-	class SystemEvent < Event
-		include AbstractClass
+	class SystemEvent < Event ; implements AbstractClass
 	end
 
 
 	### (ABSTRACT) CLASS: SocketEvent < SystemEvent
-	class SocketEvent < SystemEvent
-		
-		include			AbstractClass
+	class SocketEvent < SystemEvent ; implements AbstractClass
 		attr_accessor	:socket
 
 		### METHOD: initialize( aSocket )

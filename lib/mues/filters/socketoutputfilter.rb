@@ -39,8 +39,7 @@ require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
 
 module MUES
-	class SocketOutputFilter < IOEventFilter
-		include Debuggable
+	class SocketOutputFilter < IOEventFilter ; implements Debuggable
 
 		# State constants
 		module State
@@ -49,8 +48,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.3 2001/05/15 02:14:36 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.4 2001/06/25 14:11:07 deveiant Exp $
 		DefaultSortPosition = 300
 
 		NULL = "\000"

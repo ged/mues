@@ -43,9 +43,7 @@ module MUES
 	###########################################################################
 
 	### (ABSTRACT) CLASS: PlayerEvent < Event
-	class PlayerEvent < Event
-
-		include		AbstractClass
+	class PlayerEvent < Event ; implements AbstractClass
 		autoload	:Player, "mues/Player"
 		attr_reader :player
 

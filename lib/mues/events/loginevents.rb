@@ -43,8 +43,7 @@ module MUES
 	###########################################################################
 
 	### (ABSTRACT) CLASS: LoginSessionEvent < Event
-	class LoginSessionEvent < Event
-		include		AbstractClass
+	class LoginSessionEvent < Event ; implements AbstractClass
 		autoload	:LoginSession, "mues/LoginSession"
 		attr_reader	:session
 

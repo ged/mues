@@ -46,12 +46,11 @@ require "mues/Debugging"
 module MUES
 
 	### Thread work group class
-	class EventQueue < Object
-		include Debuggable
+	class EventQueue < Object ; implements Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.4 2001/05/14 11:39:12 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.5 2001/06/25 14:03:28 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2

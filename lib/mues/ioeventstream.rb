@@ -80,16 +80,19 @@ require "mues/Debugging"
 module MUES
 
 	### CLASS: IOEventStream < Object
-	class IOEventStream < Object
+	class IOEventStream < Object ; implements Debuggable
+
+		### Set up some state constants
 		module State
 			SHUTDOWN	= 0
 			RUNNING		= 1
 		end
+		include State
 
-		include Debuggable
+		# Import the default event handler dispatch method
 		include Event::Handler
-		include IOEventStream::State
 
+		### Class variables
 		@@IoLoopInterval = 0.1
 
 		### Accessors

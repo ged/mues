@@ -42,9 +42,7 @@ module MUES
 	###########################################################################
 
 	### (ABSTRACT) CLASS: IOEvent < Event
-	class IOEvent < Event
-
-		include			AbstractClass
+	class IOEvent < Event ; implements AbstractClass
 		attr_accessor	:data
 
 		def initialize( *args )
@@ -58,8 +56,7 @@ module MUES
 	end
 
 	### (ABSTRACT) CLASS: ControlIOModeEvent < IOEvent
-	class ControlIOModeEvent < IOEvent
-		include AbstractClass
+	class ControlIOModeEvent < IOEvent ; implements AbstractClass
 
 		### :WORK: Control modes/commands (eg., NO_ECHO_MODE, LINE_MODE,
 		### CHAR_MODE, etc.)

@@ -60,9 +60,7 @@ require "mues/Namespace"
 require "mues/Debugging"
 
 module MUES
-	class WorkerThread < Thread
-
-		include Debuggable
+	class WorkerThread < Thread ; implements Debuggable
 
 		### METHOD: new( *args )
 		### Initialize the thread with the given arguments.

@@ -36,10 +36,10 @@ http://language.perl.com/misc/Artistic.html)
 require "mues/Namespace"
 
 module MUES
-	class World < Object
+	class World < Object ; implements AbstractClass
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.4 2001/06/25 14:09:56 deveiant Exp $
 
 
 	end

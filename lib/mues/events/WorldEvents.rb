@@ -42,8 +42,7 @@ module MUES
 	###########################################################################
 
 	### (ABSTRACT) CLASS: WorldEvent < Event
-	class WorldEvent < Event
-		include AbstractClass
+	class WorldEvent < Event ; implements AbstractClass
 	end
 
 

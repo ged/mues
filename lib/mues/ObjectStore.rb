@@ -57,14 +57,13 @@ module MUES
 	class UnknownAdapterError < Exception; end
 
 	### Object store class
-	class ObjectStore < Object
+	class ObjectStore < Object ; implements Debuggable
 
 		include Event::Handler
-		include Debuggable
 
 		### Class Constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: ObjectStore.rb,v 1.5 2001/05/14 12:05:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: ObjectStore.rb,v 1.6 2001/06/25 14:09:26 deveiant Exp $
 
 		AdapterSubdir = 'mues/adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/
@@ -195,7 +194,9 @@ module MUES
 		### Store the given player in the datastore, returning true on success
 		def storePlayer( aPlayer )
 			checkType( aPlayer, MUES::Player )
+			_debugMsg( 2, "Storing player: #{aPlayer.to_s}" )
 			newDbInfo = @dbAdapter.storePlayerData( aPlayer.username, aPlayer.dbInfo )
+			_debugMsg( 2, "Done storing player: #{aPlayer.to_s}" )
 			aPlayer.dbInfo = newDbInfo
 
 			return true

@@ -113,13 +113,12 @@ module MUES
 		EOL  = CR + LF
 	end
 
-	class TelnetOutputFilter < SocketOutputFilter
-		include Debuggable
+	class TelnetOutputFilter < SocketOutputFilter ; implements Debuggable
 		include TelnetConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.1 2001/05/14 12:32:17 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.2 2001/06/25 14:11:12 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( aSocket )
 		### Initialize the output filter

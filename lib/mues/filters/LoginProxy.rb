@@ -37,12 +37,11 @@ require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
 
 module MUES
-	class LoginProxy < IOEventFilter
-		include Debuggable
+	class LoginProxy < IOEventFilter ; implements Debuggable
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: LoginProxy.rb,v 1.2 2001/05/14 12:29:00 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: LoginProxy.rb,v 1.3 2001/06/25 14:11:01 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### (PROTECTED) METHOD: initialize( session )
@@ -70,7 +69,6 @@ module MUES
 
 
 		### METHOD: handleOutputEvents( *events )
-
 		### Handle all output events by ignoring their content and returning
 		### only those events that we have cached
 		def handleOutputEvents( *events )

@@ -50,15 +50,11 @@ require "mues/Exceptions"
 
 
 module MUES
-	class IOEventFilter < Object
-		include Observable
-		include Comparable
-		include Debuggable
-		include AbstractClass
+	class IOEventFilter < Object ; implements Observable, Comparable, Debuggable, AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.4 2001/05/22 04:40:17 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.5 2001/06/25 14:10:55 deveiant Exp $
 		DefaultSortPosition = 500
 
 		### Class methods
@@ -89,6 +85,7 @@ module MUES
 							else
 								order
 							end
+
 			raise TypeError, "Sort position: expected a Fixnum, not a #{@sortPosition.class.name}" unless
 				@sortPosition.is_a?( ::Fixnum )
 			raise ArgumentError, "Sort position must be between 0 and 1000" unless
