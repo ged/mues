@@ -39,8 +39,8 @@ module MUES
 	class CommandShell < IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.2 2001/05/14 12:22:57 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.3 2001/05/15 02:10:02 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -57,12 +57,19 @@ module MUES
 			@prompt = @@DefaultPrompt
 
 			@vars = {}
-
-			queueOutputEvents( OutputEvent.new(@prompt) )
 		end
 
 		### Public methods
 		public
+
+
+		### METHOD: start( stream )
+		### Start the filter 
+		def start( stream )
+			super( stream )
+			queueOutputEvents( OutputEvent.new(@prompt) )
+		end
+
 
 		### METHOD: handleInputEvents( *events )
 		### Handle input events by comparing them to the list of valid shell
