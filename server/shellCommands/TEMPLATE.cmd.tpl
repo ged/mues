@@ -1,7 +1,8 @@
+# -*- default-generic -*-
 #
 # The (>>>FILE_SANS<<<) MUES::CommandShell command.
-# Time-stamp: <14-Sep-2002 08:01:09 deveiant>
-# $Id: TEMPLATE.cmd.tpl,v 1.2 2002/09/15 07:44:37 deveiant Exp $
+# Time-stamp: <14-Oct-2002 03:01:21 deveiant>
+# $Id: TEMPLATE.cmd.tpl,v 1.3 2002/10/14 09:46:57 deveiant Exp $
 #
 # == Authors:
 # * (>>>USER_NAME<<<) <(>>>AUTHOR<<<)>
