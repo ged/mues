@@ -68,6 +68,14 @@ called with the Config object as an argument.
   * Execute an event loop which serves as the fundamental unit of time for
     each world
 
+: ((*MUES::Service*)) - (({mues/Service}))
+
+  An abstract base class for MUES services. A service is a subsystem which
+  provides some functionality to the hosted worlds or other subsystems through
+  (({ServiceEvent}))s. There are several services (that will be) included with
+  the MUES by default: (({MUES::Service::RPC})),
+  (({MUES::Service::Linguistics})), and (({MUES::Service::HTTP})).
+
 : ((*MUES::Config*)) - (({mues/Config}))
 
   Configuration file reader/writer class. Given an IO object, a filename, or a
@@ -201,6 +209,6 @@ called with the Config object as an argument.
 
 == History
 
-  $Id: MUES.rd,v 1.4 2001/07/17 15:54:09 deveiant Exp $
+  $Id: MUES.rd,v 1.5 2001/07/26 00:32:27 deveiant Exp $
 
 =end
