@@ -13,17 +13,22 @@ ObjectStore - An object persistance abstraction class
   require "mues/ObjectStore"
   oStore = ObjectStore.new( "MySQL", "faeriemud", "localhost", "fmuser", "fmpass" )
 
-  objectId = oStore.storeObjects( obj )
+  objectIds = oStore.storeObjects( obj ) {|obj|
+	$stderr.puts "Stored object #{obj}"
+  }
 
 == Description
 
-
+This class is a generic front end to various means of storing MUES objects. It
+uses one or more configurable back ends which serialize and store objects to
+some kind of storage medium (flat file, database, sub-atomic particle inference
+engine), and then later can restore and de-serialize them.
 
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -34,7 +39,7 @@ http://language.perl.com/misc/Artistic.html)
 
 require "find"
 
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/Debugging"
@@ -52,10 +57,10 @@ module MUES
 		include Debuggable
 
 		### Constants
-		Version = %q$Revision: 1.2 $
-		Rcsid = %q$Id: ObjectStore.rb,v 1.2 2001/03/20 07:40:07 deveiant Exp $
+		Version = %q$Revision: 1.3 $
+		Rcsid = %q$Id: ObjectStore.rb,v 1.3 2001/03/29 02:30:15 deveiant Exp $
 
-		AdapterSubdir = 'mues/objstore_adapters'
+		AdapterSubdir = 'mues/adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/
 
 		### Class attributes
@@ -126,7 +131,7 @@ module MUES
 			end
 		end
 
-		### METHOD: initialize( db, host, user, password )
+		### METHOD: initialize( driver="Bdb", db="mues", host, user, password )
 		def initialize( driver = "Bdb", db = "mues", host = nil, user = nil, password = nil )
 			super()
 			@dbAdapter = self.class._getAdapter( driver, db, host, user, password )
