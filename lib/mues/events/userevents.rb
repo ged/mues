@@ -49,7 +49,8 @@ module MUES
 		autoload	:Player, "mues/Player"
 		attr_reader :player
 
-		### METHOD: initialize( aPlayer )
+		### METHOD: new( aPlayer )
+		### Returns a new player event with the specified target player
 		def initialize( aPlayer )
 			checkType( aPlayer, Player )
 			@player = aPlayer
@@ -72,7 +73,21 @@ module MUES
 	###########################################################################
 
 	### CLASS: PlayerLoginEvent < PlayerEvent
-	class PlayerLoginEvent < PlayerEvent; end
+	class PlayerLoginEvent < PlayerEvent
+
+		autoload	'MUES::IOEventStream', "mues/IOEventStream"
+		attr_reader	:stream
+
+		### METHOD: new( aPlayer, anIOEventStream )
+		### Returns a new PlayerLoginEvent with the specified target player and
+		### IOEventStream
+		def initialize( aPlayer, anIOEventStream )
+			super( aPlayer )
+
+			checkType( anIOEventStream, MUES::IOEventStream )
+			@stream = anIOEventStream
+		end
+	end
 
 	### CLASS: PlayerIdleTimeoutEvent < PlayerEvent
 	class PlayerIdleTimeoutEvent < PlayerEvent; end
