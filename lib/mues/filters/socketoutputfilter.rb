@@ -49,8 +49,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.6 2001/07/30 12:34:13 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.7 2001/09/26 13:30:39 deveiant Exp $
 		DefaultSortPosition = 300
 
 		NULL = "\000"
@@ -73,11 +73,12 @@ module MUES
 			@writeBuffer = ''
 			@writeMutex = Sync.new
 			@state = State::DISCONNECTED
+			@remoteHost = aSocket.peeraddr[2]
 
 			@mode = ''
 
 			@socketThread = Thread.new { _ioThreadRoutine(aSocket) }
-			@socketThread.desc = "SocketOutputFilter IO thread [fd: #{aSocket.fileno}, peer: #{aSocket.peeraddr[2]}]"
+			@socketThread.desc = "SocketOutputFilter IO thread [fd: #{aSocket.fileno}, peer: #{@remoteHost}]"
 		end
 
 
@@ -87,7 +88,7 @@ module MUES
 		public
 
 		# Accessors
-		attr_reader :socket, :readBuffer, :writeBuffer
+		attr_reader :readBuffer, :writeBuffer, :remoteHost
 
 		### handleOutputEvents( *events )
 		### Handle an output event by appending its data to the output buffer
@@ -181,7 +182,8 @@ module MUES
 				engine.dispatchEvents( LogEvent.new("info", "SocketOutputFilter shutting down: #{e.message}") )
 
 			rescue Shutdown
-				mySocket.syswrite( "\n\n>>> Disconnecting <<<\n\n" )
+				mySocket.syswrite( @writeBuffer )
+				mySocket.syswrite( "\n>>> Disconnecting <<<\n\n" )
 
 			### Just log any other caught exceptions (for now)
 			rescue StandardError => e
