@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.7 2002/10/14 09:43:31 deveiant Exp $
+# $Id: backend.rb,v 1.8 2002/10/26 19:06:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,8 +51,8 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version	= %q$Revision: 1.7 $
-			RcsId	= %q$Id: backend.rb,v 1.7 2002/10/14 09:43:31 deveiant Exp $
+			Version	= %q$Revision: 1.8 $
+			RcsId	= %q$Id: backend.rb,v 1.8 2002/10/26 19:06:17 deveiant Exp $
 
 			# The directory in which file-based objectstores will be kept,
 			# relative to the base dir.
@@ -73,12 +73,10 @@ module MUES
 
 			### Class methods
 
-			### Alias away the #create added to the class by
-			### MUES::FactoryMethods.
-			class << self
-				alias_method( :__create, :create )
-				remove_method( :create )
-			end
+			# Alias away the #create added to the class by MUES::FactoryMethods
+			# so we can override it without clobbering it.
+			alias_class_method :__create, :create
+
 
 			### (Overridden) Factory method: Instantiate and return a new
 			### Backend of the specified <tt>backendType</tt>, using the
