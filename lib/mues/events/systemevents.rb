@@ -33,7 +33,6 @@ require "socket"
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
 
 require "mues/events/BaseClass"
 
@@ -154,6 +153,16 @@ module MUES
 
 	### CLASS: UntrappedExceptionEvent < SystemEvent
 	class UntrappedExceptionEvent < ExceptionEvent
+
+		### METHOD: to_s
+		### Stringify the event
+		def to_s
+			return "%s: %s\n\t%s" % [
+				super(),
+				@exception.message,
+				@exception.backtrace.join( "\n\t" )
+			]
+		end
 	end
 
 
@@ -166,6 +175,7 @@ module MUES
 			checkType( callback, Proc, Method )
 			@callback = callback
 			@args = args
+			super()
 		end
 	end
 
