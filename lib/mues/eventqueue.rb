@@ -41,7 +41,6 @@ require "mues/Namespace"
 require "mues/WorkerThread"
 require "mues/Exceptions"
 require "mues/Events"
-require "mues/Debugging"
 
 module MUES
 
@@ -49,8 +48,8 @@ module MUES
 	class EventQueue < Object ; implements Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.5 2001/06/25 14:03:28 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.6 2001/07/18 01:48:37 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2
@@ -110,6 +109,7 @@ module MUES
 				unless @supervisor
 					@supervisor = Thread.new { _supervisorThreadRoutine() }
 					@supervisor.abort_on_exception = true
+					@supervisor.desc = "Supervisor thread for EventQueue #{self.id}"
 				end
 			}
 
@@ -381,14 +381,17 @@ module MUES
 			### list in between the tests? Maybe not, as nothing touches the
 			### condition variable outside of a synchronized block...
 			until @workers.list.empty? && @idleWorkers.list.empty?
-				workersRemaining = @idleWorkers.list.length
-				_debugMsg( 1, "Sending shutdown events to #{workersRemaining} idle workers. #{@workers.list.length} active workers remain." )
-				@queueMutex.synchronize {
-					@idleWorkers.list.each do
-						@queuedEvents.push( ThreadShutdownEvent.new )
-					end
-					@queueCond.broadcast
-				}
+
+				if ! @idleWorkers.list.empty?
+					workersRemaining = @idleWorkers.list.length
+					_debugMsg( 1, "Supervisor: Sending shutdown events to #{workersRemaining} idle workers. #{@workers.list.length} active workers remain." )
+					@queueMutex.synchronize {
+						@idleWorkers.list.each do
+							@queuedEvents.push( ThreadShutdownEvent.new )
+						end
+						@queueCond.broadcast
+					}
+				end
 
 				### :TODO: We should join the exiting threads here, probably,
 				### but how to ensure we're joining an exiting thread?
@@ -478,6 +481,7 @@ module MUES
 				_workerThreadRoutine( @workerCount )
 			}
 			worker.abort_on_exception = true
+			worker.desc = "Worker thread #{@workerCount} [Queue #{self.id}]"
 			@workers.add( worker )
 		end
 
