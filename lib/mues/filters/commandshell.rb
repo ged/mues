@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.21 2002/10/12 11:28:32 deveiant Exp $
+# $Id: commandshell.rb,v 1.22 2002/10/12 15:35:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,8 +72,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.21 2002/10/12 11:28:32 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.22 2002/10/12 15:35:38 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -421,6 +421,10 @@ module MUES
 				eval %Q{
 					def self.invoke( context, argString )
 						#{body}
+					rescue CommandError, SecurityError => e
+						errmsg = "Error: %s" % e.message
+
+						return [MUES::OutputEvent::new( errmsg + "\n" )]
 					rescue => e
 						errmsg = "Internal command error in %s (%s:%d): %s: %s" % [
 							self.name,
@@ -824,8 +828,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.21 2002/10/12 11:28:32 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.22 2002/10/12 15:35:38 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
