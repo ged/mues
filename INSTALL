@@ -1,6 +1,5 @@
 
-			Multi-User Environment Server Installation Instructions
-			-------------------------------------------------------
+= Multi-User Environment Server Installation Instructions
 
 These instructions aren't really all that useful yet. I haven't yet had time to
 craft a useful installation program, but intend to have something done for the
@@ -15,8 +14,7 @@ apologize to those of you trying to run this on some other platform. Suggestions
 or patches for other-platform compatibility are welcome at <ged@FaerieMUD.org>.
 
 
-Prerequisites
--------------
+== Prerequisites
 
 Versions listed are the ones I've tested with. Earlier versions may work, but
 your mileage may vary.
@@ -29,27 +27,22 @@ your mileage may vary.
   RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=pp
   Download: http://cvs.m17n.org/~akr/pp/download.html
 
-  Optional libraries:
+=== Optional libraries:
 
-* Walkit test framework (>=01-09-29) - For running unit tests
-  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=walkit+-+unit+tests+revisited
-  Download: http://www.k.mckinlay.btinternet.co.uk/walkit/
+* Test::Unit (>= 0.1.4)- For running unit tests
+  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=Test%3A%3AUnit
+  Download: http://testunit.talbott.ws/packages/testunit-0.1.4.tar.gz
 
 * ruby-tcpwrap (>=0.3) - Config option
   RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap
   Download: http://www.shugo.net/archive/ruby-tcpwrap/ruby-tcpwrap-0.3.tar.gz
 
-* bdb (>=0.2.5) - If you wish to use the Bdb objectstore.
-  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=bdb
-  Download: ftp://moulon.inra.fr/pub/ruby/
-
-* mysql-ruby (>=2.4) - If you wish to use the Mysql objectstore.
-  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=MySQL%2FRuby
-  Download: http://www.tmtm.org/mysql/ruby/mysql-ruby-2.4.tar.gz
+* RDoc (>= beta-1) - Documentation generator
+  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=RDoc
+  Home page: http://rdoc.sourceforge.net
 
 
-Installation
-------------
+== Installation
 
 These instructions assume that you've already unpacked the distribution
 somewhere, and have changed your working directory to the resultant
@@ -71,20 +64,17 @@ libraries will be installed under the site_ruby directory of the running Ruby's
 library directory.
 
 
-Documentation
--------------
+== Documentation
 
-If you have Ruby rdtools installed, you can create documentation for all the
+If you have the RDoc tool installed, you can create documentation for all the
 MUES classes in the form of HTML and manual pages with the following command:
 
  $ ruby docs/makedocs.rb
 
-This will leave HTML documentation in 'docs/html' and manual pages in
-'docs/man'.
+This will leave HTML documentation in 'docs/html'.
 
 
-Running
--------
+== Running
 
 If you wish to run the server from the distribution directory:
 
