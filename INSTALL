@@ -19,13 +19,28 @@ or patches for other-platform compatibility are welcome at <ged@FaerieMUD.org>.
 Versions listed are the ones I've tested with. Earlier versions may work, but
 your mileage may vary.
 
-* Ruby (>= 1.6.5)
+* Ruby (>= 1.7.2)
   Home page:: http://www.ruby-lang.org/
-  Download::  ftp://ftp.ruby-lang.org/pub/ruby/ruby-1.6.5.tar.gz
 
 * pp - Ruby pretty-printer (>=0.4)
   RAA::      http://www.ruby-lang.org/en/raa-list.rhtml?name=pp
   Download:: http://cvs.m17n.org/~akr/pp/download.html
+
+* HashSlice - Slicing for Hash objects
+  RAA::		 http://www.ruby-lang.org/en/raa-list.rhtml?name=HashSlice
+  Download:: http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2
+
+* Ruby-Poll (>= 0.02)- Object-oriented implementation of the poll(2) system call
+  RAA::		 http://www.ruby-lang.org/en/raa-list.rhtml?name=Ruby-Poll
+  Download:: http://www.devEiate.org/code/Ruby-Poll-0.02.tar.bz2
+
+* REXML (>= 2.5.1)- XML Processor
+  Homepage:: http://www.germane-software.com/software/rexml/
+  Download:: http://www.germane-software.com/archives/rexml_2.5.1.tgz
+
+* Log4R (>= 1.0.2) - Logging library
+  Homepage:: http://log4r.sourceforge.net/
+  Download:: http://sourceforge.net/project/showfiles.php?group_id=43396
 
 === Optional libraries:
 
