@@ -48,26 +48,53 @@ class ObjectStore
 	# Class #
 	#########
 
-	### Loads in the specified database, and returns the ObjectStore attached to it
+	### Loads in the specified config file, and returns the ObjectStore attached to it
 	### arguments:
 	###   filename - the filename of the ObjectStore config file (?)
+	### ObjectStoreConfig file format:
+	###   it's in XML, a base of 'ObjectStoreConfig', with attributes of
+	###      'name' - a name
+	###      'catalog' - the filename of the ArunaDB catalog file
+	###      'table' - the name of the table to use
 	def ObjectStore.load (filename)
 		file = File.open(filename)
-		conf = file.readlines
+		conf = file.readlines.join('')
 		file.close
+		#:TODO: this should use an XML parser of some sort, instead of doing it manually
 
 		#:TODO: parse the data to reveal the location of the database, the
 		#       database interface object, and the index, serialize and
 		#       deserialize methods.
-		#:?:    was this file going to be serialized objects itself?
-		
+
 		#:TODO: return a new ObjectStore object, but without calling initialize.
 		#       how?
+		#       I think i need to declare my own 'new' method, and make initialize
+		#       more general.  i should inquire about this.
+
+		#:!: symbols cannot be serialized (at least not using Marshal#dump)
 	end
 
 	#########
 	protected
 	#########
+
+	### Creates and returns an ArunaDB database - specifically an array of objects:
+	### [A_Catalog, A_FileStore, A_BTree, A_Table]
+	### typical usage will usually only require accessing the A_Table object, but
+	### all should be kept alive.
+	### args:
+	###   conf_filename - the name of the ObjectStoreConfig file
+	def create_database(conf_filename)
+		#cat  = A_Catalog.new(filename)
+		#fs   = A_FileStore.create(name, blksize, filename)
+		#bt   = A_BTree.new(name, fs, filename)
+		#cols = []
+		#cols << A_Column.new(name,type,not_nil,default,constraint,action,display)
+		###repeat
+		#pkeys= %w(the primary keys names) or "name"
+		#tab  = A_Table.new(name,cols,pkeys)
+		#return [cat,fs,bt,tab]
+	end
 
 	### Initializes a new ObjectStore
 	### arguments:
@@ -76,11 +103,11 @@ class ObjectStore
 	###   indexes - an array of symbols for methods to create indicies off of
 	###   serialize - the symbol for the method to serialize the objects
 	###   deserialize - the symbol for the method to deserialize the objects
-	def initialize( filename,
-				    objects = [],
-				    indexes = [],
-				    serialize = nil,
-				    deserialize = nil )
+	def initialize( filename, objects = [], indexes = [],
+				    serialize = nil, deserialize = nil )
+		if File.exists?(filename)
+			return ObjectStore.load(filename)
+		end
 		@filename = filename
 		@indexes = indexes
 		@serialize = serialize
@@ -89,6 +116,7 @@ class ObjectStore
 		add_indexes( @indexes )
 
 		#:TODO: actually create the database here
+		ObjectStore.create_database(filename)
 
 		objects.each {|o|
 			store(o)
