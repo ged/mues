@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.6 2002/06/04 07:09:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -42,7 +42,7 @@ module MUES
 	### A derivative of MUES::SocketOutputFilter that understands TELNET option
 	### negotiation and some basic terminal features.
 	class TelnetOutputFilter < SocketOutputFilter ; implements MUES::Debuggable
-		include TelnetConstants
+		include TelnetConstants, MUES::TypeCheckFunctions
 
 		### A module that contains constants used in TELNET option negotiation
 		### (ala RFC1143 [The Q Method of Implementing Telnet Option
@@ -58,8 +58,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.6 2002/06/04 07:09:38 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {

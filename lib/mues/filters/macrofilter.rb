@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: macrofilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
+# $Id: macrofilter.rb,v 1.6 2002/06/04 07:09:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,9 +36,11 @@ module MUES
 	### user-definable macros in an IOEventStream.
 	class MacroFilter < IOEventFilter ; implements MUES::Debuggable
 
+		include MUES::TypeCheckFunctions
+
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.6 2002/06/04 07:09:06 deveiant Exp $
 		DefaultSortPosition = 650
 
 		### Class variables

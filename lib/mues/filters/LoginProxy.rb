@@ -13,7 +13,7 @@
 #
 # == Rcsid
 # 
-# $Id: LoginProxy.rb,v 1.7 2002/04/01 16:27:29 deveiant Exp $
+# $Id: LoginProxy.rb,v 1.8 2002/06/04 07:08:58 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,10 +38,12 @@ module MUES
 	### it only passes on events to and from the LoginSession until the user is
 	### authenticated.
 	class LoginProxy < IOEventFilter ; implements MUES::Debuggable
+
+		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: LoginProxy.rb,v 1.7 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: LoginProxy.rb,v 1.8 2002/06/04 07:08:58 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### Create and return a LoginProxy object for the given +session+ (a

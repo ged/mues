@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: participantproxy.rb,v 1.4 2002/04/01 16:27:29 deveiant Exp $
+# $Id: participantproxy.rb,v 1.5 2002/06/04 07:09:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -37,9 +37,11 @@ module MUES
 	# MUES::IOEventStream IO to and from a participant in a MUES::Environment.
 	class ParticipantProxy < IOEventFilter; implements MUES::AbstractClass
 
+		include MUES::TypeCheckFunctions
+
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.4 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: participantproxy.rb,v 1.5 2002/06/04 07:09:11 deveiant Exp $
 		DefaultSortPosition = 850
 
 

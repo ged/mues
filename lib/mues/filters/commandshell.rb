@@ -65,7 +65,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.11 2002/04/01 16:27:29 deveiant Exp $
+# $Id: commandshell.rb,v 1.12 2002/06/04 07:08:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -98,9 +98,11 @@ module MUES
 	### MUES::User object.
 	class CommandShell < IOEventFilter ; implements MUES::Debuggable
 
+		include MUES::ServerFunctions
+
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.11 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.12 2002/06/04 07:08:54 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -295,6 +297,8 @@ module MUES
 		# approximate searches of command names.
 		class CommandTable < MUES::Object ; implements MUES::Debuggable
 
+			include MUES::TypeCheckFunctions
+
 			### Instantiate and return a new <tt>CommandTable</tt> object which
 			### contains an abbreviation mapping for the specified
 			### <tt>commandObjects</tt> (an Array of MUES::CommandShell::Command
@@ -381,8 +385,8 @@ module MUES
 		class Command < MUES::Object ; implements MUES::AbstractClass, MUES::Debuggable, Notifiable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.11 2002/04/01 16:27:29 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.12 2002/06/04 07:08:54 deveiant Exp $
 
 			### Class values
 			@@CommandRegistry	= {}
@@ -730,6 +734,8 @@ module MUES
 
 		### 'Roles' command
 		class RolesCommand < UserCommand
+
+			include MUES::ServerFunctions
 
 			### Initialize a new UnloadEnvironmentCommand object
 			def initialize # :nodoc:

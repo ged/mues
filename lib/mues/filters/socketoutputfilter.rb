@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.9 2002/04/01 16:27:29 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.10 2002/06/04 07:09:20 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,6 +39,8 @@ module MUES
 	### output to a TCPSocket.
 	class SocketOutputFilter < IOEventFilter ; implements MUES::Debuggable
 
+		include MUES::ServerFunctions, MUES::TypeCheckFunctions
+
 		### A container module for MUES::SocketOutputFilter state contants.
 		module State
 			DISCONNECTED = 0
@@ -46,8 +48,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.9 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.10 2002/06/04 07:09:20 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
