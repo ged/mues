@@ -1,6 +1,6 @@
 /*
  *	mues.c - C extensions for MUES
- *	$Id: mues.c,v 1.5 2002/09/12 09:57:26 deveiant Exp $
+ *	$Id: mues.c,v 1.6 2003/04/19 06:52:51 deveiant Exp $
  *
  *	This module loads various subordinate C extensions for MUES.
  *
@@ -8,7 +8,7 @@
  *		Martin Chase <stillflame@FaerieMUD.org>
  *		Michael Granger <ged@FaerieMUD.org>
  *
- *	Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
+ *	Copyright (c) 2002, 2003 The FaerieMUD Consortium. All rights reserved.
  *
  *  This module is free software. You may use, modify, and/or redistribute this
  *  software under the terms of the Perl Artistic License. (See
@@ -66,7 +66,7 @@ Init_mues()
   // Load the Ruby code first to define most of the class heirarchy.
   rb_require("mues/Object");
 
-  mues_debug( "Initializing the MUES C extensions." );
+  DebugMsg(( "Initializing the MUES C extensions." ));
 
 #if FOR_RDOC_PARSER
   mues_mMUES = rb_define_module( "MUES" );
@@ -80,6 +80,7 @@ Init_mues()
   // MUES::Object constant is loaded.
   Init_Mues_Object();
   Init_Mues_PolymorphicObject();
+  Init_Mues_BlankObject();
 
   rb_require("mues.rb");
 }
