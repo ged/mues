@@ -1,19 +1,15 @@
 
+= The Multi-User Environment Server (MUES)
 
-                    The Multi-User Environment Server (MUES)
-                    ----------------------------------------
-            $Id: README,v 1.3 2001/12/07 20:02:50 deveiant Exp $
-
-Authors
--------
+== Authors
 
  Michael Granger <ged@FaerieMUD.org>
  Dave McCorkhill <scotus@FaerieMUD.org>
+ Martin Chase <stillflame@FaerieMUD.org>
  Jeremiah Chase <phaedrus@FaerieMUD.org>
  Alexis Lee <red@FaerieMUD.org>
 
-General Information
--------------------
+== General Information
 
 The MUES is a multi-threaded, event-driven Internet game environment server
 written in Ruby. It is intended to facilitate the building of online multi-player
@@ -31,10 +27,9 @@ the current distribution. Community contributions in this area are especially
 welcome.
 
 
-Caveats
--------
+== Caveats
 
-IMPORTANT: This is an *alpha* release. It might blow up, compromise your
+*IMPORTANT*: This is an *alpha* release. It might blow up, compromise your
 security, write random data to sensitive portions of your hard drive, or
 otherwise fail to work as advertised. It is intended to be used by developers
 who are interested in helping out or curious onlookers who don't mind getting
@@ -48,19 +43,17 @@ are interested in MUES and FaerieMUD development. You may access the interface
 to this and other FaerieMUD-related lists at: <http://lists.FaerieMUD.org/>.
 
 
-Installation
-------------
+== Installation
 
 For installation instructions (such as they are at this point), see the INSTALL
 file.
 
-If you're really impatient, like me, and just want to test things out, see the
-QUICKSTART document. It includes instructions that should let you get the server
-up and running with a minimum of effort.
+If you're really impatient and just want to test things out, see the QUICKSTART
+document. It includes instructions that should let you get the server up and
+running with a minimum of effort.
 
 
-More Information
-----------------
+== More Information
 
 For more information about the MUES project, see <http://mues.FaerieMUD.org/>.
 
@@ -73,11 +66,10 @@ You may also access a web interface to the FaerieMUD CVS repository at:
 version of the MUES.
 
 
-Legal
------
+== Legal
 
-The MUES is Open Source Software which is Copyright (c) 2001 by The FaerieMUD
-Consortium.
+The MUES is Open Source Software which is Copyright (c) 2001,2002 by The
+FaerieMUD Consortium.
 
 You may use, modify, and/or redistribute this software under the terms of the
 Perl Artistic License, a copy of which should have been included in this
@@ -89,6 +81,8 @@ THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES,
 INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 FITNESS FOR A PARTICULAR PURPOSE.
 
+
+ $Id: README,v 1.4 2002/03/16 12:47:53 deveiant Exp $
 
 
 
