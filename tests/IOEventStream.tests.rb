@@ -78,20 +78,15 @@ module MUES
 	class MockOutputEvent < OutputEvent
 	end
 
+
 	### Stream test case
 	class IOEventStreamTestCase < MUES::TestCase
 
-		@stream = nil
-
 		### Test case set_up method
 		def set_up
-			@stream = TestingStream.new
+			@stream = TestingStream::new
 		end
 
-		### Test case tear_down method
-		def tear_down
-			@stream = nil
-		end
 
 		### Test to be sure instantiation works, and that the object has all the
 		### expected attributes in the state we expect them
@@ -140,23 +135,18 @@ module MUES
 
 			# Removing a non-existant filter doesn't change the stream and
 			# doesn't error
-			removedFilters = nil
 			assert_nothing_raised {
-				removedFilters = @stream.removeFilters( MockFilter.new("Remove tester") )
+				@stream.removeFilters( MockFilter.new("Remove tester") )
 			}
-			assert_equal  0, removedFilters.length 
 			assert_equal  4, @stream.filters.length 
 			assert @stream.filters.member?( filter )
 			assert @stream.filters.member?( laterFilter )
 
 			# Removing an added filter removes the correct one
-			removedFilters = nil
 			assert_nothing_raised {
-				removedFilters = @stream.removeFilters( filter )
+				@stream.removeFilters( filter )
 			}
-			assert_equal  1, removedFilters.length 
 			assert_equal  3, @stream.filters.length 
-			assert_same  removedFilters[0], filter 
 			assert( ! @stream.filters.member?(filter) )
 			assert @stream.filters.member?( laterFilter )
 			
@@ -165,18 +155,17 @@ module MUES
 
 		### Test persistance of default filters
 		def test_02_DefaultFilters
-			removedFilters = nil
 			assert_nothing_raised {
-				removedFilters = @stream.removeFiltersOfType( MUES::IOEventFilter )
+				@stream.removeFiltersOfType( MUES::IOEventFilter )
 			}
-			assert_equal  0, removedFilters.length 
+			assert_equal 2, @stream.filters.length
 		end
+
 
 		### Remove filters by type
 		def test_03_RemoveFiltersByType
 
 			# Setup
-			removedFilters = nil
 			filter1 = MockFilter.new( "filter1" )
 			filter2 = SubMockFilter.new( "filter2" )
 			filter3 = SubMockFilter.new( "filter3" )
@@ -184,34 +173,25 @@ module MUES
 
 			# Make sure we can remove filters by type
 			assert_nothing_raised {
-				removedFilters = @stream.removeFiltersOfType( SubMockFilter )
+				@stream.removeFiltersOfType( SubMockFilter )
 			}
-			assert_equal  2, removedFilters.length 
 			assert_equal  3, @stream.filters.length 
 
 			# Re-add the removed filters
-			@stream.addFilters( *removedFilters )
+			@stream.addFilters( filter2, filter3 )
 
 			# Make sure we can remove filters by parent type, too
-			removedFilters = nil
 			assert_nothing_raised {
-				removedFilters = @stream.removeFiltersOfType( MockFilter )
+				@stream.removeFiltersOfType( MockFilter )
 			}
-			assert_equal  3, removedFilters.length 
 			assert_equal  2, @stream.filters.length 
 		end
 
 		### Test stream pausing
 		def test_04_PauseStream
-			assert_nothing_raised {
-				@stream.pause
-			}
-
+			assert_nothing_raised { @stream.pause }
 			assert @stream.paused
-
-			assert_nothing_raised {
-				@stream.unpause
-			}
+			assert_nothing_raised { @stream.unpause }
 		end
 
 		### Test IO event queuing
