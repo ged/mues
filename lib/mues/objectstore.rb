@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.32 2002/09/12 12:09:27 deveiant Exp $
+#  $Id: objectstore.rb,v 1.33 2002/09/27 16:13:37 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.32 $
-		RcsId	= %q$Id: objectstore.rb,v 1.32 2002/09/12 12:09:27 deveiant Exp $
+		Version	= %q$Revision: 1.33 $
+		RcsId	= %q$Id: objectstore.rb,v 1.33 2002/09/27 16:13:37 deveiant Exp $
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -363,6 +363,12 @@ module MUES
 			@backend.addIndexes( *indexes )
 		end
 
+
+		### Fetch all of the keys for the specified <tt>index</tt> and return
+		### them as an Array.
+		def indexKeys( index )
+			@backend.indexKeys( index )
+		end
 
 
 		#########
