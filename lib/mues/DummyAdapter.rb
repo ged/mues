@@ -14,7 +14,7 @@ DummyAdapter - An ObjectStore debugging adapter class
 
 == Description
 
-
+A testing filesystem-based objectstore adapter class.
 
 == Author
 
@@ -29,11 +29,8 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
-require "mutexm"
-
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
 
 require "mues/adapters/Adapter"
 
@@ -43,8 +40,8 @@ module MUES
 
 			include Debuggable
 
-			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-			Rcsid = %q$Id: DummyAdapter.rb,v 1.3 2001/05/14 12:20:10 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: DummyAdapter.rb,v 1.4 2001/07/18 02:04:19 deveiant Exp $
 
 			attr_accessor :db, :host, :user, :password
 
@@ -56,7 +53,7 @@ module MUES
 				@user = user
 				@password = password
 
-				@dbDir = @db.gsub( /[^a-zA-Z0-9]+/, "" )
+				@dbDir = "%s/%s" % [ "objectstore", @db.gsub(%r{\W+}, "") ]
 				unless FileTest.directory?( @dbDir )
 					Dir.mkdir( @dbDir, 0755 )
 					Dir.mkdir( "#{@dbDir}/players", 0755 )
@@ -143,6 +140,7 @@ module MUES
 			### NoSuchObjectError exception if the player record does not exist.
 			def fetchPlayerData( username )
 				filename = _safeifyId( username )
+				obj = nil
 
 				# Try to open the corresponding file, returning nil if we fail
 				# After opening and locking, delete the file before reading.
@@ -157,6 +155,8 @@ module MUES
 				rescue IOError => e
 					raise NoSuchObjectError, e.message
 				end
+
+				return obj
 			end
 
 			### METHOD: createPlayerData( username )
