@@ -1,26 +1,20 @@
 #!/usr/bin/ruby
 # 
-# This file contains the MUES::ClassLibrary class, which is an AbstractFactory
-# class for environment metaclass libraries. Instances of this class contain a
-# library of Environment classes which can be instantiated outside of the main
-# Ruby namespace, and can be recombined and manipulated at runtime with greater
-# ease.
+# This file contains the MUES::ClassLibrary class, which is an interface object
+# for environment metaclass libraries. Instances of this class contain a library
+# of MUES::Metaclass objects which can be instantiated outside of the main Ruby
+# namespace, and can be stored and manipulated at runtime with greater ease.
 # 
 # == Synopsis
 # 
 #   require "mues/ClassLibrary"
 # 
-#   class MyLibrary < MUES::ClassLibrary
-# 	
-# 	  def initialize
-# 	    ...
-# 	  end
-# 
-#   end
-#   
+#	lib = MUES::ClassLibrary::new( "FaerieMUD" )
+#	obj = lib.newObject( "MyClass" )
+#
 # == Rcsid
 # 
-# $Id: classlibrary.rb,v 1.9 2002/10/04 10:01:45 deveiant Exp $
+# $Id: classlibrary.rb,v 1.10 2003/08/04 02:36:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -33,6 +27,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
+require "mues"
 require "mues/Object"
 require "mues/Events"
 require "mues/Exceptions"
@@ -46,16 +41,16 @@ module MUES
 	### An AbstractFactory class for environment metaclass libraries
 	class ClassLibrary < Object
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.9 2002/10/04 10:01:45 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.10 2003/08/04 02:36:15 deveiant Exp $
 
 		### Return a new ClassLibrary object with the specified name.
-		def initialize( libraryName )
-			super
-			@name = libraryName
-			@classes = {}
-			@interfaces = {}
-			@namespaces = {}
+		def initialize( libraryName="unnamed" )
+			super()
+
+			@name		= libraryName
+			@classes	= {}
+			@interfaces	= {}
 		end
 
 
@@ -66,39 +61,7 @@ module MUES
 		### Returns the name of the class library.
 		attr_reader :name
 
-		### Add an interface to the library, either by the name specified or the
-		### same name as the name attribute of the interface object if no name
-		### is specified.
-		def addInterface( interface, altInterfaceName = nil )
-			interfaceName = if altInterfaceName.nil?
-							then interface.name
-							else altInterfaceName
-							end
-
-			@interfaces[ interfaceName ] = klass
-		end
-
-		### Add a class to the library.If no <tt>alternateClassName</tt> is
-		### specified, <tt>klass.name</tt> will be used.
-		def addClass( klass, altClassName = nil )
-			klassName = if altClassName.nil?
-						then klass.name
-						else altClassName
-						end
-
-			@classes[ klassName ] = klass
-		end
-
-		### Returns the ancestors of the class specified as an Array.
-		def getClassAncestry( className )
-			return []
-		end
-
-		### Returns the eval-able definition of the class specified.
-		def getClassDefinition( className )
-			return ""
-		end
-
+		
 	end
 end
 
