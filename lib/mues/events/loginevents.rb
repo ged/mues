@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#######################################################
 =begin
 
 =LoginSessionEvents.rb
@@ -28,7 +28,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#######################################################
 
 require "mues/Namespace"
 require "mues/Exceptions"
@@ -37,9 +37,9 @@ require "mues/events/BaseClass"
 
 module MUES
 
-	###########################################################################
+	#################################################################
 	###	A B S T R A C T   E V E N T   C L A S S E S
-	###########################################################################
+	#################################################################
 
 	### (ABSTRACT) CLASS: LoginSessionEvent < Event
 	class LoginSessionEvent < Event ; implements AbstractClass
@@ -55,9 +55,9 @@ module MUES
 	end
 
 
-	###########################################################################
+	#################################################################
 	###	C O N C R E T E   E V E N T   C L A S S E S
-	###########################################################################
+	#################################################################
 
 	### CLASS: LoginSessionFailureEvent < LoginSessionEvent
 	class LoginSessionFailureEvent < LoginSessionEvent
