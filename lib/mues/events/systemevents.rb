@@ -59,7 +59,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.7 2002/05/16 03:53:19 deveiant Exp $
+# $Id: systemevents.rb,v 1.8 2002/08/01 03:09:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,7 +72,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "socket"
+require 'poll'
 
 require "mues"
 require "mues/Exceptions"
@@ -91,20 +91,33 @@ module MUES
 	end
 
 
-	### An abstract socket event class. Events which deal with socket
-	### connections, disconnections, etc. are derived from this class. It
-	### derives from the MUES::SystemEvent class.
-	class SocketEvent < SystemEvent ; implements MUES::AbstractClass
-		attr_accessor	:socket
+	### An abstract listener event class. Events which deal with MUES::Listener
+	### connections, errors, etc. are derived from this class. It derives from
+	### the MUES::SystemEvent class.
+	class ListenerEvent < SystemEvent ; implements MUES::AbstractClass
 
-		### Initialize a new SocketEvent with the specified Socket object.
-		def initialize( aSocket ) # :notnew:
-			checkType( aSocket, TCPSocket )
-			raise ArgumentError, "Socket is not connected" if aSocket.closed?
+		### Initialize a new ListenerEvent with the specified <tt>listener</tt>
+		### (a MUES::Listener object) and <tt>poll</tt> (a Poll object).
+		def initialize( listener, poll ) # :notnew:
+			checkType( listener, MUES::Listener )
+			checkType( poll, Poll )
 
-			@socket = aSocket
+			@listener = listener
+			@poll = poll
+
 			super()
 		end
+
+		######
+		public
+		######
+
+		# The listener object (MUES::Listener) associated with the event.
+		attr_accessor	:listener
+
+		# The poll object (Poll) that generated the event
+		attr_accessor	:poll
+
 	end
 
 
@@ -113,9 +126,41 @@ module MUES
 	###	C O N C R E T E   E V E N T   C L A S S E S
 	#####################################################################
 
-	### An event class that is created when a connection is accepted on the
-	### listening socket. It is a derivative of MUES::SocketEvent.
-	class SocketConnectEvent < SocketEvent
+	### An event class that is created when an error condition is detected on a
+	### listener's associated IO object. It is a derivative of
+	### MUES::ListenerEvent.
+	class ListenerErrorEvent < ListenerEvent
+
+		### Create and return a new ListenerErrorEvent with the specified
+		### <tt>listener</tt> (a MUES::Listener object), <tt>poll</tt> (a Poll
+		### object), and <tt>errorMask</tt> (a Poll::EventMask object).
+		def initialize( listener, poll, errorMask )
+			checkType( errorMask, Poll::EventMask )
+
+			error = case errorMask
+					when Poll::ERR
+						"IO error"
+					when Poll::HUP
+						"Hangup"
+					when Poll::NVAL
+						"Invalid file descriptor"
+					else
+						"Unknown error #{errorMask.inspect}"
+					end
+
+			@error = error
+			super( listener, poll )
+		end
+
+		# The error message that was detected
+		attr_accessor :error
+	end
+
+
+	### An event class that is created when a connection is accepted on a
+	### listener's associated IO object. It is a derivative of
+	### MUES::ListenerEvent.
+	class ListenerConnectEvent < ListenerEvent
 	end
 
 
@@ -214,7 +259,7 @@ module MUES
 
 		### Create and return a new ExceptionEvent with the specified +exception+.
 		def initialize( exception )
-			checkType( exception, ::Exception, Interrupt )
+			checkType( exception, ::Exception )
 
 			@exception = exception
 			super()
@@ -270,9 +315,28 @@ module MUES
 	end
 
 
+	### An event which is generated when a signal is trapped by the signal
+	### handlers. It derives from MUES::SystemEvent.
+	class SignalEvent < SystemEvent
+
+		### Create and return a new ExceptionEvent with the specified +exception+.
+		def initialize( signalName, message=nil )
+			@signal = signalName.to_s
+			@message = message || "Caught a '#{@signal}' signal."
+			super()
+		end
+
+		# The name of the signal that was trapped
+		attr_reader :signal
+
+		# The message describing the anticipated reaction to the signal
+		attr_reader :message
+	end
+
+
 	### An event which is generated when an untrapped signal is caught. It
-	### derives from the MUES::ExceptionEvent class.
-	class UntrappedSignalEvent < ExceptionEvent
+	### derives from the MUES::SignalEvent class.
+	class UntrappedSignalEvent < SignalEvent
 	end
 
 
