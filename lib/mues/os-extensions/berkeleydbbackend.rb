@@ -7,12 +7,12 @@
 # 
 #   require 'mues/ObjectStore'
 #
-#   os = MUES::ObjectStore::load( 'foo', [], 'BerkeleyDB' )
+#   os = MUES::ObjectStore::create( 'foo', [], 'BerkeleyDB' )
 #   ...
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.2 2002/07/09 15:06:02 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.3 2002/08/01 03:18:22 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,6 +25,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
+require 'pp'
 require 'bdb'
 require 'sync'
 
@@ -44,8 +45,14 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.2 2002/07/09 15:06:02 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.3 2002/08/01 03:18:22 deveiant Exp $
+
+			EnvOptions = {
+				:set_timeout	=> 50,
+				:set_lk_detect	=> 1,
+			}
+			EnvFlags = BDB::CREATE|BDB::INIT_TRANSACTION|BDB::INIT_MPOOL|BDB::INIT_LOG
 
 			### Turn on strict checking. Should be turned off for production.
 			@@StrictMode = false
@@ -53,7 +60,7 @@ module MUES
 
 			### Create a new BerkeleyDBBackend object, using the specified
 			### <tt>name</tt> as the directory to store the backing store files.
-			def initialize( name, indexes=[], configHash={} )
+			def initialize( name, indexes=[], config=nil )
 				@name = name
 				@indexes = {}
 				@mutex = Sync::new
@@ -65,15 +72,11 @@ module MUES
 					">= 3.3.x and BDB >= 0.2.1" unless
 					BDB::Common::instance_methods.include? 'associate'
 
-				dir = File::join( ObjectStore::Backend::StoreDir, @name )
-				Dir::mkdir( dir ) unless File.directory?( dir )
+				@dir = File::join( ObjectStore::Backend::StoreDir, @name )
+				Dir::mkdir( @dir ) unless File.directory?( @dir )
 
-				@env = BDB::Env.new( dir, BDB::CREATE|BDB::INIT_TRANSACTION|BDB::INIT_MPOOL )
-				@db = @env.open_db( BDB::Hash,
-								    @name,
-								    nil,
-								    BDB::CREATE,
-								    :marshal	=> true )
+				@env = BDB::Env.new( @dir, EnvFlags, EnvOptions )
+				@db = @env.open_db( BDB::Hash, @name, nil, BDB::CREATE, :marshal => Marshal )
 
 				@open = true
 				self.addIndexes( *indexes )
@@ -87,25 +90,37 @@ module MUES
 
 			### Drop the backing store for this backend
 			def drop
-				self.close
-				@env.remove()
+				self.close if self.open?
+				self.log.notice( "Dropping backing store for '#@name'" )
+				BDB::Env::remove( @dir )
 			end
+
 
 			### Backend Interface
 
 			### Store the specified <tt>objects</tt> in the database.
 			def store( *objects )
+				objects.flatten!
 				checkOpened()
 				checkEachType( objects, MUES::StorableObject )
+
+				self.log.debug { "Storing %d objects" % objects.length }
 
 				begin
 					# Start a transaction and store each object. Txn
 					# auto-commits at the end of the block.
-					@env.begin( DBD::TXN_COMMIT, @db ) do |txn, db|
-						objects.each {|obj| db[ obj.objectStoreID ] = obj }
-					end
+					self.log.debug { "   Beginning transaction..." }
+					# @env.begin( BDB::TXN_COMMIT, @db ) do |txn, db|
+						objects.each {|obj|
+							id = obj.objectStoreId
+
+							self.log.debug { "      Storing object '#{obj.objectStoreId}'..." }
+							@db[ id ] = obj
+						}
+					#end
+					self.log.debug { "   Done with transaction." }
 				rescue => err
-					raise MUES::ObjectStoreException,
+					raise MUES::ObjectStoreError,
 						"Transaction failed while storing: #{err.message}",
 						err.backtrace
 				end
@@ -119,16 +134,14 @@ module MUES
 				objs = []
 
 				begin
-					@env.begin( DBD::TXN_COMMIT, @db ) do |txn, db|
-						objs.replace ids.collect {|id| db[ id ]}
-					end
+					objs.replace ids.collect {|id| @db[ id ].to_orig}
 				rescue => err
-					raise MUES::ObjectStoreException,
+					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching: #{err.message}",
 						err.backtrace
 				end
 
-				return *objs
+				return objs
 			end
 			alias :[] :retrieve
 
@@ -143,11 +156,9 @@ module MUES
 
 				objs = nil
 				begin
-					@env.begin( DBD::TXN_COMMIT, @indexes[key.to_s] ) do |txn, idx|
-						objs.replace( idx.duplicates(val, false) )
-					end
+					objs.replace( @indexes[key.to_s.intern].duplicates(val, false) )
 				rescue => err
-					raise MUES::ObjectStoreException,
+					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching: #{err.message}",
 						err.backtrace
 				end
@@ -162,11 +173,9 @@ module MUES
 				objs = nil
 
 				begin
-					@env.begin( DBD::TXN_COMMIT, @db ) do |txn, db|
-						objs.replace( db.values )
-					end
+					objs.replace( @db.values.collect {|o| o.to_orig} )
 				rescue => err
-					raise MUES::ObjectStoreException,
+					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching values: #{err.message}",
 						err.backtrace
 				end
@@ -182,19 +191,54 @@ module MUES
 				checkOpened()
 				objs = []
 
+				indexValuePairs.keys.each {|idx|
+					raise MUES::ObjectStoreError, "No such index #{idx.inspect}" unless
+						@indexes.has_key? idx
+				}
+					
 				begin
-					@env.begin( DBD::TXN_COMMIT, @db ) do |txn, db|
-						cursors = indexValuePairs.collect {|idx,vals|
-							vals.to_a.collect {|val| txn.assoc(@indexes[idx]).cursor_set(val)}
-						}.flatten
-						db.join(cursors) {|key,val| objs << val }
-					end
+					cursors = []
+					# @env.begin( 0, @db ) {|txn, db|
+						indexValuePairs.each {|idx,vals|
+							self.log.debug { "Looking up values '#{vals.inspect}' for idx '#{idx.inspect}'" }
+							vals.to_a.each {|val|
+								self.log.debug { "Fetching cursor for '#{val}'" }
+								#cursor = txn.associate( @indexes[idx] ).cursor
+								cursor = @indexes[idx].cursor
+								rval = cursor.set( val )
+								self.log.debug { "Got a cursor with #{cursor.count} values." }
+
+								cursors << cursor
+							}
+						}
+
+						self.log.debug {"Preparing to do a join with #{cursors.length} cursors."}
+
+						@db.join(cursors) {|key,val|
+							self.log.debug {"Adding a '%s' object (%s) for join." % [val.class.name, val.muesid]}
+
+							# Have to do this despite the source saying not to
+							# use this method because the delegator it returns
+							# doesn't delegate inherited methods...
+							objs << val.to_orig
+							val = nil
+						}
+
+						#self.log.debug "Closing join transaction..."
+						#txn.close
+					#}
 				rescue => err
-					raise MUES::ObjectStoreException,
-						"Transaction failed while fetching values: #{err.message}",
-						err.backtrace
+					self.log.error "Transaction failed while fetching values: %s: %s" % [
+						err.message, err.backtrace.join("\n\t") ]
+					self.log.notice "Attempting recovery"
+					@env.recover {|txn, id|
+						self.log.error "Discarding txn #{id}"
+						txn.discard
+					}
+
 				end
 
+				self.log.debug {"Join returned '%d' ids" % objs.length}
 				return objs
 			end
 
@@ -203,6 +247,8 @@ module MUES
 			def close
 				checkOpened()
 				@open = false
+				@indexes.each_value {|idx| idx.close}
+				@db.close
 				@env.close
 			end
 
@@ -243,17 +289,19 @@ module MUES
 				checkOpened()
 
 				indexes.each {|idx|
-					name = idx.to_s
-					idx  = name.intern
+					indexName = idx.to_s
+					idx = indexName.intern
 
+					self.log.debug {"Adding index '#{indexName}'"}
+					
 					# Open a secondary handle and associate it with the first,
 					# along with a proc for making the index value from a key =>
 					# value pair.
-					@indexes[name] = @env.open_db( BDB::Hash,
-												   @name,
-												   name,
-												   BDB::CREATE|BDB::DUP|BDB::DUPSORT )
-					@db.associate( @indexes[name], BDB::CREATE ) {|db,key,value|
+					@indexes[idx] =
+						@env.open_db( BDB::Hash, indexName + "_i", nil, BDB::CREATE,
+									  :set_flags => BDB::DUP|BDB::DUPSORT, :marshal => ::Marshal )
+
+					@db.associate( @indexes[idx], BDB::CREATE ) {|db,key,value|
 						# :TODO: This should be taken out of production code
 						unless value.is_a? MUES::StorableObject
 							$stderr.puts "Ack! Value in indexer proc is not a StorableObject," +
@@ -261,9 +309,9 @@ module MUES
 						end
 
 						if value.respond_to?( idx )
-							return value.send( idx )
+							value.send( idx )
 						else
-							return false
+							false
 						end
 					}
 				}
@@ -277,7 +325,7 @@ module MUES
 			### raising an exception if not.
 			def checkOpened
 				raise ObjectStore::BackendError, "Operation attempted on closed backend" unless
-					@open
+					self.open?
 			end
 
 		end # class BerkeleyDBBackend
