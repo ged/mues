@@ -66,7 +66,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.14 2002/10/31 02:17:01 deveiant Exp $
+# $Id: systemevents.rb,v 1.15 2003/08/05 17:48:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -78,8 +78,6 @@
 #
 # Please see the file COPYRIGHT for licensing details.
 #
-
-require 'poll'
 
 require "mues/Object"
 require "mues/Exceptions"
@@ -147,25 +145,10 @@ module MUES
 	class ListenerErrorEvent < ListenerEvent
 
 		### Create and return a new ListenerErrorEvent with the specified
-		### <tt>listener</tt> (a MUES::Listener object), <tt>poll</tt> (a Poll
-		### object), and <tt>errorMask</tt> (a Poll::EventMask object).
-		def initialize( listener, poll, errorMask )
-			checkType( errorMask, Poll::EventMask )
-
-			error = case errorMask
-					when Poll::ERR
-						"IO error"
-					when Poll::HUP
-						"Hangup"
-					when Poll::NVAL
-						"Invalid file descriptor"
-					else
-						"Unknown error #{errorMask.inspect}"
-					end
-
-			@error		= error
-			@pollObj	= poll 
-
+		### <tt>listener</tt> (a MUES::Listener object) and <tt>reactor</tt> (an
+		### IO::Reactor object).
+		def initialize( listener, reactor )
+			@reactor = reactor
 			super( listener )
 		end
 
@@ -174,11 +157,8 @@ module MUES
 		public
 		######
 
-		# The error message that was detected
-		attr_reader :error
-
-		# The poll object which originated the error event
-		attr_reader :pollObj
+		# The reactor (IO::Reactor object) which originated the error event
+		attr_reader :reactor
 	end
 
 
