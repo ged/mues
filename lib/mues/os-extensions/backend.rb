@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+# $Id: backend.rb,v 1.6 2002/09/27 16:21:37 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,8 +51,8 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version	= %q$Revision: 1.5 $
-			RcsId	= %q$Id: backend.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+			Version	= %q$Revision: 1.6 $
+			RcsId	= %q$Id: backend.rb,v 1.6 2002/09/27 16:21:37 deveiant Exp $
 
 			# The directory in which file-based objectstores will be kept,
 			# relative to the base dir.
@@ -72,6 +72,9 @@ module MUES
 
 
 			### Class methods
+
+			### Alias away the #create added to the class by
+			### MUES::FactoryMethods.
 			class << self
 				alias_method( :__create, :create )
 				remove_method( :create )
@@ -108,7 +111,11 @@ module MUES
 				:open?,
 				:nitems,
 				:clear,
-				:drop
+				:drop,
+				:addIndexes,
+				:indexKeys,
+				:hasIndex?
+
 		end
 
 	end # class ObjectStore
