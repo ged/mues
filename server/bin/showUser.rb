@@ -19,21 +19,21 @@ if ARGV.length > 1
 
 	puts "Fetching user record for '#{user}' from a #{driver} objectstore."
 	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
-	user = os.fetchUser( user )
+	userObj = os.fetchUser( user )
 
-	if user.nil?
+	if userObj.nil?
 	puts "No such user '#{user}'."
 	else
-	puts "User record for user '#{user.username}':\n" +
-		"\t#{user.username.capitalize} is #{RoleDescriptions[user.role.to_i]}.\n" +
-		"\tCreated: #{user.timeCreated.to_s}\n" +
-		"\tCrypted password: #{user.cryptedPass}\n" +
-		"\tReal name: #{user.realname}\n" +
-		"\tEmail address: #{user.emailAddress}\n" +
-		"\tLast login: #{user.lastLogin}\n" +
-		"\tLast host: #{user.lastHost}\n" +
-		"\tFirst login tick: #{user.firstLoginTick}\n" +
-		"\tPreferences: \n" + user.preferences.collect {|k,v| "\t\t#{k} => #{v}\n"}.to_s +
+	puts "User record for user '#{userObj.username}':\n" +
+		"\t#{userObj.username.capitalize} is #{RoleDescriptions[userObj.role.to_i]}.\n" +
+		"\tCreated: #{userObj.timeCreated.to_s}\n" +
+		"\tCrypted password: #{userObj.cryptedPass}\n" +
+		"\tReal name: #{userObj.realname}\n" +
+		"\tEmail address: #{userObj.emailAddress}\n" +
+		"\tLast login: #{userObj.lastLogin}\n" +
+		"\tLast host: #{userObj.lastHost}\n" +
+		"\tFirst login tick: #{userObj.firstLoginTick}\n" +
+		"\tPreferences: \n" + userObj.preferences.collect {|k,v| "\t\t#{k} => #{v}\n"}.to_s +
 		"\n\n"
 	end
 
