@@ -53,14 +53,19 @@
 #
 # == To Do
 #
-# * Decide if the various types of output should be represented by classes, or
-#   by flags on the base OutputEvent. Flags could dynamically mix in the methods
-#   required to interact with the event's data, and would make things like
-#   wrapped, paged, formatted output possible.
+# * Most of the little classes in this file will eventually be replaced by more
+#   intelligent OutputEvent class and one or more Strategies (ala the Strategy
+#   Design Pattern from the GoF book) that add additional features for those
+#   OutputEventFilters that grok them. This will perhaps eventually look like:
+#
+#		outputEvent = OutputEvent::new( content, :wrapped, :paged, :formatted )
+#
+#   The output-sided IOEventFilters would then be free to implement (or not) any
+#   capability they
 #
 # == Rcsid
 # 
-# $Id: ioevents.rb,v 1.11 2002/10/14 09:37:14 deveiant Exp $
+# $Id: ioevents.rb,v 1.12 2002/10/23 18:30:25 deveiant Exp $
 # 
 # == Authors
 # 
