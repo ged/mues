@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.24 2002/10/14 09:30:45 deveiant Exp $
+# $Id: engine.rb,v 1.25 2002/10/17 14:48:41 deveiant Exp $
 # 
 # == Authors
 # 
@@ -170,8 +170,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.24 2002/10/14 09:30:45 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.25 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.25 2002/10/17 14:48:41 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1342,8 +1342,7 @@ module MUES
 							  event.listener.to_s,
 							  event.filter.peerName] )
 
-			### :TODO: Handle bans here
-
+			### :TODO: Handle IP bans here
 
 			### Create the event stream, add the new filters to the stream
 			ios = IOEventStream::new
@@ -1383,6 +1382,8 @@ module MUES
 
 			stream = event.stream
 			loginSession = event.loginSession
+
+			# :TODO: Handle user bans here.
 
 			# Set last login time and host in the user record
 			user.lastLoginDate = Time.now
