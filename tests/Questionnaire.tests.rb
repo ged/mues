@@ -64,9 +64,13 @@ class QuestionnaireTestCase < MUES::TestCase
 			:name		=> 'question2',
 			:question	=> 'Question: ',
 			:validator	=> Proc::new {|questionnaire,answer|
-				questionnaire.abort if answer.empty? || answer == 'abort'
-				if answer.downcase.split(//).uniq.join.length <= 5
+				if answer.empty? || answer == 'abort'
+					questionnaire.abort
+					false
+
+				elsif answer.downcase.split(//).uniq.join.length <= 5
 					true
+
 				else
 					questionnaire.error("Answer must contain no more than 5 unique characters")
 					false
@@ -77,7 +81,44 @@ class QuestionnaireTestCase < MUES::TestCase
 			:failAnswers	=> %w{foobazbarbim acquire eskimo},
 			:passAnswers	=> %w{foofofooooooof belle inuit intuition},
 			:abortAnswers	=> ['', 'abort'],
-		}
+		},
+
+		# Array validator step
+		{
+			:name		=> 'arrayValidatorAnswer',
+			:question	=> 'Dwarf: ',
+			:validator	=> %w{dopey bashful sneezy grumpy sleepy happy doc},
+			:errorMsg	=> "That's not a dwarf!",
+
+			:failAnswers	=> %w{dancer prancer donner blitzen},
+			:passAnswers	=> %w{dopey bashful sneezy grumpy sleepy happy doc},
+			:abortAnswers	=> [ '' ],
+		},
+
+		# Hash validator step
+		{
+			:name		=> 'hashValidatorAnswer',
+			:question	=> 'Element: ',
+			:validator	=> {
+				'fe'		=> 'Iron',
+				'al'		=> 'Aluminum',
+				'ga'		=> 'Gallium',
+				'sr'		=> 'Strontium',
+			},
+			:errorMsg	=> "Wrong!",
+
+			:failAnswers	=> %w{boo pring tapau},
+			:passAnswers	=> {
+				'fe'		=> 'Iron',
+				'al'		=> 'Aluminum',
+				'ga'		=> 'Gallium',
+				'sr'		=> 'Strontium',
+			},
+			:abortAnswers	=> [ '' ],
+		},
+
+
+
 	]
 
 
@@ -162,9 +203,11 @@ class QuestionnaireTestCase < MUES::TestCase
 				step[:passAnswers].each do |ans|
 					assert_nothing_raised { @qnaire.handleOutputEvents() }
 
-					MUES::Log.debug( "Calling assertInputPasses( %s, %s, %s )" %
-									[ @qnaire.inspect, step.inspect, ans.inspect ])
-					assertInputPasses( @qnaire, step, ans )
+					if ans.is_a?( Array )
+						assertInputPasses( @qnaire, step, *ans )
+					else
+						assertInputPasses( @qnaire, step, ans )
+					end
 
 					@qnaire.reset
 				end
@@ -214,7 +257,7 @@ class QuestionnaireTestCase < MUES::TestCase
 
 	### Test a given input against a questionnaire object, and expect it to
 	### succeed.
-	def assertInputPasses( qnaire, step, ans )
+	def assertInputPasses( qnaire, step, ans, expected=ans )
 		qnaire.debugLevel = 5
 
 		ev = MockInputEvent::new( ans )
@@ -229,7 +272,7 @@ class QuestionnaireTestCase < MUES::TestCase
 		assert qnaire.finished?, "Questionnaire is not finished"
 		assert qnaire.answers.key?( step[:name].intern ),
 			"Questionnaire doesn't have a ':%s' answer key" % step[:name]
-		assert_equal ans, qnaire.answers[ step[:name].intern ]
+		assert_equal expected, qnaire.answers[ step[:name].intern ]
 	end
 
 end # class QuestionnaireTestCase
