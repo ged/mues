@@ -1,0 +1,22 @@
+
+= HOWTO To-Do List
+
+== HOWTOs to create
+
+* Metaclasses
+
+* Services
+
+* Environments
+
+* ObjectStore:
+
+  - Backends
+  - Memory Managers
+
+== Other Tasks
+
+* Create a script to facilitate the creation of one or more outputs based on the
+  articles.
+
+
