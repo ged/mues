@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.20 2002/09/27 16:16:14 deveiant Exp $
+# $Id: user.rb,v 1.21 2002/10/06 07:45:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.20 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.20 2002/09/27 16:16:14 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.21 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.21 2002/10/06 07:45:54 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -109,10 +109,12 @@ module MUES
 		### insertion into a user's IOEventStream to query for the information
 		### necessary to create a new user. 
 		def self.getCreationQuestionnaire
-			return Questionnaire::new( "Create User", CreateUserQuestions ) {|qnaire|
+			qnaire = Questionnaire::new( "Create User", *CreateUserQuestions ) {|qnaire|
 				user = MUES::User::new( qnaire.answers )
 				MUES::ServerFunctions::registerUser( user )
 			}
+			qnaire.debugLevel = 5
+			return qnaire
 		end
 
 
@@ -396,15 +398,19 @@ module MUES
 					# use continuations to allow the return value to be
 					# decided in more than one place.
 					callcc {|rval|
-						if answer !~ /^[a-z]\w{2,}$/i
-							questionnaire.sendError( "Username must begin with a-z " \
-													"character, and contain only " \
-													"alphanumerics." )
+						if answer.empty?
+							questionnaire.abort
+							rval.call( false )
+
+						elsif answer !~ /^[a-z]\w{2,}$/i
+							questionnaire.error( "Username must begin with a-z " \
+												 "character, and contain only " \
+												 "alphanumerics.\n\n" )
 							rval.call( false )
 						end
 
 						if MUES::ServerFunctions::getUserNames.include?( answer.downcase )
-							questionnaire.sendError( "User '#{answer}' already exists" )
+							questionnaire.error( "User '#{answer}' already exists.\n\n" )
 							rval.call( false )
 						end
 
@@ -416,7 +422,7 @@ module MUES
 			# Account type
 			{
 				:name		=> "accountType",
-				:question	=> "Account type [#{AccountType::Map.keys.join(',')}]: ",
+				:question	=> "Account type [#{AccountType::Map.keys.sort.join(',')}]: ",
 				:default	=> AccountType::Default,
 				:validator	=> Proc::new {|questionnaire,answer|
 
@@ -429,34 +435,34 @@ module MUES
 						# empty.
 						answer = answer.strip.gsub(/\W+/, '').downcase
 						if answer.empty?
-							questionnaire.sendError( "Invalid response." )
+							questionnaire.abort
 							rval.call( false )
 						end
 
 						# Use matching to allow abbreviations
 						pat = Regexp::new("^#{answer}")
-						res = accountTypeMap.find_all {|name,val| pat.match(name)}
+						res = AccountType::Map.find_all {|name,val| pat.match(name)}
 
 						# If it didn't match anything, it's an error
 						if res.empty?
 							questionnaire.
-								sendError( "Invalid account type '%s': "\
-										   "Must specify one of %s" %
-										   [answer, accountTypeMap.keys.join(',')] )
+								error( "Invalid account type '%s': "\
+									   "Must specify one of %s\n\n" %
+									   [answer, AccountType::Map.keys.sort.join(',')] )
 							rval.call( false )
 
 						# If it matched more than one thing, it was un-ambiguous.
 						elsif res.length > 1
 							matched = res.collect {|name,val| name}.join(', ')
 							questionnaire.
-								sendError( "Ambiguous type '%s': Matched %s" %
-										   [answer, matched] )
+								error( "Ambiguous type '%s': Matched %s\n\n" %
+									   [answer, matched] )
 							rval.call( false )
 
 						# Otherwise, return the Integer value associated with the
 						# answer.
 						else
-							rval.call( res[1] )
+							rval.call( res[0][1] )
 						end
 					}
 				},
@@ -468,7 +474,7 @@ module MUES
 				:question	=> "Real name: ",
 				:validator	=> /[a-z ]+/i,
 				:errorMsg	=> "Invalid input. Real name must consist only of "\
-								"letters and spaces.",
+								"letters and spaces.\n\n",
 			},
 
 			# Email address
@@ -481,7 +487,7 @@ module MUES
 				# Perl's Email::Valid if it becomes an issue.
 				:validator	=> /[a-z0-9][-\.!\w]+@[-\.\w]+\.[a-z]/i,
 				:errorMsg	=> "Invalid input. Please confirm the address you " \
-								"are typing is valid.",
+								"are typing is valid.\n\n",
 			},
 
 			# Password
@@ -495,14 +501,17 @@ module MUES
 					# use continuations to allow the return value to be
 					# decided in more than one place.
 					callcc {|rval|
-						if answer.length < 6
-							questionnaire.sendError( "Invalid password: Must be at "\
-													 "least 6 characters." )
+						if answer.empty?
+							questionnaire.abort
+
+						elsif answer.length < 6
+							questionnaire.error( "Invalid password: Must be at "\
+												 "least 6 characters.\n\n" )
 							rval.call( false )
 
 						elsif answer !~ /\W/
-							questionnaire.sendError( "Invalid password: Must have at "\
-													 "least one alphanumeric character." )
+							questionnaire.error( "Invalid password: Must have at "\
+												 "least one alphanumeric character.\n\n" )
 							rval.call( false )
 
 						else
@@ -523,8 +532,9 @@ module MUES
 					# use continuations to allow the return value to be
 					# decided in more than one place.
 					callcc {|rval|
-						if answer != questionnaire.answers[:answer1]
-							questionnaire.sendError( "Passwords didn't match." )
+						if answer != questionnaire.answers[:password]
+							questionnaire.error( "Passwords didn't match.\n\n" )
+							questionnaire.undoSteps( 1 )
 							rval.call( false )
 						else
 							rval.call( true )
