@@ -1,7 +1,7 @@
 #
 # The help MUES::CommandShell command.
-# Time-stamp: <17-Oct-2002 09:52:06 deveiant>
-# $Id: help.cmd,v 1.3 2002/10/23 02:17:09 deveiant Exp $
+# Time-stamp: <22-Oct-2002 22:31:33 deveiant>
+# $Id: help.cmd,v 1.4 2002/10/23 05:00:42 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -44,7 +44,7 @@ description and its synonyms.
 	end
   else
 	helpTable = context.shell.commandTable.getHelpTable()
-	rows << "Help topics:\n"
+	rows << "Help topics:\n\n"
 
     # Find the maximum length of the commands
 	length = helpTable.keys.inject(0) {|len,key|
