@@ -1,9 +1,9 @@
 #!/usr/bin/ruby -w
 
 begin
-	require 'tests/muesunittest'
+	require 'tests/muestestcase'
 rescue
-	require '../muesunittest'
+	require '../muestestcase'
 end
 
 require 'mues/filters/Questionnaire'
@@ -152,7 +152,7 @@ class QuestionnaireTestCase < MUES::TestCase
 	def test_20_InstantiateWithSteps
 		qnaire = nil
 
-		testHeader "InstantiateWithSteps"
+		printTestHeader "InstantiateWithSteps"
 
 		assert_nothing_raised { qnaire = MUES::Questionnaire::new( *TestSteps ) }
 		assertValidQuestionnaire( qnaire )
@@ -180,7 +180,7 @@ class QuestionnaireTestCase < MUES::TestCase
 	### Build tests out of the test steps
 	def test_40_Steps
 		TestSteps.each {|step|
-			testHeader "Testing step '%s'" % step[:name]
+			printTestHeader "Testing step '%s'" % step[:name]
 
 			@qnaire.removeSteps
 			@qnaire.addSteps( step )

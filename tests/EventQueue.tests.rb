@@ -1,9 +1,9 @@
 #!/usr/bin/ruby -w
 
 begin
-	require 'tests/muesunittest'
+	require 'tests/muestestcase'
 rescue
-	require '../muesunittest'
+	require '../muestestcase'
 end
 
 require "mues/EventQueue"
@@ -27,7 +27,7 @@ module MUES
 	### Event queue tests
 	class EventQueueTestCase < MUES::TestCase
 
-		def set_up
+		def setup
 			@queueObj = EventQueue.new
 			@mockHandler = MockEventHandler.new
 			@mockHandler.activate
@@ -39,7 +39,7 @@ module MUES
 			end
 		end
 
-		def tear_down
+		def teardown
 			DebugOutputEvent.UnregisterHandlers( @mockHandler )
 			@mockHandler = nil
 			@queueObj.shutdown if @queueObj.running?

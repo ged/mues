@@ -1,9 +1,9 @@
 #!/usr/bin/ruby -w
 
 begin
-	require 'tests/muesunittest'
+	require 'tests/muestestcase'
 rescue
-	require '../muesunittest'
+	require '../muestestcase'
 end
 
 require 'mues/Metaclasses'

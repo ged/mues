@@ -4,7 +4,7 @@
 #
 # == Rcsid
 # 
-#  $Id: CommandShell.tests.rb,v 1.3 2002/10/25 05:10:30 deveiant Exp $
+#  $Id: CommandShell.tests.rb,v 1.4 2003/08/04 02:46:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -19,9 +19,9 @@
 # 
 
 begin
-	require 'tests/muesunittest'
+	require 'tests/muestestcase'
 rescue
-	require '../muesunittest'
+	require '../muestestcase'
 end
 
 require 'mues/filters/CommandShell'
@@ -49,7 +49,7 @@ module MUES
 
 		### Test instantiation of the shell factory, then add a factory to the setup
 		def test_00_InstantiateFactory
-			testHeader "Testing factory instantiation"
+			printTestHeader "Testing factory instantiation"
 			shellFactory	= nil
 
 			# Test instantiation of the shell factory
@@ -72,7 +72,7 @@ module MUES
 
 		### Test the commandshell factory
 		def test_01_Factory
-			testHeader "Testing factory object"
+			printTestHeader "Testing factory object"
 			rval = nil
 
 			{
@@ -103,7 +103,7 @@ module MUES
 		### Test shell command sets to see if they have the correct subsets for
 		### their user types.
 		def test_10_CommandObjects
-			testHeader "Testing command objects"
+			printTestHeader "Testing command objects"
 
 			@shellFactory.registry.values.uniq {|cmd|
 				debugMsg "...#{cmd.to_s}"
