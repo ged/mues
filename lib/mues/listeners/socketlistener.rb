@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.3 2002/08/09 11:11:54 deveiant Exp $
+# $Id: socketlistener.rb,v 1.4 2002/08/29 07:29:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,8 +72,8 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.3 2002/08/09 11:11:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.4 2002/08/29 07:29:45 deveiant Exp $
 
 		### Create a new SocketListener object.
 		def initialize( name, parameters={} )
@@ -151,16 +151,17 @@ module MUES
 		end
 
 
-		### Listener callback: Create a new MUES::SocketOutputFilter from the
-		### client socket after calling #accept on the listener socket.
+		### Listener callback: Create and return a new MUES::SocketOutputFilter
+		### from the client socket after calling #accept on the listener socket.
 		def createOutputFilter( poll )
 			clientSocket = @io.accept
 			pollProxy = MUES::PollProxy::new( poll, clientSocket )
-			return MUES::SocketOutputFilter::new( clientSocket, pollProxy )
+			return MUES::SocketOutputFilter::new( clientSocket, pollProxy, self )
 		end
 
 
-		### Listener callback: Dispose of the given <tt>filter</tt> if need be.
+		### Listener callback: Dispose of the given (inactive) <tt>filter</tt>
+		### (a MUES::SocketOutputFilter object) if need be.
 		def releaseOutputFilter( pollObj, filter )
 			# no-op
 		end
