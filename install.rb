@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.9 2004/03/14 01:43:49 stillflame Exp $
+#	$Id$
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
@@ -24,7 +24,7 @@ include Config
 include Readline
 
 $version	= %q$Rev$
-$rcsId		= %q$Id: install.rb,v 1.9 2004/03/14 01:43:49 stillflame Exp $
+$rcsId		= %q$Id$
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
