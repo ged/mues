@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 # 
 # This file contains the MUES::(>>>FILE_SANS<<<) class, a derivative of
-# (>>>superclass<<). (>>>description<<<)
+# (>>>superclass<<<). (>>>description<<<)
 # 
 # == Synopsis
 # 
@@ -9,7 +9,7 @@
 # 
 # == Rcsid
 # 
-# $Id: TEMPLATE.rb.tpl,v 1.7 2002/08/02 14:51:57 deveiant Exp $
+# $Id: TEMPLATE.rb.tpl,v 1.8 2002/09/08 06:55:41 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,8 +31,8 @@ module MUES
 	class (>>>FILE_SANS<<<) < (>>>superclass<<<)
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.7 2002/08/02 14:51:57 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.8 2002/09/08 06:55:41 deveiant Exp $
 
 		### Create a new (>>>FILE_SANS<<<) object.
 		def initialize
