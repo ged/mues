@@ -4,7 +4,7 @@
 #
 #
 
-$:.unshift "lib"
+$:.unshift "lib", "tests"
 
 require 'find'
 require 'test/unit/testsuite'
