@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: workerthread.rb,v 1.11 2002/10/29 19:02:42 deveiant Exp $
+# $Id: workerthread.rb,v 1.12 2002/10/29 19:05:04 deveiant Exp $
 # 
 # == Authors
 # 
@@ -53,8 +53,8 @@ module MUES
 	class WorkerThread < Thread ; implements MUES::Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-		Rcsid	= %q$Id: workerthread.rb,v 1.11 2002/10/29 19:02:42 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid	= %q$Id: workerthread.rb,v 1.12 2002/10/29 19:05:04 deveiant Exp $
 
 
 		### Create and return the thread with the given arguments.
@@ -84,6 +84,10 @@ module MUES
 	class WorkerThreadGroup < ThreadGroup ; implements MUES::Debuggable
 		
 		include MUES::TypeCheckFunctions
+
+		### Class constants
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid	= %q$Id: workerthread.rb,v 1.12 2002/10/29 19:05:04 deveiant Exp $
 
 		### Add a thread (a MUES::WorkerThread object) to the group. Adding any
 		### other kind of thread will result in an exception being raised.
