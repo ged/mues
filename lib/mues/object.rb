@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.5 2002/10/25 19:01:53 deveiant Exp $
+# $Id: object.rb,v 1.6 2002/10/26 19:00:39 deveiant Exp $
 # 
 # == Authors
 # 
@@ -57,23 +57,24 @@ end
 
 ### A couple of utility methods for the Class class.
 ### [<tt>Class::alias_class_method</tt>]
-###     Create an alias for a class method. Idea borrowed from RubyTreasures by
-###     Paul Brannan <paul@nospam.atdesk.com>.
+###     Create an alias for a class method. Borrowed from RubyTreasures by Paul
+###     Brannan <paul@nospam.atdesk.com>.
 class Class
 
 	### Alias a class method.
 	def alias_class_method( newSym, oldSym )
-		rval = nil
-		rval = class_eval {
-			alias_method( newSym, oldSym )
+		retval = nil
+		eval %{
+		  class << self
+			retval = alias_method :#{newSym}, :#{oldSym}
+		  end
 		}
-		return rval
-
+	    return retval
 	rescue Exception => err
 		# Mangle exceptions to point someplace useful
 		frames = err.backtrace
 		frames.shift while frames.first =~ /#{__FILE__}/
-		Kernel::raise err, err.message, frames
+		Kernel::raise err, err.message.gsub(/in `\w+'/, "in `alias_class_method'"), frames
 	end
 end
 
@@ -153,8 +154,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.5 2002/10/25 19:01:53 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.6 2002/10/26 19:00:39 deveiant Exp $
 
 
 		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
