@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 ###########################################################################
-=begin
+=begin 
 
 = Exceptions.rb
 
@@ -30,32 +30,19 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
+require "e2mmap"
+
 ### MUD-specific errors
 module MUES
+	extend Exception2MessageMapper
 
-	class Exception < StandardError
-		def initialize( error_message = "Unknown mud error" )
-			super( error_message )
-		end
-	end
+	def_exception :Exception,			"MUES error",						StandardError
+	def_exception :EngineException,		"Engine error",						Exception
+	def_exception :EventQueueException,	"Event queue error",				Exception
+	def_exception :LogError,			"Error in log handle",				Exception
 
-	class EngineException < Exception
-		def initialize( error_message = "Unknown engine error" )
-			super( error_message )
-		end
-	end
-
-	class EventQueueException < Exception
-		def initialize( error_message = "Unknown error in event queue" )
-			super( error_message )
-		end
-	end
-
-	class LogError < Exception
-		def initialize( error_message = "Unknown error in log handle" )
-			super( error_message )
-		end
-	end
+	def_exception :Reload,				"Configuration out of date",		Exception
+	def_exception :Shutdown,			"Server shutdown",					Exception
 
 	class UnhandledEventError < Exception
 		def initialize( error_message = "Unhandled event" )
@@ -78,51 +65,12 @@ module MUES
 		end
 	end
 
-
-	### Exception events
-
-	class Reload < Exception
-		def initialize( error_message = "Configuration reloaded" )
-			super( error_message )
-		end
-	end
-
-	class Shutdown < Exception
-		def initialize( error_message = "Server shutdown" )
-			super( error_message )
-		end
-	end
+	def_exception :VirtualMethodError,	"Unimplemented virtual method",					TypeError
+	def_exception :InstantiationError,	"Instantiation attempted of abstract class",	TypeError
+	def_exception :SocketIOError,		"Error condition on socket.",					IOError
+	def_exception :ParseError,			"Error while parsing.",							SyntaxError
 
 end
 
-
-### Other (non-MUD-specific) kinds of exceptions
-
-class VirtualMethodError < TypeError
-	def initialize( error_message = "Unimplemented virtual method" )
-		super( error_message )
-	end
-end
-
-class InstantiationError < TypeError
-	def initialize( error_message = "Instantiation attempted of abstract class" )
-		super( error_message )
-	end
-end
-
-class SocketIOError < IOError
-	def initialize( error_message = "Error condition on socket." )
-		super( error_message )
-	end
-end
-
-class ParseError < SyntaxError
-	def initialize( error_message = "Error while parsing." )
-		super( error_message )
-	end
-end
-
-
-###########################################################################
 
 
