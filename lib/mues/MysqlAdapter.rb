@@ -50,8 +50,8 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: MysqlAdapter.rb,v 1.5 2001/07/30 12:07:25 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: MysqlAdapter.rb,v 1.6 2001/08/05 05:49:23 deveiant Exp $
 
 			PlainUserFields = MUES::User::DefaultDbInfo.find_all {|field, defaultVal|
 				!defaultVal.is_a?( Array ) && !defaultVal.is_a?( Hash )
@@ -167,8 +167,14 @@ module MUES
 			### Check to see if an object with the muesid specified exists in
 			### the object table
 			def hasObject?( id )
-				escId = Mysql.escape_string( id )
-				res = @dbh.query( "SELECT COUNT(*) FROM #{@@ObjectTable} WHERE muesid = '#{escId}'" )
+				escId = @objectAdapterClass.quoteValuesForField( 'muesid', id )
+
+				# :TODO: This depends on the adapter being a MySQL adapter.  It
+				# shouldn't do so, of course, but I've yet to implement the
+				# DBI-ish TableAdapter. And (yuck), there's a hardcoded field
+				# name in two places... and... and...
+				dbh = @objectAdapterClass.dbHandle
+				res = dbh.query( "SELECT COUNT(*) FROM #{@@ObjectTable} WHERE muesid = '#{escId}'" )
 				row = res.fetch_row
 				return !row.nil? && row[0] > 0
 			end
@@ -251,6 +257,18 @@ module MUES
 				}
 			end
 
+
+			### METHOD: getUsernameList
+			### Returns an array of the names of the stored user records.
+			def getUsernameList
+				names = []
+
+				# :TODO: Same thing as hasObject?
+				dbh = @objectAdapterClass.dbHandle
+				res = dbh.query( "SELECT username FROM #{@@UserTable}" )
+				res.each {|row| names.push row[0]}
+				return names.sort
+			end
 
 
 			#########################################################

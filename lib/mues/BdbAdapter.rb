@@ -49,8 +49,8 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.6 2001/07/30 12:03:55 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.7 2001/08/05 05:49:23 deveiant Exp $
 			DirectoryName = 'objectstore-bdb'
 
 			### Class variables
@@ -193,6 +193,15 @@ module MUES
 					@lock['user'].synchronize(Sync::EX) {
 						@dbh['user'].delete( username )
 					}
+				}
+			end
+
+
+			### METHOD: getUsernameList
+			### Return an array of the names of the stored user records
+			def getUsernameList
+				@lock['user'].synchronize(Sync::SH) {
+					return @dbh['user'].keys.sort
 				}
 			end
 

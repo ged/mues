@@ -78,6 +78,10 @@ the MUES::ObjectStore class^s constructor.
 
     Delete the user data associated with the specified ((|username|)).
 
+--- getUsernameList
+
+	Return an array of the names of the stored user records.
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -91,6 +95,8 @@ http://language.perl.com/misc/Artistic.html)
 =end
 #################################################################
 
+require "find"
+
 require "mues/Namespace"
 require "mues/Exceptions"
 
@@ -102,13 +108,17 @@ module MUES
 
 			include Debuggable
 
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: DummyAdapter.rb,v 1.5 2001/07/30 12:06:09 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: DummyAdapter.rb,v 1.6 2001/08/05 05:49:23 deveiant Exp $
 
 			### METHOD: new( db, host, user, password )
 			### Create a new DummyAdapter ObjectStore adapter object.
 			def initialize( *args )
 				super( *args )
+
+				unless FileTest.directory?( "objectstore" )
+					Dir.mkdir "objectstore"
+				end
 
 				@dbDir = "%s/%s" % [ "objectstore", @db.gsub(%r{\W+}, "") ]
 				unless FileTest.directory?( @dbDir )
@@ -122,6 +132,7 @@ module MUES
 			def storeObjects( *objects )
 				oids = []
 				objects.each {|obj|
+
 					# Make an object id out of the class name and the MUES id
 					oid = _safeifyId( "%s:%s" % [ obj.class.name, obj.muesid ] )
 					oids << oid
@@ -239,6 +250,24 @@ module MUES
 				File.delete( "#{@dbDir}/users/#{filename}" )
 			end
 				
+
+			### METHOD: getUsernameList
+			### Return an array of names of the stored user records
+			def getUsernameList
+				list = []
+				Find.find( "#{@dbDir}/users/*" ) {|f|
+					Find.prune unless FileTest.file?( f )
+
+					list << f
+				}
+
+				return list
+			end
+
+
+			###############################################
+			###	P R O T E C T E D   M E T H O D S
+			###############################################
 			protected
 
 			### METHOD: safeifyId( id )

@@ -48,6 +48,10 @@ Adapter - An ObjectStore adapter abstract base class
 			...
 		end
 
+        def listUsers
+			...
+		end
+
 	  end
     end
   end
@@ -117,6 +121,10 @@ for your own adapter classes.
 
     Delete the user data associated with the specified ((|username|)).
 
+--- getUsernameList
+
+    Return an array of usernames of the stored user records.
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -141,8 +149,8 @@ module MUES
 		class Adapter < Object ; implements Debuggable, AbstractClass
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: Adapter.rb,v 1.6 2001/07/30 11:59:46 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: Adapter.rb,v 1.7 2001/08/05 05:49:23 deveiant Exp $
 
 			### Class variables
 			@@AdapterClasses = {}
@@ -194,7 +202,8 @@ module MUES
 				:storeUserData,
 				:fetchUserData,
 				:createUserData,
-				:deleteUserData
+				:deleteUserData,
+				:getUsernameList
 		end
 	end
 end
