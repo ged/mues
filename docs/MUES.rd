@@ -3,19 +3,24 @@
 = MUES - A multi-user environment server
 == Introduction 
 
-The Multi-User Environment Server is a multiplexing, multithreaded, event-driven
-internet game environment server. It facilitates the building of online
-multiplayer games or simulations by providing one or more dynamically-programmed
-object environments (worlds), the means to access these environments using a
-network client, various useful services or daemons for creating in-game systems,
-and an event model for facilitating the interaction of all the parts.
+The MUES is a multi-threaded, event-driven internet game environment server
+written in Ruby. It is intended to facilitate the building of online multiplayer
+games or simulations by providing one or more dynamically-programmed object
+environments (worlds), the means to access these environments using a network
+client, various useful services or daemons for creating in-game systems, and an
+event system for facilitating the interaction of all the parts.
 
 == System Overview
+
+The MUES is made up of a server object, called the Engine, and five main
+subsystems: Events, IOStreams, Services, Environments, and an ObjectStore.
+
 === The Engine
 
-The engine is the server part of the MUES. It is reponsible for containing world
-objects and facilitating the interaction between clients which connect to the
-server and the worlds it contains.
+The engine is the core server part of the MUES. It is responsible for handling
+incoming connections, handling any exceptions which are unhandled by other
+objects, and coordinating the interaction of its subsystems. It is contained in
+the ((<MUES::Engine>)) class, which implements the Singleton pattern. 
 
 === The Metaclass Library
 
@@ -209,6 +214,6 @@ called with the Config object as an argument.
 
 == History
 
-  $Id: MUES.rd,v 1.5 2001/07/26 00:32:27 deveiant Exp $
+  $Id: MUES.rd,v 1.6 2001/12/05 18:02:26 deveiant Exp $
 
 =end
