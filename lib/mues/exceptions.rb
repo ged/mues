@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.16 2002/09/14 18:03:31 stillflame Exp $
+# $Id: exceptions.rb,v 1.17 2003/06/06 22:22:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -153,6 +153,7 @@ module MUES
 	def_exception :InstantiationError,		"Instantiation attempted of abstract class",	TypeError
 	def_exception :SocketIOError,			"Error condition on socket.",					IOError
 	def_exception :ParseError,				"Error while parsing.",							SyntaxError
+	def_exception :FactoryError,			"Error in Factory",								ScriptError
 
 	# System exceptions
 	def_exception :EngineException,			"Engine error",									Exception
