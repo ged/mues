@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: null.rb,v 1.9 2002/10/28 00:11:54 deveiant Exp $
+# $Id: null.rb,v 1.10 2002/10/31 08:10:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -65,8 +65,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.9 2002/10/28 00:11:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.10 2002/10/31 08:10:33 deveiant Exp $
 
 		DefaultDescription = %Q{
 		This is a barebones environment used in testing. It doesn't really contain any
@@ -255,12 +255,12 @@ module MUES
 
 					# 'Who' command
 					when /^who/
-						queueOutputEvents( MUES::OutputEvent.new(@env.getUserlist) )
+						queueOutputEvents( MUES::OutputEvent.new(@environment.getUserlist) )
 
 					# 'Say' command
 					when /^say\s*(.*)/
 						sayEvent = MUES::OutputEvent.new( "#{user.to_s} says: '#{$1}'\n\n" )
-						@env.broadcast( sayEvent, self )
+						@environment.broadcast( sayEvent, self )
 						queueOutputEvents( MUES::OutputEvent.new("You say: '#{$1}'\n\n") )
 
 					else
