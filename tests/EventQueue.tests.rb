@@ -9,11 +9,13 @@ end
 require "mues/EventQueue"
 require "mues/Events"
 
+
 module MUES
 
 	### Mock event handler class
-	class MockEventHandler < Object
+	class MockEventHandler < Test::Unit::MockObject( MUES::Object )
 		def initialize 
+			super
 			@handledEvents = []
 		end
 		def handleEvent( e )
@@ -25,30 +27,32 @@ module MUES
 	### Event queue tests
 	class EventQueueTestCase < MUES::TestCase
 
-		$MockHandler = nil
-		$QueueObj = nil
-
 		def set_up
-			$QueueObj = EventQueue.new
-			# $QueueObj.debugLevel = 1
-			$MockHandler = MockEventHandler.new
-			DebugOutputEvent.RegisterHandlers( $MockHandler )
+			@queueObj = EventQueue.new
+			@mockHandler = MockEventHandler.new
+			@mockHandler.activate
+
+			begin
+				DebugOutputEvent.RegisterHandlers( @mockHandler )
+			rescue
+				puts @mockHandler.callTrace.join("\n")
+			end
 		end
 
 		def tear_down
-			DebugOutputEvent.UnregisterHandlers( $MockHandler )
-			$MockHandler = nil
-			$QueueObj.shutdown if $QueueObj.running?
+			DebugOutputEvent.UnregisterHandlers( @mockHandler )
+			@mockHandler = nil
+			@queueObj.shutdown if @queueObj.running?
 
 			if $0 == __FILE__
 				threads = Thread.list
 				#assert_equal( 1, threads.size )
 				if threads.size > 1
-					puts "\nThread status (Queue is #{ if $QueueObj.running? then \"running\" else \"not running\" end}):"
-					puts "Supervisor thread: #{ $QueueObj.supervisor.id } (#{ $QueueObj.supervisor.status })" if
-						$QueueObj.supervisor.is_a?( Thread )
-					puts "Worker threads: #{ $QueueObj.workers.list.collect {|thr| thr.id}.join(',') }"
-					puts "Idle worker threads: #{ $QueueObj.idleWorkers.list.collect {|thr| thr.id}.join(',') }"
+					puts "\nThread status (Queue is #{ if @queueObj.running? then %{running} else %{not running} end}):"
+					puts "Supervisor thread: #{ @queueObj.supervisor.id } (#{ @queueObj.supervisor.status })" if
+						@queueObj.supervisor.is_a?( Thread )
+					puts "Worker threads: #{ @queueObj.workers.list.collect {|thr| thr.id}.join(',') }"
+					puts "Idle worker threads: #{ @queueObj.idleWorkers.list.collect {|thr| thr.id}.join(',') }"
 
 					threads.each do |thr|
 						next if thr == Thread.current || ! thr.alive?
@@ -58,40 +62,43 @@ module MUES
 				end
 			end
 			
-			$QueueObj = nil
+			@queueObj = nil
 		end
 		
 		def test_00_New
-			assert_not_nil $QueueObj
-			assert_instance_of EventQueue, $QueueObj
+			assert_not_nil @queueObj
+			assert_instance_of MUES::EventQueue, @queueObj
 		end
 
 		def test_01_StartStop
-			assert_nothing_raised { $QueueObj.start }
-			until $QueueObj.running? do sleep 0.1 end
-			assert_nothing_raised { $QueueObj.shutdown }
+			mockEngine = Test::Unit::MockObject( MUES::Engine ).new
+
+			assert_nothing_raised { @queueObj.start(mockEngine) }
+			until @queueObj.running? do sleep 0.1 end
+			assert_nothing_raised { @queueObj.shutdown }
 		end
 
 		def test_02_StopWithoutStart()
-			assert_nothing_raised { $QueueObj.shutdown }
+			assert_nothing_raised { @queueObj.shutdown }
 		end
 
 		def test_03_StartWhileRunning()
-			$QueueObj.debugLevel = 0
-			$QueueObj.start
-			assert_nothing_raised { $QueueObj.start }
-			$QueueObj.shutdown
+			mockEngine = Test::Unit::MockObject( MUES::Engine ).new
+			@queueObj.debugLevel = 0
+			@queueObj.start( mockEngine )
+			assert_nothing_raised { @queueObj.start(mockEngine) }
+			@queueObj.shutdown
 		end
 
 		def test_04_QueueEvent
 			assert_nothing_raised {
 				ev = DebugOutputEvent.new( 1 )
-				$QueueObj.enqueue( ev )
+				@queueObj.enqueue( ev )
 			}
 		end
 
 		def test_05_QueueWithoutArgs
-			assert ! $QueueObj.enqueue
+			assert ! @queueObj.enqueue
 		end
 
 	end
