@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: flatfilebackend.rb,v 1.1 2002/05/28 21:15:47 deveiant Exp $
+# $Id: flatfilebackend.rb,v 1.2 2002/07/09 15:07:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -30,6 +30,8 @@ require 'pstore'
 require 'mues'
 require 'mues/Exceptions'
 require 'mues/ObjectStore'
+require 'mues/StorableObject'
+require 'mues/os-extensions/Backend'
 
 module MUES
 	class ObjectStore
@@ -38,14 +40,12 @@ module MUES
 		class FlatfileBackend < MUES::ObjectStore::Backend
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-			Rcsid = %q$Id: flatfilebackend.rb,v 1.1 2002/05/28 21:15:47 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+			Rcsid = %q$Id: flatfilebackend.rb,v 1.2 2002/07/09 15:07:45 deveiant Exp $
 
 			### Create a new BerkeleyDBBackend object.
-			def initialize( objectStore, name, serializer, indexes )
-				@objectStore = objectStore
+			def initialize( name, indexes=[], configHash={} )
 				@name = name
-				@serializer = serializer
 
 				@store = PStore::new( @name )
 				@store.transaction {
@@ -60,6 +60,12 @@ module MUES
 			######
 			public
 			######
+
+			### Drop the datastore under the backend
+			def drop
+				self.close
+				File::delete( @name )
+			end
 
 			### store
 			def store
