@@ -46,31 +46,41 @@ module MUES
 		include Debuggable
 		include AbstractClass
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
+		### Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.2 2001/05/14 12:26:47 deveiant Exp $
+		DefaultSortPosition = 500
 
-		### Class attributes
-		@@DefaultSortPosition = 500
+		### Class methods
+		class << self
 
-		### Public methods
-		public
+			### (CLASS) METHOD: defaultSortPosition
+			### Returns the integer that indicates what order the filter should
+			### naturally sort to
+			def defaultSortPosition
+				@@DefaultSortPosition
+			end
+		end # class << self
 
-		### Accessors
-		attr_accessor	:sortPosition
-		attr_reader		:queuedInputEvents, :queuedOutputEvents, :isFinished
 
-		### METHOD: initialize( sort=nil )
+		### Initializer
+
+		### (PROTECTED) METHOD: initialize( sort=nil )
 		### Initialize the filter, optionally setting the sort position to
 		### the value specified.
+		protected
 		def initialize( order=nil )
 			@sortPosition = if order.nil?
-								   @@DefaultSortPosition
-							   else
-								   order
-							   end
-
-			raise TypeError, "Sort position: expected a Fixnum" unless
-				@sortPosition.is_a?( Fixnum )
+								if self.class.const_defined? "DefaultSortPosition"
+									self.class.const_get :DefaultSortPosition
+								else
+									DefaultSortPosition
+								end
+							else
+								order
+							end
+			raise TypeError, "Sort position: expected a Fixnum, not a #{@sortPosition.class.name}" unless
+				@sortPosition.is_a?( ::Fixnum )
 			raise ArgumentError, "Sort position must be between 0 and 1000" unless
 				0 <= @sortPosition && @sortPosition <= 1000
 			
@@ -84,11 +94,28 @@ module MUES
 			super()
 		end
 
+
+		#######################################################################
+		###	P U B L I C   M E T H O D S
+		#######################################################################
+		public
+
+		### Accessors
+		attr_accessor	:sortPosition
+		attr_reader		:queuedInputEvents, :queuedOutputEvents, :isFinished
+
 		### METHOD: shutdown
 		### Shut the filter down
 		def shutdown
+			_debugMsg( 1, "In shutdown." )
 			@isFinished = true
 			return @queuedInputEvents + @queuedOutputEvents
+		end
+
+		### METHOD: start
+		### Start up the filter
+		def start
+			true
 		end
 
 		### METHOD: queueInputEvents( *events )
@@ -96,13 +123,13 @@ module MUES
 		### event stream on the next IO loop.
 		def queueInputEvents( *events )
 			events.flatten!
-			checkEachType( events, InputEvent )
+			checkEachType( events, MUES::InputEvent )
 
 			_debugMsg( 1, "Queueing #{events.size} input events." )
 			@queuedInputEventsMutex.synchronize {
 				@queuedInputEvents += events
 			}
-			_debugMsg( 1, "#{@queuedInputEvents.size} input events now queued." )
+			_debugMsg( 2, "#{@queuedInputEvents.size} input events now queued." )
 
 			return @queuedInputEvents.size
 		end
@@ -112,12 +139,13 @@ module MUES
 		### event stream on the next IO loop.
 		def queueOutputEvents( *events )
 			events.flatten!
-			checkEachType( events, OutputEvent )
+			checkEachType( events, MUES::OutputEvent )
 
+			_debugMsg( 1, "Queueing #{events.size} output events." )
 			@queuedOutputEventsMutex.synchronize {
 				@queuedOutputEvents += events
 			}
-			_debugMsg( 1, "#{@queuedOutputEvents.size} output events now queued." )
+			_debugMsg( 2, "#{@queuedOutputEvents.size} output events now queued." )
 
 			return @queuedOutputEvents.size
 		end
@@ -126,8 +154,8 @@ module MUES
 		### Comparison -- Returns -1, 0, or 1 if the receiver sorts higher, equal
 		### to, or lower than the specified object, respectively.
 		def <=>( anObject )
-			checkType( anObject, IOEventFilter )
-			return self.sortPosition <=> anObject.sortPosition
+			checkType( anObject, MUES::IOEventFilter )
+			return @sortPosition <=> anObject.sortPosition
 		end
 
 		### (VIRTUAL) METHOD: handleInputEvents( *events )
@@ -144,7 +172,6 @@ module MUES
 		### Default filter method for output events
 		def handleOutputEvents( *events )
 			events.flatten!
-			_debugMsg( 1, "There are #{@queuedOutputEvents.size} output events queued, and I've been given #{events.size}." )
 
 			@queuedOutputEventsMutex.synchronize {
 				events += @queuedOutputEvents
