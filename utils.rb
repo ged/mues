@@ -2,7 +2,7 @@
 #	Install/distribution utility functions
 #	$Id: utils.rb,v 1.20 2003/11/23 04:37:57 stillflame Exp $
 #
-#	Copyright (c) 2001-2003, The FaerieMUD Consortium.
+#	Copyright (c) 2001-2004, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -89,6 +89,13 @@ module UtilityFunctions
 			return "\e[%sm" % attr
 		end
 	end
+
+	### Return the given +prompt+ with the specified +attributes+ turned on and
+	### a reset at the end.
+	def colored( prompt, *attributes )
+		return ansiCode( *(attributes.flatten) ) + prompt + ansiCode( 'reset' )
+	end
+
 
 	# Test for the presence of the specified <tt>library</tt>, and output a
 	# message describing the test using <tt>nicename</tt>. If <tt>nicename</tt>
