@@ -1,6 +1,6 @@
 #
 # The filters MUES::CommandShell command.
-# $Id: filters.cmd,v 1.1 2002/09/05 04:07:11 deveiant Exp $
+# $Id: filters.cmd,v 1.2 2002/09/12 12:54:27 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -29,18 +29,19 @@ implementor
   # where 'context' is a MUES::Command::Context object, and argString is the
   # text of the command entered, with the command name and any leading/trailing
   # whitespace removed.
-  if args.strip.empty?
+  if argString.strip.empty?
 	  user = context.user
-  elsif args =~ /^\s*(\w+)\s*$/
-	  user = MUES::ServerFunctions::engine.getUserByName( $1 ) 
+  elsif argString =~ /^\s*(\w+)\s*$/
+	  username = $1.to_s
+	  user = MUES::ServerFunctions::getUserByName( username ) 
 	  if user.nil?
-		  return [MUES::OutputEvent.new( "No such user '#$1'" )]
+		  return [MUES::OutputEvent.new( "No such user '#{username}'" )]
 	  end
   else
-	  return [MUES::OutputEvent.new( usage() )]
+	  return [MUES::OutputEvent.new( self.usage )]
   end
 
-  filterList = [ "Filters currently in your stream:" ]
+  filterList = [ "Filters currently in #{user.username}'s stream:" ]
   user.ioEventStream.filters.sort.each {|filter|
 	  filterList << filter.to_s
   }
