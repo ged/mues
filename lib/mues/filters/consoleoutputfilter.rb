@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.12 2002/10/31 02:17:26 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.13 2003/09/12 02:22:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,7 +31,7 @@ require "thread"
 require "mues/Object"
 require "mues/Events"
 require "mues/Exceptions"
-require "mues/PollProxy"
+require "mues/ReactorProxy"
 require "mues/filters/OutputFilter"
 
 module MUES
@@ -40,8 +40,8 @@ module MUES
 	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.12 2002/10/31 02:17:26 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.13 2003/09/12 02:22:06 deveiant Exp $
 		DefaultSortPosition = 15
 
 		### A container module for MUES::SocketOutputFilter state contants.
@@ -51,8 +51,8 @@ module MUES
 			SHUTDOWN = 2
 		end
 
-		# The Poll events to react to
-		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN
+		# The Reactor events to react to
+		HandledReactorEvents = [ :read, :write, :error ]
 
 		# Legibility constants
 		NULL = "\000"
@@ -67,11 +67,11 @@ module MUES
 
 
 		### Initialize the console output filter.
-		def initialize( pollProxy, originListener=MUES::Listener, sortOrder=DefaultSortPosition )
-			checkType( pollProxy, MUES::PollProxy )
+		def initialize( reactorProxy, originListener=MUES::Listener, sortOrder=DefaultSortPosition )
+			checkType( reactorProxy, MUES::ReactorProxy )
 			checkType( originListener, MUES::Listener )
 
-			@pollProxy		= pollProxy
+			@reactorProxy		= reactorProxy
 
 			@readBuffer		= ''
 			@writeBuffer	= ''
@@ -166,7 +166,7 @@ module MUES
 		### Start the filter
 		def start( stream )
 			super( stream )
-			@pollProxy.register( Poll::IN, method(:handlePollEvent) )
+			@reactorProxy.register( :read, method(:handleReactorEvent) )
 			@state = State::RUNNING
 		end
 
@@ -174,7 +174,7 @@ module MUES
 		### Shut the filter down, disconnecting from the remote host.
 		def stop( stream )
 			debugMsg 1, "Stopping %s" % self.to_s
-			self.sendShutdownMessage if @pollProxy.registered?
+			self.sendShutdownMessage if @reactorProxy.registered?
 			self.shutdown
 			rval = super( stream )
 			debugMsg 3, "Stopping console filter, returning: %s" % rval.to_s
@@ -227,7 +227,6 @@ module MUES
 
 		### Shut the filter down.
 		def shutdown
-
 			debugMsg 1, "Shutting filter down."
 
 			# Set the state to shutdown and notify the writing thread
@@ -237,7 +236,7 @@ module MUES
 
 			# Unregister the input IO
 			self.log.info( "Filter #{self.to_s} shutting down." )
-			@pollProxy.unregister
+			@reactorProxy.unregister
 
 			# Flag the filter as finished and notify the controlling stream
 			self.finish
@@ -253,7 +252,7 @@ module MUES
 
 
 		### Append the specified <tt>strings</tt> to the output buffer and mask
-		### the Poll object to receive writable condition events.
+		### the Reactor object to receive writable condition events.
 		def appendToWriteBuffer( *strings )
 			data = strings.join("")
 			return if data.empty?
@@ -265,36 +264,28 @@ module MUES
 		end
 
 
-		### Handler routine for Poll events. Reads data from queued
-		### output events, sends it to the remote client, and creates new input
-		### events from user input via the io.
-		def handlePollEvent( io, mask )
-			debugMsg( 5, "Got poll event: #{mask.class.name}: %x" % mask )
+		### Handler routine for Reactor events.
+		def handleReactorEvent( io, event )
+			debugMsg( 5, "Got reactor event: %p" % event )
 
 			### Handle invalid file descriptor
-			if (mask & (Poll::NVAL|Poll::HUP)).nonzero?
-				err = (mask == Poll::NVAL ? "Invalid file descriptor" : "Hangup")
+			case event
+
+			when :error
 				self.log.error( "#{err} for #{io.inspect}" )
 				self.shutdown
-			end
-
-			### Handle io errors
-			if (mask & Poll::ERR).nonzero?
-				self.log.error( "IO error (unknown)" )
-			end
 
 			### Read any input from the io if it's ready
-			if (mask & Poll::IN).nonzero?
+			when :read
 				readData = io.sysread( MTU )
-				debugMsg( 5, "Read %d bytes in poll event handler (readData = %s)." %
+				debugMsg( 5, "Read %d bytes in reactor event handler (readData = %s)." %
 						[ readData.length, readData.inspect ] )
 				handleRawInput( readData )
-			end
 
-			# If the mask contains bits we don't handle, log them
-			if ( (mask ^ HandledBits) & mask ).nonzero?
-				self.log.notice( "Unhandled Poll event in #{self.class.name}: %o" %
-								 ((mask ^ HandledBits) & mask) )
+			# If the event contains bits we don't handle, log them
+			else
+				self.log.notice( "Unhandled Reactor event in #{self.class.name}: %o" %
+								 ((event ^ HandledBits) & event) )
 			end
 
 		rescue => e
