@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.26 2002/10/14 09:35:55 deveiant Exp $
+# $Id: user.rb,v 1.27 2002/10/18 00:35:28 stillflame Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.26 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.26 2002/10/14 09:35:55 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.27 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.27 2002/10/18 00:35:28 stillflame Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -151,6 +151,7 @@ module MUES
 			question = CreateUserQuestions.find {|question| question[:name] == attribute} or
 				raise RuntimeError, "Can't build a questionnaire for '%s': No question with that name." %
 				attribute
+			question[:question] = ("Currently: %s\n" % user.send(attribute.intern)) + question[:question]
 
 			qnaire = Questionnaire::new( "Change #{attribute}", question ) {|qnaire|
 				MUES::ServerFunctions::unregisterUser( user )
