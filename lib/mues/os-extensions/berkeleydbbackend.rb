@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.10 2002/10/23 02:49:18 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.11 2003/09/12 04:32:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -44,8 +44,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.10 2002/10/23 02:49:18 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.11 2003/09/12 04:32:46 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,
@@ -70,7 +70,7 @@ module MUES
 					"The installed version of BDB doesn't support " +
 					"associations. You should upgrade to BerkeleyDB " +
 					">= 3.3.x and BDB >= 0.2.1" unless
-					BDB::Common::instance_methods.include? 'associate'
+					BDB::Common::instance_methods( true ).include? 'associate'
 
 				# Figure out what the target directory is
 				@dir = File::join( ObjectStore::Backend::StoreDir, @name )
