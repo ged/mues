@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.5 2002/10/23 02:13:25 deveiant Exp $
+# $Id: socketlistener.rb,v 1.6 2002/10/26 19:05:47 deveiant Exp $
 # 
 # == Authors
 # 
@@ -47,8 +47,8 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.5 2002/10/23 02:13:25 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.6 2002/10/26 19:05:47 deveiant Exp $
 
 		### Create a new SocketListener object with the specified
 		### <tt>name</tt>. This listener understands the following
@@ -89,8 +89,6 @@ module MUES
 			@wrapName			= parameters['wrap-name'] || name
 			@wrapIdent			= parameters['wrap-ident'] || false
 			@wrapIdentTimeout	= parameters['wrap-ident-timeout'] || 30
-
-			@filterDebugLevel	= parameters['filter-debug'].to_i
 
 			# If the listener's configured to use tcp_wrappers, load the tcpwrap
 			# library and set the wrappered flag.
@@ -143,8 +141,6 @@ module MUES
 		# The number of seconds to wait for an ident lookup before timing out
 		attr_reader :wrapIdentTimeout
 
-		# The debugging level set on filters created by this listener
-		attr_accessor :filterDebugLevel
 
 		### Return a human-readable version of the listener suitable for log
 		### messages, etc.
@@ -174,7 +170,8 @@ module MUES
 		### Listener callback: Dispose of the given (inactive) <tt>filter</tt>
 		### (a MUES::SocketOutputFilter object) if need be.
 		def releaseOutputFilter( pollObj, filter )
-			# no-op
+			self.log.notice "Filter %s (%s) released to %s" % 
+				[ filter.muesid, filter.class.name, self.class.name ]
 		end
 
 
