@@ -25,7 +25,7 @@
 # 
 # == Rcsid
 # 
-# $Id: interface.rb,v 1.7 2002/10/04 05:06:43 deveiant Exp $
+# $Id: interface.rb,v 1.8 2002/10/04 09:56:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -54,11 +54,11 @@ module MUES
 		### expressing requirements.
 		class Interface
 
-			include MUES::TypeCheckMethods
+			include MUES::TypeCheckFunctions
 
 			# Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
-			Rcsid = %q$Id: interface.rb,v 1.7 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
+			Rcsid = %q$Id: interface.rb,v 1.8 2002/10/04 09:56:31 deveiant Exp $
 
 
 			# Mix in instance vars, accessors, and methods for attributes and
