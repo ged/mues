@@ -38,8 +38,8 @@ require "mues/filters/IOEventFilter"
 module MUES
 	class ParticipantProxy < IOEventFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.1 2001/07/27 04:07:37 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: participantproxy.rb,v 1.2 2001/09/26 13:27:49 deveiant Exp $
 		DefaultSortPosition = 850
 
 		#############################################################
@@ -47,7 +47,21 @@ module MUES
 		#############################################################
 		public
 
+		attr_reader :user, :role, :env
 		abstract :handleInputEvents
+
+		### METHOD: initialize( aUser=MUES::User, aRole=MUES::Role, anEnv= )
+		def initialize( aUser, aRole, anEnv )
+			checkType( aUser, MUES::User )
+			checkType( aRole, MUES::Role )
+			checkType( anEnv, MUES::Environment )
+
+			super()
+
+			@user = aUser
+			@role = aRole
+			@env = anEnv
+		end
 
 	end # class ParticipantProxy
 end # module MUES
