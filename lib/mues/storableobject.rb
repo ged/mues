@@ -14,7 +14,7 @@
 #	end
 #
 #	obj = MyObject::new
-#	objId = obj.objectStoreID
+#	objId = obj.objectStoreId
 #	objectStore.register( obj )
 #
 #	# ...later...
@@ -31,10 +31,6 @@
 #
 # Please see the file COPYRIGHT for licensing details.
 #
-
-require "mues.so" # For Polymorphic
-require "mues/ObjectStore"
-require "mues/Exceptions"
 
 
 module MUES
@@ -67,7 +63,7 @@ module MUES
 		
 		### The auto-generated object id used as the primary key in the
 		### MUES::ObjectStore.
-		alias :objectStoreID :muesid
+		alias :objectStoreId :muesid
 
 
 		### Returns true if the receiver is a shallow reference to a
@@ -82,23 +78,32 @@ module MUES
 		### any other objects which should be visited as the second and
 		### succeeding arguments.
 		def accept( visitor )
-			checkType( visitor, MUES::ObjectStore::ObjectSpaceVisitor )
+			checkType( visitor, MUES::ObjectSpaceVisitor )
 			return visitor.visit( self )
 		end
 
 
 		### Callback method for prepping the object for storage in an
-		### ObjectStore. Should return either itself or a copy of itself
-		### suitable for serialization (eg., with references flattened,
-		### un-serializable data removed or preserved in some way, etc.). It may
-		### modify any attribute except its <tt>muesid</tt>, provided, of
-		### course, that it can reconstitute itself when its #awaken method is
-		### called. The MUES::ObjectStore it is about to be stored in is given
-		### as the <tt>objStore</tt> argument.
+		### ObjectStore. Should return a copy of itself suitable for
+		### serialization (eg., with references flattened, un-serializable data
+		### removed or preserved in some way, etc.). It may modify any attribute
+		### except its <tt>muesid</tt>, provided, of course, that it can
+		### reconstitute itself when its #awaken method is called. The
+		### MUES::ObjectStore it is about to be stored in is given as the
+		### <tt>objStore</tt> argument.
 		def lull( objStore )
-			return self
+			copy = self.dup
+			copy.lull!( objStore )
+			return copy
 		end
 
+
+		### Like #lull, but modifies the receiver in place. Returns <tt>nil</tt>
+		### if no modifications were made.
+		def lull!( objStore )
+			return nil
+		end
+		
 
 		### Callback method for thawing after being retrieved from the
 		### ObjectStore. Should return either itself, or a copy of itself which
@@ -106,7 +111,16 @@ module MUES
 		### un-serializable data reconstituted, etc.). The MUES::ObjectStore it
 		### is about to be stored in is given as the <tt>objStore</tt> argument.
 		def awaken( objStore )
-			return self
+			copy = self.dup
+			copy.awaken!( objStore )
+			return copy
+		end
+
+		
+		### Like #awaken, but modifies the receiver in place. Returns
+		### <tt>nil</tt> if no modifications were made.
+		def awaken!( objStore )
+			return nil
 		end
 
     end # class StorableObject
@@ -152,7 +166,7 @@ module MUES
 			super()
 
 			if obj.kind_of? MUES::StorableObject
-				@muesid = id.objectStoreID
+				@muesid = id.objectStoreId
 				@indexTable = indexTable ? indexTable : {}
 			else
 				@muesid = obj.to_s
@@ -166,7 +180,7 @@ module MUES
 		### Marshal interface: Returns a partially-reconstituted
 		### ShallowReference -- it will be non-functional until the #objStore
 		### method is called with the current MUES::ObjectStore object.
-		def ShallowReference._load( string )
+		def ShallowReference.load( string )
 			MUES::ShallowReference::new( string )
 		end
 
@@ -178,7 +192,7 @@ module MUES
 
 		### Marshal interface: Returns a serialized ShallowReference as a
 		### String.
-		def _dump( depth )
+		def dump( depth )
 			return @muesid
 		end
 
