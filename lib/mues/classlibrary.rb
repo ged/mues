@@ -26,7 +26,7 @@
 #   
 # == Rcsid
 # 
-# $Id: classlibrary.rb,v 1.5 2002/04/01 15:53:38 deveiant Exp $
+# $Id: classlibrary.rb,v 1.6 2002/05/16 03:52:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -53,8 +53,8 @@ module MUES
 	### An AbstractFactory class for environment metaclass libraries
 	class ClassLibrary < Object
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.5 2002/04/01 15:53:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.6 2002/05/16 03:52:06 deveiant Exp $
 
 		### Return a new ClassLibrary object with the specified name.
 		def initialize( libraryName )
@@ -85,8 +85,8 @@ module MUES
 			@interfaces[ interfaceName ] = klass
 		end
 
-		### Add a class to the library.If no <tt>alternateClassName<tt> is
-		### specified, <tt>klass.name<tt> will be used.
+		### Add a class to the library.If no <tt>alternateClassName</tt> is
+		### specified, <tt>klass.name</tt> will be used.
 		def addClass( klass, altClassName = nil )
 			klassName = if altClassName.nil?
 						then klass.name
