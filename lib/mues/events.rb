@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.14 2002/10/23 04:57:49 deveiant Exp $
+# $Id: events.rb,v 1.15 2003/04/19 06:55:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -69,7 +69,7 @@ module MUES
 		### which wishes to handle one or more event types.
 		module Handler
 
-			include MUES::TypeCheckFunctions
+			include MUES::TypeCheckFunctions, MUES::Debuggable
 
 			### Event dispatcher method. This method does dynamic dispatch to
 			### class-specific event handler methods in the class that mixes it
