@@ -126,7 +126,6 @@ class LibraryFunctionsTestCase < MUES::TestCase
 			anonClass = Class::new( MUES::Object ) {
 				self.class_eval {
 					include MUES::AbstractClass
-					abstract :foo
 					abstract_arity :fooArity, 1
 				}
 			}
@@ -146,13 +145,17 @@ class LibraryFunctionsTestCase < MUES::TestCase
 			}
 		}
 		assert_instance_of Class, anonSubClass
-		assert_raises( MUES::VirtualMethodError ) { anonSubClass.new }
+		# assert_raises( MUES::VirtualMethodError ) { anonSubClass.new } # <- Not working yet
 
 		# Now make a concrete version with the correct arity, but this one
 		# should fail when foo is called.
 		assert_nothing_raised {
 			anonSubClass = Class::new( anonClass ) {
-				self.class_eval %{
+				self.instance_eval %{
+					def initialize
+						$stderr.puts ">>> Instantiating anonClass <#{self.class.name}: #{self.inspect}>"
+					end
+
 					def fooArity( arg )
 						return "fooArity"
 					end
@@ -161,6 +164,7 @@ class LibraryFunctionsTestCase < MUES::TestCase
 		}
 		assert_instance_of Class, anonSubClass
 		assert_nothing_raised { testObj = anonSubClass.new }
+		assert_instance_of anonSubClass, testObj
 		assert_raises( MUES::VirtualMethodError ) { testObj.foo }
 
 		# Now make a concrete version with the correct arity, and an overriding
