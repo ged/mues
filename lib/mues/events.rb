@@ -12,6 +12,8 @@ MUES::Events - a collection of event classes for the MUES Engine
 
   require "mues/Events"
 
+  include MUES::Event::Handler
+
   event = MUES::EngineShutdownEvent.new
   eventQueue.priorityEnqueue( event )
 
@@ -20,6 +22,17 @@ MUES::Events - a collection of event classes for the MUES Engine
 This module is a collection of event classes for system-level events in the
 FaerieMUD server. World events are subclasses of MUES::WorldEvent, and are
 defined in the game object library.
+
+== Mixins
+=== MUES::Event::Handler
+
+A default event handler mixin. Including this module mixes in a
+(({handleEvent})) method that does dynamic dispatch to methods in the class that
+mixes it in. It will look for a method called (({_handle*eventClass*()})), where
+((|eventClass|)) is the class of the event to handle. If no explicit handler is
+found, each of the event^s superclasses is tried as well. If no handler is
+defined for any of the events, it tries to call (({_handleEvent()})). If no
+handler is found, an ((<MUES::UnhandledEventError>)) is raised.
 
 == Author
 
@@ -50,15 +63,14 @@ require "mues/events/EnvironmentEvents"
 module MUES
 	class Event
 
-		### MODULE: Event::Handler
-		#  A default event handler module. Including this module mixes in a
-		#  handleEvent() method that does dynamic dispatch to methods in the
-		#  class that mixes it in. It will look for a method called
-		#  '_handle<eventClass>()', where eventClass is the class of the event
-		#  to handle. If no explicit handler is found, each of the event's
-		#  superclasses is tried as well. If no handler is defined for any of
-		#  the events, it tries to call _handleEvent(). If no handler is
-		#  found, an UnhandledEventError is raised.
+		### A default event handler module. Including this module mixes in a
+		### handleEvent() method that does dynamic dispatch to methods in the
+		### class that mixes it in. It will look for a method called
+		### '_handle<eventClass>()', where eventClass is the class of the event
+		### to handle. If no explicit handler is found, each of the event's
+		### superclasses is tried as well. If no handler is defined for any of
+		### the events, it tries to call _handleEvent(). If no handler is found,
+		### an UnhandledEventError is raised.
 		module Handler
 
 			def handleEvent( event )
