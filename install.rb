@@ -18,10 +18,8 @@ include UtilityFunctions
 require 'rbconfig'
 require 'find'
 require 'ftools'
-require 'readline'
 
 include Config
-include Readline
 
 $version	= %q$Rev$
 $rcsId		= %q$Id$
