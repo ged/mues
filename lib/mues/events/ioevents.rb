@@ -72,6 +72,13 @@ module MUES
 	### CLASS: OutputEvent < IOEvent
 	class OutputEvent < IOEvent; end
 
+	### CLASS: OutputPromptEvent < OutputEvent
+	class OutputPromptEvent < OutputEvent
+		def initialize( *args )
+			args = [ "mues> " ] if args.empty?
+			super( *args )
+		end
+	end
 
 	### CLASS: InputEvent < IOEvent
 	class InputEvent < IOEvent; end
