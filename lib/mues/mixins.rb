@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.2 2002/09/12 12:04:48 deveiant Exp $
+# $Id: mixins.rb,v 1.3 2002/09/15 00:09:30 deveiant Exp $
 # 
 # == Authors
 # 
@@ -447,9 +447,9 @@ module MUES
 	### subclasses may be instantiated by name.
 	module FactoryMethods
 
-		@@registeredDerivatives = {}
-		def self.registeredDerivatives
-			@@registeredDerivatives
+		@@typeRegistry = {}
+		def self.typeRegistry
+			@@typeRegistry
 		end
 
 
@@ -464,11 +464,11 @@ module MUES
 			### Add a class global to hold derivative classes by various keys and
 			### the class methods.
 			klass.instance_eval {
-				@@registeredDerivatives[self] = {}
+				@@typeRegistry[self] = {}
 
 				### Returns an Array of registered derivatives
 				def self.getDerivativeClasses
-					@@registeredDerivatives[self].values.uniq
+					@@typeRegistry[self].values.uniq
 				end
 
 				### Returns the type name used when searching for a derivative.
@@ -502,6 +502,7 @@ module MUES
 				### <tt>afterCreation</tt>, it will be called after the object
 				### is instantiated, and is passed the new instance.
 				def self.create( subType, *args )
+					MUES::TypeCheckFunctions::checkType( subType, ::String, ::Class )
 					subClass = getSubclass( subType )
 
 					if self.respond_to?( :beforeCreation )
@@ -524,10 +525,10 @@ module MUES
 				### the Factory for later lookup. This is how the factory class
 				### finds the classes named by the #create method. The hash of
 				### loaded subclasses can be found in the class variable
-				### '<tt>@@registeredDerivatives</tt>'.
+				### '<tt>@@typeRegistry</tt>'.
 				def self.inherited( subClass )
 					MUES::Log.debug( "\e[33;01m%s (factory) inherited by %s\e[0m" % [self.name, subClass.name] )
-					return self.superclass.inherited( subClass ) unless @@registeredDerivatives.has_key?( self )
+					return self.superclass.inherited( subClass ) unless @@typeRegistry.has_key?( self )
 					factoryType = self.factoryType
 
 					MUES::Log.debug( "Adding derivative '%s' to the %s factory" % [
@@ -548,11 +549,11 @@ module MUES
 											key, key.type.name,
 											self.name
 										])
-						@@registeredDerivatives[self][ key ] = subClass
+						@@typeRegistry[self][ key ] = subClass
 					}
 
 					MUES::Log.debug( "%d derivatives now registered for %s Factory" %
-									 [@@registeredDerivatives[self].keys.length, factoryType] )
+									 [@@typeRegistry[self].keys.length, factoryType] )
 
 					#super( subClass )
 				end
@@ -562,27 +563,38 @@ module MUES
 				### to #create, attempt to load the corresponding class if it is
 				### not already loaded and return the class object.
 				def self.getSubclass( className )
+					MUES::TypeCheckFunctions::checkType( className, ::Class, ::String )
 					return self if ( self.name == className || className == '' )
 					return className if className.is_a?( Class ) && className >= self
 
 					MUES::Log.debug( "Fetching the '#{className}' derivative of #{self.name}" )
-					unless @@registeredDerivatives[self].has_key? className
+					unless @@typeRegistry[self].has_key? className
+						
 						self.loadDerivative( className )
-						unless ( @@registeredDerivatives[self].has_key? className )
-							pp @@registeredDerivatives
+
+						@@typeRegistry[self].keys.each {|k|
+							if k == className
+								MUES::Log.debug( "...registry key #{k.inspect} == #{className.inspect}" )
+							else
+								MUES::Log.debug( "...registry key #{k.inspect} != #{className.inspect}" )
+							end
+						}
+
+						unless ( @@typeRegistry[self].has_key? className )
+							pp @@typeRegistry[self]
 							raise Exception,
 								"loadDerivative(%s) didn't add a '%s' key to the registry for %s" %
 								[ className, className, self.name ]
 						end
-						unless ( @@registeredDerivatives[self][className].is_a? Class )
-							pp @@registeredDerivatives
+						unless ( @@typeRegistry[self][className].is_a? Class )
+							pp @@typeRegistry[self]
 							raise Exception,
 								"loadDerivative(%s) added something other than a class to the registry for %s" %
 								[ className, self.name ]
 						end
 					end
 					
-					return @@registeredDerivatives[self][ className ]
+					return @@typeRegistry[self][ className ]
 				end
 
 
@@ -611,7 +623,7 @@ module MUES
 
 					# Check to see if the specified listener is now loaded. If it
 					# is not, raise an error to that effect.
-					unless @@registeredDerivatives[self][ className ]
+					unless @@typeRegistry[self][ className ]
 						MUES::Log.debug( "Failed to load '%s' via %s.create" % [
 											className, self.name ])
 						raise RuntimeError,
