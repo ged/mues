@@ -41,7 +41,7 @@
 #
 # == Rcsid
 # 
-# $Id: log.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
+# $Id: log.rb,v 1.8 2002/09/12 11:50:47 deveiant Exp $
 # 
 # == Authors
 # 
@@ -54,17 +54,11 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues/Config'
-
-require 'log4r'
-require 'log4r/logger'
-require 'log4r/outputter/outputter'
-require 'log4r/outputter/emailoutputter'
-require 'log4r/formatter/patternformatter'
-
 BEGIN {
-	require 'log4r/configurator'
+	require 'log4r'
 	require 'log4r/logger'
+	require 'log4r/configurator'
+	require 'log4r/outputter/outputter'
 
 	module MUES
 		class Log < Log4r::Logger
@@ -78,8 +72,13 @@ BEGIN {
 	$VERBOSE = false
 	constantNames = MUES::Log::LogLevels.collect {|sym| sym.to_s.upcase.intern}
 	Log4r::Configurator.custom_levels( *constantNames )
+	Log4r::Logger.root.level = 1
+
 	$VERBOSE = oldv
 }
+
+require 'log4r/outputter/emailoutputter'
+require 'log4r/formatter/patternformatter'
 
 
 module MUES
@@ -91,8 +90,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: log.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: log.rb,v 1.8 2002/09/12 11:50:47 deveiant Exp $
 
 
 		### Class methods
@@ -101,6 +100,9 @@ module MUES
 		### specified config (a MUES::Config object).
 		def self.configure( config )
 			MUES::TypeCheckFunctions::checkType( config, MUES::Config )
+
+			l4ro = Log4r::Logger::new( 'log4r' )
+			l4ro.outputters = Log4r::Outputter.stderr
 
 			# Configure the logger with the log4r section of the config file
 			Log4r::Configurator::load_xml_string( config.logging.logConfig )
@@ -117,10 +119,12 @@ module MUES
 				oldv = $VERBOSE
 				$VERBOSE = false
 				logger = Log4r::Logger::new( 'MUES' )
+
+				# Set the outputter for the global log to STDERR initially
 				logger.outputters = Log4r::Outputter.stderr
 				Log4r::Outputter.stderr.formatter =
 					Log4r::PatternFormatter::new( :pattern => '\e[1;32m[%d] [%l] %C:\e[0m %.1024m',
-												  :date_pattern => '%Y/%m/%d %H:%M %Z' )
+												  :date_pattern => '%Y/%m/%d %H:%M:%S %Z' )
 				logger.level = LogLevels.index( :debug )
 				$VERBOSE = oldv
 			end
@@ -142,6 +146,17 @@ module MUES
 			}
 
 			self.mueslogger.send( sym, *args, &block )
+		end
+
+
+		### Initializer
+		def initialize( klass )
+			type.mueslogger.debug {"Creating logger for #{klass}"}
+			Thread.critical = true
+			oldv = $VERBOSE
+			$VERBOSE = false
+			super( klass )
+			$VERBOSE = oldv
 		end
 
 	end
