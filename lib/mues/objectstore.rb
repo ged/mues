@@ -1,35 +1,34 @@
-# !/usr/bin/ruby -w
+#!/usr/bin/ruby -w
 #
-# This file contains the class for the ObjectStore service, as it will be
-# used by MUES.
+# This file contains the MUES::ObjectStore class, which is used to provide
+# object persistance for MUES objects.
 #
-# == Copyright
+# The ObjectStore is a factory/wrapper class that provides a front end for
+# combining a Strategy for object persistance (a MUES::ObjectStore::Backend)
+# and, optionally, a one for swapping disused objects (mostly) out of memory
+# temporarily via a MUES::ObjectStore::GarbageCollector.
+#   
+# == Caveats/Requirements
 #
-# Copyright (c) 2002 FaerieMUD Consortium, all rights reserved.
-# 
-# This is Open Source Software.  You may use, modify, and/or redistribute 
-# this software under the terms of the Perl Artistic License, a copy of which
-# should have been included in this distribution (See the file Artistic). If
-# it was not, a copy of it may be obtained from
-# http://language.perl.com/misc/Artistic.html or
-# http://www.faeriemud.org/artistic.html).
-# 
-# THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES,
-# INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-# FITNESS FOR A PARTICULAR PURPOSE.
+# * All objects stored must inherit from the MUES::StorableObject class.
+#
+# * Multiple ObjectStores alive in the same ruby process must have distinct
+#   names.
 #
 # == Synopsis
 #
-#   require "ObjectStore"
-#   require "StorableObject"
+#   require "mues/ObjectStore"
+#   require "mues/StorableObject"
 #
-#   $store = ObjectStore.new("test_store")
+#   $store = MUES::ObjectStore.load( "test_store" )
 #   objs = []
 #   ids = []
 #   40.times do
-#      obj << StorableObject.new
-#      ids << obj[-1].objectStoreID
+#	    newObj = MUES::StorableObject.new
+#       objs << newObj
+#       ids << newObj.objectStoreID
 #   end
+#
 #   $store.store( objs )
 #   #...or with garbage collection
 #   $store.register( objs )
@@ -42,375 +41,311 @@
 #
 #   $store.close
 #
-# == Description
+# == Version
 #
-#   This is the class that implements the storage and retrieval of objects for
-#   the ObjectStoreService.  This will use ArunaDB as the database manager.
-#
-# == Caveats
-#
-#   All objects stored must inherit from the class StorableObject, for
-#   the required ability to be a shallow reference.
-#
-#   The serializing Proc must be able to accept both a random StorableObject
-#   and a String, to differentiate between the two, and to return an object of
-#   the corresponding type (String for StorableObjects, a kind of StorableObject
-#   for Strings).
-#
-#   Indexes, as passed to the 'new' method, must return strings.
-#   They should take no arguments, but need not be implemented in all classes to be
-#   stored.  If an object does not respond to a method, nil will be used.
-#
-#   Multiple ObjectStores alive in the same ruby process must have distinct names.
-#
+#  $Id: objectstore.rb,v 1.28 2002/06/04 07:03:47 deveiant Exp $
+# 
 # == Authors
 #
 # * Martin Chase <stillflame@FaerieMUD.org>
 # * Michael Granger <ged@FaerieMUD.org>
 #
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-$: << "/home/touch/archives/arunadb_0_80" if File.directory?(
-				"/home/touch/archives/arunadb_0_80" )
 
-require "a_catalog" #arunadb file
-require "a_table"   #arunadb file
-require "a_index"   #arunadb file
-require "StorableObject/StorableObject.rb"
-require "ObjectStoreGC"
-require "sync"
+require 'forwardable'
+require 'sync'
 
-class ObjectStore
+require 'mues'
+require 'mues/Exceptions'
+require 'mues/StorableObject'
+require 'mues/ObjectSpaceVisitor'
 
-  ### Example de/serializing proc
-  @@prokie = Proc.new {|o|(o.kind_of?(String))?Marshal.load(o):Marshal.dump(o)}
-  TRASH_RATE = 50 #seconds
-  INDEXES_KEY = "indexes"
+require 'mues/os-extensions/FlatfileBackend'
+require 'mues/os-extensions/NullGarbageCollector'
 
-  #########
-  # Class #
-  #########
 
-  ### Loads in the specified catalog, and returns the ObjectStore attached to it.
-  ### Will create a new ObjectStore if file doesn't exist.
-  ### arguments:
-  ###   filename - the filename of the ObjectStore config file (?)
-  def ObjectStore.load (*args)
-    ObjectStore.new(*args)
-  end
-  
+module MUES
 
-  #########
-  protected
-  #########
+    # Exception class for ObjectStore errors
+    def_exception :ObjectStoreException,	"Objectstore internal error",	MUES::Exception
+	
 
-  ### Initializes a new ObjectStore
-  ### arguments:
-  ###   filename - the filename to store the ObjectStore config file as
-  ###   dump_undump - the Proc to give an object to get a string and to give a
-  ###                 string to get an object.
-  ###   indexes - an array of symbols for index methods
-  def initialize( filename, dump_undump, indexes = nil )
-    @filename = filename
-    @dump_undump = dump_undump
-    @mutex = Sync.new
-    @active_objects = Hash.new # the GC has responsibility for maintaining this
+	# The ObjectStore provides a mechanism for object persistance and,
+	# optionally, a way of swapping disused objects (mostly) out of memory
+	# temporarily via a GarbageCollector.
+    class ObjectStore < MUES::Object
 
-    if File.exists?(filename)
-      @catalog = A_Catalog.use(filename)
-      match = %r~(.*)(\..*)?~.match(filename) 
-      @basename = match[1]
-      raise "The '#{@basename}' table does not exist in the catalog contained in '#{filename}'." unless A_Table.exists?( @basename )
-      @table = A_Table.connect( @basename )
-      td = @table.find( nil, INDEXES_KEY )
-      indexies = (td) ? td.obj : @dump_undump.call([])
-      unpacked = @dump_undump.call( indexies )
-      @indexes = Hash.new
-      if (unpacked)
-	unpacked.each {|ind|
-	  if A_Index.exists?( nil, ind.to_s )
-	    @indexes[ind] = A_Index.open( ind.to_s, @table.name )
-	  end
-	}
-	add_index_methods( indexes )
-      end
-      @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
-      finalize
-    else
-      @indexes = Hash.new
-      if (indexes && indexes.length > 0)
-	indexes.each {|ind| @indexes[ind] = nil}
-      end
-      create_database(filename)
-      add_index_methods( indexes )
-      @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
-      finalize
-    end
-    
-  end
+		include MUES::TypeCheckFunctions
 
-  ### Creates and returns an ArunaDB database - specifically an array of objects:
-  ### [A_Catalog, A_Table]
-  ### typical usage will usually only require accessing the A_Table object, but
-  ### the catalog should be kept alive (i think).
-  ### args:
-  ###   conf_filename - the name of the ObjectStoreConfig file to be
-  def create_database(conf_filename)
-    if ( match = %r~(.*)(\..*)?~.match(conf_filename) )
-      @basename = match[1]
-    else
-      @basename = "object_store" + Time.now.to_i.to_s
-    end
-    cat_name = @basename
-    fs_name = @basename
-    fs_filename = @basename + "1.adb"
-    locks_filename = @basename + "2.adb"
-    @table_name = bt_name = @basename
-    @catalog  = A_Catalog.use(cat_name)
-    @lck_name = @basename + "locks"
-    fs   = A_FileStore.create(fs_name, 1024, fs_filename)
-    locs = A_FileStore.create(@lck_name, 1024, locks_filename)
-    bt   = A_BTree.new(bt_name, fs_name)
-    cols = []
-    typ = "v"
-    ###################   name type not_nil default constraint action display
-    cols << A_Column.new("id" , 'v', true  ,  nil  ,   nil    ,  nil ,  nil  )
-    cols << A_Column.new("obj", 'v',  nil  ,  nil  ,   nil    ,  nil ,  nil  )
-    if (@indexes && @indexes.length > 0) 
-      @indexes.each { |ind|
-  	cols << A_Column.new( ind[0].id2name, 'v' )
-      }
-    end
-    pkeys= "id"
-    @table = A_Table.new(bt_name, cols, pkeys, fs_name, @lck_name)
-    # add an A_Index object to @indexes for each entry
-    if (@indexes && @indexes.length > 0)
-      cols = ['id', 'obj']
-      @indexes.each {|ind|
-	cols.push( ind )
-	@indexes[ind] = A_Index.new(ind, @table_name, cols, 'U', fs_name, @lck_name)
-	cols.pop
-      }
-    end
-  end
+		### Default de/serializing proc
+		DefaultDumperProc = Proc.new {|obj|
+			case obj
+			when String
+				Marshal.load( obj )
+			when StorableObject
+				Marshal.dump( obj )
+			else
+				raise ObjectStoreException, "Cannot serialize a #{obj.class.name}"
+			end
+		}
 
-  # this writes the configuration information to the ArunaDB and 
-  # freezes all unused attributes.
-  def finalize
-    indexies = @dump_undump.call(@indexes.keys)
-    @mutex.synchronize( Sync::EX ) {
-      trans = A_Transaction.new
-      if @table.exists?(trans, INDEXES_KEY)
-	#update(transaction, pkey, column_names, values)
-	@table.update(trans, INDEXES_KEY, ['obj'], [indexies] )
-      else
-	@table.insert( trans, ['id', 'obj'], [INDEXES_KEY, indexies] )
-      end
-      trans.commit
-    }
-    instance_variables.each {|o| o.freeze unless o === @active_objects or o === @gc or o === @table}
-    # brrrrrr....
-  end
+		### The default GarbageCollector class
+		DefaultGcClass = MUES::ObjectStore::NullGarbageCollector
 
-  ### Returns the arunadb code for the type of storage to be used on a class.
-  ### Raises: TypeError if class isn't supported
-  def get_type(aClass)
-    raise TypeError.new( "Expected Class but received #{aClass.type.name}" ) unless
-      aClass.kind_of?(Class)
-    case aClass
-    when Fixnum
-      "l"
-    when Time
-      "t"
-    when String
-      "v"
-    else
-      raise TypeError.new( "Indexes cannot return objects of class %s" % aClass )
-    end
-  end
+		### The default Backend class
+		DefaultBackendClass = MUES::ObjectStore::FlatfileBackend
 
-  ######
-  public
-  ######
+		### The default GarbageCollectorVisitor class
+		DefaultGcVisitorClass = MUES::ObjectSpaceVisitor
 
-  # filename - the name of the catalog file
-  # catalog - the A_Catalog object
-  # dump_undump - the Proc to control serialization and it's reverse, deserialization
-  # indexes - a hash of A_Index objects, keyed by the symbol used to generate each
-  # active_objects - a hash of objects currently recognized by this object store
-  # gc - the garbage collection system for this object store
-  # table_name - the name of the table objects are stored to
-  attr_reader :filename, :catalog, :dump_undump, :indexes,
-    :active_objects, :table, :gc, :table_name
+		### The name of the subdirectory to load default backends and
+		### garbagecollector classes from (relative to $LOAD_PATH)
+		BackendDir = 'mues/os-extensions'
 
-  ### Stores the objects into the database
-  ### arguments:
-  ###   objects - the objects to store
-  ### caveats:
-  ###   aruna's docs say that while concurrant transactions work fine, their
-  ###   multi-threaded capabilities haven't been fully tested.  who knows what
-  ###   that's going to mean.
-  def store ( *objects )
-    (objects.kind_of?(Array)) ? objects.flatten! : (objects = [objects])
-    raise("ObjectStore database not open.") unless (@table)
-    index_names = @indexes.collect {|ind| ind[0].id2name}
-    index_returns = objects.collect {|o|
-      raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
-	o.kind_of?(StorableObject)
-      @indexes.collect {|ind|
-	o.send(ind[0])
-      }
-    }
-    ids = objects.collect {|o| o.objectStoreID}
-    serialized = objects.collect {|o| @dump_undump.call(o)}
-    @mutex.synchronize( Sync::EX ) {
-      trans = A_Transaction.new
-      col_names = ['id', 'obj'] + index_names
-      ids.each_index do |i|
-	if @table.exists?(trans, ids[i])
-	  #update(transaction, pkey, column_names, values)
-	  @table.update(trans, ids[i], col_names[1..-1],
-			[serialized[i], index_returns[i]].flatten)
-	else
-	  @table.insert( trans, col_names,
-			[ids[i], serialized[i], index_returns[i]].flatten )
-	end
-      end
-      trans.commit
-    }
-  end
 
-  ### registers objects with the garbage collector (so that they can be kept track
-  ### of and 'deleted' when needed).
-  def register (*objects)
-    @gc.register(*objects)
-  end
-    
-  ### fills in @active_objects with all db entries that match the given index
-  ### name/value provided, or all objects if no arguements are used.
-  ### arguments:
-  ###   index_name - the name of the index to use
-  ###   value - the value to search for
-  ### default behavior is to assume no index and load all elements
-  def pre_load (index_name = nil, value = nil)
-    if(index_name)
-      @active_objects |= eval("retrieve_all_by_#{index_name}(#{value})")
-    else
-      @table.each { |entry| @active_objects[entry.id] = [retrieve(entry.id)] }
-    end
-  end
+		### Class globals
 
-  ### Closes the database.
-  def close
-    @gc.shutdown
-    @table.close
-    @catalog.close
-    @table = nil
-    @catalog = nil
-  end
+		# Instances of objectstores, keyed by name
+		@@instances = {}
 
-  ### Opens the database again.  Starts a new garbage collector.
-  ### That is, if the database isn't already open.
-  #	def open
-  #	  (@table = A_Table.connect(@table_name)) if ! @table
-  #	  @gc.start( 'trash_rate' => TRASH_RATE )
-  #	end
-  #:!: opening databases usually means flock problems
 
-  ### Gets the object specified by the given id out of the database
-  ### Well, not really.  returns a StorableObject style shallow reference
-  def retrieve ( id )
-    if ( an_obj = @active_objects[id] )
-      return an_obj
-    else
-      an_obj = ShallowReference.new( id, self )
-      @active_objects[id] = an_obj
-      return an_obj
-    end
-  end
+		#########
+		# Class #
+		#########
 
-  ### *ACTUALLY* gets the object specifed by the given id out of the database
-  ### arguments:
-  ###   id - the id (objectStoreID) of the object
-  def _retrieve ( id )
-    if ( table_data = (@table.find( nil, id )) )
-      return @dump_undump.call( table_data.obj )
-    else
-      return nil
-    end
-  end
+		### Disallow new() to prevent multiple instances of the same-named store
+		private_class_method :new
 
-  ### auto genererates methods for retrieving objects using the index names provided.
-  ### each index must be accompanied by a corresponding method on the objects to be
-  ### stored.  during db creation, each index will create an A_Index object to look
-  ### through.
-  ### methods created:
-  ###   retrieve_by_[index] - make a ShallowReference with the right info.
-  ###   _retrieve_by_[index] - grab the object, looking for the value provided first,
-  ###                          then the id.
-  ###   _retrieve_all_by_[index] - grabs all objects whose indexing method returns
-  ###                              the value provided.
-  def add_index_methods ( *indexes )
-    indexes.flatten!
-    indexes.each {|ind|
-      ind_str = ind.to_s
-      ObjectStore.class_eval <<-END
+		### Load the specified catalog, and returns the ObjectStore attached to
+		### it.  Will create a new ObjectStore if file doesn't exist.
+		###
+		### Arguments:
+        ### name::         the store identifier
+        ### indexes::      an Array of symbols/strings for index methods
+        ### dump_undump::  the Proc to give an object to get a string and to give a
+        ###                string to get an object.
+		### gcClass::      The name of the garbage collector class to use.
+		### backendClass:: The name of the backend class to use.
+		def ObjectStore.load( name, indexes = [], dump_undump = DefaultDumperProc,
+							 gcClass = DefaultGcClass, backendClass = DefaultBackendClass,
+							 gcVisitor = DefaultGcVisitorClass, garbageCollectorArgs = {} )
 
-      def retrieve_by_#{ind_str} (id, val)
-	ShallowReference.new(id, self, :_retrieve_by_#{ind_str}, val)
-      end
+			# Return either the instance with the specified name, or a new store
+			# if there isn't one yet loaded.
+			return @@instances[ name ] ||= ObjectStore.new( name, indexes, dump_undump,
+														    gcClass, backendClass,
+														    gcVisitor,
+														    garbageCollectorArgs )
+		end
 
-      def _retrieve_by_#{ind_str} (id, val)
-	if ( table_data = (@indexes[#{ind_str}].find( nil, id )) )
-	  return @dump_undump.call( table_data.obj )
-	else
-	  return nil
-	end
-      end
 
-      def _retrieve_all_by_#{ind_str} (val)
-	if (val)
-	  objs = []
-	  @indexes[#{ind_str}].each(nil, [val], [val]) {|t_data|
-	    objs << @dump_undump.call( t_data.obj )
-	  }
-	  return objs
-	else
-	  _retrieve_all
-	end
-      end
 
-      END
-    }
-  end
+		### Initializes a new ObjectStore
+		###
+		### Arguments:
+        ### name::         the store identifier
+        ### indexes::      an Array of symbols/strings for index methods
+        ### dump_undump::  the Proc to give an object to get a string and to give a
+        ###                string to get an object.
+		### gcClass::      The name of the garbage collector class to use.
+		### backendClass:: The name of the backend class to use.
+		### gcVisitor::    An instance of MUES::ObjectSpaceVisitor
+		###                or one of its derivative. If one is not provided, an
+		###                instance of the DefaultGcVisitorClass is provided.
+		def initialize( name, indexes, dump_undump, gcClass, backendClass,
+					    gcVisitor, garbageCollectorArgs ) # :notnew:
+			checkType( dump_undump, Proc, Method )
+			checkType( gcClass, Class )
+			checkType( backendClass, Class )
 
-  def _retrieve_all
-    objs = []
-    @table.each {|t_data|
-      objs << @dump_undump.call( t_data.obj )
-    }
-    return objs
-  end
+			super()
 
-  def exists? ( an_id )
-    @table.exists?(A_Transaction.new, an_id)
-  end
-  
-  def empty? 
-    @table.nitems == 0
-  end
-  
-  def open? 
-    @table ? true : false
-  end
-  
-  def entries 
-    @table.nitems
-  end
-  alias size entries
-  alias count entries
-  
-  def clear
-    @table.clear
-  end
+			@name			= name
+			@indexes		= indexes
+			@dump_undump	= dump_undump
+			@mutex			= Sync.new
+			@database		= Backend::create( backendClass, self, name, dump_undump, indexes )
+			@gc				= GarbageCollector::create( gcClass, self )
 
-end
+			# Add accessors for the specified indexes
+			add_index_methods( *indexes )
+
+			# Start the garbage collector either with the visitor object
+			# specified, or an instance of the default
+			gcVisitor ||= DefaultGcVisitorClass::new
+			@gc.start( gcVisitor )
+
+			return self
+		end
+
+
+		#########
+		protected
+		#########
+
+		### Auto-genererate methods for retrieving objects using the index names
+		### provided.  Each index must have a corresponding method on the
+		### objects to be stored.
+		###
+		### Methods created:
+		### [<tt>retrieve_by_<em>index</em></tt>] 
+		###   make a MUES::ShallowReference for the specified object.
+		### [<tt>_retrieve_by_<em>index</em></tt>]
+		###   grab the object, looking for the value provided first, then the
+		###   id.
+		### [<tt>_retrieve_all_by_<em>index</em></tt>]
+		###   grabs all objects whose indexing method returns the value
+		###   provided.
+		def add_index_methods ( *indexes )
+			indexes.flatten!
+			indexes.each {|ind|
+				ind_str = ind.to_s
+				ObjectStore.class_eval <<-END
+				
+				def retrieve_shallow_by_#{ind_str}(id)
+					register IndexedShallowReference.new( id, self, #{ind_str} )
+				end
+			
+				def retrieve_by_#{ind_str}(id, val)
+					@database.retrieve_by_index( id, #{ind_str} )
+				end
+
+				def retrieve_all_by_#{ind_str}(val)
+					register @database.lookup( {#{ind_str} -> val} )
+				end
+
+				END
+			}
+		end
+
+
+		######
+		public
+		######
+
+		# the name of the catalog file
+		attr_reader :name
+
+		# the Proc to control serialization and it's reverse, deserialization
+		attr_reader :dump_undump
+
+		# a hash of A_Index objects, keyed by their names
+		attr_reader :indexes
+
+
+		### Stores the specified <tt>objects</tt> into the ObjectStore.
+		def store ( *objects )
+			@database.store( *objects )
+		end
+
+		### Registers the specified <tt>objects</tt> with the garbage collector
+		### (so that they can be kept track of and swapped out of memory when
+		### needed). If the object is not already stored in the ObjectStore, it
+		### will be stored when it is swapped.
+		def register (*objects)
+			@gc.register(*objects)
+		end
+
+		### Removes the specified objects from the ObjectStore after
+		### unregistering them.
+		def remove( *objects )
+			@database.remove( *objects )
+		end
+
+		### Unregisters the specified <tt>objects</tt> with the garbage
+		### collector. The object will thenafter never be swapped out of memory
+		### (unless it is re-registed, of course), but the last version of the
+		### object will remain stored in the ObjectStore.
+		def unregister( *objects )
+			@gc.unregister( *objects )
+		end
+		
+		### Preload the @active_objects with all objects that match the given
+		### index name/value provided, or all objects if no arguments are used.
+		###
+		### Arguments:
+		### [index_hash]
+		###   Optionally, a hash of index to value(s) as per #lookup. Defaults
+		###   to loading all objects in the store.
+		def pre_load ( index_hash = Hash.new )
+			objs = ( (! index_hash.empty?) ? lookup(index_hash) : retrieve_all() )
+			@gc.register(objs)
+		end
+
+		### Allows momentary access to the object from the database, by calling
+		### this method and supplying a block.  No changes to the object made in
+		### the block will be written to the database.
+		def do_read_only( id )
+			obj = retrieve( id ).dup
+			return yield( obj )
+		end
+
+		### Closes the database.
+		def close
+			@gc.shutdown
+			@database.close
+			@database = nil
+			@gc = nil
+		end
+
+		### Fetches and returns the MUES::StorableObject specifed by the given
+		### <tt>id</tt>.
+		def retrieve( id )
+			@gc[id] ||= @database[id]
+		end
+
+		### Gets and returns a MUES::ShallowReference to the object specified by
+		### <tt>id</tt> out of the ObjectStore.
+		def retrieve_shallow( id )
+			@gc[id] ||= ShallowReference.new( id, self )
+		end
+
+		### Given a hash of index keys and values, fetch and return each object
+		### that matches all of the specified pairs.
+		def lookup( index_pairs )
+			@database.lookup( index_pairs )
+		end
+
+		### Fetch an Array of all objects stored in the ObjectStore.
+		def retrieve_all
+			@database.retrieve_all
+		end
+
+		### Returns <tt>true</tt> if an object with the specified <tt>id</tt>
+		### exists in the ObjectStore.
+		def exists? ( id )
+			@database.exists?( id )
+		end
+
+		### Returns <tt>true</tt> if the ObjectStore is empty.
+		def empty? 
+			@table.nitems == 0
+		end
+		
+		### Returns <tt>true</tt> if the ObjectStore is currently open.
+		def open? 
+			@table ? true : false
+		end
+		
+		### Returns the number of objects stored in the ObjectStore.
+		def entries 
+			@table.nitems
+		end
+		alias :size :entries
+		alias :count :entries
+		
+		### Removes (unregisters) all objects from the ObjectStore.
+		def clear
+			@table.clear
+		end
+
+
+    end # class ObjectStore
+end # module MUES
+
