@@ -41,7 +41,7 @@
 #
 # == Rcsid
 # 
-# $Id: log.rb,v 1.8 2002/09/12 11:50:47 deveiant Exp $
+# $Id: log.rb,v 1.9 2002/09/13 15:25:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -80,6 +80,7 @@ BEGIN {
 require 'log4r/outputter/emailoutputter'
 require 'log4r/formatter/patternformatter'
 
+require 'mues/Mixins'
 
 module MUES
 
@@ -90,8 +91,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: log.rb,v 1.8 2002/09/12 11:50:47 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+		Rcsid = %q$Id: log.rb,v 1.9 2002/09/13 15:25:49 deveiant Exp $
 
 
 		### Class methods
