@@ -39,7 +39,7 @@ require "tableadapter/Search"
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
+require "mues/Player"
 
 require "mues/adapters/Adapter"
 
@@ -50,12 +50,15 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-			Rcsid = %q$Id: MysqlAdapter.rb,v 1.3 2001/05/14 12:21:26 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: MysqlAdapter.rb,v 1.4 2001/07/18 02:06:35 deveiant Exp $
 
-			PlainPlayerFields = %w{username cryptedPass realname emailAddress lastLogin
-									lastHost dateCreated age role flags}
-			MarshalledPlayerFields = %w{preferences characters}
+			PlainPlayerFields = MUES::Player::DefaultDbInfo.find_all {|field, defaultVal|
+				!defaultVal.is_a?( Array ) && !defaultVal.is_a?( Hash )
+			}.collect {|ary| ary[0]}
+			MarshalledPlayerFields = MUES::Player::DefaultDbInfo.find_all {|field, defaultVal|
+				defaultVal.is_a?( Array ) || defaultVal.is_a?( Hash )
+			}.collect {|ary| ary[0]}
 
 			### Class variables
 			@@ObjectTable	= 'object'
@@ -188,11 +191,8 @@ module MUES
 				when Hash
 					@lock['player'].synchronize( Sync::EX ) { 
 						playerRow = @playerAdapterClass.new
-						PlainPlayerFields.each {|key|
-							playerRow.send( key, dbInfo[key] )
-						}
-						MarshalledPlayerFields.each {|key|
-							playerRow.send( key, Marshal.dump dbInfo[key] )
+						(PlainPlayerFields + MarshalledPlayerFields).each {|key|
+							playerRow.send( "#{key}=", dbInfo[key] )
 						}
 
 						playerRow.username = playerName
@@ -211,10 +211,13 @@ module MUES
 			def fetchPlayerData( username )
 				checkType( username, String )
 
+				playerData = nil
 				@lock['player'].synchronize( Sync::SH ) {
 					search = TableAdapter::Search.new( @playerAdapterClass, 'username' => username )
-					search[0]
+					playerData = search[0]
 				}
+
+				return playerData
 			end
 
 
