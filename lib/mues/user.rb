@@ -33,8 +33,6 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
-require "socket"
-
 require "mues/Namespace"
 require "mues/Debugging"
 require "mues/Events"
@@ -46,40 +44,68 @@ module MUES
 		include Debuggable
 		include Event::Handler
 
+		module Role
+			PLAYER		= 0
+			CREATOR		= 1
+			IMPLEMENTOR	= 2
+			ADMIN		= 3
+		end
+		Role.freeze
+
+		### Class attributes
 		@@DefaultPrompt = 'mues> '
+
+		### (PROTECTED) METHOD: initialize( playerDataHash )
+		### Initialize a new player object with the hash of attributes specified
+		protected
+		def initialize( dbInfo )
+			checkType( dbInfo, Hash )
+			super()
+
+			@remoteIp = nil
+			@ioEventStream = nil
+			@prompt = @@DefaultPrompt
+
+			@dbInfo = dbInfo
+
+			OutputEvent.RegisterHandlers( self )
+			TickEvent.RegisterHandlers( self )
+		end
 
 		#############################################################################
 		###	P U B L I C   M E T H O D S
 		#############################################################################
 		public
 
-		attr_accessor	:ioEventStream, :name, :isImmortal, :prompt
-		attr_reader		:remoteIp
+		### Accessors
+		attr_accessor	:ioEventStream, :prompt
+		attr_reader		:remoteIp, :dbInfo
 
-		### METHOD: initialize( remoteIp )
-		### Initialize a new player object with the remote ip address of the initial
-		### connection
-		def initialize( remoteIp )
-			super()
+		### METHOD: isCreator?
+		### Returns true if this player has creator permissions
+		def isCreator?
+			return @dbInfo['role'] >= Role::CREATOR
+		end
 
-			@ioEventStream = nil
-			@name = "<unnamed player #{self.id}>"
-			@isImmortal = false
-			@characters = []
-			@currentCharacter = nil
-			@prompt = @@DefaultPrompt
-			@remoteIp = remoteIp
+		### METHOD: isImplementor?
+		### Returns true if this player has implementor permissions
+		def isImplementor?
+			return @dbInfo['role'] >= Role::IMPLEMENTOR
+		end
 
-			OutputEvent.RegisterHandlers( self )
-			TickEvent.RegisterHandlers( self )
+		### METHOD: isAdmin?
+		### Returns true if this player has admin permissions
+		def isAdmin?
+			return @dbInfo['role'] >= Role::ADMIN
 		end
 
 		### METHOD: to_s
+		### Returns a stringified version of the player object
 		def to_s
-			if @currentCharacter then
-				return "#{@name.capitalize} [#{@currentCharacter.to_s}] (#{@remoteIp})"
+			if @remoteIp
+				return "#{@name.capitalize} <#{@dbInfo['emailAddress']}> [connected from #{@remoteIp}]"
 			else
-				return "#{@name.capitalize} (#{@remoteIp})"
+				return "#{@name.capitalize} <#{@dbInfo['emailAddress']}>"
 			end
 		end
 
@@ -88,6 +114,8 @@ module MUES
 		def disconnect
 
 			### Tell the character object that we're going bye-bye
+			if @currentCharacter
+			end
 
 			### Unregister all our handlers
 			OutputEvent.UnregisterHandlers( self )
@@ -96,6 +124,36 @@ module MUES
 			### Shut down the IO event stream
 			@ioEventStream.shutdown if @ioEventStream
 			
+			### Save ourselves
+			engine().dispatchEvents( PlayerSaveEvent.new(self) )
+		end
+
+		### METHOD: method_missing( aSymbol, *args )
+		### Create and call methods that are the same as player data keys
+		def method_missing( aSymbol, *args )
+			origMethName = aSymbol.id2name
+			methName = origMethName.sub( /=$/, '' )
+			super unless @dbInfo.has_key?( methName )
+
+			oldVerbose = $VERBOSE
+			$VERBOSE = false
+
+			self.class.class_eval <<-"end_eval"
+			def #{methName}( arg=nil )
+				if !arg.nil?
+					@dbInfo["#{methName}"] = arg
+				end
+				@dbInfo["#{methName}"]
+			end
+			def #{methName}=( arg )
+				self.#{methName}( arg )
+			end
+			end_eval
+
+			$VERBOSE = oldVerbose
+
+			raise RuntimeError, "Method definition for '#{methName}' failed." if method( methName ).nil?
+			method( origMethName ).call( *args )
 		end
 
 
