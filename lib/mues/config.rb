@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/22 18:20:49 $">
+#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/23 01:57:40 $">
 #	
 # 	  <!-- General server configuration:
 # 		  server-name:			The name of the server
@@ -218,7 +218,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.17 2002/10/22 18:20:49 deveiant Exp $
+# $Id: config.rb,v 1.18 2002/10/23 01:57:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -255,8 +255,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.17 2002/10/22 18:20:49 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.18 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.18 2002/10/23 01:57:40 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -683,7 +683,7 @@ module MUES
 			### specified <tt>xmlElement</tt> (a REXML::Element object).
 			def initialize( xmlElement, parent = nil )
 				super( xmlElement, parent )
-				$stderr.puts "Adding item '%s': %s" % [ self.inspect, self.value.inspect ]
+				# $stderr.puts "Adding item '%s': %s" % [ self.inspect, self.value.inspect ]
 			end
 
 
@@ -1242,7 +1242,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/22 18:20:49 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/23 01:57:40 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
