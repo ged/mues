@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.36 2002/10/29 07:37:18 deveiant Exp $
+# $Id: engine.rb,v 1.37 2002/10/31 02:14:39 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.36 2002/10/29 07:37:18 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.37 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.37 2002/10/31 02:14:39 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1189,9 +1189,9 @@ module MUES
 			}
 
 			# Notify all the Notifiables that we're shutting down
-			self.log.notice( "Sending onEngineShutdown() notifications." )
+			self.log.notice "Sending onEngineShutdown() notifications."
 			MUES::Notifiable.classes.each {|klass|
-				debugMsg( 1, "Notifying #{klass.name} of shutdown." )
+				self.log.info "Notifying #{klass.name} of shutdown."
 				rval = klass.atEngineShutdown( self )
 				cleanupEvents += rval if rval.kind_of?( Array )
 			}
@@ -1201,7 +1201,8 @@ module MUES
 			### call)
 			cleanupEvents.flatten!
 			cleanupEvents.compact!
-			debugMsg( 1, "Got #{cleanupEvents.length} cleanup events." )
+			self.log.info "Got #{cleanupEvents.length} cleanup events."
+			cleanupEvents.reject! {|event| !event.kind_of?(MUES::Event) }
 			@privilegedEventQueue.priorityEnqueue( *cleanupEvents ) unless cleanupEvents.empty?
 
 			### Close and sync the objectstore
