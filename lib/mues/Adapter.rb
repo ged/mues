@@ -28,7 +28,19 @@ Adapter - An ObjectStore adapter abstract base class
 			...
 		end
 
-		def stored?( id )
+		def hasObject?( id )
+			...
+		end
+
+		def storePlayerData( username, data )
+			...
+		end
+
+		def fetchPlayerData( username )
+			...
+		end
+
+		def createPlayerData( username )
 			...
 		end
 
@@ -39,7 +51,8 @@ Adapter - An ObjectStore adapter abstract base class
 
 == Description
 
-
+This is an abstract base class which defines the required interface for
+MUES::ObjectStore adapters.
 
 == Author
 
@@ -68,20 +81,52 @@ module MUES
 			include Debuggable
 			include AbstractClass
 
-			Version = %q$Revision: 1.3 $
-			Rcsid = %q$Id: Adapter.rb,v 1.3 2001/03/29 02:47:05 deveiant Exp $
+			### Class constants
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: Adapter.rb,v 1.4 2001/05/14 12:13:49 deveiant Exp $
+
+			### METHOD: initialize( db, host, user, password )
+			### Initialize the adapter with the specified values
+			protected
+			def initialize( db, host, user, password )
+				@db			= db
+				@host		= host
+				@user		= user
+				@password	= password
+			end
+
+
+			###################################################################
+			###	P U B L I C   M E T H O D S
+			###################################################################
+			public
+
+			attr_reader :db, :host, :user
 
 			def storeObject( obj )
-				raise UnimplementedError, "Required method unimplemented."
+				raise VirtualMethodError, "Required method 'storeObject' unimplemented."
 			end
 
 			def fetchObject( id )
-				raise UnimplementedError, "Required method unimplemented."
+				raise VirtualMethodError, "Required method 'fetchObject' unimplemented."
 			end
 
-			def stored?( id )
-				raise UnimplementedError, "Require method unimplemented."
+			def hasObject?( id )
+				raise VirtualMethodError, "Require method 'hasObject?' unimplemented."
 			end
+
+			def storePlayerData( username, data )
+				raise VirtualMethodError, "Required method 'storePlayerData' unimplemented."
+			end
+
+			def fetchPlayerData( username )
+				raise VirtualMethodError, "Required method 'fetchPlayerData' unimplemented."
+			end
+
+			def createPlayerData( username )
+				raise VirtualMethodError, "Required method 'createPlayerData' unimplemented."
+			end
+
 		end
 	end
 end
