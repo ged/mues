@@ -2,31 +2,29 @@
 ###########################################################################
 
 =begin
-
 = Events.rb
+== Name
 
-== NAME
+MUES::Events - a collection of event classes for the MUES Engine
 
-MUES::Events - a collection of event classes for the FaerieMUD server
-
-== SYNOPSIS
+== Synopsis
 
   require "mues/Events"
 
   event = MUES::EngineShutdownEvent.new
   eventQueue.priorityEnqueue( event )
 
-== DESCRIPTION
+== Description
 
 This module is a collection of event classes for system-level events in the
 FaerieMUD server. World events are subclasses of MUES::WorldEvent, and are
 defined in the game object library.
 
-== AUTHOR
+== Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -35,7 +33,7 @@ http://language.perl.com/misc/Artistic.html)
 =end
 
 ###########################################################################
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/Exceptions"
 require "mues/Debugging"
 require "socket"
@@ -138,7 +136,7 @@ module MUES
 		def initialize( *args )
 			super()
 			@creationTime = Time.now
-			_debugMsg( "Initializing an #{self.class.name} at #{@creationTime}" )
+			_debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime}" )
 		end
 
 	end
@@ -344,6 +342,21 @@ module MUES
 
 	### CLASS: PlayerLogoutEvent < PlayerEvent
 	class PlayerLogoutEvent < PlayerEvent
+	end
+
+	### CLASS: PlayerAuthenticationEvent
+	class PlayerAuthenticationEvent < PlayerEvent
+		attr_reader :login, :password, :successCallback, :failureCallback
+
+		### METHOD: initialize( aPlayer, username, password, successCallback, failureCallback )
+		def initialize( player, username, password, sCallback, fCallback )
+			super( player )
+
+			@username	= username
+			@password	= password
+			@successCallback = sCallback
+			@failureCallback = fCallback
+		end
 	end
 
 end # module MUES
