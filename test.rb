@@ -11,7 +11,7 @@ BEGIN {
 	include UtilityFunctions
 
 	verboseOff {
-		require "mues/Log"
+		require "mues/log"
 		require "log4r"
 		require "log4r/outputter/fileoutputter"
 		MUES::Log::mueslogger.outputters =
