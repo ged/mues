@@ -44,29 +44,26 @@ module MUES
 
 	### Thread work group class
 	class EventQueue < Object
-
 		include Debuggable
 
-		attr_accessor :minWorkers, :maxWorkers, :threshold
-		attr_reader	:threadCount, :idle, :supervisor, :idleWorkers, :workers
+		### Class constants
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
 
-		@@DefaultMinWorkers = 2
-		@@DefaultMaxWorkers = 20
-		@@DefaultThreshold = 0.2
-		@@DefaultSafeLevel = 2
+		### Class attributes
+		@@DefaultMinWorkers	= 2
+		@@DefaultMaxWorkers	= 20
+		@@DefaultThreshold	= 0.2
+		@@DefaultSafeLevel	= 2
 
-		###############################################################################
-		###	P U B L I C   M E T H O D S
-		###############################################################################
-		public
-
-		### METHOD: initialize( minWorkers=Fixnum, maxWorkers=Fixnum,
-		###							threadThreshold=Float, safeLevel=Fixnum )
-		### Initialize the queue and start up its workers
+		### (PROTECTED) METHOD: initialize( minWorkers=Fixnum, maxWorkers=Fixnum,
+		###											threadThreshold=Float, safeLevel=Fixnum )
+		### Initialize the queue object
+		protected
 		def initialize( minWorkers=@@DefaultMinWorkers, 
-					   maxWorkers=@@DefaultMaxWorkers, 
-					   thresh=@@DefaultThreshold, 
-					   safeLevel=@@DefaultSafeLevel )
+					    maxWorkers=@@DefaultMaxWorkers, 
+					    thresh=@@DefaultThreshold, 
+					    safeLevel=@@DefaultSafeLevel )
 
 			super()
 			WorkerThread.abort_on_exception = 1
@@ -92,6 +89,14 @@ module MUES
 			@supervisorMutex = Mutex.new
 		end
 
+		###############################################################################
+		###	P U B L I C   M E T H O D S
+		###############################################################################
+		public
+
+		### Attribute accessors
+		attr_accessor :minWorkers, :maxWorkers, :threshold
+		attr_reader	:threadCount, :idle, :supervisor, :idleWorkers, :workers
 
 		### METHOD: start()
 		### Start the supervisor thread and begin processing events
@@ -106,20 +111,25 @@ module MUES
 			return true
 		end
 
-		### METHOD: enqueue( events=[ Event ] )
+		### METHOD: enqueue( *events )
 		### Add the specified events to the end of the queue of pending events
 		def enqueue( *events )
+			checkEachType( events, Event )
 			_debugMsg( 1, "Enqueuing " + events.length.to_s + " events." )
 			@queueMutex.synchronize {
 				@queuedEvents += events
-				@queuedEvents.flatten!
+				@queuedEvents.sort!
 			}
 		end
 
+		### METHOD: <<( *events )
+		### Alias for enqueue( events )
+		alias :<< :enqueue
 
 		### METHOD: priorityEnqueue( events=[ Event ] )
 		### Add the specified events to the beginning of the queue of pending events
 		def priorityEnqueue( *events )
+			checkEachType( events, Event )
 			_debugMsg( 1, "Enqueuing " + events.length.to_s + " priority events." )
 			@queueMutex.synchronize {
 				@queuedEvents.unshift( events )
@@ -422,7 +432,7 @@ module MUES
 		end
 
 
-		### METHOD: _killWorkerThread( workerThread )
+		### (PROITECTED) METHOD: _killWorkerThread( workerThread )
 		### Kill the specified worker thread and join it right away
 		def _killWorkerThread( workerThread )
 			raise ArgumentError, "Cannot kill the current thread" if workerThread == Thread.current
@@ -438,7 +448,6 @@ module MUES
 
 
 	end # class EventQueue
-
-end
+end # module MUES
 
 
