@@ -109,6 +109,21 @@ class PolymorphicObjectBecomeTests < RUNIT::TestCase
 		assert_equals BecomeTestToken, container3.contents[0].contents[0].class
 	end
 
+	# Test tokenizing across multiple references in instance vars of multiple
+	# objects
+	def test_03_untokenize_multiref
+		obj = BecomeTestToken.new( "Mmmmm chicken... more chicken." )
+		container1 = BecomeTestContainer.new( obj )
+		container2 = BecomeTestContainer.new( obj )
+		container3 = BecomeTestContainer.new( container1, container2 )
+
+		assert_no_exception { obj.value }
+
+		assert_equals BecomeTestObject, container1.contents[0].class
+		assert_equals BecomeTestObject, container2.contents[0].class
+		assert_equals BecomeTestObject, container3.contents[0].contents[0].class
+	end
+
 end
 
 if $0 == __FILE__
