@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-#  $Id: muesunittest.rb,v 1.3 2002/09/13 15:36:14 deveiant Exp $
+#  $Id: muesunittest.rb,v 1.4 2002/10/04 09:58:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -50,32 +50,87 @@
 # 
 
 if File.directory? "lib"
-	$:.unshift "lib", "ext"
+	$:.unshift "lib", "ext", "tests"
 elsif File.directory? "../lib"
-	$:.unshift "../lib", "../ext", ".."
+	$:.unshift "../lib", "../ext", "tests", ".."
 end
 
 require "test/unit"
+
+# Try to require a system-wide mock-object lib, if installed, else use our own.
+begin
+	require "test/unit/mock"
+rescue LoadError
+	require "mock"
+end
+
 
 ### Test case class
 module MUES
 	class TestCase < Test::Unit::TestCase
 
-		def ansicode( *codes )
-			return "\033[#{codes.collect {|x| sprintf '%02d',x}.join(':')}m"
+		# Set some ANSI escape code constants (Shamelessly stolen from Perl's
+		# Term::ANSIColor by Russ Allbery <rra@stanford.edu> and Zenin <zenin@best.com>
+		AnsiAttributes = {
+			'clear'      => 0,
+			'reset'      => 0,
+			'bold'       => 1,
+			'dark'       => 2,
+			'underline'  => 4,
+			'underscore' => 4,
+			'blink'      => 5,
+			'reverse'    => 7,
+			'concealed'  => 8,
+
+			'black'      => 30,   'on_black'   => 40, 
+			'red'        => 31,   'on_red'     => 41, 
+			'green'      => 32,   'on_green'   => 42, 
+			'yellow'     => 33,   'on_yellow'  => 43, 
+			'blue'       => 34,   'on_blue'    => 44, 
+			'magenta'    => 35,   'on_magenta' => 45, 
+			'cyan'       => 36,   'on_cyan'    => 46, 
+			'white'      => 37,   'on_white'   => 47
+		}
+
+
+		def ansiCode( *attributes )
+			attr = attributes.collect {|a| AnsiAttributes[a] ? AnsiAttributes[a] : nil}.compact.join(';')
+			if attr.empty? 
+				return ''
+			else
+				return "\e[%sm" % attr
+			end
+		end
+		ErasePreviousLine = "\033[A\033[K"
+
+		def message( msg )
+			$stdout.puts msg
+			$stdout.flush
 		end
 
-		### Add a debugging message to the test output if -w is turned on
-		def debugMsg( *messages )
+		def debugMsg( *msgs )
 			return unless $DEBUG
-			$stderr.puts messages.join('')
+			$stderr.puts "%sDEBUG>>> %s %s" %
+				[ ansiCode('bold', 'red'), msgs.join(''), ansiCode('reset') ]
 			$stderr.flush
+		end
+
+		def replaceMessage( *msg )
+			print ErasePreviousLine
+			message( *msg )
+		end
+
+		def writeLine( length=75 )
+			puts "\r" + ("-" * length )
 		end
 
 		### Output a header for delimiting tests
 		def testHeader( desc )
-			debugMsg( ansicode(1,33) + ">>> " + desc + " <<<" + ansicode(0) )
+			return unless $VERBOSE || $DEBUG
+			message "%s>>> %s <<<%s" % 
+				[ ansiCode(%w{bold white on_blue}), desc, ansiCode('reset') ]
 		end
+
 
 		### Try to force garbage collection to start.
 		def collectGarbage
