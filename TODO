@@ -7,10 +7,6 @@ This is an informal list of tasks yet to be done for the MUES.
 
 These are tasks which should be completed before the next release.
 
-* Update docs in the Engine to reflect changes (partially done already).
-
-* Fix the PI-parsing part of MUES::Config::Element.
-
 * Fix /eval CommandShell command by making it use an event that gets executed by
   the privileged queue.
 
