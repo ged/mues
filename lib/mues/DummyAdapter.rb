@@ -19,15 +19,14 @@ A testing filesystem-based objectstore adapter class. This class shouldn^t be
 required directly; you should instead specify "Dummy" as the first argument to
 the MUES::ObjectStore class^s constructor.
 
-== Methods
-=== Protected Methods
+== Classes
+=== MUES::DummyAdapter
+==== Public Methods
 
---- initialize( db, host, user, password )
+--- new( db, host, user, password )
 
-	Initialize the adapter object with the specified ((|db|)), ((|host|)),
+	Create a new adapter object with the specified ((|db|)), ((|host|)),
 	((|user|)), and ((|password|)) values.
-
-=== Attribute Accessor Methods
 
 --- db
 
@@ -40,8 +39,6 @@ the MUES::ObjectStore class^s constructor.
 --- user
 
     Returns the user associated with the adapter.
-
-=== Abstract Methods
 
 --- storeObjects( *objects )
 
@@ -82,6 +79,13 @@ the MUES::ObjectStore class^s constructor.
 
 	Return an array of the names of the stored user records.
 
+==== Protected Methods
+
+--- _safeifyId( id )
+
+    Returns the specified ((|id|)) (a (({String}))) after stripping any
+    characters which couldn^t safely be used in a filename.
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -108,19 +112,28 @@ module MUES
 
 			include Debuggable
 
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: DummyAdapter.rb,v 1.6 2001/08/05 05:49:23 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: DummyAdapter.rb,v 1.7 2001/11/01 17:23:20 deveiant Exp $
 
-			### METHOD: new( db, host, user, password )
+			### METHOD: new( config=MUES::Config )
 			### Create a new DummyAdapter ObjectStore adapter object.
-			def initialize( *args )
-				super( *args )
+			def initialize( config )
+				super( config )
 
-				unless FileTest.directory?( "objectstore" )
-					Dir.mkdir "objectstore"
+				dir = @config['directory'] || 'objectstore-d'
+
+				# If the directory isn't absolute, tack the server root onto it
+				if dir !~ %r{^/}
+					dir = File.join( config['rootdir'], dir )
 				end
 
-				@dbDir = "%s/%s" % [ "objectstore", @db.gsub(%r{\W+}, "") ]
+				# If the BDB objectstore directory doesn't yet exist, make it
+				unless File.directory?( dir )
+					Dir.mkdir( dir )
+				end
+
+				@db = @config['db'] || 'mues'
+				@dbDir = "%s/%s" % [ dir, @db.gsub(%r{\W+}, "") ]
 				unless FileTest.directory?( @dbDir )
 					Dir.mkdir( @dbDir, 0755 )
 					Dir.mkdir( "#{@dbDir}/users", 0755 )
@@ -191,15 +204,20 @@ module MUES
 			### METHOD: storeUserData( username, data )
 			### Store the given data as the user record for the specified username
 			def storeUserData( username, data )
-				filename = _safeifyId( username )
+				filename = "#{@dbDir}/users/%s" % _safeifyId( username )
 				
 				# Open a file with the username as the name and dump the object to it
-				File.open( "#{@dbDir}/users/#{filename}", File::CREAT|File::TRUNC|File::RDWR, 0644 ) { |f|
+				File.delete( filename ) if File.exists?( filename )
+				File.open( filename, File::CREAT|File::TRUNC|File::RDWR, 0644 ) { |f|
+					begin
 					until f.flock( File::LOCK_EX|File::LOCK_NB )
 						sleep 0.2
 					end
+						$stderr.puts( "Marshalling user data to #{filename}: #{data.inspect}" )
 					Marshal.dump( data, f )
+					ensure
 					f.flock( File::LOCK_UN )
+					end
 				}
 			end
 
@@ -214,14 +232,18 @@ module MUES
 				# After opening and locking, delete the file before reading.
 				begin
 					File.open( "#{@dbDir}/users/#{filename}", File::RDONLY ) { |f|
+						begin
 						until f.flock( File::LOCK_EX|File::LOCK_NB )
 							sleep 0.2
 						end
 						obj = Marshal.restore( f )
+							$stderr.puts( "Unmarshalled user data: #{obj.inspect}" )
+						ensure
 						f.flock( File::LOCK_UN )
+						end
 					}
-				rescue IOError => e
-					raise NoSuchObjectError, e.message
+				rescue Errno::ENOENT => e
+					obj = nil
 				end
 
 				return obj
@@ -255,10 +277,11 @@ module MUES
 			### Return an array of names of the stored user records
 			def getUsernameList
 				list = []
-				Find.find( "#{@dbDir}/users/*" ) {|f|
+				Find.find( "#{@dbDir}/users" ) {|f|
+					next if f == "#{@dbDir}/users"
 					Find.prune unless FileTest.file?( f )
 
-					list << f
+					list << f.gsub( %r{.*#{File::Separator}}, '' )
 				}
 
 				return list
@@ -270,10 +293,10 @@ module MUES
 			###############################################
 			protected
 
-			### METHOD: safeifyId( id )
+			### (PROTECTED) METHOD: safeifyId( id )
 			def _safeifyId( id )
 				checkType( id, String )
-				return id.gsub( /[^:a-zA-Z0-9]+/, "" )
+				return id.gsub( /[^:a-zA-Z0-9]+/, "" ).untaint
 			end
 
 		end
