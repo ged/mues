@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.16 2002/09/28 10:42:51 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.17 2002/10/04 05:08:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -75,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.16 2002/09/28 10:42:51 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.17 2002/10/04 05:08:44 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -123,9 +123,10 @@ module MUES
 		attr_reader		:queuedOutputEvents
 
 		# A flag for indicating that the filter is finished its role in the
-		# stream, and should be removed.
+		# stream, and should be removed. Aliases: #isFinished?, #finished?
 		attr_reader		:isFinished
 		alias :isFinished? :isFinished
+		alias :finished? :isFinished
 
 
 		### Start filter notifications for the specified stream. Returns an
