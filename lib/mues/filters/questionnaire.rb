@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.12 2003/10/13 04:02:14 deveiant Exp $
+# $Id: questionnaire.rb,v 1.13 2004/03/03 16:48:20 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,11 +146,52 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.12 2003/10/13 04:02:14 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.13 2004/03/03 16:48:20 deveiant Exp $
 
 		DefaultSortPosition = 600
 
+
+		#############################################################
+		###	C L A S S   M E T H O D S
+		#############################################################
+
+		# Define a search path for #load.
+		@path = [ "server/questionnaires", "questionnaires" ]
+		@loaded = {}
+		class << self
+			attr_reader :path, :loaded
+		end
+
+
+		### Load a questionnaire object from a file, searching in the class's
+		### #path.
+		def self::load( name, &block )
+			unless @loaded.key?( name )
+				fn = name.dup
+				fn << ".rb" unless /\.rb$/ =~ fn
+				file = self.path.
+					collect {|dir| File::join( dir, fn )}.
+					find {|path| File::file?( path )} or
+					raise LoadError, "Could not find a Questionnaire named #{name}"
+			
+				src = File::read( file )
+				questions = eval( src, nil, file, 1 )
+
+				@loaded[name] = new( name, *questions )
+			end
+
+			qn = @loaded[name].dup
+			qn.finalizer = block if block
+
+			return qn
+		end
+
+
+
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
 
 		### Create a new Questionnaire object.
 		def initialize( name, *steps )
@@ -293,6 +334,8 @@ module MUES
 					debugMsg 2, "Last step answered. Calling finalizer."
 					@result = @finalizer.call( self ) if @finalizer
 					debugMsg 3, "Finalizer returned <%s>" % @result.inspect
+					events << result if result.is_a?( MUES::IOEvent ) ||
+						result.is_a?( MUES::IOEventFilter )
 					self.finish
 				end
 			end
@@ -606,7 +649,7 @@ module MUES
 				# for this question
 				self.answers[ step[:name].intern ] = result
 
-				# Queue the next question, flaging ourselves as no longer
+				# Queue the next question, flagging ourselves as no longer
 				# needing input events if that fails.
 				self.askNextQuestion or @inProgress = false
 			}
