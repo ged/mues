@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: participantproxy.rb,v 1.6 2002/08/02 20:03:43 deveiant Exp $
+# $Id: participantproxy.rb,v 1.7 2002/08/29 07:24:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -26,22 +26,25 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Object"
+require "mues/Mixins"
 require "mues/Exceptions"
 require "mues/Events"
-require "mues/filters/IOEventFilter"
+require "mues/filters/InputFilter"
+require "mues/User"
+require "mues/Role"
+require "mues/Environment"
 
 module MUES
 
 	# An abstract proxy class (derived from MUES::IOEventFilter) for relaying
 	# MUES::IOEventStream IO to and from a participant in a MUES::Environment.
-	class ParticipantProxy < IOEventFilter; implements MUES::AbstractClass
+	class ParticipantProxy < MUES::InputFilter; implements MUES::AbstractClass
 
 		include MUES::TypeCheckFunctions
 
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.6 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: participantproxy.rb,v 1.7 2002/08/29 07:24:40 deveiant Exp $
 		DefaultSortPosition = 850
 
 
@@ -67,8 +70,6 @@ module MUES
 		attr_reader :user
 		attr_reader :role
 		attr_reader :env
-
-		abstract :handleInputEvents
 
 	end # class ParticipantProxy
 end # module MUES
