@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/09/14 23:48:40 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/09/27 16:23:01 $">
 
   <!--
 
@@ -23,8 +23,13 @@
 	<server-name>Experimental MUD</server-name>
 	<server-description>An experimental MUES server.</server-description>
 	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
-	<root-dir>server</root-dir>
-	<motd>== Message of the day ==</motd>
+	<root-dir>.</root-dir>
+	<motd>
+	  MUES Server Command Shell:
+	  /help for help
+	  /quit to disconnect
+	  /shutdown to halt the server (admin privileges required)
+	</motd>
   </general>
 
 
@@ -41,7 +46,7 @@
 	<tick-length>1.0</tick-length>
 	<exception-stack-size>10</exception-stack-size>
 	<debug-level>0</debug-level>
-	<poll-interval>0.5</poll-interval>
+	<poll-interval>0.05</poll-interval>
 
 	<!-- Engine's EventQueue configuration:
 		minworkers:		Minimum number of worker threads running
