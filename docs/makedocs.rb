@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
-#	MUES Documentation Generation Script
-#	$Id: makedocs.rb,v 1.5 2002/04/18 14:15:48 deveiant Exp $
+#	MUES RDoc Documentation Generation Script
+#	$Id: makedocs.rb,v 1.6 2002/10/17 14:47:06 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -11,69 +11,154 @@
 #
 
 # Muck with the load path and the cwd
-$filename = __FILE__
-$basedir = File::expand_path( $0 ).sub( %r{/docs/makedocs.rb}, '' )
-unless $basedir.empty? || Dir.getwd == $basedir
-	$stderr.puts "Changing working directory from '#{Dir.getwd}' to '#$basedir'"
-	Dir.chdir( $basedir ) 
+unless File.exists?( 'lib/mues.rb' )
+	filename = __FILE__
+	basedir = File::expand_path( $0 ).sub( %r{/docs/makedocs.rb}, '' )
+	unless $basedir.empty? || Dir.getwd == $basedir
+		$stderr.puts "Changing working directory from '#{Dir.getwd}' to '#$basedir'"
+		Dir.chdir( $basedir ) 
+	end
 end
+
+$LOAD_PATH.unshift "docs/lib"
 
 # Load modules
 require 'getoptlong'
 require 'rdoc/rdoc'
-require "utils"
+require 'utils'
 include UtilityFunctions
 
-opts = GetoptLong.new
-opts.set_options(
-	[ '--debug',	'-d',	GetoptLong::NO_ARGUMENT ],
-	[ '--verbose',	'-v',	GetoptLong::NO_ARGUMENT ]
-)
+def makeDocs( docsdir, template='css2', upload=nil, diagrams=false )
 
-$docsdir = "docs/html"
-$libdirs = %w{lib server README}
-opts.each {|opt,val|
-	case opt
+	docs = findRdocableFiles()
 
-	when '--debug'
-		$debug = true
+	header "Making documentation in #{docsdir}."
+	message "Will upload to '#{upload}'" if upload
 
-	when '--verbose'
-		$verbose = true
+	flags = [
+		'--all',
+		'--inline-source',
+		'--main', 'README',
+		'--fmt', 'html',
+		'--include', 'docs',
+		'--template', template,
+		'--op', docsdir,
+		'--title', "Multi-User Environment Server (MUES)"
+	]
 
-	when '--upload'
-		$upload = true
+	flags += [ '--quiet' ] unless $VERBOSE
+	flags += [ '--diagram' ] if diagrams
 
-	end
-}
+	buildDocs( flags, docs )
+	uploadDocs( upload, docsdir ) if upload
+end
 
 
-header "Making documentation in #$docsdir from files in #{$libdirs.join(', ')}."
-
-flags = [
-	'--all',
-	'--inline-source',
-	'--main', 'README',
-	'--include', 'docs',
-	'--op', $docsdir,
-	'--title', "Multi-User Environment Server (MUES)"
-]
-
-message "Running 'rdoc #{flags.join(' ')} #{$libdirs.join(' ')}'\n" if $verbose
-
-unless $debug
-	begin
-		r = RDoc::RDoc.new
-		r.document( flags + $libdirs  )
-	rescue RDoc::RDocError => e
-		$stderr.puts e.message
-		exit(1)
+def buildDocs( flags, docs )
+	message "Running 'rdoc #{flags.join(' ')} #{docs.join(' ')}'\n" if $VERBOSE
+	unless $DEBUG
+		begin
+			r = RDoc::RDoc.new
+			r.document( flags + docs )
+		rescue RDoc::RDocError => e
+			$stderr.puts e.message
+			exit(1)
+		end
 	end
 end
 
-# rdoc \
-#	--all \
-#	--inline_source \
-#	--main "lib/mues.rb" \
-#	--title "Multi-User Environment Server (MUES)" \
-#		lib server
+
+def uploadDocs( url, docsdir )
+	header "Uploading new docs snapshot to #{url}."
+
+	case url
+	
+	# SSH target
+	when %r{^ssh://(.*)}
+		target = $1
+		if target =~ %r{^([^/]+)/(.*)}
+			host, path = $1, $2
+			path = "/" + path unless path =~ /^(\/|\.)/
+			cmd = "tar -C #{docsdir} -cf - . | ssh #{host} 'tar -C #{path} -xvf -'"
+			unless $DEBUG
+				system( cmd )
+			else
+				message "Would have uploaded using the command:\n    #{cmd}\n\n"
+			end
+		else
+			error "--upload ssh://host/path"
+		end
+	when %r{^file://(.*)}
+		targetdir = $1
+		targetdir.gsub!( %r{^file://}, '' )
+
+		File.makedirs targetdir, true
+		Dir["#{docsdir}/**/*"].each {|file|
+			fname = file.gsub( %r:#{docsdir}/:, '' )
+			if File.directory? file
+				unless $DEBUG
+					File.makedirs File.join(targetdir, fname), true
+				else
+					message %{File.makedirs %s, true\n} % File.join(targetdir, fname)
+				end
+			else
+				unless $DEBUG
+					File.install( file, File.join(targetdir, fname), 0444, true )
+				else
+					message %{File.install( %s, %s, 0444, true )\n} % [
+						file,
+						File.join(targetdir, fname),
+					]
+				end
+			end
+		}
+
+	else
+		raise "I don't know how to upload to urls like '#{url}'."
+	end
+end
+
+
+if $0 == __FILE__
+	opts = GetoptLong.new
+	opts.set_options(
+		[ '--debug',	'-d',	GetoptLong::NO_ARGUMENT ],
+		[ '--verbose',	'-v',	GetoptLong::NO_ARGUMENT ],
+		[ '--upload',	'-u',	GetoptLong::REQUIRED_ARGUMENT ],
+		[ '--diagrams', '-D',	GetoptLong::NO_ARGUMENT ],
+		[ '--template',	'-T',	GetoptLong::REQUIRED_ARGUMENT ],
+		[ '--output',	'-o',	GetoptLong::REQUIRED_ARGUMENT ]
+	)
+
+	debug = false
+	verbose = false
+	upload = nil
+	diagrams = false
+	template = 'mues'
+	docsdir = "docs/html"
+
+	opts.each {|opt,val|
+		case opt
+
+		when '--debug'
+			debug = true
+
+		when '--verbose'
+			verbose = true
+
+		when '--upload'
+			upload = val
+
+		when '--diagrams'
+			diagrams = true
+
+		when '--output'
+			docsdir = val
+		end
+	}
+
+	$DEBUG = true if debug
+	$VERBOSE = true if verbose
+
+	makeDocs( docsdir, template, upload, diagrams )
+end
