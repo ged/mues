@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: null.rb,v 1.5 2002/04/01 16:31:25 deveiant Exp $
+# $Id: null.rb,v 1.6 2002/07/09 15:15:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -60,9 +60,8 @@ module MUES
 	class NullEnv < MUES::Environment
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.5 2002/04/01 16:31:25 deveiant Exp $
-		DefaultName = "NullEnvironment"
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.6 2002/07/09 15:15:06 deveiant Exp $
 		DefaultDescription = <<-"EOF"
 		This is a barebones environment used in testing. It doesn^t really contain any
 		interesting functionality other than the ability to return roles and allow
@@ -72,8 +71,8 @@ module MUES
 		EOF
 
 		### Instantiate and return a new MUES::NullEnv object.
-		def initialize
-			super( DefaultName, DefaultDescription )
+		def initialize( instanceName )
+			super( instanceName, DefaultDescription )
 
 			@participants		= []
 			@participantsMutex	= Sync.new
