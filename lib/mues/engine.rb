@@ -279,8 +279,8 @@ module MUES
 		include Debuggable
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.6 2001/05/14 11:29:07 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.7 2001/05/22 04:27:57 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -771,59 +771,54 @@ module MUES
 			player = event.player
 
 			results = []
+			@log.debug( "In _handlePlayerEvent. Event is: #{event.to_s}" )
 
 			### Handle the player status change events by changing the contents of the players hash
 			case event
 
 			when PlayerLoginEvent
+				stream = event.stream
 
 				### If the player object is already active (ie., already
 				### connected and has a shell), remove the old socket connection
 				### and re-connect with the new one. Otherwise, just activate
 				### the player object.
 				if player.activated?
-					results << "Player "
-
-					newFilter = session.ioEventStream.removeFiltersOfType( SocketOutputFilter )[0]
-					raise RuntimeError, "Cannot reconnect from a stream with no SocketOutputFilter" unless newFilter
-					results << player.reconnect( newFilter )
+					results << LogEvent.new( "notice", "Player #{player.to_s} reconnected." )
+					results << player.reconnect( stream )
 				else
-					results << LogEvent.new( "notice", "Login succeeded for user '#{username}'." )
-					results << player.activate( session.ioEventStream )
+					results << LogEvent.new( "notice", "Login succeeded for #{player.to_s}." )
+					results << player.activate( stream )
 				end
 
-				### Ensure the player is marked as active
 				@playersMutex.synchronize(Sync::EX) {
-					@players[ player ]['status'] = 'active';
+					@players[ player ] = { "status" => "active" }
 				}
-
-				@playersMutex.synchronize(Sync::EX) { @players[ player ]["status"] = "active" }
 
 			when PlayerDisconnectEvent
 				results << LogEvent.new("notice", "Player #{player.name} went link-dead.")
-				# :TODO: Once reconnect works: 
-				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
-				@playersMutex.synchronize(Sync::EX) { @players.delete( player ) }
-				player.disconnect
+				@playersMutex.synchronize(Sync::EX) { @players[ player ]["status"] = "linkdead" }
+				results << player.disconnect
 
 			when PlayerIdleTimeoutEvent
 				results << LogEvent.new("notice", "Player #{player.name} disconnected due to idle timeout.")
-				# :TODO: Once reconnect works: 
 				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
 				@playersMutex.synchronize(Sync::EX) { @players.delete( player ) }
 				player.disconnect
 
 			when PlayerLogoutEvent
-				results << LogEvent.new("notice", "Player #{player.name} disconnected.")
+				results << LogEvent.new("notice", "Player #{player.to_s} disconnected.")
 				@playersMutex.synchronize(Sync::EX) { @players.delete( player ) }
 				player.disconnect
 
 			when PlayerSaveEvent
-				results << LogEvent.new("info", "Saving record for player #{player.name}.")
+				@log.debug( "In PlayerSaveEvent handler for #{player.to_s}" )
+				results << LogEvent.new("info", "Saving record for player #{player.to_s}.")
 				begin
 					@engineObjectStore.storePlayer( player )
 				rescue Exception => e
-					results << LogEvent.new("error", "Exception while storing player record for #{player.name}")
+					@log.debug( "Error while saving #{player.to_s}: ", e.backtrace.join("\n") )
+					results << LogEvent.new("error", "Exception while storing player record for #{player.to_s}")
 					### :TODO: Perhaps dump to a rescue file or something?
 				end
 
@@ -854,7 +849,7 @@ module MUES
 
 			### Look for a player with the same name as the one logging in...
 			@playersMutex.synchronize(Sync::SH) {
-				player = @players.keys.find {|p| player.username == username }
+				player = @players.keys.find {|p| p.username == username }
 			}
 			player ||= @engineObjectStore.fetchPlayer( username )
 
