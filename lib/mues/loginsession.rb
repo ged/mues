@@ -58,8 +58,8 @@ require "mues/IOEventFilters"
 module MUES
 	class LoginSession < Object; implements Debuggable
 
-		Version = %q$Revision: 1.5 $
-		Rcsid = %q$Id: loginsession.rb,v 1.5 2001/07/30 11:25:13 deveiant Exp $
+		Version = %q$Revision: 1.6 $
+		Rcsid = %q$Id: loginsession.rb,v 1.6 2001/09/26 12:52:22 deveiant Exp $
 
 		### :TODO: Testing code only
 		@@Logins = { 
@@ -114,6 +114,8 @@ module MUES
 		###	P U B L I C   M E T H O D S
 		###################################################
 		public
+
+		attr_reader :remoteHost, :loginAttemptCount, :maxTries
 
 		### METHOD: handleInputEvents( *events )
 		### Get login and password information from input events
@@ -182,6 +184,7 @@ module MUES
 		def authSuccessCallback( user )
 			_debugMsg( 1, "User authenticated successfully." )
 
+			stream = nil
 			@authMutex.synchronize {
 				@finished = true
 				@waitingOnEngine = false
@@ -194,9 +197,15 @@ module MUES
 				@stream.pause
 				@stream.removeFilters( @myProxy )
 				@stream.addInputEvents( *@queuedInputEvents )
+				stream = @stream
+
+				# Clear up circular references
+				@myProxy = nil
+				@stream = nil
+				@myTimeoutEvent = nil
 			}
 
-			UserLoginEvent.new( user, @stream )
+			UserLoginEvent.new( user, stream, self )
 		end
 
 
@@ -246,6 +255,11 @@ module MUES
 				if @myTimeoutEvent
 					engine.cancelScheduledEvents( @myTimeoutEvent )
 				end
+
+				# Clear up circular references
+				@myProxy = nil
+				@stream = nil
+				@myTimeoutEvent = nil
 			}
 		end
 
