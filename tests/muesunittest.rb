@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-#  $Id: muesunittest.rb,v 1.4 2002/10/04 09:58:13 deveiant Exp $
+#  $Id: muesunittest.rb,v 1.5 2002/10/06 02:06:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -144,6 +144,44 @@ module MUES
 		def run( result )
 			$stderr.puts self.name if $VERBOSE
 			super
+		end
+
+
+		### Additional assertion methods
+
+		### Passes if <tt>actual</tt> matches the given <tt>regexp</tt>.
+		def assert_match( regexp, actual, message=nil )
+			_wrap_assertion {
+				assert(regexp.kind_of?(Regexp), "The first parameter to assert_matches should be a Regexp.")
+				full_message = build_message(message, actual, regexp) {
+					| arg1, arg2 |
+					"Expected <#{arg1}> to match #{arg2.inspect}"
+				}
+				assert_block(full_message) {
+					regexp.match( actual )
+				}
+			}
+		end
+
+
+
+		### This was copied from test/unit.rb because I can't call it from
+		### here. Grrr... one shouldn't make methods useful to subclassers
+		### private.
+
+		def _wrap_assertion # :nodoc:
+			@_assertion_wrapped ||= false
+			if (!@_assertion_wrapped)
+				@_assertion_wrapped = true
+				begin
+					add_assertion
+					return yield
+				ensure
+					@_assertion_wrapped = false
+				end
+			else    
+				return yield
+			end
 		end
 
 	end # module TestCase
