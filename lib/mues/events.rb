@@ -30,6 +30,11 @@ This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
+== To Do
+
+* Work priority into the class heirarchy so you can optionally pass a priority
+  to the constructor of any subclass.
+
 =end
 
 ###########################################################################
@@ -87,56 +92,79 @@ module MUES
 
 		end
 
+		### Class constants
+		MaxPriority		= 64
+		MinPriority		= 1
+		DefaultPriority	= (MaxPriority / 2).to_i
 
-		### Class variable: Handler objects for the various event classes, keyed
-		###		by class
+		### Class attributes
 		@@Handlers = { Event => [] }
 
-		### (STATIC) METHOD: RegisterHandlers( *handlers )
-		### Register the specified objects as interested in events of the
-		###		receiver class
-		def Event.RegisterHandlers( *handlers )
-			checkEachResponse( handlers, "handleEvent" )
+		### Class methods
+		class << self
 
-			### Add the handlers to the handlers for this class
-			@@Handlers[ self ] |= handlers
-			return @@Handlers[ self ].length
+			### (STATIC) METHOD: RegisterHandlers( *handlers )
+			### Register the specified objects as interested in events of the
+			###		receiver class
+			def RegisterHandlers( *handlers )
+				checkEachResponse( handlers, "handleEvent" )
+
+				### Add the handlers to the handlers for this class
+				@@Handlers[ self ] |= handlers
+				return @@Handlers[ self ].length
+			end
+
+			### (STATIC) METHOD: UnregisterHandlers( *handlers )
+			### Unregister the specified objects as interested in events of the
+			###		receiver class
+			def UnregisterHandlers( *handlers )
+				@@Handlers[ self ] -= handlers
+				@@Handlers[ self ].length
+			end
+
+			### (STATIC) METHOD: GetHandlers
+			### Return handlers for the specified class and its parents, most
+			###		specific first
+			def GetHandlers
+				return self.ancestors.find_all { |klass| 
+					klass <= Event
+				}.collect { |klass|
+					@@Handlers[ klass ]
+				}.flatten.uniq
+			end
+
+			### (SINGLETON) METHOD: inherited( newSubclass )
+			### Set up a handler array for each new subclass as it is created
+			def inherited( newSubclass )
+				@@Handlers[ newSubclass ] = []
+			end
 		end
 
-		### (STATIC) METHOD: UnregisterHandlers( *handlers )
-		### Unregister the specified objects as interested in events of the
-		###		receiver class
-		def Event.UnregisterHandlers( *handlers )
-			@@Handlers[ self ] -= handlers
-			@@Handlers[ self ].length
-		end
-
-		### (STATIC) METHOD: GetHandlers
-		### Return handlers for the specified class and its parents, most
-		###		specific first
-		def Event.GetHandlers
-			return self.ancestors.find_all { |klass| 
-				klass <= Event
-			}.collect { |klass|
-				@@Handlers[ klass ]
-			}.flatten.uniq
-		end
-
-		### (SINGLETON) METHOD: inherited( newSubclass )
-		### Set up a handler array for each new subclass as it is created
-		def Event.inherited( newSubclass )
-			@@Handlers[ newSubclass ] = []
-		end
 
 		### Instance methods
-		attr_reader :creationTime
+		attr_reader		:creationTime, :priority
 
 		### METHOD: initialize
 		### Initialize a new event
-		def initialize( *args )
+		def initialize( priority=DefaultPriority )
 			super()
+			self.priority = priority
 			@creationTime = Time.now
-			_debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime}" )
+			_debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime} (priority=#{@priority})" )
+		end
+
+		### METHOD: priority=( priority )
+		def priority=( priority )
+			checkType( priority, Integer )
+			priority = MaxPriority if priority > MaxPriority
+			priority = MinPriority if priority < MinPriority
+			@priority = priority
+		end
+
+		### METHOD: <=>
+		def <=>( otherEvent )
+			checkType( otherEvent, Event )
+			( @priority <=> otherEvent.priority ).nonzero? || @creationTime <=> otherEvent.creationTime
 		end
 
 	end
@@ -158,7 +186,7 @@ module MUES
 	class PlayerEvent < Event
 
 		include		AbstractClass
-		autoload	:Player, "lib/Player"
+		autoload	:Player, "mues/Player"
 		attr_reader :player
 
 		### METHOD: initialize( aPlayer )
@@ -169,6 +197,20 @@ module MUES
 		end
 	end
 
+
+	### (ABSTRACT) CLASS: LoginSessionEvent < Event
+	class LoginSessionEvent < Event
+		include		AbstractClass
+		autoload	:LoginSession, "mues/LoginSession"
+		attr_reader	:session
+
+		### METHOD: initialize( aLoginSession )
+		def initialize( aLoginSession )
+			checkType( aLoginSession, LoginSession )
+			@session = aLoginSession
+			super()
+		end
+	end
 
 	### (ABSTRACT) CLASS: IOEvent < Event
 	class IOEvent < Event
@@ -217,6 +259,7 @@ module MUES
 				@severity = $1
 			else
 				@severity = "info"
+				args.push( severity )
 			end
 
 			@message = args.size > 0 ? args.to_s : "[Mark]"
@@ -272,6 +315,19 @@ module MUES
 	end
 
 
+	### CLASS: CallbackEvent < SystemEvent
+	class CallbackEvent < SystemEvent
+		attr_accessor :callback, :args
+
+		### METHOD: initialize( callback )
+		def initialize( callback, *args )
+			checkType( callback, Proc, Method )
+			@callback = callback
+			@args = args
+		end
+	end
+
+
 	### CLASS: UntrappedSignalEvent < ExceptionEvent
 	class UntrappedSignalEvent < ExceptionEvent
 	end
@@ -311,22 +367,42 @@ module MUES
 	end
 
 
-	### CLASS: PlayerLoginEvent < PlayerEvent
-	class PlayerLoginEvent < PlayerEvent
-	end
-
-
-	### CLASS: PlayerLoginFailureEvent < PlayerEvent
-	class PlayerLoginFailureEvent < PlayerEvent
+	### CLASS: LoginSessionFailureEvent < LoginSessionEvent
+	class LoginSessionFailureEvent < LoginSessionEvent
 
 		attr_reader :reason
 
-		### METHOD: initialize( aPlayer, reason )
-		def initialize( player, reason )
-			super( player )
+		### METHOD: initialize( aLoginSession, reason )
+		def initialize( session, reason )
+			super( session )
 			@reason = reason
 		end
 
+	end
+
+
+	### CLASS: LoginSessionAuthEvent < LoginSessionEvent
+	class LoginSessionAuthEvent < LoginSessionEvent
+
+		attr_reader :username, :password, :successCallback, :failureCallback
+
+		### METHOD: initialize( aLoginSession, user, pass, successCallback, failureCallback )
+		def initialize( session, user, pass, sCall, fCall )
+			checkTypes( [user,pass], String )
+			checkTypes( [sCall,fCall], String, Method, Proc )
+
+			super( session )
+			@username			= user
+			@password			= pass
+			@successCallback	= sCall
+			@failureCallback	= fCall
+		end
+
+	end
+
+
+	### CLASS: PlayerLoginEvent < PlayerEvent
+	class PlayerLoginEvent < PlayerEvent
 	end
 
 
@@ -342,21 +418,6 @@ module MUES
 
 	### CLASS: PlayerLogoutEvent < PlayerEvent
 	class PlayerLogoutEvent < PlayerEvent
-	end
-
-	### CLASS: PlayerAuthenticationEvent
-	class PlayerAuthenticationEvent < PlayerEvent
-		attr_reader :login, :password, :successCallback, :failureCallback
-
-		### METHOD: initialize( aPlayer, username, password, successCallback, failureCallback )
-		def initialize( player, username, password, sCallback, fCallback )
-			super( player )
-
-			@username	= username
-			@password	= password
-			@successCallback = sCallback
-			@failureCallback = fCallback
-		end
 	end
 
 end # module MUES
