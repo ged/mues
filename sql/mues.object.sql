@@ -1,7 +1,7 @@
 /*
    MUES Object Table Schema (MySQL)
-	$Id: mues.object.sql,v 1.1 2001/03/15 02:22:16 deveiant Exp $
-	Time-stamp: <28-Jan-2001 03:59:28 deveiant>
+	$Id: mues.object.sql,v 1.2 2001/05/14 12:34:43 deveiant Exp $
+	Time-stamp: <31-Mar-2001 10:24:02 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -12,7 +12,7 @@
 
  */
 
-/* The Player table */
+/* The frozen object table */
 DROP TABLE IF EXISTS object;
 CREATE TABLE object (
 	
@@ -21,6 +21,7 @@ CREATE TABLE object (
 	ts					TIMESTAMP(12),
 	
 	/* Data fields */
+	muesid				VARCHAR(200)	NOT NULL,
 	data				MEDIUMBLOB
 
 );
