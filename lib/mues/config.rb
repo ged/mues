@@ -52,13 +52,13 @@ require "mues/Exceptions"
 
 module MUES
 
-	class ConfigFormatError < SyntaxError; end
+	def_exception :ConfigFormatError, "Syntax error in config file",		SyntaxError
 
 	class Config < Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.4 2001/05/14 11:16:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.5 2001/07/18 01:40:22 deveiant Exp $
 
 		### METHOD: initialize( sourceIoOrFileName = nil )
 		### Initialize the configuration, optionally loading the configuration
@@ -112,7 +112,7 @@ module MUES
 		### (PROTECTED) METHOD: _initFromIo( source )
 		### Load the configuration values from an IO object
 		def _initFromIo( source )
-			checkType( source, IO )
+			checkType( source, ::IO )
 
 			_parseConfig( source.readlines )
 		end
@@ -120,7 +120,7 @@ module MUES
 		### (PROTECTED) METHOD: _initFromFile( source )
 		### Load the configuration objects from the file specified
 		def _initFromFile( source )
-			checkType( source, String )
+			checkType( source, ::String )
 
 			io = File.open( source, "r" )
 			_initFromIo( io )
@@ -130,7 +130,7 @@ module MUES
 		### Parse the configuration from the array of Strings given, and return
 		### a section object.
 		def _parseConfig( contentArray )
-			checkType( contentArray, Array )
+			checkType( contentArray, ::Array )
 
 			### Create a new main section, and add it to the sectionBranch stack,
 			### which is how we keep track of which part of the heirarchy is
@@ -230,7 +230,7 @@ module MUES
 			### Initialize this config section with the name specified
 			protected
 			def initialize( sectionName )
-				checkType( sectionName, String )
+				checkType( sectionName, ::String )
 				@name = sectionName
 				@values = {}
 				super()
@@ -276,7 +276,7 @@ module MUES
 			### METHOD: [ key ]
 			### Get the configuration value with the name specified.
 			def []( key )
-				checkType( key, String )
+				checkType( key, ::String )
 				return @values[ key.downcase ]
 			end
 
@@ -284,8 +284,8 @@ module MUES
 			### Set the configuration value specified by name to the value
 			### specified.
 			def []=( key, value )
-				checkType( key, String )
-				checkType( value, Numeric, String, Config::Section, TrueClass, FalseClass )
+				checkType( key, ::String )
+				checkType( value, ::Numeric, ::String, Config::Section, ::TrueClass, ::FalseClass )
 
 				@values[ key.downcase ] = value
 			end
