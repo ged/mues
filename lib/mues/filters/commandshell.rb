@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.30 2002/10/28 00:07:37 deveiant Exp $
+# $Id: commandshell.rb,v 1.31 2002/10/28 00:26:09 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.30 2002/10/28 00:07:37 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.31 2002/10/28 00:26:09 deveiant Exp $
 		DefaultSortPosition = 990
 
 		### Class globals
@@ -512,20 +512,6 @@ module MUES
 		### lookup before every command.
 		class Context < MUES::Object ; implements MUES::Debuggable
 
-			# The invoking MUES::CommandShell.
-			attr_reader :shell
-
-			# The invoking MUES::User.
-			attr_reader :user
-
-			# The MUES::IOEventStream object associated with the invoking
-			# command shell.
-			attr_reader :stream
-
-			# The object which was last set as the command context for the
-			# shell.
-			attr_accessor :evalContext
-
 			### Create and return a new Context object with the specified shell
 			### (a MUES::CommandShell object), user (a MUES::User object),
 			### stream (a MUES::IOEventStream object), and
@@ -540,6 +526,27 @@ module MUES
 				debugMsg( 2, "Initializing context object for #{@user.to_s}" )
 				super()
 			end
+
+
+			######
+			public
+			######
+
+			# The invoking MUES::CommandShell.
+			attr_reader :shell
+
+			# The invoking MUES::User.
+			attr_reader :user
+
+			# The MUES::IOEventStream object associated with the invoking
+			# command shell.
+			attr_reader :stream
+
+			# The object which was last set as the command context for the
+			# shell.
+			attr_accessor :evalContext
+
+
 		end # class Context
 
 
@@ -888,8 +895,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.30 2002/10/28 00:07:37 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.31 2002/10/28 00:26:09 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
