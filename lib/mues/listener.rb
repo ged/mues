@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.4 2002/09/12 11:48:03 deveiant Exp $
+# $Id: listener.rb,v 1.5 2002/10/26 18:58:21 deveiant Exp $
 # 
 # == Authors
 # 
@@ -71,8 +71,8 @@ module MUES
 		include MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: listener.rb,v 1.4 2002/09/12 11:48:03 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: listener.rb,v 1.5 2002/10/26 18:58:21 deveiant Exp $
 
 		### Class methods
 
@@ -90,10 +90,12 @@ module MUES
 			@parameters	= parameters
 			@io			= io
 
+			@filterDebugLevel	= parameters['filter-debug'].to_i
+
 			self.log.info( "Initialized a %s" % self.class.name )
 
 			super()
-			self.log.debug {"Returning from MUES::Listener initializer"}
+			self.log.debug "Returning from MUES::Listener initializer"
 		end
 
 
@@ -111,6 +113,10 @@ module MUES
 
 		# The IO object associated with this listener.
 		attr_reader :io
+
+		# The debugging level that will be set on new filter created by this
+		# listener
+		attr_accessor :filterDebugLevel
 
 
 		# Virtual methods required in derivatives
