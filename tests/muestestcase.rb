@@ -209,7 +209,24 @@ module MUES
 		### Output the name of the test as it's running if in verbose mode.
 		def run( result )
 			$stderr.puts self.name if $VERBOSE || $DEBUG
+
+			# Support debugging for individual tests
+			olddb = nil
+			if $DebugPattern && $DebugPattern =~ @method_name
+				MUES::Logger::global.outputters <<
+					MUES::Logger::Outputter::create( 'file', $stderr, "STDERR" )
+				MUES::Logger::global.level = :debug
+
+				olddb = $DEBUG
+				$DEBUG = true
+			end
+			
 			super
+
+			unless olddb.nil?
+				$DEBUG = olddb 
+				MUES::Logger::global.outputters.clear
+			end
 		end
 
 

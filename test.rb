@@ -39,21 +39,27 @@ $stderr.sync = $stdout.sync = true
 safelevel = 0
 patterns = []
 requires = []
+$DebugPattern = nil
 
 # Parse command-line switches
 ARGV.options {|oparser|
 	oparser.banner = "Usage: #$0 [options] [TARGETS]\n"
 
-	oparser.on( "--debug", "-d", TrueClass, "Turn debugging on" ) {
-		$DEBUG = true
+	oparser.on( "--debug[=PATTERN]", "-d[=PATTERN]", String,
+		"Turn debugging on (for tests which match PATTERN" ) {|arg|
+		if arg
+			$DebugPattern = Regexp::new( arg )
+			puts "Turned debugging on for %p" % $DebugPattern
+		else
+			format = colored( %q{#{time} [#{level}]: }, 'cyan' ) +
+				colored( %q{#{name} #{frame ? '('+frame+')' : ''}: #{msg[0,1024]}}, 'white' )
+			outputter = MUES::Logger::Outputter::create( 'file', $deferr, "Default", format )
+			MUES::Logger::global.outputters << outputter
+			MUES::Logger::global.level = :debug
 
-		format = colored( %q{#{time} [#{level}]: }, 'cyan' ) +
-			colored( %q{#{name} #{frame ? '('+frame+')' : ''}: #{msg[0,1024]}}, 'white' )
-		outputter = MUES::Logger::Outputter::create( 'file', $deferr, "Default", format )
-		MUES::Logger::global.outputters << outputter
-		MUES::Logger::global.level = :debug
-
-		debugMsg "Turned debugging on."
+			$DEBUG = true
+			debugMsg "Turned debugging on."
+		end
 	}
 
 	oparser.on( "--verbose", "-v", TrueClass, "Make progress verbose" ) {
