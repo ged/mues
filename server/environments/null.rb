@@ -61,12 +61,10 @@ module MUES
 	class NullEnvironment < Environment
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.1 2001/07/27 03:25:12 deveiant Exp $
-
-		### Class variables
-		@@DefaultName = "NullEnvironment"
-		@@DefaultDescription = <<-"EOF"
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.2 2001/07/30 09:51:36 deveiant Exp $
+		DefaultName = "NullEnvironment"
+		DefaultDescription = <<-"EOF"
 		This is a barebones environment used in testing. It doesn^t really contain any
 		interesting functionality other than the ability to return roles and allow
 		connections.
@@ -75,12 +73,13 @@ module MUES
 		EOF
 
 		### (PROTECTED) METHOD: initialize()
+		### Initialize the environment
 		protected
 		def initialize
-			super( @@DefaultName, @@DefaultDescription )
+			super( DefaultName, DefaultDescription )
 
-			@participants = []
-			@partMutex = Sync.new
+			@participants		= []
+			@participantsMutex	= Sync.new
 		end
 
 		#############################################################
@@ -90,6 +89,19 @@ module MUES
 
 		### Methods required by the World class's contract
 
+		### METHOD: start
+		### Start the world instance
+		def start
+			return LogEvent.new( "notice", "Starting Null environment #{self.muesid}" )
+		end
+
+		### METHOD: stop
+		### Stop the world instance
+		def stop
+			# Stop participants
+			return LogEvent.new( "notice", "Stopping Null environment #{self.muesid}" )
+		end
+
 		### METHOD: getParticipantProxy( aUser=MUES::User, aRole=MUES::Role )
 		### Return a (({MUES::ParticipantProxy})) object for the specified role
 		### in the environment.
@@ -98,7 +110,7 @@ module MUES
 			checkType( role, MUES::Role )
 
 			proxy = Controller.new( user, Character.new(role), self )
-			@partMutex.synchronize( SYNC::EX ) {
+			@participantsMutex.synchronize( SYNC::EX ) {
 				@participants << proxy
 			}
 
@@ -134,7 +146,7 @@ module MUES
 			count = 0
 
 			# Send the event to everyone connected, except perhaps the exception
-			@partMutex.synchronize( Sync::SH ) {
+			@participantsMutex.synchronize( Sync::SH ) {
 				@participants.each {|part|
 					part.queueOutputEvents( message )
 					count += 1
@@ -151,7 +163,7 @@ module MUES
 			# Iterate over the list of connected users, adding a line for each
 			# of 'em
 			userlist = " Connected users:"
-			@partMutex.synchronize( Sync::SH ) {
+			@participantsMutex.synchronize( Sync::SH ) {
 				userList << @participants.sort.collect {|part|
 					"%s: %s (%s)" % [
 						part.user.to_s,
