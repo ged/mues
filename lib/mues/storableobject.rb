@@ -93,7 +93,7 @@ module MUES #:nodoc:
 		### MUES::ObjectStore it is about to be stored in is given as the
 		### <tt>objStore</tt> argument.
 		def lull( objStore )
-			copy = self.dup
+			copy = Marshal::load( Marshal::dump(self) )
 			copy.lull!( objStore )
 			return copy
 		end
@@ -112,9 +112,8 @@ module MUES #:nodoc:
 		### un-serializable data reconstituted, etc.). The MUES::ObjectStore it
 		### is about to be stored in is given as the <tt>objStore</tt> argument.
 		def awaken( objStore )
-			copy = self.dup
-			copy.awaken!( objStore )
-			return copy
+			self.awaken!( objStore )
+			return self
 		end
 
 		
