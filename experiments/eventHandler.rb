@@ -2,21 +2,22 @@
 
 
 require "mues/Events"
+include MUES
 
 class Handler < Object
 
 	include MUES::Event::Handler
 
   protected
-	def _handleSystemEvent( event )
+	def handleSystemEvent( event )
 		puts "Handled system event: #{event.to_s}"
 	end
 
-	def _handleTestSystemEvent( event )
+	def handleTestSystemEvent( event )
 		puts "Handled test system event: #{event.to_s}"
 	end
 
-	def _handleTickEvent( event )
+	def handleTickEvent( event )
 		puts "Handled tick event: #{event.to_s}"
 	end
 
@@ -41,11 +42,11 @@ def dispatchEvent( event )
 end
 
 
-class TestSystemEvent < SystemEvent; end
-class TestWorldEvent < WorldEvent; end
+class TestSystemEvent < MUES::SystemEvent; end
+class TestWorldEvent < MUES::EnvironmentEvent; end
 
 h = Handler.new
-eventsToGenerate = [ ThreadShutdownEvent, EngineShutdownEvent, TestSystemEvent, TestWorldEvent ]
+eventsToGenerate = [ Shutdown, EngineShutdownEvent, TestSystemEvent, TestWorldEvent ]
 
 
 eventsToGenerate.each do |klass|
