@@ -39,7 +39,7 @@
 # * Martin Chase <stillflame@FaerieMUD.org>
 #
 
-#require "ArunaDB"
+require "ArunaDB"
 
 class ObjectStore
 
