@@ -333,6 +333,8 @@ end
 ### The base MUES namespace
 module MUES
 
+	autoload :Engine, "mues/Engine.rb"
+
 	### MODULE: MUES::AbstractClass
 	module AbstractClass
 		def AbstractClass.append_features( klass )
@@ -510,11 +512,9 @@ module MUES
 	### (ABSTRACT) CLASS: MUES::Object
 	class Object < ::Object; implements AbstractClass
 
-		autoload "MUES::Engine", "mues/Engine.rb"
-
 		### Class constants
-		Version	= %q$Revision: 1.12 $
-		RcsId	= %q$Id: mues.rb,v 1.12 2001/11/01 16:54:06 deveiant Exp $
+		Version	= %q$Revision: 1.13 $
+		RcsId	= %q$Id: mues.rb,v 1.13 2001/12/05 18:06:25 deveiant Exp $
 
 		class << self
 			def finalizer( objDesc )
@@ -536,7 +536,7 @@ module MUES
 			@muesid = __GenerateMuesId()
 			@objectStoreData = nil
 			objRef = "%s [%d]" % [ self.class.name, self.id ]
-			ObjectSpace.define_finalizer( self, MUES::Object.finalizer(objRef) )
+			#ObjectSpace.define_finalizer( self, MUES::Object.finalizer(objRef) )
 		end
 
 		###################################################
