@@ -49,8 +49,8 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.7 2001/08/05 05:49:23 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.8 2001/09/26 13:01:13 deveiant Exp $
 			DirectoryName = 'objectstore-bdb'
 
 			### Class variables
@@ -144,11 +144,14 @@ module MUES
 				checkType( username, String )
 				checkType( data, Hash )
 
+				_debugMsg( 2, "Prepping user data for '#{username}'" )
 				data['username'] = username
 				frozenData = Marshal.dump( data )
+				_debugMsg( 2, "Storing user data for '#{username}'." )
 				@lock['user'].synchronize(Sync::EX) {
 					@dbh['user'].store( username, frozenData )
 				}
+				_debugMsg( 2, "User data stored successfully." )
 
 				return data
 			end
