@@ -19,9 +19,6 @@ ObjectStore - An object persistance abstraction class
 
   user = oStore.fetchUser( "login" )
 
-  banTable = oStore.getBanTable
-  allowTable = oStore.getAllowTable
-
 == Description
 
 This class is a generic front end to various means of storing MUES objects. It
@@ -62,8 +59,8 @@ module MUES
 		autoload "MUES::ObjectStore::Adapter", "mues/adapters/Adapter"
 
 		### Class Constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: ObjectStore.rb,v 1.8 2001/07/30 11:51:06 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: ObjectStore.rb,v 1.9 2001/08/05 05:45:30 deveiant Exp $
 
 		AdapterSubdir = 'mues/adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/
@@ -261,6 +258,11 @@ module MUES
 			@dbAdapter.deleteUserData( username )
 		end
 		
+		### METHOD: getUserList()
+		### Returns an array of usernames that exist in the objectstore
+		def getUserList
+			@dbAdapter.getUsernameList()
+		end
 
 	end
 end
