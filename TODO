@@ -25,9 +25,11 @@ This is an informal list of tasks yet to be done for the MUES.
 
 * Fix the mysterious backspace-freezing bug in the TelnetOutputFilter.
 
-* Make a list of CommandShell commands to implement, and start implementing
-  them.
+* Implement the commands in server/shellCommands/TODO.
 
 * Add 'bans' code to Engine.
 
+* Finish code to re-write a config file.
+
+* Define a shutdown method for NullEnvironment.
 
