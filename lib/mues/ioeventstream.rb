@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.23 2002/10/25 05:02:03 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.24 2002/10/26 18:57:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.23 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.23 2002/10/25 05:02:03 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.24 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.24 2002/10/26 18:57:43 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
@@ -131,6 +131,7 @@ module MUES
 			@streamThread = Thread.new { streamThreadRoutine() }
 			@streamThread.abort_on_exception = true
 			@streamThread.desc = "IOEventStream thread [Stream #{self.id}]"
+
 		end
 
 
@@ -212,48 +213,76 @@ module MUES
 		end
 
 
-		### Remove the specified <tt>filters</tt> from the stream, returning any
-		### consequential events. The default filters cannot be removed. If no
+		### Remove and return the specified <tt>filters</tt> from the
+		### stream. The default filters cannot be removed. If no
 		### <tt>filters</tt> are specified, all but the default filters are
 		### removed.
 		def removeFilters( *filters )
-			if filters.empty?
-				filters = @filters - [ @doFilter, @diFilter ]
-			else
-				checkEachType( filters, MUES::IOEventFilter )
-				raise MUES::Exception, "Cannot remove the default input filter" if
-					filters.include?( @diFilter )
-				raise MUES::Exception, "Cannot remove the default output filter" if
-					filters.include?( @doFilter )
-			end
+			checkEachType( filters, MUES::IOEventFilter )
+			raise MUES::Exception, "Cannot remove the default input filter" if
+				filters.include?( @diFilter )
+			raise MUES::Exception, "Cannot remove the default output filter" if
+				filters.include?( @doFilter )
 
-			results = []
-			debugMsg( 1, "Removing #{filters.size} filters from stream #{self.id}" )
+			@filterMutex.synchronize( Sync::EX ) {
+				if filters.empty?
+					filters = @filters - [ @doFilter, @diFilter ]
+				end
 
-			### Remove each filter that is actually in the stream, notifying
-			### each one that it should stop notifying this stream
-			@filterMutex.synchronize(Sync::EX) {
-				(@filters & filters).each {|f|
-					results << f.stop( self )
-				}
-
+				filters &= @filters
 				@filters -= filters
 			}
 
-			debugMsg( 2, "Stream now has #{@filters.size} filters." )
-			return results.flatten
+			debugMsg( 1, "Removed #{filters.size} filters from stream #{self.id}" )
+			return filters
 		end
 
 
 		### Remove all filters of the type specified by <tt>filterClass</tt> (a
-		### Class object) from the IOEventStream, returning any consequential
-		### events. The default filters cannot be removed.
+		### Class object) from the stream. The default filters cannot be
+		### removed.
 		def removeFiltersOfType( filterClass )
 			checkType( filterClass, ::Class )
 			@filterMutex.synchronize( Sync::SH ) {
 				filters = findFiltersOfType(filterClass) - [ @diFilter, @doFilter ]
 				removeFilters( *filters )
 			}
+		end
+
+
+		### Stop and remove the specified filters from the stream, returning any
+		### resulting events. If the optional <tt>block</tt> is given, it is
+		### called once for each filter being stopped, after removal from the
+		### stream, but before #stop is called on it.
+		def stopFilters( *filters )
+			results = []
+			debugMsg 1, "Stopping %s filters." %
+				filters.empty? ? "all" : filters.length.to_s
+
+			self.removeFilters( *filters ).each {|f|
+				results << yield( f ) if block_given?
+				results << f.stop( self )
+			}
+
+			debugMsg 2, "Stream now has #{@filters.size} filters."
+			return results.flatten
+		end
+
+
+		### Stop and remove filters of the type specified by
+		### <tt>filterClass</tt> (a Class object) from the stream, returnings
+		### any resulting events. If a block is given, it will be called once
+		### for each filter being removed, after it is removed, but before it is
+		### stopped.
+		def stopFiltersOfType( filterClass, &block )
+			checkType( filterClass, ::Class )
+
+			results = @filterMutex.synchronize( Sync::SH ) {
+				filters = findFiltersOfType(filterClass) - [ @diFilter, @doFilter ]
+				self.stopFilters( *filters, &block )
+			}
+
+			return results
 		end
 
 
@@ -361,11 +390,14 @@ module MUES
 		def shutdown
 			results = []
 
+			self.pause
+
 			# Set the state flag and remove all filters
 			debugMsg( 1, "Shutting down event stream #{self.id}." )
 			@filterMutex.synchronize(Sync::EX) {
 				@state = SHUTDOWN
-				results << self.removeFilters
+				results.replace self.stopFilters
+				results.flatten!
 				@filters.clear
 			}
 
@@ -377,13 +409,17 @@ module MUES
 				@notification.signal
 			}
 
-			### Join on the stream's thread with a timeout of 2 seconds
+			# Join on the stream's thread with a timeout of 2 seconds. The
+			# shutdown can come from the stream thread itself, or from outside,
+			# so handle both situations.
+			debugMsg 3, "Joining on stream thread."
 			if @streamThread != Thread.current
 				@streamThread.join( 2 ) || @streamThread.kill
 			elsif Thread.current != Thread.main
 				Thread.current.exit
 			end
 
+			debugMsg 2, "Returning %d result events for shutdown" % results.flatten.length
 			return results.flatten
 		end
 
