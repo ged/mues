@@ -23,7 +23,7 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.9 $
+$version	= %q$Rev$
 $rcsId		= %q$Id: install.rb,v 1.9 2004/03/14 01:43:49 stillflame Exp $
 
 stty_save = `stty -g`.chomp
@@ -142,8 +142,9 @@ end
 if $0 == __FILE__
 	header "MUES Installer #$version"
 
-	unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
-		abort "MUES will not run under this version of Ruby. It requires at least 1.7.2 (CVS)."
+	unless RUBY_VERSION >= "1.8.1" || ENV['NO_VERSION_CHECK']
+		abort "MUES will not run under this version of Ruby. It requires at least 1.8.1.\n" +
+			"Re-run again with NO_VERSON_CHECK set to ignore this check."
 	end
 
 	for lib in RequiredLibraries
@@ -179,7 +180,8 @@ if $0 == __FILE__
 	i.installFiles( "server/bin", "#{serverDir}/bin", 0755, verbose )
 	i.installFiles( "server/shellCommands", "#{serverDir}/shellCommands", 0644, verbose )
 	i.installFiles( "server/environments", "#{serverDir}/environments", 0644, verbose )
-	i.installFiles( "server/minimal-config.xml", serverDir, 0644, verbose )
+	i.installFiles( "server/questionnaires", "#{serverDir}/environments", 0644, verbose )
+	i.installFiles( "server/config.yml", serverDir, 0644, verbose )
 end
 	
 
