@@ -1,10 +1,11 @@
 # -*- default-generic -*-
 # User-related MUES::CommandShell commands.
-# Time-stamp: <15-Oct-2002 06:36:24 deveiant>
-# $Id: users.cmd,v 1.6 2002/10/15 12:37:14 deveiant Exp $
+# Time-stamp: <22-Oct-2002 22:01:56 deveiant>
+# $Id: users.cmd,v 1.7 2002/10/23 04:02:31 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
+# * Martin Chase <stillflame@FaerieMUD.org>
 #
 
 
