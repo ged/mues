@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: workerthread.rb,v 1.10 2002/09/12 12:14:59 deveiant Exp $
+# $Id: workerthread.rb,v 1.11 2002/10/29 19:02:42 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,6 +51,11 @@ module MUES
 
 	### A thread subclass for worker threads in EventQueues
 	class WorkerThread < Thread ; implements MUES::Debuggable
+
+		### Class constants
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Rcsid	= %q$Id: workerthread.rb,v 1.11 2002/10/29 19:02:42 deveiant Exp $
+
 
 		### Create and return the thread with the given arguments.
 		def initialize( *args ) # :yeilds: *args
