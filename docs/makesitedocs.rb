@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Documentation Generation Script
-#	$Id: makesitedocs.rb,v 1.6 2002/06/04 06:41:06 deveiant Exp $
+#	$Id: makesitedocs.rb,v 1.7 2002/07/07 18:12:20 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -35,7 +35,7 @@ opts.set_options(
 )
 
 $docsdir = "docs/html"
-$libdirs = %w{lib ext server README INSTALL QUICKSTART}
+$libdirs = %w{lib ext server README INSTALL QUICKSTART CONFIGURATION}
 opts.each {|opt,val|
 	case opt
 
