@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Documentation Generation Script
-#	$Id: makedocs.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+#	$Id: makedocs.rb,v 1.2 2001/12/06 13:38:25 red Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -24,10 +24,12 @@ require "delegate"
 require "utils"
 include UtilityFunctions
 
-if require "rd/rd2html-ext-lib"
+$extendedHtml = false
+begin
+	require "rd/rd2html-ext-lib"
 	$extendedHtml = true
-else
-	$extendedHtml = false
+rescue LoadError => e
+	puts "rd/rd2html-ext-lib unavailable, will not use extended HTML"
 end
 
 class Generator < SimpleDelegator

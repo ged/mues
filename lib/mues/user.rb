@@ -29,14 +29,14 @@ Namespace for account type constants. Contains:
 : AccountType::CREATOR
 
   Creator permissions allow the user to start and stop their own Environments,
-  examine the state of any object inside an Environment which they have started,
-  and fetch limited runtime statistics from the Engine.
+  examine the state of any object inside an Environment which they have
+  started, and fetch limited runtime statistics from the Engine.
 
 : AccountType::IMPLEMENTOR
 
-  Implementor permissions allow the user to start and stop any Environment, view
-  the state of any object in any Environment, interact with the Engine to a
-  limited degree (shutdown, restart, reload config), view the banlist, etc.
+  Implementor permissions allow the user to start and stop any Environment,
+  view the state of any object in any Environment, interact with the Engine to
+  a limited degree (shutdown, restart, reload config), view the banlist, etc.
 
 : AccountType::ADMIN
 
@@ -169,8 +169,8 @@ module MUES
 		include Event::Handler
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.12 2001/11/01 21:25:53 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.13 2001/12/06 13:38:25 red Exp $
 
 		# User AccountType constants
 		module AccountType

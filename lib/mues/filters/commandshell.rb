@@ -380,8 +380,8 @@ module MUES
 	class CommandShell < IOEventFilter ; implements Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.9 2001/11/01 17:42:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.10 2001/12/06 13:38:26 red Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -393,7 +393,7 @@ module MUES
 		# any more instances.
 		@@Finalizer = Proc.new {
 			@@Instances -= 1
-			_debugMsg( 2, "Decremeted command shell instance count: #{@@Instances}" )
+			_debugMsg( 2, "Decremented command shell instance count: #{@@Instances}" )
 		}
 
 
@@ -461,9 +461,9 @@ module MUES
 
 			_debugMsg( 5, "CommandShell: Got #{events.size} input events to filter." )
 
-			### :TODO: This is probably only good for a few commands. Eventually,
-			### this will probably become a dispatch table which gets shell commands
-			### dynamically from somewhere.
+			### :TODO: This is probably only good for a few commands.
+			### Eventually, this will probably become a dispatch table which
+			### gets shell commands dynamically from somewhere.
 			events.flatten.each do |e|
 
 				### If the input looks like a command for the shell, look for
@@ -623,8 +623,8 @@ module MUES
 		class Command < MUES::Object ; implements AbstractClass, Debuggable, Notifiable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.9 2001/11/01 17:42:05 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.10 2001/12/06 13:38:26 red Exp $
 
 			### Class values
 			@@CommandRegistry	= {}

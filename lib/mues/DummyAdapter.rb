@@ -112,8 +112,8 @@ module MUES
 
 			include Debuggable
 
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: DummyAdapter.rb,v 1.7 2001/11/01 17:23:20 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+			Rcsid = %q$Id: DummyAdapter.rb,v 1.8 2001/12/06 13:38:26 red Exp $
 
 			### METHOD: new( config=MUES::Config )
 			### Create a new DummyAdapter ObjectStore adapter object.
@@ -213,12 +213,15 @@ module MUES
 					until f.flock( File::LOCK_EX|File::LOCK_NB )
 						sleep 0.2
 					end
-						$stderr.puts( "Marshalling user data to #{filename}: #{data.inspect}" )
+					$stderr.puts( "Marshalling user data to #{filename}: #{data.inspect}" )
 					Marshal.dump( data, f )
 					ensure
 					f.flock( File::LOCK_UN )
 					end
 				}
+				# Red: ObjectStore sets user.dbinfo to return value of this fn
+				# Return previous value so it remains valid for to_s -> isCreator?
+				data
 			end
 
 			### METHOD: fetchUserData( username )

@@ -335,8 +335,8 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.13 2001/11/01 19:52:00 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.14 2001/12/06 13:38:25 red Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -972,6 +972,7 @@ module MUES
 					@log.debug( "About to call storeUser()." )
 					@engineObjectStore.storeUser( user )
 					@log.debug( "Back from storeUser()." )
+					# Exception: calls user.isCreator?, no longer valid
 					results << LogEvent.new("info", "Saved user record for #{user.to_s}")
 					@log.debug( "Added LogEvent to results array." )
 				rescue Exception => e

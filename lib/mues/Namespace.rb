@@ -234,6 +234,11 @@ class Object
 	### ((|validTypes|)), calling the optional ((|errBlock|)) if specified,
 	### or raising a (({TypeError})) if not.
 	def checkType( anObject, *validTypes )
+		# Red: Throw away any nil types, and warn
+		# Debug level might be inappropriate?
+		os = validTypes.size
+		validTypes.compact!
+		debugMsg("1", "nil given in *validTypes") unless os == validTypes.size
 		if validTypes.size > 0 then
 
 			### Compare the object against the array of valid types, and either
@@ -290,6 +295,11 @@ class Object
 	### calling the optional ((|errBlock|)) if specified, or raising a
 	### (({TypeError})) if one of the methods is unimplemented.
 	def checkResponse( anObject, *requiredMethods )
+		# Red: Throw away any nil types, and warn
+		# Debug level might be inappropriate?
+		os = requiredMethods.size
+		requiredMethods.compact!
+		debugMsg("1", "nil given in *requiredMethods") unless os == requiredMethods.size
 		if requiredMethods.size > 0 then
 			requiredMethods.each do |method|
 				next if anObject.respond_to?( method )
@@ -513,8 +523,8 @@ module MUES
 	class Object < ::Object; implements AbstractClass
 
 		### Class constants
-		Version	= %q$Revision: 1.13 $
-		RcsId	= %q$Id: Namespace.rb,v 1.13 2001/12/05 18:06:25 deveiant Exp $
+		Version	= %q$Revision: 1.14 $
+		RcsId	= %q$Id: Namespace.rb,v 1.14 2001/12/06 13:38:25 red Exp $
 
 		class << self
 			def finalizer( objDesc )
