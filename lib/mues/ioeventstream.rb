@@ -48,7 +48,7 @@ contained in the events.
 The stream also contains its own thread of execution, so I/O in it is processed
 independently of the main thread of execution.
 
-== Methods
+== Classes
 === MUES::IOEventStream
 ==== Instance Methods
 
@@ -310,6 +310,28 @@ module MUES
 		end
 
 
+		### METHOD: findFiltersOfType( aClass ) { block }
+		### Find and return all the handlers of the specified type from the
+		### IOEventStream, passing each matching filter to the optional block,
+		### if given.
+		def findFiltersOfType( aClass )
+			checkType( aClass, ::Class )
+			values = []
+
+			@filterMutex.synchronize( Sync::SH ) {
+				if block_given?
+					@filters.find_all {|filter| filter.kind_of?( aClass )}.each {|f|
+						values << yield( f )
+					}
+				else
+					values = @filters.find_all {|filter| filter.kind_of?( aClass )}.flatten
+				end
+			}
+
+			return values
+		end
+
+
 		### METHOD: addEvents( *events )
 		### Add the specified events to whichever side of the stream they need to be
 		### added to.
@@ -515,7 +537,7 @@ module MUES
 				@filters.sort.each {|filter|
 					_debugMsg( 3, "Sending #{events.size} input events to a #{filter.class.name} "+
 							   "(sort order = #{filter.sortPosition})." )
-					results = filter.handleInputEvents( *events )
+					results = filter.handleInputEvents( *events ) unless filter.isFinished?
 					_debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
 					if ( results.nil? || filter.isFinished )
 						_debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
@@ -557,7 +579,7 @@ module MUES
 
 					_debugMsg( 3, "Sending #{events.size} output events to a #{filter.class.name} "+
 							   "(sort order = #{filter.sortPosition})." )
-					results = filter.handleOutputEvents( *events )
+					results = filter.handleOutputEvents( *events ) unless filter.isFinished?
 					_debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
 
 					# If the filter returned nil or its isFinished flag is set,
