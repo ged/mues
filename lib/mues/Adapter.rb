@@ -16,43 +16,43 @@ Adapter - An ObjectStore adapter abstract base class
     class ObjectStore
       class MyAdapter < Adapter
 
-		def initialize( db, host, user, password )
-			...
-		end
+        def initialize( configObj )
+            ...
+        end
 
-		def storeObject( obj )
-			...
-		end
+        def storeObject( obj )
+            ...
+        end
 
-		def fetchObject( id )
-			...
-		end
+        def fetchObject( id )
+            ...
+        end
 
-		def hasObject?( id )
-			...
-		end
+        def hasObject?( id )
+            ...
+        end
 
         def storeUserData( username, data )
-			...
-		end
+            ...
+        end
 
         def fetchUserData( username )
-			...
-		end
+            ...
+        end
 
         def createUserData( username )
             ...
         end
 
         def deleteUserData( username )
-			...
-		end
+            ...
+        end
 
         def listUsers
-			...
-		end
+            ...
+        end
 
-	  end
+      end
     end
   end
 
@@ -78,7 +78,7 @@ used as a superclass for your own adapter classes.
 --- MUES::ObjectStore::Adapter.getAdapterClass( name )
 
     Returns an adapter class if one whose name matches the specified ((|name|))
-	has been loaded. Returns (({nil})) if no such class has been loaded.
+    has been loaded. Returns (({nil})) if no such class has been loaded.
 
 --- MUES::ObjectStore::Adapter.inherit( subclass=Class )
 
@@ -86,17 +86,17 @@ used as a superclass for your own adapter classes.
 
 ==== Public Methods
 
---- MUES::ObjectStore::Adapter#initialize( db, host, user, password )
+--- MUES::ObjectStore::Adapter#initialize( config=MUES::Config )
 
-    Initialize the adapter with the specified values.
+    Initialize the adapter with the values specified by the given config object.
 
 === MUES::ObjectStore::Adapter
 === Protected Methods
 
 --- initialize( db, host, user, password )
 
-	Initialize the adapter object with the specified ((|db|)), ((|host|)),
-	((|user|)), and ((|password|)) values.
+    Initialize the adapter object with the specified ((|db|)), ((|host|)),
+    ((|user|)), and ((|password|)) values.
 
 === Attribute Accessor Methods
 
@@ -177,8 +177,8 @@ module MUES
 		class Adapter < MUES::Object ; implements Debuggable, AbstractClass
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-			Rcsid = %q$Id: Adapter.rb,v 1.8 2001/11/01 17:20:54 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+			Rcsid = %q$Id: Adapter.rb,v 1.9 2001/12/05 18:09:37 deveiant Exp $
 
 			### Class variables
 			@@AdapterClasses = {}
