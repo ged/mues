@@ -41,7 +41,7 @@
 #
 # == Rcsid
 # 
-# $Id: log.rb,v 1.10 2002/10/04 05:16:54 deveiant Exp $
+# $Id: log.rb,v 1.11 2002/10/25 00:24:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -91,8 +91,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-		Rcsid = %q$Id: log.rb,v 1.10 2002/10/04 05:16:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Rcsid = %q$Id: log.rb,v 1.11 2002/10/25 00:24:33 deveiant Exp $
 
 
 		### Class methods
@@ -102,8 +102,8 @@ module MUES
 		def self.configure( config )
 			MUES::TypeCheckFunctions::checkType( config, MUES::Config )
 
-			l4ro = Log4r::Logger::new( 'log4r' )
-			l4ro.outputters = Log4r::Outputter.stderr
+			#l4ro = Log4r::Logger::new( 'log4r' )
+			#l4ro.outputters = Log4r::Outputter.stderr
 
 			# Configure the logger with the log4r section of the config file
 			Log4r::Configurator::load_xml_string( config.logging.logConfig )
