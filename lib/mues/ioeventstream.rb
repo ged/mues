@@ -44,7 +44,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.16 2002/08/02 20:03:44 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.17 2002/08/26 16:30:51 deveiant Exp $
 # 
 # == Authors
 # 
@@ -451,21 +451,7 @@ module MUES
 			### that are returned for the next filter
 			@filterMutex.synchronize(Sync::SH) {
 				@filters.sort.each {|filter|
-					debugMsg( 3, "Sending #{events.size} input events to a #{filter.class.name} "+
-							   "(sort order = #{filter.sortPosition})." )
-					results = filter.handleInputEvents( *events ) unless filter.isFinished?
-					debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
-					if ( results.nil? || filter.isFinished )
-						debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
-						removeFilters( filter )
-						oev = filter.queuedOutputEvents
-						debugMsg( 2, "Adding #{oev.size} output events from finished filter to queue for next cycle." )
-						addOutputEvents( *oev )
-						events = filter.queuedInputEvents
-						next
-					end
-					debugMsg( 3, "#{results.size} events left after filtering." )
-					events = results.flatten
+					results = callFilterHandler( filter, "input", *events )
 				}
 			}
 
@@ -491,25 +477,7 @@ module MUES
 			### that are returned for the next filter
 			@filterMutex.synchronize(Sync::SH) {
 				@filters.sort.reverse.each {|filter|
-
-					debugMsg( 3, "Sending #{events.size} output events to a #{filter.class.name} "+
-							   "(sort order = #{filter.sortPosition})." )
-					results = filter.handleOutputEvents( *events ) unless filter.isFinished?
-					debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
-
-					# If the filter returned nil or its isFinished flag is set,
-					# get all of its queued events and remove it from the stream.
-					if ( results.nil? || filter.isFinished ) then
-						debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
-						removeFilters( filter )
-						iev = filter.queuedInputEvents
-						debugMsg( 2, "Adding #{iev.size} input events from finished filter to queue for next cycle." )
-						addInputEvents( *iev )
-						events = filter.queuedOutputEvents
-						next
-					end
-
-					events = results.flatten
+					events = callFilterHandler( filter, "output", *events )
 				}
 			}
 
@@ -528,6 +496,48 @@ module MUES
 
 			addOutputEvents( event )
 		end
+
+		
+		#########
+		protected
+		#########
+
+		### Call the specified <tt>filter</tt>'s handler method with the
+		### specified <tt>events</tt> for the specified
+		### <tt>direction</tt>. Returns an Array of result events.
+		def callFilterHandler( filter, direction, *events )
+			debugMsg( 3, "Sending #{events.size} #{direction} events to a #{filter.class.name} "+
+					 "(sort order = #{filter.sortPosition})." )
+
+			results = filter.send( "handle%sEvents" % direction.capitalize, *events ) unless
+				filter.isFinished?
+			debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if
+				results.is_a? Array
+
+			# If the filter returned nil or its isFinished flag is set,
+			# get all of its queued events and remove it from the stream.
+			if ( results.nil? || filter.isFinished? )
+
+				debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
+				removeFilters( filter )
+
+				opposite = (direction == "input" ? "Output" : "Input")
+
+				requeuedEvents = filter.send( "queue%sEvents" % opposite )
+				debugMsg( 2, "Adding %d %sEvents from finished filter to queue for next cycle." % [
+							 requeuedEvents.size, opposite ])
+				self.send( "add%sEvents" % opposite, *requeuedEvents )
+
+				# Make results into an array again if it's nil, then Add any
+				# pending events to it.
+				results ||= []
+				results.push( *filter.send("queued%sEvents" % direction.capitalize) )
+			end
+
+			debugMsg( 3, "#{results.size} events left after filtering." )
+			return results.flatten
+		end
+
 
 	end #class IOEventStream
 end #module MUES
