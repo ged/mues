@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.34 2002/10/26 18:54:29 deveiant Exp $
+# $Id: engine.rb,v 1.35 2002/10/27 21:27:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.34 2002/10/26 18:54:29 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.35 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.35 2002/10/27 21:27:10 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -675,20 +675,27 @@ module MUES
 				beforeCount = 0
 				afterCount = 0
 
-				### Synchronize exclusively to avoid an event that's being
-				### cancelled from being executed
+				# Search the schedule table for the events specified, keeping
+				# track of how many events were deleted.
 				@scheduledEventsMutex.synchronize(Sync::EX) {
 					@scheduledEvents.each_key {|type|
 						@scheduledEvents[type].each_key {|time|
+
+							# Count the events before, remove the specified
+							# ones, and then count them after.
 							beforeCount += @scheduledEvents[type][time].length
 							@scheduledEvents[type][time] -= events
 							afterCount += @scheduledEvents[type][time].length
+
+							# Delete any slot that is empty
+							@scheduledEvents[type].delete(time) if
+								@scheduledEvents[type][time].empty?
 						}
 					}
 				}
 
-				cancelled = beforeCount - afterCount
-				debugMsg( 3, "Cancelled #{cancelled} events (#{afterCount} of #{beforeCount} events remain)." )
+				self.log.info "Cancelled %d scheduled events (%d of %d events remain)." %
+					[ beforeCount - afterCount, afterCount,  beforeCount ]
 			end
 		end
 
