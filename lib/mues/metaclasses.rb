@@ -1,46 +1,40 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# This file is the base require for the Metaclass classes -- it loads all the
+# required subordinate modules and sets up the Metaclass namespace with constants
+# and functions that the other modules share.
+# 
+# == Synopsis
+# 
+#   require "metaclasses"
+# 
+#   myClass = Metaclass::Class.new( "MyClass" )
+#   implementable = Metaclass::Interface( "Implementable" )
+#   myClass << implementable
+# 
+#   ...etc.
+# 
+# == Rcsid
+#
+# $Id: metaclasses.rb,v 1.2 2002/03/30 19:10:01 deveiant Exp $
+#
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=Classes.rb
-
-== Name
-
-Classes - Metaclass collection module
-
-== Synopsis
-
-  require "metaclass/Classes"
-
-  klass = Metaclass::Class.new( "MyClass" )
-  interface = Metaclass::Interface( "Implementable" )
-  interface.addClass( klass )
-
-  ...etc.
-
-== Description
-
-This module is just a convenient way of requiring all of the metaclass modules
-in one (({require})).
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-require "metaclass/Association"
-require "metaclass/Attribute"
-require "metaclass/Class"
-require "metaclass/Interface"
-require "metaclass/Method"
-require "metaclass/Namespace"
-require "metaclass/Operation"
+require 'metaclass/Constants'
+require 'metaclass/Association'
+require 'metaclass/Attribute'
+require 'metaclass/Interface'
+require 'metaclass/Namespace'
+require 'metaclass/Operation'
+require 'metaclass/Parameter'
+require 'metaclass/Class'
 
