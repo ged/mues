@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: loginevents.rb,v 1.6 2002/04/01 16:27:30 deveiant Exp $
+# $Id: loginevents.rb,v 1.7 2002/06/04 07:08:30 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,7 +48,8 @@ module MUES
 
 	### Abstract base class for LoginSession events.
 	class LoginSessionEvent < Event ; implements MUES::AbstractClass
-		autoload	:LoginSession, "mues/LoginSession"
+
+		include MUES::TypeCheckFunctions
 
 		# The MUES::LoginSession this event is associated with.
 		attr_reader	:session

@@ -10,7 +10,7 @@
 # 
 # == Rcsid
 # 
-# $Id: userevents.rb,v 1.8 2002/04/01 16:27:30 deveiant Exp $
+# $Id: userevents.rb,v 1.9 2002/06/04 07:08:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,7 +39,8 @@ module MUES
 
 	### Abstract user event class
 	class UserEvent < Event ; implements MUES::AbstractClass
-		autoload	:User, "mues/User"
+
+		include MUES::TypeCheckFunctions
 
 		# The user object associated with the event
 		attr_reader :user
