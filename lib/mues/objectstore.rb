@@ -79,7 +79,6 @@
 $: << "/home/touch/archives/arunadb_0_80" if File.directory?(
 				"/home/touch/archives/arunadb_0_80" )
 
-require "sync"
 require "a_catalog" #arunadb file
 require "a_table"   #arunadb file
 require "StorableObject/StorableObject.rb"
@@ -87,9 +86,7 @@ require "ObjectStoreGC"
 
 class ObjectStore
 
-  include Sync_m
-
-        TRASH_RATIO = .1
+        TRASH_RATE = 50 #seconds
   
 	#########
 	# Class #
@@ -114,10 +111,12 @@ class ObjectStore
 	    the_cat = A_Catalog.use(catl)
 	    the_table = A_Table.connect(tabl)
 	    database = [the_cat, the_table]
+	    table_name = tabl
 	  else
+	    table_name = nil
 	    database = nil
 	  end
-	  super(filename, database, indexes, serialize, deserialize)
+	  super(filename, database, indexes, serialize, deserialize, table_name)
 	end
 
 	### Loads in the specified config file, and returns the ObjectStore attached to it
@@ -143,7 +142,7 @@ class ObjectStore
 	  cat_name = basename + ".ctl"
 	  fs_name = basename
 	  fs_filename = basename + "1.adb"
-	  bt_name = basename
+	  @table_name = bt_name = basename
 	  cat  = A_Catalog.new(cat_name)
 	  fs   = A_FileStore.create(fs_name, 1024, fs_filename)
 	  bt   = A_BTree.new(bt_name, fs_name)
@@ -183,8 +182,9 @@ class ObjectStore
 	###   indexes - a 2D array [ [method_symbol, return_class], ...]
 	###   serialize - the symbol for the method to serialize the objects
 	###   deserialize - the symbol for the method to deserialize the objects
+	###   table_name - the name of the table used
 	def initialize( filename, database, indexes = [],
-		        serialize = nil, deserialize = nil )
+		        serialize = nil, deserialize = nil, table_name = nil )
 	  @filename = filename
 	  @indexes = indexes
 	  @serialize = serialize || :_dump
@@ -193,9 +193,9 @@ class ObjectStore
 	  add_indexes( @indexes )
 	  
 	  @database = database || create_database(@filename)
+	  
 	  @table = @database[-1]
-	  @table_mutex = Sync.new
-	  @gc = ObjectStoreGC.new(self, :os_gc_mark)
+	  @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
 	end
 	
 	######
@@ -203,7 +203,7 @@ class ObjectStore
 	######
 	
 	attr_reader :filename, :database, :serialize, :deserialize, :indexes,
-	  :active_objects, :table
+	  :active_objects, :table, :table_name
 
 	### Stores the objects into the database
 	### arguments:
@@ -225,15 +225,13 @@ class ObjectStore
 	  ids.each_index do |i|
 	    if @table.exists?(trans, ids[i])
 	      #update(transaction, pkey, column_names, values)
-	      @table.update(trans, ids[i], "obj", serialized[i])
+	      @table.update(trans, ids[i], col_names[1, col_names.length-2],
+			    [serialized[i], index_returns[i]].flatten)
 	    else
 	      @gc.register( objects[i] )
 	      @table.insert( trans, col_names,
 			    [ids[i], serialized[i], classes[i], index_returns[i]].flatten )
 	    end
-	    @indexes.each {|ind|
-	      @table.update( trans, ids[i], ind[0].id2name, objects[i].send(ind) )
-	    }
 	  end
 	  trans.commit
 	end
@@ -242,13 +240,14 @@ class ObjectStore
 	def close 
 	  @gc.shutdown
 	  @table.close
+	  @table = nil
 	end
 	
 	### Opens the database again.  Starts a new garbage collector.
 	### That is, if the database isn't already open.
 	def open
-	  @table.open if ! @table.open?
-	  @gc.start( TRASH_RATIO )
+	  (@table = A_Table.connect(@table_name)) if ! @table
+	  @gc.start( 'trash_rate' => TRASH_RATE )
 	end
 
 	### Gets the object specified by the given id out of the database

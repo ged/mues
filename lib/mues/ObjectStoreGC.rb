@@ -53,17 +53,16 @@ class ObjectStoreGC
   ### arguments:
   ###   objectStore - the ObjectStore to 'delete' objects to
   ###   mark - the symbol of the method to be used for 'mark'ing objects
-  ###   trash_ratio - the percent of memory allowed to be trash
-  ###   delay - the (seconds) delay between GC invocations
-  def initialize(objectStore, mark = nil, trash_ratio = 0.1, delay = 50)
-	  @objectStore = objectStore
-	  @active_objects = @objectStore.active_objects
-	  @mark = mark
-	  @delay = delay
-	  @trash_ratio = trash_ratio
-	  @mutex = Sync.new
-	  @shutting_down = false
-	  @thread = Thread.new { _gc_routine() }
+  ###   algor_args - the arguments to pass to the GC algorithm (a Hash).
+  ###                varies depending on algorithm.
+  def initialize(objectStore, mark = :os_gc_mark, algor_args = {})
+    @objectStore = objectStore
+    @active_objects = @objectStore.active_objects
+    @mark = mark
+    @algor_args = algor_args
+    @mutex = Sync.new
+    @shutting_down = false
+    @thread = Thread.new { _gc_routine(@algor_args) }
   end
 
   ######
@@ -76,29 +75,32 @@ class ObjectStoreGC
     }
   end
   
-  def trash_ratio
+  def algor_args
     @mutex.sychronize( Sync::SH ) {
-      @trash_ratio
+      @algor_args
     }
   end
   
-  def trash_ratio= (val)
-    raise TypeError unless val.kind_of?(Float) and val.between?(0,1)
+  def algor_args= (val)
+    raise TypeError("Must be a Float between 0 and 1") unless val.kind_of?(Float) and 
+      val.between?(0.0,1.0)
     @mutex.sychronize( Sync::EX ) {
-      @trash_ratio = val
+      @algor_args = val
     }
   end
   
   ### Runs the GC right now
   ### arguments:
-  ###   trash_ratio - the percent of memory aloowed before GC stops
-  def start (ratio = @trash_ratio)
-    trash_ratio=( val )
+  ###   algor_args - the percent of memory aloowed before GC stops
+  def start (args = @algor_args)
+    algor_args=( args )
   end
     
   ### Kills the garbage collector, first storing all active objects
   def shutdown
-    @shutting_down = true
+    @mutex.synchronize( Sync::EX ) {
+      @shutting_down = true
+    }
     @thread.join
   end
 
@@ -114,18 +116,25 @@ class ObjectStoreGC
   #########
   
   ### Loops every @delay seconds (or more) and calls the garbage collection algorithm.
-  def _gc_routine
+  ### arguments:
+  ###   aHash - of arguments for the algorithm.
+  ### currently takes:
+  ###   'trash_rate' - the time between invocations
+  def _gc_routine(aHash)
+    delay = aHash['trash_rate'] || 50
     until(@shutting_down)
       loop_time = Time.now
-      until (Time.new - loop_time >= @delay) do Thread.stop end
-      _collect
+      until (Time.new - loop_time >= delay || @shutting_down) do
+	Thread.stop #:!: deadlock is here, when #shutdown calls Thread.join
+      end
+      _collect(aHash)
     end
   end
   
   ### The actual garbage collection algorithm, in this case the simplest we could think of.
   ### Redefine for desired behavior.
-  def _collect
-    @mutex.synchronize( Sync::SH ) {
+  def _collect(aHash)
+#    @mutex.synchronize( Sync::SH ) {
       @active_objects.each {|o|
 	if(o.refCount == 1 or o.send(@mark))
 	  @mutex.synchronize( Sync::EX ) {
@@ -134,13 +143,8 @@ class ObjectStoreGC
 	  }
 	end
       }
-    }
+#    }
   end
-  
-  #######
-  private
-  #######
-  
   
 end
 
@@ -148,10 +152,8 @@ end
 #NOTES#
 #######
 
-# Also, the train algorithm was intended for helping negate the individual time
-# cost of each GC cycle.  while this may be necessary in some cases, won't this
-# be such that all it's doing is sending a message to a database (ArunaDB), which
-# is pretty multi-threaded and not too time costing.  Is it even advantageous to
-# attempt to minimize the grouping of calls to that database?  the train algorithm
-# does come with an typical overall time cost, at the return of rarified user
-# waits...  I don't know, so i'm going to discuss it with someone first.
+# The train algorithm was intended for helping negate the individual time
+# cost of each GC cycle.
+# The current algorithm is just the simplest we could think of: iterate over all
+# objects and delete those that need it.
+# Once the workings of train are understood, we should switch over.
