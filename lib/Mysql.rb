@@ -348,8 +348,8 @@ class TableAdapter
 		"BINARY"		=> MysqlField::BINARY_FLAG
 	}
 
-	Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-	Rcsid = %q$Id: Mysql.rb,v 1.5 2001/09/26 13:38:46 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+	Rcsid = %q$Id: Mysql.rb,v 1.6 2001/11/01 17:57:25 deveiant Exp $
 
 
 	###########################################################################
@@ -731,6 +731,7 @@ class TableAdapter
 	### ((|cascade|)) parameter isn't used yet, but will eventually when the
 	### object-relational stuff works.
 	def delete( cascade=false )
+		dbh = self.class.dbHandle()
 		res = dbh.query("DELETE FROM %s WHERE %s = %s" % [ self.class.table, self.class.primaryKey, rowid ])
 		self.rowid = nil
 		return true
