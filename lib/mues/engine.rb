@@ -260,7 +260,6 @@ require "mues/IOEventFilters"
 require "mues/ObjectStore"
 require "mues/World"
 require "mues/LoginSession"
-require "mues/Debugging"
 
 module MUES
 
@@ -279,8 +278,8 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.8 2001/06/25 14:03:14 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.9 2001/07/18 01:45:27 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -353,6 +352,7 @@ module MUES
 
 			@state = State::STARTING
 			@config = config
+			startupEvents = []
 
 			### Change working directory to that specified by the config file
 			#Dir.chdir( @config["rootdir"] )
@@ -360,6 +360,7 @@ module MUES
 			# Set the server name to the one specified by the config
 			@name = @config["name"]
 			@admin = @config["admin"]
+			@tick = 0
 
 			### Sanity-check the log handle and assign it
 			@log = Log.new( @config["rootdir"] + "/" + @config["logfile"] )
@@ -396,13 +397,24 @@ module MUES
 			@eventQueue = EventQueue.new( @config["eventqueue"]["minworkers"], 
 										  @config["eventqueue"]["maxworkers"],
 										  @config["eventqueue"]["threshold"] )
-			@eventQueue.debugLevel = 1
+			# @eventQueue.debugLevel = 1
 			@eventQueue.start
+
+			# Notify all the Notifiables that we're started
+			@log.notice( "Sending onEngineStartup() notifications." )
+			MUES::Notifiable.classes.each {|klass|
+				startupEvents << klass.atEngineStartup( self )
+			}
+
+			# Now enqueue any startup events
+			startupEvents.flatten!
+			self.dispatchEvents( *startupEvents ) unless startupEvents.empty?
 
 			### Set up a listener socket on the specified port
 			@log.info( "Starting listener thread." )
 			@listenerMutex.synchronize( Sync::EX ) {
 				@listenerThread = Thread.new { _listenerThreadRoutine }
+				@listenerThread.desc = "Listener socket thread"
 				@listenerThread.abort_on_exception = true
 			}
 
@@ -418,17 +430,20 @@ module MUES
 			return true
 		end
 
+
 		### METHOD: started?()
 		### Return true if the server is currently started or running
 		def started?
 			return @state == State::STARTING || running?
 		end
 
+
 		### METHOD: running?()
 		### Return true if the server is currently running
 		def running?
 			return @state == State::RUNNING
 		end
+
 
 		### METHOD: stop()
 		### Shut the server down
@@ -450,15 +465,24 @@ module MUES
 				end
 			}
 
-			### Now queue up any cleanup events and dispatch 'em
+			# Notify all the Notifiables that we're shutting down
+			@log.notice( "Sending onEngineShutdown() notifications." )
+			MUES::Notifiable.classes.each {|klass|
+				cleanupEvents << klass.atEngineShutdown( self )
+			}
+
+			### Now enqueue any cleanup events as priority events (guaranteed to
+			### be executed before the event queue returns from the shutdown()
+			### call)
 			cleanupEvents.flatten!
 			@eventQueue.priorityEnqueue( *cleanupEvents ) unless cleanupEvents.empty?
 
 			### Shut down the event queue
-			@log.info( "Shutting down and cleaning up event queue" )
+			@log.notice( "Shutting down and cleaning up event queue" )
 			@eventQueue.shutdown
 
-			### :TODO: Needs more shutdown stuff
+			### :TODO: Needs more thorough cleanup
+			return true
 		end
 
 
@@ -504,17 +528,18 @@ module MUES
 			# Repeating and tick-fired events
 			when Integer
 
-				# Repeating events -- keyed with an array of two elements: the
-				# number of the next tick at which the events should be
-				# dispatched, and the interval at which they run
+				# A negative time argument means repeating events -- key with an
+				# array of two elements: the number of the next tick at which
+				# the events should be dispatched, and the interval at which
+				# they run
 				if time < 0
 					tickInterval = time.abs
-					nextTick = @tick + interval
+					nextTick = @tick + tickInterval
 					@log.debug( "Scheduling #{events.length} events to repeat every " +
 							    "#{tickInterval} ticks (next at #{nextTick})" )
 					@scheduledEventsMutex.synchronize(Sync::EX) {
-						@scheduledEvenst['repeating'][[ nextTick, tickInterval ]] ||= []
-						@scheduledEvenst['repeating'][[ nextTick, tickInterval ]] += events
+						@scheduledEvents['repeating'][[ nextTick, tickInterval ]] ||= []
+						@scheduledEvents['repeating'][[ nextTick, tickInterval ]] += events
 					}
 
 				# One-time tick-fired events, keyed by tick number
@@ -667,7 +692,7 @@ module MUES
 		### after stop() is called.
 		def _mainThreadRoutine
 
-			@tick = 0
+			Thread.current.desc = "[Main]"
 
 			### Start the event loop until the engine stops running
 			@log.notice( "Starting event loop." )
@@ -711,13 +736,13 @@ module MUES
 					@log.info( "Connect from #{playerSock.addr[2]}" )
 					dispatchEvents( SocketConnectEvent.new(playerSock) )
 				rescue Errno::EPROTO
-					dispatchEvents( LogEvent.new("error", "Accept failed (EPROTO).") )
+					dispatchEvents( LogEvent.new("error", "Listener thread: Accept failed (EPROTO).") )
 					next
 				rescue Reload
-					dispatchEvents( LogEvent.new("notice", "Got notice of configuration reload.") )
+					dispatchEvents( LogEvent.new("notice", "Listener thread: Got notice of configuration reload.") )
 					break
 				rescue Shutdown
-					dispatchEvents( LogEvent.new("notice", "Got notice of server shutdown.") )
+					@log.notice( "Listener thread: Got notice of server shutdown." )
 					break
 				rescue
 					dispatchEvents( UntrappedExceptionEvent.new($!) )
@@ -892,7 +917,7 @@ module MUES
 		### (PROTECTED) METHOD: _handleUntrappedExceptionEvent( event )
 		### Handle untrapped exceptions.
 		def _handleUntrappedExceptionEvent( event )
-			maxSize = @config["engine"]["exceptionStackSize"]
+			maxSize = @config["engine"]["exceptionStackSize"].to_i
 			
 			@exceptionStackMutex.synchronize(Sync::EX) {
 				@exceptionStack.push event.exception
@@ -911,6 +936,7 @@ module MUES
 		### Handle untrapped signals.
 		def _handleUntrappedSignalEvent( event )
 			if event.exception.is_a?( Interrupt ) then
+				@log.crit( "Caught interrupt. Shutting down." )
 				stop()
 			else
 				_handleUntrappedExceptionEvent( event )
@@ -967,7 +993,6 @@ module MUES
 		### (PROTECTED) METHOD: _handleLogEvent( event )
 		### Handle logging events by writing their content to the syslog
 		def _handleLogEvent( event )
-			@log.debug( "Handling a log event (#{event.severity}: #{event.message})." )
 			@log.send( event.severity, event.message )
 			return []
 		end
