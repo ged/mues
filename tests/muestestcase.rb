@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-#  $Id: muestestcase.rb,v 1.8 2003/08/04 02:45:03 deveiant Exp $
+#  $Id: muestestcase.rb,v 1.9 2003/09/12 04:33:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -147,6 +147,18 @@ module MUES
 			}
 		end
 		alias_method :tear_down, :teardown
+
+
+		### Instance alias for the like-named class method.
+		def addSetupBlock( &block )
+			self.class.addSetupBlock( &block )
+		end
+
+
+		### Instance alias for the like-named class method.
+		def addTeardownBlock( &block )
+			self.class.addTeardownBlock( &block )
+		end
 
 
 		### Instance alias for the like-named class method.
