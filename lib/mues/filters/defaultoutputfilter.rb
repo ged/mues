@@ -37,11 +37,9 @@ module MUES
 	class DefaultOutputFilter < IOEventFilter
 
 		### Class constants
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
-
-		### Class attributes
-		@@DefaultSortPosition = 0
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		DefaultSortPosition = 0
 
 		### Public methods
 		public

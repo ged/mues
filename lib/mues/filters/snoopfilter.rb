@@ -35,10 +35,10 @@ require "mues/filters/IOEventFilter"
 module MUES
 	class SnoopFilter < IOEventFilter
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: snoopfilter.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: snoopfilter.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		DefaultSortPosition = 300
 
-		@@DefaultSortPosition = 300
 	end # class SnoopFilter
 end # module MUES
 

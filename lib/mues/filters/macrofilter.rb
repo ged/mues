@@ -36,10 +36,15 @@ require "mues/filters/IOEventFilter"
 module MUES
 	class MacroFilter < IOEventFilter
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: macrofilter.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		DefaultSortPosition = 200
 
-		@@DefaultSortPosition = 200
+		def initialize( aPlayer )
+			super()
+			checkType( aPlayer, MUES::Player )
+			@player = aPlayer
+		end
 
 	end # class MacroFilter
 end # module MUES

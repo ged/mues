@@ -36,8 +36,9 @@ require "mues/filters/IOEventFilter"
 module MUES
 	class CharacterController < IOEventFilter
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: CharacterController.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: CharacterController.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		DefaultSortPosition = 850
 
 
 	end # class CharacterController
