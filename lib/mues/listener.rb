@@ -47,7 +47,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.11 2003/10/13 06:27:27 deveiant Exp $
+# $Id: listener.rb,v 1.12 2004/02/29 04:47:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -74,10 +74,16 @@ module MUES
 		include MUES::Factory
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
 
 		# CVS id tag 
-		Rcsid = %q$Id: listener.rb,v 1.11 2003/10/13 06:27:27 deveiant Exp $
+		Rcsid = %q$Id: listener.rb,v 1.12 2004/02/29 04:47:13 deveiant Exp $
+
+		# The default parameter hash for listeners
+		DefaultParameters = {
+			:filterDebug	=> 1,
+			:questionnaire	=> 'login',
+		}
 
 		#############################################################
 		###	C L A S S   M E T H O D S
@@ -99,10 +105,11 @@ module MUES
 		### object).
 		def initialize( name, parameters={}, io=nil )
 			@name		= name
-			@parameters	= parameters
+			@parameters	= Defaults.merge( parameters, &MUES::HashMergeFunction )
 			@io			= io
 
-			@filterDebugLevel = parameters['filter-debug'].to_i
+			@filterDebugLevel 	= parameters[:filterDebug].to_i
+			@loginQuestionnaire = parameters[:questionnaire]
 
 			super()
 		end
@@ -126,6 +133,10 @@ module MUES
 		# The debugging level that will be set on new filter created by this
 		# listener
 		attr_accessor :filterDebugLevel
+
+		# The name or instance of the MUES::Questionnaire to use for loading the
+		# user for connections from this Listener.
+		attr_accessor :loginQuestionnaire
 
 
 		# Virtual methods required in derivatives
