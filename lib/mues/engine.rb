@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.27 2002/10/23 04:56:10 deveiant Exp $
+# $Id: engine.rb,v 1.28 2002/10/23 05:14:24 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,7 +146,8 @@ require "mues/PollProxy"
 
 module MUES
 
-	### MUES server class (Singleton)
+	### MUES server class (Singleton). See lib/mues/Engine.rb for more
+	### information.
 	class Engine < MUES::Object ; implements MUES::Debuggable
 
 		# Import type/safe-checking functions and the default event handler
@@ -177,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.27 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.27 2002/10/23 04:56:10 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.28 2002/10/23 05:14:24 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
