@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
 =status.rb
@@ -24,7 +24,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "mues/Namespace"
 require "mues/Exceptions"
