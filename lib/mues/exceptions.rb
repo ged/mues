@@ -77,6 +77,9 @@ module MUES
 	def_exception :Reload,					"Configuration out of date",		Exception
 	def_exception :Shutdown,				"Server shutdown",					Exception
 
+	# Command shell/macro shell exceptions
+	def_exception :CommandError,			"Command error",					Exception
+	def_exception :MacroError,				"Macro error",						Exception
 
 	### Event exceptions
 	class UnhandledEventError < Exception
