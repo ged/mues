@@ -2,30 +2,30 @@
 #################################################################
 =begin
 
-=NullEnvironment.rb
+=NullEnv.rb
 
 == Name
 
-NullEnvironment - A VERY simple testing environment
+NullEnv - A VERY simple testing environment
 
 == Synopsis
 
-  mues> /load NullEnvironment
-  Loading environment object from 'NullEnvironment' class...
-  Environment loaded.
+  mues> /loadenv NullEnv nullWorld
+  Attempting to load the 'NullEnv' environment as 'nullWorld'
+  Successfully loaded 'nullWorld'
 
   mues> /roles
-  NullEnvironment:
+  nullWorld (NullEnv):
        testrole		A boring role for testing
        superuser	A barely less-boring role for testing
 
-  (1) roles available to you.
+  (2) roles available to you.
 
-  mues> /connect NullEnvironment superuser
+  mues> /connect nullWorld superuser
   Connecting...
   Connected to NullEnvironment as 'superuser'
 
-  mues {NullEnvironment:superuser}> ...
+  nullWorld: superuser>> ...
 
 == Description
 
@@ -58,11 +58,11 @@ require "mues/Role"
 require "mues/IOEventFilters"
 
 module MUES
-	class NullEnvironment < Environment
+	class NullEnv < MUES::Environment
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: NullEnv.rb,v 1.2 2001/07/30 09:51:36 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: NullEnv.rb,v 1.3 2001/09/26 12:37:09 deveiant Exp $
 		DefaultName = "NullEnvironment"
 		DefaultDescription = <<-"EOF"
 		This is a barebones environment used in testing. It doesn^t really contain any
@@ -87,6 +87,8 @@ module MUES
 		#############################################################
 		public
 
+		attr_accessor :participants
+
 		### Methods required by the World class's contract
 
 		### METHOD: start
@@ -109,12 +111,26 @@ module MUES
 			checkType( user, MUES::User )
 			checkType( role, MUES::Role )
 
-			proxy = Controller.new( user, Character.new(role), self )
-			@participantsMutex.synchronize( SYNC::EX ) {
+			proxy = Controller.new( user, Character.new(role), role, self )
+			@participantsMutex.synchronize( Sync::EX ) {
 				@participants << proxy
 			}
 
 			return proxy
+		end
+
+		### METHOD: removeParticipantProxy( aProxy=MUES::NullEnv::Controller )
+		### Remove the specified proxy from the environment's list of
+		### participants, if it exists therein. Returns true on success, nil if
+		### the specified proxy is not the correct type of controller, or false
+		### if the specified proxy was not listed as a participant in this
+		### environment.
+		def removeParticipantProxy( aProxy )
+			return nil unless aProxy.kind_of? MUES::NullEnv::Controller
+
+			return false unless @participants & [ aProxy ]
+			@participants -= [ aProxy ]
+			return true
 		end
 
 		### METHOD: getAvailableRoles( aUser )
@@ -122,8 +138,8 @@ module MUES
 		def getAvailableRoles( user )
 			checkType( user, MUES::User )
 
-			roles = [ Role.new( self, "schmoe", "An average schmoe participant" ) ]
-			roles << Role.new( self, "admin", "Administrative participant" ) if user.is_admin?
+			roles = [ Role.new( self, "muggle", "An average schmoe participant" ) ]
+			roles << Role.new( self, "admin", "Administrative participant" ) if user.isAdmin?
 
 			return roles
 		end
@@ -136,7 +152,7 @@ module MUES
 		### the controller specified.
 		def broadcast( message, exception=nil )
 			checkType( message, ::String, OutputEvent )
-			checkType( message, Controller )
+			checkType( exception, Controller )
 
 			# Convert a string to output event
 			if message.kind_of?( String )
@@ -148,6 +164,7 @@ module MUES
 			# Send the event to everyone connected, except perhaps the exception
 			@participantsMutex.synchronize( Sync::SH ) {
 				@participants.each {|part|
+					next if part == exception
 					part.queueOutputEvents( message )
 					count += 1
 				}
@@ -162,19 +179,18 @@ module MUES
 
 			# Iterate over the list of connected users, adding a line for each
 			# of 'em
-			userlist = " Connected users:"
+			userList = " Connected users:\n"
 			@participantsMutex.synchronize( Sync::SH ) {
 				userList << @participants.sort.collect {|part|
-					"%s: %s (%s)" % [
-						part.user.to_s,
+					"  %s [played by %s]" % [
 						part.character.role.name,
-						part.character.role.description
+						part.user.username,
 					]
 				}.join("\n")
 			}
-			userlist << "\n\n"
+			userList << "\n\n"
 
-			return userlist
+			return userList
 		end
 
 
@@ -185,17 +201,19 @@ module MUES
 		### The ParticipantProxy derivative (ie., controller) class
 		class Controller < MUES::ParticipantProxy
 
+			DefaultSortPosition = 750
+
 			attr_reader :user, :character
 			
-			### METHOD: initialize( aUser=MUES::User, character=MUES::NullEnv::Character, env=MUES::NullEnv )
-			### Initialize a new NullEnvironment::Controller object with the
+			### METHOD: initialize( aUser=MUES::User,
+			###						character=MUES::NullEnv::Character, 
+			###						role=MUES::Role,
+			###						env=MUES::NullEnv )
+			### Initialize a new NullEnv::Controller object with the
 			### specified user object.
-			def initialize( user, character, env )
-				super()
-
-				@user = user
+			def initialize( user, character, role, env )
+				super( user, role, env )
 				@character = character
-				@env = env
 			end
 
 			### METHOD: handleInputEvents( *events )
@@ -204,18 +222,18 @@ module MUES
 				results = []
 
 				# Do some basic commands
-				events.each {|evemt|
+				events.each {|event|
 					case event.data
 
 					# 'Who' command
 					when /^who/
-						results << OutputEvent.new( @env.getUserlist )
+						queueOutputEvents( OutputEvent.new(@env.getUserlist) )
 
 					# 'Say' command
 					when /^say\s*(.*)/
-						sayEvent = OutputEvent.new( "#{user.to_s} says: '#{$1}'" )
+						sayEvent = OutputEvent.new( "#{user.to_s} says: '#{$1}'\n\n" )
 						@env.broadcast( sayEvent, self )
-						results << OutputEvent.new( "You say: '#{$1}'" )
+						queueOutputEvents( OutputEvent.new("You say: '#{$1}'\n\n") )
 
 					else
 						results << event
@@ -246,7 +264,7 @@ module MUES
 		end
 					
 
-	end # class NullEnvironment
+	end # class NullEnv
 end # module MUES
 
 
