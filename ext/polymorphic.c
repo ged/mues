@@ -1,12 +1,15 @@
 /*
  *	monadic.c - A monadic object class for Ruby
- *	$Id: polymorphic.c,v 1.3 2002/02/12 00:42:43 deveiant Exp $
+ *	$Id: polymorphic.c,v 1.4 2002/02/12 00:56:33 deveiant Exp $
  *
  *	This module defines a MonadicObject class which is capable of exchanging its
  *	identity with another MonadicObject by calling its #become() method. It is
  *	based on code by Mathieu Bouchard <matju@cam.org>.
  *
- *	Author: Michael Granger <ged@FaerieMUD.org>
+ *	Authors:
+ *		Martin Chase <stillflame@FaerieMUD.org>
+ *		Michael Granger <ged@FaerieMUD.org>
+ *
  *	Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
  *
  *	This library is free software; you can redistribute it and/or modify it
