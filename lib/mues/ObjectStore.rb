@@ -17,6 +17,11 @@ ObjectStore - An object persistance abstraction class
 	$stderr.puts "Stored object #{obj}"
   }
 
+  player = oStore.fetchPlayer( "login" )
+
+  banTable = oStore.getBanTable
+  allowTable = oStore.getAllowTable
+
 == Description
 
 This class is a generic front end to various means of storing MUES objects. It
@@ -43,6 +48,7 @@ require "mues/Namespace"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/Debugging"
+require "mues/Player"
 
 module MUES
 
@@ -57,8 +63,8 @@ module MUES
 		include Debuggable
 
 		### Constants
-		Version = %q$Revision: 1.3 $
-		Rcsid = %q$Id: ObjectStore.rb,v 1.3 2001/03/29 02:30:15 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: ObjectStore.rb,v 1.4 2001/04/06 08:19:20 deveiant Exp $
 
 		AdapterSubdir = 'mues/adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/
@@ -155,9 +161,38 @@ module MUES
 			}
 		end
 
-		### METHOD: stored?( id )
-		def stored?( id )
-			return @dbAdapter.stored?( id )
+		### METHOD: hasObject?( id )
+		def hasObject?( id )
+			return @dbAdapter.hasObject?( id )
+		end
+
+		### METHOD: fetchPlayer( username ) { |obj| block } -> Player
+		### With no associated block, fetchPlayer returns a player object for
+		### the username specified, or (({nil})) if no such player exists. If
+		### the optional code block is given, it will be passed the player
+		### object as an argument, and the player object will be automatically
+		### stored and de-allocated when the block terminates.
+		def fetchPlayer( username )
+			checkType( username, String )
+			playerData = @dbAdapter.fetchPlayerData( username )
+			return nil if playerData.nil?
+
+			player = Player.new( playerData )
+
+			if block_given?
+				yield( player )
+				storePlayer( player )
+				return true
+			else
+				return player
+			end
+		end
+
+		### METHOD: storePlayer( player )
+		### Store the given player in the datastore, returning true on success
+		def storePlayer( aPlayer )
+			checkType( aPlayer, Player )
+			@dbAdapter.storePlayerData( aPlayer.username, aPlayer.dbInfo )
 		end
 
 	end
