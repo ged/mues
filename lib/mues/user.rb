@@ -35,7 +35,6 @@ require "date"
 require "md5"
 
 require "mues/Namespace"
-require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/IOEventFilters"
@@ -63,7 +62,7 @@ module MUES
 			'lastLogin'			=> '',
 			'lastHost'			=> '',
 
-			'timeCreated'		=> Time.new,
+			'timeCreated'		=> Time.now,
 			'firstLoginTick'	=> 0,
 
 			'role'				=> Role::PLAYER,
@@ -76,7 +75,7 @@ module MUES
 		### Initialize a new player object with the hash of attributes specified
 		protected
 		def initialize( dbInfo )
-			checkResponse( dbInfo, '[]', '[]=' )
+			checkResponse( dbInfo, '[]', '[]=', 'has_key?' )
 			super()
 
 			@remoteIp = nil
