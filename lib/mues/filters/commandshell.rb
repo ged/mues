@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.31 2002/10/28 00:26:09 deveiant Exp $
+# $Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.31 2002/10/28 00:26:09 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
 		DefaultSortPosition = 990
 
 		### Class globals
@@ -286,6 +286,11 @@ module MUES
 		class Command < MUES::PolymorphicObject ; implements MUES::Debuggable
 
 			include MUES::User::AccountType, MUES::TypeCheckFunctions
+
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+
 
 			### Instantiate and return a new Command object with the specified
 			### values. The arguments are as follows:
@@ -512,6 +517,11 @@ module MUES
 		### lookup before every command.
 		class Context < MUES::Object ; implements MUES::Debuggable
 
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+
+
 			### Create and return a new Context object with the specified shell
 			### (a MUES::CommandShell object), user (a MUES::User object),
 			### stream (a MUES::IOEventStream object), and
@@ -559,6 +569,11 @@ module MUES
 		class CommandTable < MUES::Object ; implements MUES::Debuggable
 
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
+
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+
 
 			### Instantiate and return a new <tt>CommandTable</tt> object which
 			### contains an abbreviation mapping for the specified
@@ -713,6 +728,11 @@ module MUES
 		class CommandParser < MUES::Object ; implements MUES::Debuggable
 			
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
+
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+
 
 			### Instantiate and return a parser object which will create command
 			### objects from the specified class (which should be either
@@ -895,8 +915,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.31 2002/10/28 00:26:09 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
