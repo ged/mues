@@ -1,7 +1,9 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin 
+
 = IOEventFilters.rb
+
 == Name
 
 MUES::IOEventFilters - Filter classes for MUES::IOEventStream objects.
@@ -34,10 +36,8 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
+#################################################################
 
-###########################################################################
-
-require "mues/filters/CharacterController"
 require "mues/filters/ClientOutputFilter"
 require "mues/filters/CommandShell"
 require "mues/filters/DefaultInputFilter"
@@ -48,4 +48,5 @@ require "mues/filters/MacroFilter"
 require "mues/filters/SnoopFilter"
 require "mues/filters/SocketOutputFilter"
 require "mues/filters/ConsoleOutputFilter"
+require "mues/filters/ParticipantProxy"
 
