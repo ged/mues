@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.8 2002/10/13 23:24:05 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.9 2002/10/14 09:44:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,13 +39,13 @@ module MUES
 	class ObjectStore
 
 		### BerkeleyDB ObjectStore backend.
-		class BerkeleyDBBackend < MUES::ObjectStore::Backend
+		class BerkeleyDBBackend < MUES::ObjectStore::Backend ; implements MUES::Debuggable
 
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.8 2002/10/13 23:24:05 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.9 2002/10/14 09:44:40 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,
@@ -104,22 +104,22 @@ module MUES
 				checkOpened()
 				checkEachType( objects, MUES::StorableObject )
 
-				self.log.debug "      Storing objects: %s..." % objects.inspect
+				debugMsg 1, "Storing %d objects" % objects.length
 
 				begin
 					# Start a transaction and store each object. Txn
 					# auto-commits at the end of the block.
-					self.log.debug { "   Beginning transaction..." }
+					debugMsg 2, "   Beginning transaction for 'store'"
 					@env.begin( BDB::TXN_COMMIT, @db ) do |txn, db|
 						objects.each {|obj|
 							id = obj.objectStoreId
 
-							self.log.debug "      Storing object <%s> with id = '%s'..." %
+							debugMsg 5, "      Storing object <%s> with id = '%s'..." %
 								[ obj.inspect, obj.objectStoreId ]
 							db[ id ] = Marshal::dump( obj )
 						}
 					end
-					self.log.debug { "   Done with transaction." }
+					debugMsg 2, "   Done with 'store' transaction."
 				rescue => err
 					raise MUES::ObjectStoreError,
 						"Transaction failed while storing: #{err.message}",
@@ -134,14 +134,18 @@ module MUES
 				checkOpened()
 				objs = []
 
+				debugMsg 1, "Retrieving objects for %d ids" % ids.length
+
 				begin
-					objs.replace ids.collect {|id|
-						if @db.key?( id )
-							Marshal::restore(@db[ id ])
-						else
-							nil
-						end
-					}
+					@env.begin( 0, @db ) do |txn, db|
+						objs.replace ids.collect {|id|
+							if db.key?( id )
+								Marshal::restore(@db[ id ])
+							else
+								nil
+							end
+						}
+					end
 				rescue => err
 					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching: #{err.message}",
@@ -163,9 +167,10 @@ module MUES
 
 				objs = []
 				begin
-					objs.replace @indexes[key.to_s.intern].
-						duplicates(val, false).
-						collect {|o| Marshal::restore(o) }
+					@env.begin( 0, @indexes[key.to_s.intern] ) do |txn, idx|
+						objs.replace idx.duplicates(val, false).
+							collect {|o| Marshal::restore(o) }
+					end
 				rescue => err
 					raise MUES::ObjectStoreError,
 						"Transaction failed while fetching: #{err.message}",
@@ -182,10 +187,12 @@ module MUES
 				objs = []
 
 				begin
-					objs.replace @db.values.collect {|o| Marshal::restore(o) }
+					@env.begin( 0, @db ) do |txn, db|
+						objs.replace db.values.collect {|o| Marshal::restore(o) }
+					end
 				rescue => err
 					raise MUES::ObjectStoreError,
-						"Transaction failed while fetching values: #{err.message}",
+						"Transaction failed while fetching: #{err.message}",
 						err.backtrace
 				end
 
@@ -204,37 +211,38 @@ module MUES
 					raise MUES::ObjectStoreError, "No such index #{idx.inspect}" unless
 						@indexes.has_key? idx
 				}
+				debugMsg 1, "Doing lookup with %d index pairs" % indexValuePairs.length
 				
 				begin
 					cursors = []
 					@env.begin( 0, @db ) do |txn, db|
 						indexValuePairs.each {|idx,vals|
 							vals = [ vals ] unless vals.is_a?( Array )
-							self.log.debug { "Looking up values '#{vals.inspect}' for idx '#{idx.inspect}'" }
+							debugMsg 2, "Looking up values '#{vals.inspect}' for idx '#{idx.inspect}'"
 							vals.each {|val|
-								self.log.debug { "Fetching cursor for '#{val}'" }
+								debugMsg 3, "Fetching cursor for '#{val}'"
 								cursor = txn.associate( @indexes[idx] ).cursor
 								rval = cursor.set( val )
-								self.log.debug { "Got a cursor with #{cursor.count} values." }
+								debugMsg 2, "Got a cursor with #{cursor.count} values."
 
 								cursors << cursor
 							}
 						}
 
-						self.log.debug {"Preparing to do a join with #{cursors.length} cursors."}
+						debugMsg 2, "Preparing to do a join with #{cursors.length} cursors."
 
 						db.join(cursors) {|key,val|
 							objs << Marshal::restore( val )
-							self.log.debug "Added obj: <%s> in join." % objs[-1].inspect
+							debugMsg 5, "Added obj: <%s> in join." % objs[-1].inspect
 						}
 
-						self.log.debug "Closing cursors..."
+						debugMsg 3, "Closing cursors..."
 						cursors.each {|cursor| cursor.close}
 
-						self.log.debug "Leaving join transaction..."
+						debugMsg 2, "Leaving join transaction..."
 					end
 				rescue => err
-					self.log.error "Transaction failed while fetching values: %s: %s" % [
+					self.log.error "Transaction failed while fetching: %s: %s" % [
 						err.message, err.backtrace.join("\n\t") ]
 					self.log.notice "Attempting recovery"
 					@env.recover {|txn, id|
@@ -244,8 +252,48 @@ module MUES
 
 				end
 
-				self.log.debug {"Join returned '%d' ids" % objs.length}
+				debugMsg 1, "Join returned '%d' ids" % objs.length
 				return objs
+			end
+
+
+			### Remove and return the objects specified by the given
+			### <tt>objects</tt> (which can be either objects or their ids) from
+			### the backing store.
+			def remove( *objects )
+				checkEachType( objects, MUES::StorableObject, ::String )
+				checkOpened()
+				objs = []
+				
+				objects.collect! {|obj|
+					case obj
+					when MUES::StorableObject
+						obj.objectStoreId
+
+					when String
+						obj
+
+					else
+						raise "Unexpected value '%s' in remove" % obj.inspect
+					end
+				}
+
+				begin
+					@env.begin( BDB::TXN_COMMIT, @db ) do |txn, db|
+						debugMsg 3, "Removing values for ids '%s'" % objs.inspect
+						objects.each {|id| db.delete( id )}
+						debugMsg 3, "Done with transaction"
+					end
+				rescue => err
+					self.log.error "Transaction failed while removing: %s: %s" % [
+						err.message, err.backtrace.join("\n\t") ]
+					self.log.notice "Attempting recovery"
+					@env.recover {|txn, id|
+						self.log.error "Discarding txn #{id}"
+						txn.discard
+					}
+
+				end
 			end
 
 
@@ -296,7 +344,7 @@ module MUES
 					indexName = idx.to_s
 					idx = indexName.intern
 
-					self.log.debug {"Adding index '#{indexName}'"}
+					debugMsg 1, "Adding index '#{indexName}'"
 					
 					# Open a secondary handle and associate it with the first,
 					# along with a proc for making the index value from a key =>
