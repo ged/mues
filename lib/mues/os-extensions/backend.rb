@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.3 2002/07/09 15:06:44 deveiant Exp $
+# $Id: backend.rb,v 1.4 2002/08/01 03:17:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,8 +39,6 @@ require 'mues/ObjectStore'
 module MUES
 	class ObjectStore
 
-		MUES::def_exception :BackendError, "ObjectStore Backend Error", MUES::ObjectStoreException
-
 		### This class is the abstract base class for MUES::ObjectStore
 		### backends. Derivatives of this class provide an adapter-like
 		### interface to a means of storing MUES::StorableObjects in some sort
@@ -53,8 +51,12 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version	= %q$Revision: 1.3 $
-			RcsId	= %q$Id: backend.rb,v 1.3 2002/07/09 15:06:44 deveiant Exp $
+			Version	= %q$Revision: 1.4 $
+			RcsId	= %q$Id: backend.rb,v 1.4 2002/08/01 03:17:15 deveiant Exp $
+
+			# The directory in which file-based objectstores will be kept,
+			# relative to the base dir.
+			StoreDir = "objectstores"
 
 			# Default de/serializing proc
 			DefaultSerializer = Proc.new {|obj|
@@ -64,20 +66,24 @@ module MUES
 				when StorableObject
 					Marshal.dump( obj )
 				else
-					raise ObjectStoreException, "Cannot serialize a #{obj.class.name}"
+					raise ObjectStoreError, "Cannot serialize a #{obj.class.name}"
 				end
 			}
 
 
 			### Class methods
+			class << self
+				alias_method( :__create, :create )
+				remove_method( :create )
+			end
 
 			### (Overridden) Factory method: Instantiate and return a new
 			### Backend of the specified <tt>backendType</tt>, using the
 			### specified <tt>name</tt>, <tt>indexes</tt> Array, and
 			### <tt>argHash</tt>.
-			def self.create( backendType, name, indexes=[], argHash={} )
+			def self.create( backendType, name, indexes=[], configValue=nil )
 				Dir::mkdir( StoreDir ) unless File.directory? StoreDir
-				return super( backendType, name, indexes, argHash )
+				return __create( backendType, name, indexes, configValue )
 			end
 
 
@@ -85,8 +91,8 @@ module MUES
 
 			# Returns the directory objectstores live under (part of the
 			# FactoryMethods interface)
-			def self.derivativeDir
-				return 'objectstores'
+			def self.derivativeDirs
+				return ['mues/os-extensions']
 			end
 
 
