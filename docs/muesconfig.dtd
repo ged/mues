@@ -2,11 +2,10 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-    Time-stamp: <07-Sep-2002 23:21:09 deveiant>
-	$Id: muesconfig.dtd,v 1.7 2002/09/12 09:54:12 deveiant Exp $
+	$Id: muesconfig.dtd,v 1.8 2002/10/27 16:59:14 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
-	Time-stamp: "26-May-2002 22:22:46 deveiant"
+	Time-stamp: "27-Oct-2002 09:56:46 deveiant"
 
 	Copyright (c) 2002, The FaerieMUD Consortium. All rights reserved.
 
@@ -28,7 +27,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.7 $ -->
+<!-- A version string like $Revision: 1.8 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -138,7 +137,8 @@
 
 
 <!-- Environment/s config section -->
-<!ELEMENT environments          (environment)*>
+<!ELEMENT environments          (envpath?,(environment)*)>
+<!ELEMENT envpath               (directory+)>
 <!ELEMENT environment           (description,(param)*)>
 <!ATTLIST environment
             name                %Text;              #REQUIRED
@@ -154,7 +154,7 @@
             parser-class        %ClassName;         #IMPLIED>
 
 <!ELEMENT commandpath           (directory+)>
-<!ELEMENT directory             (#PCDATA)>
+
 
 <!-- Universal elements -->
 <!ELEMENT objectstore           (backend,memorymanager,(param)*)>
@@ -173,3 +173,4 @@
 <!ATTLIST param
             name                %Text;              #REQUIRED>
 
+<!ELEMENT directory             (#PCDATA)>
