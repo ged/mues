@@ -30,7 +30,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.12 2002/10/04 05:06:43 deveiant Exp $
+# $Id: class.rb,v 1.13 2002/10/04 09:56:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module MUES
 		### to build other classes.
 		class Class
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
-			Rcsid = %q$Id: class.rb,v 1.12 2002/10/04 05:06:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
+			Rcsid = %q$Id: class.rb,v 1.13 2002/10/04 09:56:10 deveiant Exp $
 
 			# Mix in comparison methods
 			include Comparable
@@ -83,7 +83,7 @@ module MUES
 
 				# If the BaseClass class isn't loaded yet, load it
 				unless Metaclass.const_defined? :BaseClass
-					require 'metaclass/BaseClass'
+					require 'mues/metaclass/BaseClass'
 				end
 
 				@name		= name
@@ -134,7 +134,7 @@ module MUES
 					addInterface( metaObject )
 
 				else
-					raise ArgumentError, "Can't append a '#{metaObject.class.name}' to a #{self.class.name}."
+					raise TypeError, "Can't append a '#{metaObject.class.name}' to a #{self.class.name}."
 				end
 
 				return self
@@ -146,7 +146,7 @@ module MUES
 			### <tt>otherClass</tt>. This method (and all the rest defined by
 			### Comparable behave accordingly).
 			def <=>( otherClass )
-				raise ArgumentError,
+				raise TypeError,
 					"Cannot compare a #{self.class.name} and a #{otherClass.class.name}" unless
 					otherClass.kind_of?( Metaclass::Class )
 
@@ -160,10 +160,10 @@ module MUES
 			### Returns true if the receiver is between the specified classes in the
 			### inheritance hierarchy.
 			def between?( classOne, classTwo )
-				raise ArgumentError,
+				raise TypeError,
 					"Illegal argument 1: Cannot compare a #{classOne.class.name} with a #{self.class.name}" unless
 					classOne.kind_of? Metaclass::Class
-				raise ArgumentError,
+				raise TypeError,
 					"Illegal argument 2: Cannot compare a #{classTwo.class.name} with a #{self.class.name}" unless
 					classTwo.kind_of? Metaclass::Class
 
