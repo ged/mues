@@ -51,5 +51,9 @@ This is an informal list of tasks yet to be done for the MUES.
 * Better and more-useful error-handling. Errors from Environments should never
   crash the server.
 
+* Make it possible to configure all aspects of login semantics. Should be able
+  to go directly from login to environment, give them a command shell if they're
+  not an admin, etc. (reltuk's idea on IRC)
+
 
 
