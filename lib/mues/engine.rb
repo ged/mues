@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+###########################################################################
 =begin 
 
 = Engine
@@ -46,6 +47,30 @@ following tasks:
 * Execute an event loop which serves as the fundamental unit of time for
   each world
 
+=== Subsystems
+
+The Engine contains three basic kinds of functionality: thread routines, event
+dispatch and handling routines, and system startup/shutdown routines.
+
+==== Threads and Thread Routines
+
+There are currently two thread routines in the Engine: the routines for the main
+thread of execution and the listener socket. The main thread loops in the
+((<MUES::Engine#_mainThreadRoutine>)) method, marking each loop by dispatching a
+((<MUES::TickEvent>)), and then sleeping for a duration of time set in the main
+configuration file. The listener socket also has a thread dedicated to it which
+runs in the ((<MUES::Engine#_listenerThreadRoutine>)) method. This thread waits
+on a call to accept() for an incoming connection, and dispatches a
+SocketConnectEvent for each client.
+
+==== Event Dispatch and Handling
+
+The Engine contains the main dispatch mechanism for events in the server in the
+form of a (({MUES::EventQueue})). This class is a prioritized scaling thread
+work crew class which accepts and executes events given to it by the server.
+
+=== Other Stuff
+
 More comprehensive documentation to follow, but in the meantime, you can find
 the working copy at:
 ((<URL:http://docs.faeriemud.org/bin/view/Dream/TheEngine>)).
@@ -53,15 +78,18 @@ the working copy at:
 == Methods
 === MUES::Engine
 ==== Class Methods
+
 --- MUES::Engine.instance()
 
     Returns the singleton instance of the Engine object, creating it if necessary.
 
-==== Instance Methods
+==== Protected Instance Methods
 
 --- MUES::Engine#initialize()
 
     Sets up and initializes the engine instance.
+
+==== Instance Methods
 
 --- MUES::Engine#hostname
 
@@ -97,22 +125,22 @@ the working copy at:
 
     Returns the state of the engine, which will be one of:
 
-      : ((|MUES::Engine::State::ENGINE_STATE_STOPPED|))
+      : ((|MUES::Engine::State::STOPPED|))
 
         Engine is stopped. It will not answer connections on any port, and it
         has no threads running.
 
-      : ((|MUES::Engine::State::ENGINE_STATE_STARTING|))
+      : ((|MUES::Engine::State::STARTING|))
 
         The engine is starting up. It will begin answering connections on its
         listen port at the end of this state.
 
-      : ((|MUES::Engine::State::ENGINE_STATE_RUNNING|))
+      : ((|MUES::Engine::State::RUNNING|))
 
         The engine is running, and it will answer connections on its main listen
         port. This is the normal state of operation.
 
-      : ((|MUES::Engine::State::ENGINE_STATE_SHUTDOWN|))
+      : ((|MUES::Engine::State::SHUTDOWN|))
 
         The engine is shutting down. It will stop answering connections,
         disconnect all connected players, and stop all running threads.
@@ -126,11 +154,11 @@ the working copy at:
 --- MUES::Engine#started?
 
     Returns (({true})) if the engine is in any state except
-    ((<ENGINE_STATE_STOPPED>)).
+    ((<State::STOPPED>)).
 
 --- MUES::Engine#running?
 
-    Returns true if the engine is in the ((<ENGINE_STATE_RUNNING>)) state.
+    Returns true if the engine is in the ((<State::RUNNING>)) state.
 
 --- MUES::Engine#stop()
 
@@ -150,14 +178,9 @@ the working copy at:
 
     Returns a multi-line string indicating the current status of the engine.
 
---- MUES::Engine#authenticatePlayer( username, password )
-
-    Returns (({true})) if the ((|username|)) and ((|password|)) match the values
-    of a current player.
-
 ==== Protected Instance Methods
 
---- MUES::Engine#_eventLoop()
+--- MUES::Engine#_mainThreadRoutine()
 
     The main event loop. This is the routine that the main thread runs,
     dispatching ((<MUES::TickEvent>))s for timing. Exits and returns the total
@@ -211,19 +234,22 @@ the working copy at:
 == AUTHOR
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
+and Jeremiah Chase <((<phaedrus@FaerieMUD.org|URL:mailto:phaedrus@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
+###########################################################################
 
 require "socket"
 require "thread"
+require "md5"
 
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/Log"
 require "mues/EventQueue"
 require "mues/Exceptions"
@@ -243,17 +269,17 @@ module MUES
 
 		### State constants
 		module State
-			ENGINE_STATE_STOPPED	= 0
-			ENGINE_STATE_STARTING	= 1
-			ENGINE_STATE_RUNNING	= 2
-			ENGINE_STATE_SHUTDOWN	= 3
+			STOPPED		= 0
+			STARTING	= 1
+			RUNNING		= 2
+			SHUTDOWN	= 3
 		end
-		include Engine::State
+
 		include Event::Handler
 
 		### Default constants
-		Version			= %q$Revision: 1.3 $
-		RcsId			= %q$Id: engine.rb,v 1.3 2001/03/23 23:34:37 deveiant Exp $
+		Version			= %q$Revision: 1.4 $
+		RcsId			= %q$Id: engine.rb,v 1.4 2001/03/28 22:23:05 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -265,7 +291,8 @@ module MUES
 		### Make the new method private, as this class is a singleton
 		private_class_method :new
 
-		### (PRIVATE) METHOD: initialize
+		### (PROTECTED) METHOD: initialize
+		protected
 		def initialize
 			@config = nil
 			@log = nil
@@ -280,7 +307,7 @@ module MUES
 			@playersMutex = Mutex.new
 			@exceptionStack = []
 			@exceptionStackMutex = Mutex.new
-			@state = ENGINE_STATE_STOPPED
+			@state = State::STOPPED
 			@startTime = nil
 			@tick = nil
 			@engineObjectStore = nil
@@ -310,7 +337,7 @@ module MUES
 		def start( config )
 			checkType( config, Config )
 
-			@state = ENGINE_STATE_STARTING
+			@state = State::STARTING
 			@config = config
 
 			### Change working directory to that specified by the config file
@@ -324,17 +351,17 @@ module MUES
 			@log = Log.new( @config["rootdir"] + "/" + @config["logfile"] )
 			@log.notice( "Engine startup for #{@name} at #{Time.now.to_s}" )
 
-			### Connect to the MUES database
+			### Connect to the MUES objectstore
 			@log.info( "Creating Engine objectstore: %s %s@%s" % [
-						  @config['database']['driver'],
-						  @config['database']['db'],
-						  @config['database']['host']
+						  @config['objectstore']['driver'],
+						  @config['objectstore']['db'],
+						  @config['objectstore']['host']
 					  ])
-			@engineObjectStore = ObjectStore.new( @config["database"]["driver"],
-												  @config["database"]["db"],
-												  @config["database"]["host"],
-												  @config["database"]["username"],
-												  @config["database"]["password"] )
+			@engineObjectStore = ObjectStore.new( @config["objectstore"]["driver"],
+												  @config["objectstore"]["db"],
+												  @config["objectstore"]["host"],
+												  @config["objectstore"]["username"],
+												  @config["objectstore"]["password"] )
 
 			### Register the server as being interested in a couple of different events
 			@log.info( "Registering engine event handlers." )
@@ -366,12 +393,12 @@ module MUES
 			@listenerThread.abort_on_exception = true
 
 			# Reset the state to indicate we're running
-			@state = ENGINE_STATE_RUNNING
+			@state = State::RUNNING
 			@startTime = Time.now
 
 			### Start the event loop
 			@log.info( "Starting event loop." )
-			_eventLoop()
+			_mainThreadRoutine()
 			@log.info( "Back from event loop." )
 
 			return true
@@ -380,20 +407,20 @@ module MUES
 		### METHOD: started?()
 		### Return true if the server is currently started or running
 		def started?
-			return @state == ENGINE_STATE_STARTING || running?
+			return @state == State::STARTING || running?
 		end
 
 		### METHOD: running?()
 		### Return true if the server is currently running
 		def running?
-			return @state == ENGINE_STATE_RUNNING
+			return @state == State::RUNNING
 		end
 
 		### METHOD: stop()
 		### Shut the server down
 		def stop()
 			@log.notice( "Stopping engine" )
-			@state = ENGINE_STATE_SHUTDOWN
+			@state = State::SHUTDOWN
 
 			### Shut down the listener socket
 			@listenerThread.raise( Shutdown )
@@ -452,24 +479,18 @@ module MUES
 		end
 
 
-		### METHOD: authenticatePlayer( username, password )
-		### Return true if the given username + password matches a valid player.
-		def authenticatePlayer( username, password )
-
-		end
-
-		###############################################################################
-		###	P R O T E C T E D   M E T H O D S
-		###############################################################################
+		### Protected methods
 		protected
 
-		### Thread routines
+		#######################################################################
+		###	T H R E A D   R O U T I N E S
+		#######################################################################
 
-		### (PROTECTED) METHOD: _eventLoop()
+		### (PROTECTED) METHOD: _mainThreadRoutine()
 		### The main event loop. This is the routine that the main thread runs,
 		### dispatching TickEvents for timing. Exits and returns the total
 		### number of ticks to the caller after stop() is called.
-		def _eventLoop
+		def _mainThreadRoutine
 
 			@tick = 0
 
@@ -506,11 +527,7 @@ module MUES
 			while running? do
 				begin
 					playerSock = @listener.accept
-					conn = Thread.new {
-						dynSock = playerSock
-						dispatchEvents( SocketConnectEvent.new(dynSock) )
-					}
-					conn.join
+					dispatchEvents( SocketConnectEvent.new(playerSock) )
 				rescue Errno::EPROTO
 					dispatchEvents( LogEvent.new("error", "Accept failed (EPROTO).") )
 					next
@@ -551,7 +568,10 @@ module MUES
 			return listener
 		end
 
-		### Event handlers
+
+		#######################################################################
+		###	E V E N T   H A N D L E R S
+		#######################################################################
 
 		### (PROTECTED) METHOD: _handleSocketConnectEvent( event )
 		### Handle connections to the listener socket.
@@ -572,11 +592,11 @@ module MUES
 			### :TODO: This should check for connection type, and generate new
 			### filters accordingly. This of course depends on having the filter
 			### classes to do so
-			liFilter = LoginInputFilter.new(@config, newPlayer)
+			liFilter = LoginProxy.new(@config, newPlayer)
 			#liFilter.debug( 1 )
 			soFilter = SocketOutputFilter.new(sock, newPlayer)
 			#soFilter.debug( 1 )
-			shellFilter = ShellInputFilter.new( newPlayer )
+			shellFilter = CommandShell.new( newPlayer )
 			#comFilter.debug( 1 )
 
 			### Add the new filters to the stream, then add the stream to the player
@@ -599,33 +619,54 @@ module MUES
 
 			### Handle the player status change events by changing the contents of the players hash
 			case event
+
 			when PlayerLoginEvent
 				@log.notice( "Player #{player.name} logged in." )
 				@playersMutex.synchronize {	@players[ player ]["status"] = "active" }
+
 			when PlayerLoginFailureEvent
 				@log.notice( "Failed login attempt by player #{player.name}: #{event.reason}." )
+
 			when PlayerDisconnectEvent
 				@log.notice( "Player #{player.name} went link-dead." )
 				# :TODO: Once reconnect works: 
 				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
 				@playersMutex.synchronize {	@players.delete( player ) }
 				player.disconnect
+
 			when PlayerIdleTimeoutEvent
 				@log.notice( "Player #{player.name} disconnected due to idle timeout." )
 				# :TODO: Once reconnect works: 
 				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
 				@playersMutex.synchronize {	@players.delete( player ) }
 				player.disconnect
+
 			when PlayerLogoutEvent
 				@log.notice( "Player #{player.name} disconnected." )
 				@playersMutex.synchronize {	@players.delete( player ) }
 				player.disconnect
-			when Player
+
 			else
 				_handleUnknownEvent( event )
 			end
 
 			return []
+		end
+
+		### (PROTECTED) METHOD: _handlePlayerAuthenticationEvent( event )
+		### Handle a user authentication attempt event
+		def _handlePlayerAuthenticationEvent( event )
+
+			if ! passwords.key?( event.username )
+				event.failureCallback.call( event.player, "No such user" )
+
+			elsif passwords[event.username] != MD5.new( event.password ).hexdigest
+				event.failureCallback.call( event.player, "Bad password" )
+
+			else
+				event.successCallback.call( event.player )
+			end
+
 		end
 
 
