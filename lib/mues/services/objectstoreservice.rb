@@ -31,6 +31,10 @@ module MUES
 	### Class for the ObjectStore system's Service interface to MUES
 	class ObjectStoreService < MUES::Service
 
+		### Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid = %q$Id: objectstoreservice.rb,v 1.12 2002/08/01 01:14:08 deveiant Exp $
+
 		# Include the default event dispatcher method
 		include MUES::Event::Handler
 
@@ -56,7 +60,7 @@ module MUES
 		#########
 
 		### Handle events which are requesting an adapter for this service.
-		def _handleGetServiceAdapterEvent (event)
+		def handleGetServiceAdapterEvent (event)
 			if event.name == @name
 				*(event.args)
 

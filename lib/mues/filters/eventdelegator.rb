@@ -13,7 +13,7 @@
 #
 # == Rcsid
 # 
-# $Id: eventdelegator.rb,v 1.8 2002/06/04 07:08:58 deveiant Exp $
+# $Id: eventdelegator.rb,v 1.9 2002/08/01 01:14:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -42,8 +42,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.8 2002/06/04 07:08:58 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.9 2002/08/01 01:14:08 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### Create and return a LoginProxy object for the given +session+ (a
@@ -69,10 +69,10 @@ module MUES
 
 		### OutputEvent handler.
 		def handleOutputEvents( *events )
-			_debugMsg( 1, "I have #{@queuedOutputEvents.length} pending output events." )
+			debugMsg( 1, "I have #{@queuedOutputEvents.length} pending output events." )
 			ev = super()
 			ev.flatten!
-			_debugMsg( 1, "Parent class's handleOutputEvents() returned #{ev.size} events." )
+			debugMsg( 1, "Parent class's handleOutputEvents() returned #{ev.size} events." )
 
 			return ev
 		end

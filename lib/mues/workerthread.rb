@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: workerthread.rb,v 1.7 2002/04/01 16:27:31 deveiant Exp $
+# $Id: workerthread.rb,v 1.8 2002/08/01 01:14:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -53,7 +53,7 @@ module MUES
 		### Create and return the thread with the given arguments.
 		def initialize( *args ) # :yeilds: *args
 			@startTime = Time.now
-			_debugMsg( 1, "Initializing worker thread at #{@startTime.ctime}" )
+			debugMsg( 1, "Initializing worker thread at #{@startTime.ctime}" )
 			super { yield(*args) }
 		end
 

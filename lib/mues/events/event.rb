@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: event.rb,v 1.8 2002/07/09 15:02:08 deveiant Exp $
+# $Id: event.rb,v 1.9 2002/08/01 01:14:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -104,7 +104,7 @@ module MUES
 			super()
 			self.priority = priority
 			@creationTime = Time.now
-			_debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime} (priority=#{@priority})" )
+			debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime} (priority=#{@priority})" )
 		end
 
 
