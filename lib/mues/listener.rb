@@ -9,8 +9,8 @@
 # Instances of this class's derivatives are usually constructed by a
 # MUES::Config::ListenersSection object.
 #
-# Concrete derivatives of this class must provide implementations of the
-# following operations:
+# Concrete derivatives of this class will probably be interested in providing
+# implementations of one or more of the following operations:
 #
 # [<tt>createOutputFilter( <em>pollObject</em> )</tt>]
 #   Called when the listener's IO object indicates it is readable, this method
@@ -35,10 +35,10 @@
 #       def createOutputFilter( poll )
 #           clientSocket = self.io.accept
 #			proxy = MUES::PollProxy::new( poll, clientSocket )
-#			return MUES::SocketOutputFilter::new( clentSocket, pollProxy )
+#			return MUES::MyOutputFilter::new( clientSocket, pollProxy )
 #       end
 #
-#       def onDisconnect( filter )
+#       def releaseOutputFilter( filter )
 #           # no-op
 #       end
 #
@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.3 2002/08/02 20:03:44 deveiant Exp $
+# $Id: listener.rb,v 1.4 2002/09/12 11:48:03 deveiant Exp $
 # 
 # == Authors
 # 
@@ -71,23 +71,14 @@ module MUES
 		include MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: listener.rb,v 1.3 2002/08/02 20:03:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: listener.rb,v 1.4 2002/09/12 11:48:03 deveiant Exp $
 
 		### Class methods
 
 		### Return a list of directories to search for listener classes.
 		def self.derivativeDirs
 			["mues/listeners"]
-		end
-
-
-		### Return an Array of listeners as configured by the specified
-		### <tt>config</tt> (a MUES::Config object).
-		def self.createFromConfig( config )
-			return config.engine.listeners.collect {|name,lconfig|
-				self.create( lconfig['class'], name, lconfig['parameters'] )
-			}
 		end
 
 
@@ -99,7 +90,10 @@ module MUES
 			@parameters	= parameters
 			@io			= io
 
+			self.log.info( "Initialized a %s" % self.class.name )
+
 			super()
+			self.log.debug {"Returning from MUES::Listener initializer"}
 		end
 
 
@@ -119,8 +113,8 @@ module MUES
 		attr_reader :io
 
 
-		### Abstract (virtual) methods
-		abstract :onConnect, :onDisconnect
+		# Virtual methods required in derivatives
+		abstract :createOutputFilter, :releaseOutputFilter
 
 
 		### Return a human-readable version of the listener suitable for log
