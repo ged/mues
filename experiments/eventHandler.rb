@@ -5,7 +5,7 @@ require "mues/Events"
 
 class Handler < Object
 
-	include Event::Handler
+	include MUES::Event::Handler
 
   protected
 	def _handleSystemEvent( event )
