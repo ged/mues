@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-#  $Id: muesunittest.rb,v 1.6 2002/10/12 15:43:05 deveiant Exp $
+#  $Id: muesunittest.rb,v 1.7 2002/10/25 05:09:53 deveiant Exp $
 # 
 # == Authors
 # 
@@ -57,12 +57,8 @@ end
 
 require "test/unit"
 
-# Try to require a system-wide mock-object lib, if installed, else use our own.
-begin
-	require "test/unit/mock"
-rescue LoadError
-	require "mock"
-end
+# Require the mock object lib
+require "mock"
 
 
 ### Test case class
