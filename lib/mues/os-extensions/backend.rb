@@ -17,7 +17,7 @@
 #
 #	ostore = MUES::ObjectStore::create( :backend => 'Foo', ... )
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

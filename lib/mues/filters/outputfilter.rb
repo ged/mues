@@ -14,9 +14,9 @@
 #		end
 #	end
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: outputfilter.rb,v 1.4 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -37,8 +37,17 @@ module MUES
 	class OutputFilter < MUES::IOEventFilter ; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: outputfilter.rb,v 1.4 2003/10/13 04:02:14 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default filter sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition = 5
 
 		### Create a new OutputFilter object with the specified

@@ -64,9 +64,9 @@
 # 	end
 # 
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: event.rb,v 1.16 2003/10/13 04:02:15 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -90,14 +90,27 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Constants
-		Version			= /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
-		Rcsid			= %q$Id: event.rb,v 1.16 2003/10/13 04:02:15 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Maximum event priority
 		MaxPriority		= 64
+
+		# Minimum event priority
 		MinPriority		= 1
+
+		# Default event priority
 		DefaultPriority	= (MaxPriority / 2).to_i
 
-		### Class global - A hash of handlers, keyed by Class, for each event
-		### type.
+		# Class global - A hash of handlers, keyed by Class, for each event
+		# type.
 		@@Handlers = { Event => [] }
 
 

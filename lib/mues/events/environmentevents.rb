@@ -28,9 +28,9 @@
 #   LoadEnvironmentEvent.new( environmentNameString )
 #   UnloadEnvironmentEvent.new( environmentNameString )  
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: environmentevents.rb,v 1.10 2003/10/13 04:02:15 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

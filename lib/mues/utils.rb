@@ -7,9 +7,9 @@
 # 
 #   require 'mues/utils'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: TEMPLATE.rb.tpl,v 1.8 2002/09/08 06:55:41 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

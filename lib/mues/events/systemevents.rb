@@ -64,7 +64,7 @@
 # 
 #   require 'mues/events/systemevents'
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

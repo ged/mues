@@ -11,9 +11,9 @@
 # 
 #   require 'mues/filters/participantproxy'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: participantproxy.rb,v 1.10 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -43,8 +43,17 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.10 2003/10/13 04:02:14 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default filter sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition = 850
 
 

@@ -8,9 +8,9 @@
 #   require 'mues/filters/telnetconstants'
 #   include MUES::TelnetConstants
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: telnetconstants.rb,v 1.3 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -29,8 +29,15 @@
 module TelnetConstants
 
 	### Class constants
-	Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-	Rcsid = %q$Id: telnetconstants.rb,v 1.3 2003/10/13 04:02:14 deveiant Exp $
+
+	# SVN Revision
+	SVNRev = %q$Rev$
+
+	# SVN Id
+	SVNId = %q$Id$
+
+	# SVN URL
+	SVNURL = %q$URL$
 
 	### Codes taken and reformatted from the standard library telnet module.
 	### Author: Wakou Aoyama <wakou@fsinet.or.jp>

@@ -31,9 +31,9 @@
 #		end
 #	end
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: logger.rb,v 1.3 2004/03/17 15:21:05 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -54,11 +54,14 @@ module MUES
 
 		require 'mues/logger/outputter'
 
-		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# CVS id tag
-		Rcsid = %q$Id: logger.rb,v 1.3 2004/03/17 15:21:05 deveiant Exp $
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# Log levels array (in order of decreasing verbosity)
 		Levels = {

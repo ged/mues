@@ -20,9 +20,9 @@
 #		end
 #	end
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: role.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -48,8 +48,16 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: role.rb,v 1.11 2003/10/13 04:02:16 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create and return a role object for the given <tt>environment</tt> with the
 		### <tt>name</tt> and <tt>description</tt> string specified.

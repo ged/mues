@@ -10,9 +10,9 @@
 #   os = MUES::ObjectStore::create( 'foo', [], 'BerkeleyDB' )
 #   ...
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: berkeleydbbackend.rb,v 1.12 2003/10/13 04:02:12 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -44,18 +44,25 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.12 2003/10/13 04:02:12 deveiant Exp $
 
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
+
+			# Default options for the BDB::Env object
 			EnvOptions = {
 				:set_timeout	=> 50,
 				:set_lk_detect	=> 1,
 				:set_verbose	=> true,
 			}
-			EnvFlags = BDB::CREATE|BDB::INIT_TRANSACTION|BDB::RECOVER
 
-			### Turn on strict checking. Should be turned off for production.
-			@@StrictMode = false
+			# Default flags for the BDB::Env object
+			EnvFlags = BDB::CREATE|BDB::INIT_TRANSACTION|BDB::RECOVER
 
 
 			### Create a new BerkeleyDBBackend object, using the specified

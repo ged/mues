@@ -29,7 +29,7 @@
 # 
 # == Version
 #
-#  $Id: simplememorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
+#  $Id$
 # 
 # == Authors
 #
@@ -51,8 +51,15 @@ module MUES
 		class SimpleMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: simplememorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
+
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 			### The symbol of the default method to call to "mark" objects.
 			DefaultMarkMethod = :os_gc_mark

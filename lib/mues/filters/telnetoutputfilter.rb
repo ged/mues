@@ -11,9 +11,9 @@
 # 
 #   tf = MUES::TelnetOutputFilter.new( socketObj )
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: telnetoutputfilter.rb,v 1.16 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -58,11 +58,14 @@ module MUES
 		end
 		include StateConstants
 
-		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# CVS id tag
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.16 2003/10/13 04:02:14 deveiant Exp $
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# List of supported options and whether we ask for or offer them
 		Supported = {

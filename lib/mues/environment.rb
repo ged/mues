@@ -55,7 +55,7 @@
 # Different modes of connection to an Environment can be created by modifying or
 # replacing the commands for interacting with them.
 #
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 
@@ -89,9 +89,15 @@ module MUES
 		include MUES::TypeCheckFunctions, MUES::Event::Handler, PluginFactory
 
 		### Class constants
-		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
-		Rcsid = %q$Id$
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		### Class variables and methods

@@ -13,9 +13,9 @@
 #		...
 #	end
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: privilegedevent.rb,v 1.2 2003/10/13 04:02:15 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -42,8 +42,16 @@ module MUES
 		include MUES::SafeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: privilegedevent.rb,v 1.2 2003/10/13 04:02:15 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create a new PrivilegedEvent object.
 		def initialize( priority=MUES::Event::DefaultPriority )

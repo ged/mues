@@ -11,7 +11,7 @@
 #       ...
 #   end
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

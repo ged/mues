@@ -12,9 +12,9 @@
 #                                            'bind-port' => 23,
 #                                            'bind-addr' => '0.0.0.0' )
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: telnetlistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -38,8 +38,15 @@ module MUES
 	class TelnetListener < MUES::SocketListener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: telnetlistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		### Create a new TelnetListener object. See
 		### MUES::SocketListener#initialize for the list of valid

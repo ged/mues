@@ -105,7 +105,7 @@
 # 
 # You can find more about the MUES project at http://mues.FaerieMUD.org/
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 
@@ -177,15 +177,16 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		SHUTDOWN	= 3
 	end
 
-	### Default constants
-	Version				= /([\d\.]+)/.match( %q{$Revision: 1.46 $} )[1]
-	Rcsid				= %q$Id$
-	DefaultHost			= 'localhost'
-	DefaultPort			= 6565
-	DefaultName			= 'ExperimentalMUES'
-	DefaultAdmin		= 'MUES Admin <mues@localhost>'
+	# SVN Revision
+	SVNRev = %q$Rev$
 
-	### Prototype for scheduled events hash (duped before use)
+	# SVN Id
+	SVNId = %q$Id$
+
+	# SVN URL
+	SVNURL = %q$URL$
+
+	# Prototype for scheduled events hash (duped before use)
 	ScheduledEventsHash = { :timed => {}, :ticked => {}, :repeating => {} }
 
 	### Class variables

@@ -52,10 +52,10 @@
 #	puts "life is what life does" if
 #		f.accept(v) == b.accept(v)
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: objectspacevisitor.rb,v 1.8 2003/10/13 04:02:16 deveiant Exp $
-# 
+# $Id$
+#
 # == Authors
 # 
 # * Michael Granger <ged@FaerieMUD.org>
@@ -81,8 +81,15 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
-		Rcsid = %q$Id: objectspacevisitor.rb,v 1.8 2003/10/13 04:02:16 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		### Instantiate and return a new ObjectSpaceVisitor object.

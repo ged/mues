@@ -15,9 +15,9 @@
 #   between multiple runs of the environment, how to specify conversion functions
 #   for modified types when there are already users who are of old types, etc.
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: user.rb,v 1.32 2003/10/13 04:02:16 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -58,11 +58,14 @@ module MUES
 
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
-		# CVS version tag
-		Version			= /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# CVS id tag
-		Rcsid			= %q$Id: user.rb,v 1.32 2003/10/13 04:02:16 deveiant Exp $
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		#############################################################

@@ -16,7 +16,7 @@
 #     end
 #   end
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 
@@ -60,8 +60,13 @@ module MUES
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
 		def initialize( version )
-			parts = version.to_s.split(/\./, 4)
-
+			if version =~ /\./
+				parts = version.to_s.split(/\./, 4)
+			else
+				version = Integer( version )
+				parts = version/1000, (version%1000) / 100, (version%100)
+			end
+			
 			@major, @minor, @point, @frag = parts
 			@versionVector = parts.collect {|num|
 				num.to_i.chr

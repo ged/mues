@@ -26,9 +26,9 @@
 #	delegator = MUES::EventDelegator::new( self )
 #   delegator.queueOutputEvents( MUES::PromptEvent::new )
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: eventdelegator.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -55,10 +55,20 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
 
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default filter sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition	= 600
+
+		# Default methods to delegate to for given event types
 		DefaultHandlers = {
 			:input	=> :handleInputEvents,
 			:output => :handleOutputEvents,

@@ -32,8 +32,15 @@ module MUES
 	class ObjectStoreService < MUES::Service
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid = %q$Id: objectstoreservice.rb,v 1.14 2003/10/13 04:02:11 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# Include the default event dispatcher method
 		include MUES::Event::Handler

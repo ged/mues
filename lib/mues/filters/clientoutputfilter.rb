@@ -9,9 +9,9 @@
 # 
 #   require 'mues/filters/clientoutputfilter'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: clientoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -34,8 +34,16 @@ module MUES
 	### placeholder.</em>
 	class ClientOutputFilter < MUES::OutputFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: clientoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition = 101
 
 	end # class ClientOutputFilter

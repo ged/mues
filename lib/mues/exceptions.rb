@@ -98,9 +98,9 @@
 # * Update the list of exception classes above to match what's actually here
 #   after it gels a bit more.
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: exceptions.rb,v 1.19 2003/10/13 04:02:17 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

@@ -28,9 +28,9 @@
 # 
 #   nullWorld: superuser>> ...
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: null.rb,v 1.11 2003/10/13 04:02:10 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

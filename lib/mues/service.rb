@@ -33,9 +33,9 @@
 #     end # class MyService
 #   end # module MUES
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: service.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -66,8 +66,15 @@ module MUES
 		include MUES::Event::Handler, PluginFactory
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.11 2003/10/13 05:16:43 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		### Class globals
 		@@ServiceDirectories = ["mues/services"]

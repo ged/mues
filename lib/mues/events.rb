@@ -33,9 +33,9 @@
 # * Work priority into the class heirarchy so you can optionally pass a priority
 #   to the constructor of any subclass.
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: events.rb,v 1.19 2004/03/03 16:06:50 aidan Exp $
+# $Id$
 # 
 # == Authors
 # 

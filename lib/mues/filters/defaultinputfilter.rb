@@ -7,9 +7,9 @@
 # 
 #   require 'mues/filters/defaultinputfilter'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: defaultinputfilter.rb,v 1.8 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -33,8 +33,17 @@ module MUES
 	class DefaultInputFilter < MUES::InputFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: defaultinputfilter.rb,v 1.8 2003/10/13 04:02:14 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition = 1000
 
 

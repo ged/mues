@@ -14,9 +14,9 @@
 #   config = MUES::Config::new( "muesconfig.xml" )
 #   MUES::Engine::instance.start( config )
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: mues.rb,v 1.28 2003/10/13 04:02:17 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

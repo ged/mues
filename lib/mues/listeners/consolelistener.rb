@@ -9,9 +9,9 @@
 #
 #   cl = MUES::Listener::create( 'console' )
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: consolelistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -34,8 +34,16 @@ module MUES
 	class ConsoleListener < MUES::Listener ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
-		Rcsid = %q$Id: consolelistener.rb,v 1.6 2003/10/13 04:02:13 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create a new ConsoleListener object.
 		def initialize( name, parameters={} )

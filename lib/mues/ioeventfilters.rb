@@ -16,9 +16,9 @@
 # 
 #   stream.addFilters( soFilter, shFilter, snFilter )
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: ioeventfilters.rb,v 1.9 2003/10/13 04:02:17 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

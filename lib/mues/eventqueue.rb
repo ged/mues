@@ -18,7 +18,7 @@
 #   queue = MUES::EventQueue.new( 2, 10, 1.5, 2 )
 #   queue.enqueue( *events )
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

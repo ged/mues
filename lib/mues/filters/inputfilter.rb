@@ -19,9 +19,9 @@
 #		end
 #	end
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: inputfilter.rb,v 1.2 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -42,8 +42,17 @@ module MUES
 	class InputFilter < MUES::IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: inputfilter.rb,v 1.2 2003/10/13 04:02:14 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default filter sort order (See MUES::IOEventFilter)
 		DefaultSortPosition = 995
 
 

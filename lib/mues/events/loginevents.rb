@@ -18,7 +18,7 @@
 # 
 #   require 'mues/events/loginevents'
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

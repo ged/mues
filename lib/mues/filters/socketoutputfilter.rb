@@ -10,9 +10,9 @@
 #   sock = listener.accept
 #   sofilter = MUES::SocketOutputFilter.new( sock )
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: socketoutputfilter.rb,v 1.20 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -48,9 +48,20 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.20 2003/10/13 04:02:14 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default filter sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition = 15
+
+		# Default assumption about how big the remote console is
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
 		# The reactor events to react to
@@ -62,7 +73,8 @@ module MUES
 		LF   = "\012"
 		EOL  = CR + LF
 
-		### Class attributes
+
+		### Class globals
 
 		# Maximum transmissable unit (chunk size)
 		@@MTU = 4096

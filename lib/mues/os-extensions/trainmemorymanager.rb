@@ -63,9 +63,9 @@
 #	not being maintained.  For actual use, please see
 #	ImprovedTrainMemoryManager.rb.
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: trainmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -82,18 +82,29 @@ require 'mues/object'
 
 module MUES
 	class ObjectStore
+
 		### an incremental memory manager scheme, to allow for non-disruptive
 		### management of the ObjectStore system.  note: this cannot be restart()ed.
 		class TrainMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: trainmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
 
-			######
-			public
-			######
+			# SVN Revision
+			SVNRev = %q$Rev$
 
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
+
+
+			#########################################################
+			###	I N S T A N C E   M E T H O D S
+			#########################################################
+
+			### Create a new TrainMemoryManager object with the specified
+			### +args+.
 			def initialize( *args )
 				super( *args )
 				@interval			= @config['interval']			|| 50
@@ -106,6 +117,11 @@ module MUES
 				@trainThread = nil
 				@activeObjectReferences = {}
 			end
+
+
+			######
+			public
+			######
 
 			# the number of seconds between each manager thread interval
 			attr_accessor :interval

@@ -6,9 +6,9 @@
 #
 #   $ runQuestionnaire.rb <questionnaire-name>
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: runQuestionnaire.rb,v 1.1 2003/11/22 09:37:21 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

@@ -114,7 +114,7 @@
 #		thingie.save
 #	}
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

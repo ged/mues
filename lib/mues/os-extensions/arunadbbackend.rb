@@ -39,13 +39,18 @@ module MUES
 
 	    ### The AruanaDB-based ObjectStore backend.
 	    class ArundaDBBackend < MUES::ObjectStore::Backend
+			include Sync_m
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: arunadbbackend.rb,v 1.4 2003/10/13 04:02:12 deveiant Exp $
 
+			# SVN Revision
+			SVNRev = %q$Rev$
 
-			include Sync_m
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 			A_Index.instance_eval { include Enumerable }
 			A_Table.instance_eval { include Enumerable }

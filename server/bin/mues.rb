@@ -7,9 +7,9 @@
 #
 #   $ mues.rb [configfile]
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: mues.rb,v 1.10 2002/10/14 09:46:33 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -139,7 +139,7 @@ def main
 	# Instantiate the configuration object, aborting if we can't find it
 	begin
 		config = if configFile 
-					 MUES::Config::new( configFile )
+					 MUES::Config::load( configFile )
 				 else
 					 MUES::Config::new
 				 end

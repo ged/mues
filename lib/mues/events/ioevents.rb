@@ -63,9 +63,9 @@
 #   The output-sided IOEventFilters would then be free to implement (or not) any
 #   capability they
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: ioevents.rb,v 1.13 2003/10/13 04:02:15 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

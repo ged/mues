@@ -47,8 +47,15 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.32 2004/02/29 18:47:08 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		#############################################################
@@ -163,8 +170,15 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.32 2004/02/29 18:47:08 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		# Methods to not remove from the instances of this class

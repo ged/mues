@@ -40,7 +40,7 @@
 #           MUES::TypeCheckFunctions, MUES::SafeCheckFunctions,
 #           MUES::ServerFunctions, MUES::Notifiable
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

@@ -4,7 +4,7 @@
 # base class for objects that control where logging output is sent in an
 # MUES::Logger object. 
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

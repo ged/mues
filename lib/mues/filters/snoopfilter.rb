@@ -8,9 +8,9 @@
 # 
 #   require 'mues/filters/snoopfilter'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: snoopfilter.rb,v 1.6 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -36,11 +36,25 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
-		Rcsid = %q$Id: snoopfilter.rb,v 1.6 2003/10/13 04:02:14 deveiant Exp $
 
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default leading character to designate input which should be handled
+		# by this filter.
 		KeySigil = '@'
+
+		# Default filter sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition = 300
+
+		# Default filter sort order number for the filter installed in the
+		# target's stream.
 		DefaultTargetPosition = 299
 
 

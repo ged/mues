@@ -11,9 +11,9 @@
 # 
 #   require 'mues/events/commandevents'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: commandevents.rb,v 1.3 2003/10/13 04:02:15 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -39,8 +39,16 @@ module MUES
 	class EvalCommandEvent < MUES::PrivilegedEvent
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: commandevents.rb,v 1.3 2003/10/13 04:02:15 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create a new EvalCommandEvent that will evaluate the specified
 		### <tt>code</tt> in the context of the given <tt>contextObject</tt> for

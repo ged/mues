@@ -8,9 +8,9 @@
 # 
 #   require 'mues/filters/defaultoutputfilter'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: defaultoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -34,9 +34,19 @@ module MUES
 	class DefaultOutputFilter < MUES::OutputFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.7 2003/10/13 04:02:14 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default sort order (See MUES::IOEventFilter)
 		DefaultSortPosition = 0
+
 
 		### Create and return a new default output filter with a history of the
 		### specified <tt>size</tt>. The filter's history is an array of the

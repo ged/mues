@@ -10,7 +10,7 @@
 #   os = MUES::ObjectStore::create( 'foo', [], 'DBI', :backend => 'dbi:mysql:objectstore' )
 #   ...
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

@@ -22,7 +22,7 @@
 #                                         'wrap-ident-lookup'   => true,
 #                                         'wrap-ident-timeout'  => 15
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

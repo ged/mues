@@ -9,7 +9,7 @@
 #   require 'mues/filters/macrofilter'
 #   filter = MUES::MacroFilter.new( aUser )
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

@@ -47,7 +47,7 @@
 #   connectMsg = MUES::OutputEvent.new( "Welcome to ExperimentalMUD." )
 #   @stream.addOutputEvents( loginMsg )
 # 
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 

@@ -37,9 +37,9 @@
 # 
 # * Perhaps add soundex matching if there are no abbrev matches for a command?
 #
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: commandshell.rb,v 1.36 2004/03/03 16:06:50 aidan Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -74,11 +74,18 @@ module MUES
 		include MUES::ServerFunctions, PluginFactory
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.36 2004/03/03 16:06:50 aidan Exp $
-		DefaultSortPosition = 990
 
-		### Class globals
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default sort order number (See MUES::IOEventFilter)
+		DefaultSortPosition = 990
 
 		# The default characters that designate an input line as a command
 		DefaultCommandPrefix = '/'
@@ -298,8 +305,15 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.36 2004/03/03 16:06:50 aidan Exp $
+
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 
 			### Instantiate and return a new Command object with the specified
@@ -492,8 +506,15 @@ module MUES
 		class Context < MUES::Object ; implements MUES::Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.36 2004/03/03 16:06:50 aidan Exp $
+
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 
 			### Create and return a new Context object with the specified shell
@@ -545,8 +566,15 @@ module MUES
 			include MUES::TypeCheckFunctions, PluginFactory
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.36 2004/03/03 16:06:50 aidan Exp $
+
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 
 			### Instantiate and return a new <tt>CommandTable</tt> object which
@@ -704,8 +732,15 @@ module MUES
 			include MUES::TypeCheckFunctions, PluginFactory
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.36 2004/03/03 16:06:50 aidan Exp $
+
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 
 			### Instantiate and return a parser object which will create command
@@ -892,11 +927,14 @@ module MUES
 			###	C L A S S   V A R I A B L E S
 			#########################################################
 
-			# CVS version tag
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.35 $} )[1]
+			# SVN Revision
+			SVNRev = %q$Rev$
 
-			# CVS id tag
-			Rcsid = %q$Id: commandshell.rb,v 1.35 2003/10/13 05:16:43 deveiant Exp $
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 			# The shell class to use if no alternate is specified
 			DefaultShellClass	= MUES::CommandShell

@@ -12,9 +12,9 @@
 #
 #	puts "Thread #{thr.desc} has been running for #{thr.runtime} seconds."
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: workerthread.rb,v 1.13 2003/10/13 04:02:16 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -53,8 +53,15 @@ module MUES
 	class WorkerThread < Thread ; implements MUES::Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
-		Rcsid	= %q$Id: workerthread.rb,v 1.13 2003/10/13 04:02:16 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		### Create and return the thread with the given arguments.
@@ -86,8 +93,16 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
-		Rcsid	= %q$Id: workerthread.rb,v 1.13 2003/10/13 04:02:16 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Add a thread (a MUES::WorkerThread object) to the group. Adding any
 		### other kind of thread will result in an exception being raised.

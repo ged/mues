@@ -13,9 +13,9 @@
 # [-o, --output=filename]
 #	Save the report to the specified file. By default, output goes to STDOUT.
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: hostreport.rb,v 1.1 2002/10/29 20:06:17 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

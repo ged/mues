@@ -103,6 +103,8 @@ def main
 		"-I", "ext",
 		"server/bin/mues.rb",
 		'--init',
+		'--console',
+		'--loglevel=debug',
 		$DefaultConfig,
 		*ARGV
 	]

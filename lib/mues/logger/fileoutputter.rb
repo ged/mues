@@ -4,9 +4,9 @@
 # MUES::Logger::Outputter. This is a logger outputter that writes to a
 # file or other filehandle.
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: fileoutputter.rb,v 1.1 2003/11/27 05:45:49 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -27,11 +27,14 @@ class Logger
 	### This is an MUES::Logger::Outputter that writes to an IO object.
 	class FileOutputter < MUES::Logger::Outputter
 
-		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.1 $} )[1]
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# CVS id tag
-		Rcsid = %q$Id: fileoutputter.rb,v 1.1 2003/11/27 05:45:49 deveiant Exp $
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# The default description
 		DefaultDescription = "File Outputter"

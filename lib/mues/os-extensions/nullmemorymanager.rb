@@ -11,9 +11,9 @@
 #   os = MUES::ObjectStore::load( 'foo', [], nil, 'Null' )
 #	...
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: nullmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -41,8 +41,15 @@ module MUES
 		class NullMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: nullmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
+
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
 
 
 			######

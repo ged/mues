@@ -8,9 +8,9 @@
 # 
 #   require 'mues/events/userevents'
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: userevents.rb,v 1.14 2003/10/13 05:13:31 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 

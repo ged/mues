@@ -3,7 +3,7 @@
 #	MUES Distribution Maker Script
 #	$Id: makedist.rb,v 1.12 2002/10/31 08:26:05 deveiant Exp $
 #
-#	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
+#	Copyright (c) 2001, 2002, 2004, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -26,10 +26,15 @@ Options = [
 
 ### End of configuration
 
+# SVN Revision
+SVNRev = %q$Rev$
 
-# Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.12 2002/10/31 08:26:05 deveiant Exp $
+# SVN Id
+SVNId = %q$Id$
+
+# SVN URL
+SVNURL = %q$URL$
+
 
 $Programs = {
 	'tar'	=> nil,

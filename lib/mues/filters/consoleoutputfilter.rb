@@ -10,9 +10,9 @@
 #   
 #   cof = MUES::ConsoleOutputFilter.instance
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: consoleoutputfilter.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -40,9 +40,19 @@ module MUES
 	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.15 2003/10/13 04:02:14 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default filter sort order number (See MUES::IOEventFilter)
 		DefaultSortPosition = 15
+
 
 		### A container module for MUES::SocketOutputFilter state contants.
 		module State

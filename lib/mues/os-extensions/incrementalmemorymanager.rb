@@ -22,9 +22,9 @@
 # 
 #   (see MemoryManager.rb)
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: incrementalmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -51,8 +51,16 @@ module MUES
 		class IncrementalMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.7 2003/10/13 04:02:12 deveiant Exp $
+
+			# SVN Revision
+			SVNRev = %q$Rev$
+
+			# SVN Id
+			SVNId = %q$Id$
+
+			# SVN URL
+			SVNURL = %q$URL$
+
 
 			### Create a new IncrementalMemoryManager object.
 			def initialize( *args )

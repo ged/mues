@@ -10,9 +10,9 @@
 #	proxy = MUES::ReactorProxy::new( reactor, ioObject )
 #	proxy.register( :read, :write, &method(:reactorEventHandler) )
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: reactorproxy.rb,v 1.6 2003/10/13 04:02:16 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -36,8 +36,15 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
-		Rcsid = %q$Id: reactorproxy.rb,v 1.6 2003/10/13 04:02:16 deveiant Exp $
+
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		### Instantiate and return a new ReactorProxy for the specified
