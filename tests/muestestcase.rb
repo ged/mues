@@ -12,9 +12,9 @@
 #	# Allow the unit test to be run from the base dir, or from tests/mues/ or
 #	# similar:
 #	begin
-#		require 'tests/muesunittest'
+#		require 'tests/muestestcase'
 #	rescue
-#		require '../muesunittest'
+#		require '../muestestcase'
 #	end
 #
 #	require 'mysomething'
@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-#  $Id: muestestcase.rb,v 1.7 2002/10/25 05:09:53 deveiant Exp $
+#  $Id: muestestcase.rb,v 1.8 2003/08/04 02:45:03 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,95 +49,129 @@
 #
 # 
 
-if File.directory? "lib"
-	$:.unshift "lib", "ext", "tests"
-elsif File.directory? "../lib"
-	$:.unshift "../lib", "../ext", "tests", ".."
+begin
+	basedir = File::dirname( File::dirname(__FILE__) )
+	unless $LOAD_PATH.include?( "#{basedir}/lib" )
+		$LOAD_PATH.unshift "#{basedir}/lib",
+			"#{basedir}/ext",
+			"#{basedir}/tests" 
+	end
 end
 
 require "test/unit"
+require "test/unit/mock"
 
-# Require the mock object lib
-require "mock"
+require "mues"
 
-
-### Test case class
 module MUES
+
+	### The abstract base class for MUES test cases.
 	class TestCase < Test::Unit::TestCase
 
-		# Set some ANSI escape code constants (Shamelessly stolen from Perl's
-		# Term::ANSIColor by Russ Allbery <rra@stanford.edu> and Zenin <zenin@best.com>
-		AnsiAttributes = {
-			'clear'      => 0,
-			'reset'      => 0,
-			'bold'       => 1,
-			'dark'       => 2,
-			'underline'  => 4,
-			'underscore' => 4,
-			'blink'      => 5,
-			'reverse'    => 7,
-			'concealed'  => 8,
-
-			'black'      => 30,   'on_black'   => 40, 
-			'red'        => 31,   'on_red'     => 41, 
-			'green'      => 32,   'on_green'   => 42, 
-			'yellow'     => 33,   'on_yellow'  => 43, 
-			'blue'       => 34,   'on_blue'    => 44, 
-			'magenta'    => 35,   'on_magenta' => 45, 
-			'cyan'       => 36,   'on_cyan'    => 46, 
-			'white'      => 37,   'on_white'   => 47
-		}
-
-		# ANSI escape to move to the previous line and clear it
-		ErasePreviousLine = "\033[A\033[K"
+		class << self
+			@methodCounter = 0
+			attr_accessor :methodCounter
+		end
 
 
-		### Returns a String containing the specified ANSI escapes suitable for
-		### inclusion in another string. The <tt>attributes</tt> should be one
-		### or more of the keys of AnsiAttributes.
-		def ansiCode( *attributes )
-			attr = attributes.collect {|a| AnsiAttributes[a] ? AnsiAttributes[a] : nil}.compact.join(';')
-			if attr.empty? 
-				return ''
-			else
-				return "\e[%sm" % attr
-			end
+		### Inheritance callback -- adds @setupBlocks and @teardownBlocks ivars
+		### and accessors to the inheriting class.
+		def self::inherited( klass )
+			klass.module_eval {
+				@setupBlocks = []
+				@teardownBlocks = []
+
+				class << self
+					attr_accessor :setupBlocks
+					attr_accessor :teardownBlocks
+				end
+			}
+			klass.methodCounter = 0
+		end
+		
+
+
+		### Output the specified <tt>msgs</tt> joined together to
+		### <tt>STDERR</tt> if <tt>$DEBUG</tt> is set.
+		def self::debugMsg( *msgs )
+			return unless $DEBUG
+			self.message "DEBUG>>> %s" % msgs.join('')
 		end
 
 		### Output the specified <tt>msgs</tt> joined together to
 		### <tt>STDOUT</tt>.
-		def message( *msgs )
-			$stdout.puts msgs.join('')
-			$stdout.flush
-		end
-
-		### Output the specified <tt>msgs</tt> joined together to
-		### <tt>STDERR</tt> if <tt>$DEBUG</tt> is set.
-		def debugMsg( *msgs )
-			return unless $DEBUG
-			$stderr.puts "%sDEBUG>>> %s %s" %
-				[ ansiCode('bold', 'red'), msgs.join(''), ansiCode('reset') ]
+		def self::message( *msgs )
+			$stderr.puts msgs.join('')
 			$stderr.flush
 		end
 
-		### Replace the previous line with the specified <tt>msgs</tt>.
-		def replaceMessage( *msgs )
-			print ErasePreviousLine
-			message( *msg )
+
+		### Add a setup block for the current testcase
+		def self::addSetupBlock( &block )
+			self.methodCounter += 1
+			newMethodName = "setup_#{self.methodCounter}".intern
+			define_method( newMethodName, &block )
+			self.setupBlocks.push newMethodName
 		end
+			
+		### Add a teardown block for the current testcase
+		def self::addTeardownBlock( &block )
+			self.methodCounter += 1
+			newMethodName = "teardown_#{self.methodCounter}".intern
+			define_method( newMethodName, &block )
+			self.teardownBlocks.unshift newMethodName
+		end
+			
+
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
+
+		### Forward-compatibility method for namechange in Test::Unit
+		def setup( *args )
+			self.class.setupBlocks.each {|sblock|
+				debugMsg "Calling setup block method #{sblock}"
+				self.send( sblock )
+			}
+			super( *args )
+		end
+		alias_method :set_up, :setup
+
+
+		### Forward-compatibility method for namechange in Test::Unit
+		def teardown( *args )
+			super( *args )
+			self.class.teardownBlocks.each {|tblock|
+				debugMsg "Calling teardown block method #{tblock}"
+				self.send( tblock )
+			}
+		end
+		alias_method :tear_down, :teardown
+
+
+		### Instance alias for the like-named class method.
+		def message( *msgs )
+			self.class.message( *msgs )
+		end
+
+
+		### Instance alias for the like-named class method
+		def debugMsg( *msgs )
+			self.class.debugMsg( *msgs )
+		end
+
 
 		### Output a separator line made up of <tt>length</tt> of the specified
 		### <tt>char</tt>.
 		def writeLine( length=75, char="-" )
-			puts "\r" + (char * length )
+			$stderr.puts "\r" + (char * length )
 		end
 
 
 		### Output a header for delimiting tests
-		def testHeader( desc )
+		def printTestHeader( desc )
 			return unless $VERBOSE || $DEBUG
-			message "%s>>> %s <<<%s" % 
-				[ ansiCode(%w{bold white on_blue}), desc, ansiCode('reset') ]
+			message ">>> %s <<<" % desc
 		end
 
 
@@ -149,50 +183,55 @@ module MUES
 			GC.start
 		end
 
+
 		### Output the name of the test as it's running if in verbose mode.
 		def run( result )
-			$stderr.puts self.name if $VERBOSE
+			$stderr.puts self.name if $VERBOSE || $DEBUG
 			super
 		end
 
 
-		### Additional assertion methods
+		#############################################################
+		###	E X T R A   A S S E R T I O N S
+		#############################################################
 
-		### Passes if <tt>actual</tt> matches the given <tt>regexp</tt>.
-		def assert_match( regexp, actual, message=nil )
-			_wrap_assertion {
-				assert(regexp.kind_of?(Regexp), "The first parameter to assert_matches should be a Regexp.")
-				full_message = build_message(message, actual, regexp) {
-					| arg1, arg2 |
-					"Expected <#{arg1}> to match #{arg2.inspect}"
-				}
-				assert_block(full_message) {
-					regexp.match( actual )
-				}
+		### Negative of assert_respond_to
+		def assert_not_respond_to( obj, meth )
+			msg = "%s expected NOT to respond to '%s'" %
+				[ obj.inspect, meth ]
+			assert_block( msg ) {
+				!obj.respond_to?( meth )
 			}
 		end
 
 
-
-		### This was copied from test/unit.rb because I can't call it from
-		### here. Grrr... one shouldn't make methods useful to subclassers
-		### private.
-
-		def _wrap_assertion # :nodoc:
-			@_assertion_wrapped ||= false
-			if (!@_assertion_wrapped)
-				@_assertion_wrapped = true
-				begin
-					add_assertion
-					return yield
-				ensure
-					@_assertion_wrapped = false
-				end
-			else    
-				return yield
-			end
+		### Assert that the instance variable specified by +sym+ of an +object+
+		### is equal to the specified +value+. The '@' at the beginning of the
+		### +sym+ will be prepended if not present.
+		def assert_ivar_equal( value, object, sym )
+			sym = "@#{sym}".intern unless /^@/ =~ sym.to_s
+			msg = "Instance variable '%s'\n\tof <%s>\n\texpected to be <%s>\n" %
+				[ sym, object.inspect, value.inspect ]
+			msg += "\tbut was: <%s>" % object.instance_variable_get(sym)
+			assert_block( msg ) {
+				value == object.instance_variable_get(sym)
+			}
 		end
 
-	end # module TestCase
+
+		### Assert that the specified +object+ has an instance variable which
+		### matches the specified +sym+. The '@' at the beginning of the +sym+
+		### will be prepended if not present.
+		def assert_has_ivar( sym, object )
+			sym = "@#{sym}" unless /^@/ =~ sym.to_s
+			msg = "Object <%s> expected to have an instance variable <%s>" %
+				[ object.inspect, sym ]
+			assert_block( msg ) {
+				object.instance_variables.include?( sym.to_s )
+			}
+		end
+
+	end # class TestCase
+
 end # module MUES
 
