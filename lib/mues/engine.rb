@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.31 2002/10/25 00:33:40 deveiant Exp $
+# $Id: engine.rb,v 1.32 2002/10/25 03:07:09 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.31 2002/10/25 00:33:40 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.32 2002/10/25 03:07:09 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1141,7 +1141,6 @@ module MUES
 				end
 			end
 			self.log.notice( "Exiting event loop." )
-			ignoreSignals()
 
 			return @tick
 		end
@@ -1364,7 +1363,7 @@ module MUES
 			ios.addFilters( event.filter )
 
 			### Create the login session and add it to our collection
-			session = LoginSession::new( @config, ios, event.filter.peerName )
+			session = LoginSession::new( @config, ios, event.filter )
 			session.debugLevel = 1
 			@loginSessionsMutex.synchronize(Sync::EX) {
 				@loginSessions.push session
@@ -1432,7 +1431,7 @@ module MUES
 
 			# Set last login time and host in the user record
 			user.lastLoginDate = Time.now
-			user.lastHost = loginSession.remoteHost
+			user.lastHost = loginSession.peerName
 
 			### If the user object is already active (ie., already connected
 			### and has a shell), remove the old socket connection and
@@ -1519,28 +1518,28 @@ module MUES
 
 		### Handle a user authentication attempt event.
 		def handleLoginSessionAuthEvent( event )
-			session = event.session
-			remoteHost = event.remoteHost
-			username = event.username
-			password = event.password
-			user = nil
+			session		= event.session
+			filter		= event.filter
+			username	= event.username
+			password	= event.password
+			user		= nil
 
-			self.log.info( "Authentication event from session %s for %s@%s: %s" %
-					   [ session.id, username, remoteHost, password.gsub(/./, '*') ] )
+			self.log.info "Authentication event from session %s for %s@%s: %s" %
+				[ session.id, username, filter.peerName, password.gsub(/./, '*') ]
 			results = []
 
 			### :TODO: Check user bans
 
 			# If we're running in init mode, the user is logging in as 'admin',
 			# and they're coming from the localhost, create a dummy admin user.
-			if self.initMode? && username == 'admin' && remoteHost =~ /^(?:localhost|127\.0\.0\.1)$/
-				self.log.notice( "ADMIN connection (init mode) from %s" % remoteHost )
+			if self.initMode? && username == 'admin' && filter.isLocal?
+				self.log.notice( "ADMIN connection (init mode) from %s" % filter.peerName )
 				user = MUES::User::new( :accountType => 'admin',
 									    :username => 'admin',
 									    :realname => 'Init Mode Admin',
 									    :emailAddress => 'muesadmin@localhost',
 									    :lastLoginDate => Time::now,
-									    :lastHost => remoteHost )
+									    :lastHost => filter.peerName )
 				results << event.successCallback.call( user )
 
 			# Otherwise, try to fetch the user from the objecstore and authenticate her
@@ -1667,7 +1666,7 @@ module MUES
 		def handleSignalEvent( event )
 			self.log.crit( "Caught SIG#{event.signal}" )
 
-			if $stderr.tty? && ! $stderr.eof?
+			if $stderr.tty?
 				$stderr.puts ">>> %s <<<" % event.message
 			end
 
@@ -1676,6 +1675,7 @@ module MUES
 				self.dispatchEvents( MUES::ReconfigEvent::new )
 
 			when "TERM", "INT"
+				ignoreSignals()
 				self.dispatchEvents( MUES::EngineShutdownEvent::new(event) )
 
 			else
