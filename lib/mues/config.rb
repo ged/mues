@@ -19,126 +19,128 @@
 #
 # This is an example config file.
 # 
-#    <?xml version="1.0" encoding="UTF-8"?>
-#    <!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
-#    
-#    <muesconfig version="1.1">
-#    
-#      <!-- General server configuration -->
-#      <general>
-#    	<server-name>Experimental MUD</server-name>
-#    	<server-description>An experimental MUES server.</server-description>
-#    	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
-#    	<root-dir>server</root-dir>
-#      </general>
-#    
-#    
-#      <!-- Engine (core) configuration -->
-#      <engine>
-#    
-#    	<!-- Number of floating-point seconds between tick events -->
-#    	<tick-length>1.0</tick-length>
-#    	<exception-stack-size>10</exception-stack-size>
-#    	<debug-level>0</debug-level>
-#    
-#    	<!-- Engine objectstore config -->
-#    	<objectstore>
-#    	  <backend class="BerkeleyDB"></backend>
-#    	  <memorymanager class="Simple">
-#    		<param name="trash_rate">50</param>
-#    	  </memorymanager>
-#    	</objectstore>
-#    
-#    	<!-- Listener objects -->
-#    	<listeners>
-#    
-#    	  <!-- Telnet listener: MUES::TelnetOutputFilter -->
-#    	  <listener name="telnet">
-#    		<filter-class>MUES::TelnetOutputFilter</filter-class>
-#    		<bind-port>23</bind-port>
-#    		<bind-address>0.0.0.0</bind-address>
-#    		<use-wrapper>true</use-wrapper>
-#    	  </listener>
-#    
-#    	  <!-- Client listener: MUES::ClientOutputFilter (BEEP) -->
-#    	  <listener name="client">
-#    		<filter-class>MUES::ClientOutputFilter</filter-class>
-#    		<bind-port>2424</bind-port>
-#    		<bind-address>0.0.0.0</bind-address>
-#    		<use-wrapper>false</use-wrapper>
-#    	  </listener>
-#    	</listeners>
-#      </engine>
-#    
-#    
-#      <!-- Logging system configuration (Log4R format) -->
-#      <logging>
-#    	<log4r_config>
-#    
-#    	  <!-- Log4R pre-config -->
-#    	  <pre_config>
-#    		<parameters>
-#    		  <logpath>server/log</logpath>
-#    		  <mypattern>%l [%d] %m</mypattern>
-#    		</parameters>
-#    	  </pre_config>
-#    
-#    	  <!-- Log Outputters -->
-#    	  <outputter type="IOOutputter" name="console" fdno="2" />
-#    	  <outputter type="FileOutputter" name="serverlog"
-#    		filename="#{logpath}/server.log" trunc="false" />
-#    	  <outputter type="FileOutputter" name="errorlog"
-#    		filename="#{logpath}/error.log" trunc="true" />
-#    	  <outputter type="FileOutputter" name="environmentlog"
-#    		filename="#{logpath}/environments.log" trunc="false" />
-#    	  <outputter type="EmailOutputter" name="mailadmin">
-#    		<server>localhost</server>
-#    		<port>25</port>
-#    		<from>mueslogs@localhost</from>
-#    		<to>muesadmin@localhost</to>
-#    	  </outputter>
-#    
-#    	  <!-- Loggers -->
-#    	  <logger name="MUES"   level="INFO"  outputters="serverlog" />
-#    	  <logger name="error"  level="WARN"  outputters="errorlog,console" />
-#    	  <logger name="dire"   level="ERROR" outputters="errorlog,console,mailadmin" />
-#    	</log4r_config>
-#      </logging>
-#    
-#    
-#      <!-- Environments which are to be loaded at startup -->
-#      <environments>
-#    	<environment name="FaerieMUD" class="FaerieMUD::World">
-#    	  <objectstore name="FaerieMUD">
-#    		<backend class="BerkeleyDB"></backend>
-#    		<memorymanager class="PMOS"></memorymanager>
-#    	  </objectstore>
-#    	</environment>
-#    
-#    	<environment name="testing" class="MUES::ObjectEnv">
-#    	  <objectstore name="testing-objectenv">
-#    		<backend class="Flatfile" />
-#    		<memorymanager class="Simple">
-#    		  <param name="trash_rate">100</param>
-#    		</memorymanager>
-#    	  </objectstore>
-#    	</environment>
-#      </environments>
-#    
-#    
-#      <!-- Services which are to be loaded at startup -->
-#      <services>
-#    	<service name="objectstore" class="MUES::ObjectStoreService" />
-#    	<service name="soap" class="MUES::SOAPService">
-#    	  <param name="listen-port">7680</param>
-#    	  <param name="listen-address">0.0.0.0</param>
-#    	  <param name="use-wrappers">true</param>
-#    	</service>
-#    	<service name="physics" class="MUES::ODEService" />
-#    	<service name="weather" class="MUES::WeatherService" />
-#      </services>
-#    
-#    </muesconfig>
+#	<?xml version="1.0" encoding="UTF-8"?>
+#	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
+#	
+#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 00:48:05 $">
+#	
+#	  <!-- General server configuration -->
+#	  <general>
+#		<server-name>Experimental MUD</server-name>
+#		<server-description>An experimental MUES server.</server-description>
+#		<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
+#		<root-dir>server</root-dir>
+#	  </general>
+#	
+#	
+#	  <!-- Engine (core) configuration -->
+#	  <engine>
+#	
+#		<!-- Number of floating-point seconds between tick events -->
+#		<tick-length>1.0</tick-length>
+#		<exception-stack-size>10</exception-stack-size>
+#		<debug-level>0</debug-level>
+#	
+#		<!-- Engine EventQueue configuration -->
+#		<eventqueue>
+#		  <!-- Minimum number of worker threads to have running at all times -->
+#		  <minworkers>5</minworkers>
+#	
+#		  <!-- Maximum number of worker threads to have running at any time -->
+#		  <maxworkers>50</maxworkers>
+#		  
+#		  <!-- What $SAFE should be set to running inside a worker thread -->
+#		  <safelevel>2</safelevel>
+#	
+#		  <!-- The number of seconds to wait before changing the number of worker
+#		  threads that are currently running -->
+#		  <threshold>2</threshold>
+#		</eventqueue>
+#	
+#		<!-- Engine objectstore config -->
+#		<objectstore name="mues">
+#		  <backend class="BerkeleyDB" />
+#		  <memorymanager class="Simple">
+#			<param name="interval">50</param>
+#		  </memorymanager>
+#		  <visitor class="ObjectSpaceVisitor" />
+#		</objectstore>
+#	
+#		<!-- Listener objects -->
+#		<listeners>
+#	
+#		  <!-- Telnet listener: MUES::TelnetOutputFilter -->
+#		  <listener name="telnet">
+#			<filter-class>MUES::TelnetOutputFilter</filter-class>
+#			<bind-port>23</bind-port>
+#			<bind-address>0.0.0.0</bind-address>
+#			<use-wrapper>true</use-wrapper>
+#		  </listener>
+#		  
+#		</listeners>
+#	  </engine>
+#	  
+#	
+#	  <!-- Logging system configuration (Log4R format) -->
+#	  <logging>
+#		<log4r_config>
+#	
+#		  <!-- Log4R pre-config -->
+#		  <pre_config>
+#			<parameter name="logpath" value="server/log" />
+#			<parameter name="mypattern" value="%l [%d] %m" />
+#		  </pre_config>
+#	
+#		  <!-- Log Outputters -->
+#		  <outputter type="IOOutputter" name="console" fdno="2" />
+#		  <outputter type="FileOutputter" name="serverlog"
+#			filename="#{logpath}/server.log" trunc="false" />
+#		  <outputter type="FileOutputter" name="errorlog"
+#			filename="#{logpath}/error.log" trunc="true" />
+#		  <outputter type="FileOutputter" name="environmentlog"
+#			filename="#{logpath}/environments.log" trunc="false" />
+#		  <outputter type="EmailOutputter" name="mailadmin" server="localhost"
+#			port="25" from="mueslogs@localhost" to="muesadmin@localhost" />
+#	
+#		  <!-- Loggers -->
+#		  <logger name="MUES"   level="INFO"  outputters="serverlog" />
+#		  <logger name="error"  level="WARN"  outputters="errorlog,console" />
+#		  <logger name="dire"   level="ERROR" outputters="errorlog,console,mailadmin" />
+#		</log4r_config>
+#	  </logging>
+#	
+#	  
+#	  <!-- Environments which are to be loaded at startup -->
+#	  <environments>
+#		<environment name="null" class="NullEnv">
+#		  <description>A testing environment without any surrounding.</description>
+#		  <objectstore name="FaerieMUD">
+#			<backend class="BerkeleyDB" />
+#			<memorymanager class="PMOS" />
+#		  </objectstore>
+#		</environment>
+#		
+#		<environment name="testing" class="MUES::ObjectEnv">
+#		  <description>A surroundings/object proving ground.</description>
+#		  <objectstore name="testing-objectenv">
+#			<backend class="Flatfile" />
+#			<memorymanager class="Simple">
+#			  <param name="interval">100</param>
+#			</memorymanager>
+#		  </objectstore>
+#		</environment>
+#	  </environments>
+#	
+#	  <commandshell class="MUES::CommandShell">
+#		<param name="reload-interval">50</param>
+#		<param name="default-prompt">mues&gt; </param>
+#		<param name="command-prefix">/</param>
+#		<commandspath>
+#		  <directory>server/commands</directory>
+#		</commandspath>
+#	  </commandshell>
+#	  
+#	</muesconfig>
 #
 # This would yield an object that you could use like this:
 # 
@@ -147,15 +149,15 @@
 #   Dir.chdir configObj.general.root_dir
 #   puts "Starting #{configObj.general.server_name}
 #
-#	# Sections can be interated over...
+#   # Sections can be interated over...
 #   configObj.engine.listeners.each {|listenerConfig|
 #
-#		# Tag attributes are treated like key-value pairs
-#		puts "Starting listener for #{listenerConfig['name']}"
-#		startListener( listenerConfig.filter_class,
-#		               listenerConfig.bind_address,
-#		               listenerConfig.bind_port,
-#		               listenerConfig.use_wrapper )
+#       # Tag attributes are treated like key-value pairs
+#       puts "Starting listener for #{listenerConfig['name']}"
+#       startListener( listenerConfig.filter_class,
+#                      listenerConfig.bind_address,
+#                      listenerConfig.bind_port,
+#                      listenerConfig.use_wrapper )
 #   }
 #
 # == Synopsis
@@ -166,12 +168,12 @@
 #   config.general.items
 #   # => ["server_name", "server_admin", "server_description", "root_dir"]
 #
-#	config.general.server_name
+#   config.general.server_name
 #   # => "Experimental MUD"
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.8 2002/07/07 18:26:05 deveiant Exp $
+# $Id: config.rb,v 1.9 2002/08/01 00:48:05 deveiant Exp $
 # 
 # == Authors
 # 
@@ -190,7 +192,6 @@ require 'rexml/document'
 
 require 'mues'
 require 'mues/Exceptions'
-require 'mues/Environment'
 
 
 module MUES
@@ -202,32 +203,43 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.8 2002/07/07 18:26:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.9 2002/08/01 00:48:05 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
 		### name or an IO object opened to the XML configuration source.
 		def initialize( source = nil )
 
+			@fileSource = nil
+			@loadTime = Time::now
+
 			# If no source is specified, it just gets the default config from
 			# the data section below.
 			if source.nil?
-				source = _getDefaultConfig
+				source = getDefaultConfig()
 				@xmldoc = REXML::Document::new( source )
 			else
 
 				# A source argument should be either a filename or an IO already
 				# opened to the config XML source.
-				unless source.kind_of?( String ) || source.kind_of?( IO )
-					raise TypeError "Source must be an IO or the name of a file"
+				if source.kind_of?( String )
+					@fileSource = source
+					io = File::new( source, "r" )
+				elsif source.kind_of?( IO )
+					io = source
+				else
+					raise TypeError, "Source must be an IO or the name of a file"
 				end
 
-				@xmldoc = REXML::Document::new( source )
+				@xmldoc = REXML::Document::new( io )
+				io.close
 			end
 
 			@mainSection = MUES::Config::Section::create( @xmldoc.root )
 			super()
+
+			return true
 		end
 
 		
@@ -242,6 +254,29 @@ module MUES
 
 		# The underlying XML document object
 		attr_reader :xmldoc
+
+
+		# Reload the configuration from the original source. Returns
+		# <tt>true</tt> if the configuration had changed and was successfully
+		# reloaded. If the config object was loaded without a file as the
+		# original source, this method will just return false.
+		def reload
+			return false unless @fileSource
+			unless File.readable?( @fileSource )
+				return false
+			end
+
+			initialize( @fileSource )
+		end
+
+
+		# Returns <tt>true</tt> if the source file for this configuration has
+		# changed. If the config object wasn't loaded from a file, or the file
+		# has not changed since it was read, <tt>false</tt> is returned.
+		def fileHasChanged?
+			return false unless @fileSource
+			return @loadTime < File.stat( @fileSource ).mtime
+		end
 
 
 		# Returns the configuration object as a string suitable for
@@ -292,7 +327,7 @@ module MUES
 		#########
 
 		### Return the source of the default configuration as a String.
-		def _getDefaultConfig
+		def getDefaultConfig
 
 			# Read through the source for this file, capturing everything
 			# between __END__ and __END_DATA__ tokens.
@@ -328,7 +363,7 @@ module MUES
 				checkType( xmlElement, REXML::Element )
 				@xmlElement = xmlElement
 				@parent = parent
-				@name = @xmlElement.name.gsub( '-', '_' )
+				@name = @xmlElement.name.gsub( /-/, '_' )
 				@subsections = {}
 				@items = {}
 
@@ -382,7 +417,7 @@ module MUES
 
 			### Get the element attribute by the <tt>name</tt> specified.
 			def []( name )
-				name = name.to_s.gsub( '_', '-' ).downcase
+				name = name.to_s.gsub( /_/, '-' ).downcase
 				return @xmlElement.attributes[ name ]
 			end
 
@@ -390,7 +425,7 @@ module MUES
 			### Set the element's attribute specified by +name+ to the +value+
 			### specified.
 			def []=( name, value )
-				name = name.to_s.gsub( '_', '-' ).downcase
+				name = name.to_s.gsub( /_/, '-' ).downcase
 				@xmlElement.attributes[ name ] = value.to_s
 			end
 
@@ -506,7 +541,7 @@ module MUES
 			### the specified <tt>name</tt>. <EM>Aliases:</EM>
 			### <tt>subsection?</tt>.
 			def has_subsection?( name )
-				key = name.downcase.gsub('-', '_')
+				key = name.downcase.gsub(/-/, '_')
 				@subsections.has_key?( key ) && @subsections[ key ].kind_of?( MUES::Config::Section )
 			end
 			alias :subsection? :has_subsection?
@@ -542,7 +577,7 @@ module MUES
 
 			### Autoloading element-method constructor
 			def method_missing( sym, *args )
-				methodName = sym.id2name.gsub( "-", "_" )
+				methodName = sym.id2name.gsub( /-/, "_" )
 				super( sym, *args ) unless 
 					@subsections.key?( methodName ) || @items.key?( methodName )
 
@@ -576,7 +611,7 @@ module MUES
 			### name.
 			def addSubelement( element )
 				checkType( element, REXML::Element )
-				name = element.name.gsub( '-', '_' )
+				name = element.name.gsub( /-/, '_' )
 
 				# Create a new item for whichever section is appropriate
 				# based on whether or not it has sub-elements, and set the
@@ -629,10 +664,10 @@ module MUES
 			# (<tt>true</tt> or <tt>false</tt> equivalent)
 			def asBoolean( item )
 				return case item.to_s
-					   when /^false$/i, /^no$/i, "0", 0
+					   when /^false$/i, /^no$/i, /^off$/i
 						   false
 					   else
-						   true
+						   item
 					   end
 			end
 
@@ -698,6 +733,20 @@ module MUES
 		end # class EngineSection 
 
 
+		### The EventQueue configuration section class -- this section contains
+		### configuration items for the MUES::EventQueue that runs in the
+		### Engine.
+		class EventQueueSection < MUES::Config::Section
+		end # class EventQueueSection 
+
+
+		### The Login configuration section class -- this section contains
+		### configuration items for controlling user login via
+		### MUES::LoginSession objects.
+		class LoginSection < MUES::Config::Section
+		end # class LoginSection
+
+
 		### The logging configuration section class -- this section contains a
 		### Log4R-style XML configuration for configuring the server's internal
 		### logging.
@@ -736,22 +785,6 @@ module MUES
 		### MUES::Environment objects to load at server startup.
 		class EnvironmentsSection < MUES::Config::EnumerableSection
 
-			######
-			public
-			######
-
-			### Create and return MUES::Environment objects that were specified
-			### by this section.
-			def getConfiguredEnvironments( config )
-				environments = []
-
-				# Iterate 
-				self.each {|name,env|
-					MUES::Environment::create(  )
-				}
-			end
-
-
 			#########
 			protected
 			#########
@@ -763,10 +796,19 @@ module MUES
 				checkType( env, REXML::Element )
 
 				if env.name == 'environment'
+					parameters = {}
+					env.elements.each("param") {|param|
+						parameters[ param.attributes["name"] ] = asBoolean( param.text )
+					}
+
 					ostore = Section::create( env.elements["objectstore"], self )
+					description = env.elements["description"].text
+
 					@items[ env.attributes["name"] ] = {
-						'class'		=> env.attributes["class"],
-						'ostore'	=> ostore,
+						'class'			=> env.attributes["class"],
+						'description'	=> description,
+						'parameters'	=> parameters,
+						'ostore'		=> ostore,
 					}
 
 				else
@@ -775,39 +817,6 @@ module MUES
 				end
 			end
 		end # class EnvironmentsSection 
-
-
-		### Services configuration section. This section contains the list of
-		### MUES::Service objects which should be loaded at Engine startup.
-		class ServicesSection < MUES::Config::EnumerableSection
-
-
-			######
-			public
-			######
-
-			### Callback -- load the specifications of a service to be loaded
-			### from the REXML::Element <tt>service</tt>.
-			def addSubelement( service )
-				checkType( service, REXML::Element )
-
-				if service.name == 'service'
-					parameters = {}
-					service.elements.each("param") {|param|
-						parameters[ param.attributes["name"] ] = param.text
-					}
-
-					@items[ service.attributes["name"] ] = {
-						'class'			=> service.attributes["class"],
-						'parameters'	=> parameters
-					}
-
-				else
-					raise MUES::ConfigError,
-						"Unknown subelement #{service.name} in services section"
-				end
-			end
-		end # class ServicesSection 
 
 
 		### Generic ObjectStore configuration section -- this section is used as
@@ -819,7 +828,6 @@ module MUES
 			def initialize( element, parent )
 				@backend = nil
 				@memoryManager = nil
-				@visitor = nil
 				@argHash = {}
 
 				super( element, parent )
@@ -838,10 +846,6 @@ module MUES
 			# memory-manager.
 			attr_reader :memoryManager
 
-			# The name of the visitor class to be used when traversing the
-			# objectspace, if specified.
-			attr_reader :visitor
-
 			# The arguments hash used to configure the MM and Backend
 			attr_reader :argHash
 
@@ -849,13 +853,12 @@ module MUES
 			### Inspect method -- returns a stringified version of the object
 			### suitable for debugging.
 			def inspect
-				"<%s '%s' (%d): Backend: %s, MemoryManager: %s, Visitor: %s>" % [
+				"<%s '%s' (%d): Backend: %s, MemoryManager: %s>" % [
 					self.class.name,
 					self['name'],
 					self.id,
 					self.backend.inspect,
 					self.memoryManager.inspect,
-					self.visitor.inspect,
 				]
 			end
 
@@ -864,7 +867,7 @@ module MUES
 			### <tt>element</tt> to the objectstore configuration.
 			def addSubelement( element )
 				checkType( element, REXML::Element )
-				name = element.name.gsub( '-', '_' )
+				name = element.name.gsub( /-/, '_' )
 
 				# Parse the elements that belong to an ObjectStoreSection and
 				# any parameters that belong to them.
@@ -876,9 +879,9 @@ module MUES
 					params = {}
 					element.each_element {|param|
 						raise MUES::ConfigError,
-							"Unknown element #{element.name} in memorymanager" unless
+							"Unknown element #{param.name} in memorymanager" unless
 							param.name = 'param'
-						params[ param.attributes["name"] ] = param.text
+						params[ param.attributes["name"].intern ] = param.text
 					}
 					@memoryManager = className
 					@argHash[:memoryManager] = params
@@ -889,24 +892,16 @@ module MUES
 					params = {}
 					element.each_element {|param|
 						raise MUES::ConfigError,
-							"Unknown element #{element.name} in memorymanager" unless
+							"Unknown element #{param.name} in backend" unless
 							param.name = 'param'
-						params[ param.attributes["name"] ] = param.text
+						params[ param.attributes["name"].intern ] = param.text
 					}
 					@backend = className
 					@argHash[:backend] = params
 
-				when /visitor/
-					className = element.attributes["class"]
-					params = {}
-					element.each_element {|param|
-						raise MUES::ConfigError,
-							"Unknown element #{element.name} in visitor" unless
-							param.name = 'param'
-						params[ param.attributes["name"] ] = param.text
-					}
-					@visitor = className
-					@argHash[:visitor] = params
+				when /param/i
+					key = element.attributes["name"].to_s.intern
+					@argHash[key] = element.text
 
 				else
 					raise MUES::ConfigError,
@@ -932,12 +927,17 @@ module MUES
 			def addSubelement( listener )
 				checkType( listener, REXML::Element )
 
+				name = listener.attributes["name"]
+
 				if listener.name == 'listener'
-					@items[ listener.attributes["name"] ] = {
-						'filterClass'	=> listener.elements["filter-class"].text,
-						'bindPort'		=> listener.elements["bind-port"].text.to_i,
-						'bindAddr'		=> listener.elements["bind-address"].text,
-						'useWrapper'	=> asBoolean( listener.elements["use-wrapper"].text )
+					parameters = {}
+					listener.elements.each("param") {|param|
+						parameters[ param.attributes["name"] ] = param.text
+					}
+
+					@items[ name ] = {
+						'class'			=> listener.attributes["class"] || name.capitalize,
+						'parameters'	=> parameters,
 					}
 
 				else
@@ -947,6 +947,74 @@ module MUES
 			end
 		end
 
+		### CommandShell configuration section. This section contains the
+		### configuration values for the MUES::CommandShell, or an alternative
+		### class to use instead.
+		class CommandShellSection < MUES::Config::Section
+
+			### Create and return a new MUES::Config::CommandShellSection object.
+			def initialize( element, parent )
+				@parameters		= {}
+				@commandPath	= []
+				@shellClass		= element.attributes['shell-class']
+				@tableClass		= element.attributes['table-class']
+					 
+				super( element, parent )
+			end
+
+			######
+			public
+			######
+
+			# The Array of directories to search for command source files.
+			attr_reader :commandPath
+
+			# The Hash of parameters specified for the command shell
+			attr_reader :parameters
+
+			# The command-shell class to use (potentially nil)
+			attr_reader :shellClass
+
+			# The command-table class to use (potentially nil)
+			attr_reader :tableClass
+
+
+			### Callback -- load the specifications for the command shell from
+			### the REXML::Element <tt>commandshell</tt>.
+			def addSubelement( elem )
+				checkType( elem, REXML::Element )
+
+				case elem.name
+
+				when 'commandspath'
+					elem.each_element {|dir|
+						raise MUES::ConfigError,
+							"Unknown element #{dir.name} in commandshell/commandspath" unless
+							dir.name = 'directory'
+						@commandPath << dir.text
+					}
+
+				when 'param'
+					@parameters[ elem.attributes['name'] ] = elem.text
+
+				else
+					raise MUES::ConfigError,
+						"Unknown subelement #{commandshell.name} in commandshell section"
+				end
+			end
+
+			### Provide a stringified representation of the commandshell section
+			def inspect
+				"<%s (%d): Parameters: %s, Command Path: %s>" % [
+					self.class.name,
+					self.id,
+					self.parameters.inspect,
+					self.commandPath.inspect,
+				]
+			end
+
+		end # class CommandShellSection 
+
 	end # class Config
 end # module MUES
 
@@ -954,117 +1022,54 @@ end # module MUES
 # Embed the default configuration
 __END__
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
+<!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN" "../docs/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="07-Jul-2002 10:02:25">
-
-  <!-- General server configuration -->
+<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 00:48:05 $">
   <general>
-	<server-name>Experimental MUD</server-name>
-	<server-description>An experimental MUES server.</server-description>
-	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
-	<root-dir>server</root-dir>
+	<server-name>FaerieMUD</server-name>
+	<server-description>This is an experimental MUES server.</server-description>
+	<server-admin>ged@FaerieMUD.org</server-admin>
+	<root-dir>/var/mud</root-dir>
   </general>
 
-
-  <!-- Engine (core) configuration -->
   <engine>
-
-	<!-- Number of floating-point seconds between tick events -->
-	<tick-length>1.0</tick-length>
-	<exception-stack-size>10</exception-stack-size>
-	<debug-level>0</debug-level>
-	
-	<!-- Engine objectstore config -->
-	<objectstore name="mues">
-	  <backend class="BerkeleyDB"></backend>
-	  <memorymanager class="Simple">
-		<param name="interval">50</param>
-	  </memorymanager>
-	  <visitor class="ObjectSpaceVisitor">
+	<eventqueue>
+	  <maxworkers>50</maxworkers>
+	  <minworkers>5</minworkers>
+	  <safelevel>2</safelevel>
+	  <threshold>0.5</threshold>
+	</eventqueue>
+	<objectstore name="engine">
+	  <backend class="Flatfile" />
+	  <memorymanager class="Null" />
 	</objectstore>
-
-	<!-- Listener objects -->
 	<listeners>
-
-	  <!-- Telnet listener: MUES::TelnetOutputFilter -->
-	  <listener name="telnet">
-		<filter-class>MUES::TelnetOutputFilter</filter-class>
-		<bind-port>23</bind-port>
-		<bind-address>0.0.0.0</bind-address>
-		<use-wrapper>true</use-wrapper>
-	  </listener>
-	  
-	  <!-- Client listener: MUES::ClientOutputFilter (BEEP) -->
-	  <listener name="client">
-		<filter-class>MUES::ClientOutputFilter</filter-class>
-		<bind-port>2424</bind-port>
-		<bind-address>0.0.0.0</bind-address>
-		<use-wrapper>false</use-wrapper>
-	  </listener>
+	  <listener name="telnet" class="Telnet" />
 	</listeners>
   </engine>
-  
 
-  <!-- Logging system configuration (Log4R format) -->
+  <login>
+	<maxtries>3</maxtries>
+	<timeout>300</timeout>
+	<banner>FaerieMUD MUES</banner>
+	<userprompt>User: </userprompt>
+	<passprompt>Pass: </passprompt>
+  </login>
+
   <logging>
 	<log4r_config>
-
-	  <!-- Log4R pre-config -->
 	  <pre_config>
-		<parameter name="logpath" value="server/log" />
-		<parameter name="mypattern" value="%l [%d] %m" />
 	  </pre_config>
-
-	  <!-- Log Outputters -->
-	  <outputter type="IOOutputter" name="console" fdno="2" />
-	  <outputter type="FileOutputter" name="serverlog"
-		filename="#{logpath}/server.log" trunc="false" />
-	  <outputter type="FileOutputter" name="errorlog"
-		filename="#{logpath}/error.log" trunc="true" />
-	  <outputter type="FileOutputter" name="environmentlog"
-		filename="#{logpath}/environments.log" trunc="false" />
-	  <outputter type="EmailOutputter" name="mailadmin" server="localhost"
-		port="25" from="mueslogs@localhost" to="muesadmin@localhost" />
-
-	  <!-- Loggers -->
-	  <logger name="MUES"   level="INFO"  outputters="serverlog" />
-	  <logger name="error"  level="WARN"  outputters="errorlog,console" />
-	  <logger name="dire"   level="ERROR" outputters="errorlog,console,mailadmin" />
 	</log4r_config>
   </logging>
 
-  
-  <!-- Environments which are to be loaded at startup -->
   <environments>
-	<environment name="FaerieMUD" class="FaerieMUD::World">
-	  <objectstore name="FaerieMUD">
-		<backend class="BerkeleyDB" />
-		<memorymanager class="PMOS" />
-	  </objectstore>
-	</environment>
-	
-	<environment name="testing" class="MUES::ObjectEnv">
-	  <objectstore name="testing-objectenv">
-		<backend class="Flatfile" />
-		<memorymanager class="Simple">
-		  <param name="interval">100</param>
-		</memorymanager>
-	  </objectstore>
-	</environment>
   </environments>
 
-  
-  <!-- Services which are to be loaded at startup -->
-  <services>
-	<service name="objectstore" class="MUES::ObjectStoreService" />
-	<service name="soap" class="MUES::SOAPService">
-	  <param name="listen-port">7680</param>
-	  <param name="listen-address">0.0.0.0</param>
-	  <param name="use-wrappers">true</param>
-	</service>
-	<service name="physics" class="MUES::ODEService" />
-	<service name="weather" class="MUES::WeatherService" />
-  </services>
-
+  <commandshell>
+	<commandspath>
+	  <directory>server/shellCommands/</directory>
+	</commandspath>
+  </commandshell>
 </muesconfig>
+
