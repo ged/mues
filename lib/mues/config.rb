@@ -12,7 +12,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.31 2004/02/29 04:24:03 deveiant Exp $
+# $Id: config.rb,v 1.32 2004/03/03 16:06:50 aidan Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		extend Forwardable
 
 		### Class constants/methods
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
-		Rcsid = %q$Id: config.rb,v 1.31 2004/02/29 04:24:03 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
+		Rcsid = %q$Id: config.rb,v 1.32 2004/03/03 16:06:50 aidan Exp $
 
 		def self::debugMsg( *msgs )
 			$stderr.puts msgs.join
@@ -85,7 +85,7 @@ module MUES
 				:objectStore => {
 					:name			=> 'engine',
 					:backend		=> 'BerkeleyDB',
-					:memoryManager	=> 'Null',
+					:memorymanager	=> 'Null',
 					:visitor		=> nil,
 					:argHash		=> {},
 				},
@@ -115,7 +115,7 @@ module MUES
 			},
 
 			:environments => {
-				:envPath	=> ['#{general.rootDir}/server/environments'],
+				:envPath	=> ["environments"],
 				:autoload	=> [
 					{
 						:kind => 'Null',
@@ -127,6 +127,7 @@ module MUES
 			},
 
 			:commandShell => {
+				:commandPath => [],
 				:shellClass => nil,
 				:tableClass	=> nil,
 				:parserClass => nil,
@@ -347,7 +348,7 @@ module MUES
 			configHash = {
 				:name => os.name,
 				:backend => os.backend,
-				:memmgr => os.memoryManager,
+				:memmgr => os.memorymanager,
 				:config => os.argHash,
 			}
 
@@ -390,7 +391,7 @@ module MUES
 			cshell = self.commandShell
 			MUES::CommandShell::Factory::new(
 				cshell.commandPath,
-				cshell.parames,
+				cshell.params.to_h,
 				cshell.shellClass,
 				cshell.tableClass,
 				cshell.parserClass )
@@ -406,12 +407,12 @@ module MUES
 
 			return self.environments.autoload.collect {|env|
 				self.log.debug "Loading a %s env as '%s'" %
- 					[ env.kind, env.name ]
+ 					[ env[:kind], env[:name] ]
 				MUES::Environment::create(
-					env.kind,
-					env.name,
-					env.description,
-					env.params.to_h )
+					env[:kind],
+					env[:name],
+					env[:description],
+					env[:params] )
 			}
 		end
 
@@ -424,11 +425,11 @@ module MUES
 
 			return self.engine.listeners.collect {|lconfig|
 				self.log.info "Calling create for a '%s' listener named '%s': parameters => %s." %
-					[ lconfig.kind, lconfig.name, lconfig.params.inspect ]
+					[ lconfig[:kind], lconfig[:name], lconfig[:params].inspect ]
 				MUES::Listener::create(
-					lconfig.kind,
-					lconfig.name,
-					lconfig.params.to_h )
+					lconfig[:kind],
+					lconfig[:name],
+					lconfig[:params] )
 			}
 		end
 

@@ -47,7 +47,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.12 2004/02/29 04:47:13 deveiant Exp $
+# $Id: listener.rb,v 1.13 2004/03/03 16:06:50 aidan Exp $
 # 
 # == Authors
 # 
@@ -74,10 +74,10 @@ module MUES
 		include MUES::Factory
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
 
 		# CVS id tag 
-		Rcsid = %q$Id: listener.rb,v 1.12 2004/02/29 04:47:13 deveiant Exp $
+		Rcsid = %q$Id: listener.rb,v 1.13 2004/03/03 16:06:50 aidan Exp $
 
 		# The default parameter hash for listeners
 		DefaultParameters = {
@@ -105,7 +105,7 @@ module MUES
 		### object).
 		def initialize( name, parameters={}, io=nil )
 			@name		= name
-			@parameters	= Defaults.merge( parameters, &MUES::HashMergeFunction )
+			@parameters	= MUES::Config::Defaults.merge( parameters, &MUES::HashMergeFunction )
 			@io			= io
 
 			@filterDebugLevel 	= parameters[:filterDebug].to_i

@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.41 2004/02/29 18:34:18 deveiant Exp $
+#  $Id: objectstore.rb,v 1.42 2004/03/03 16:06:50 aidan Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.41 $} )[1]
-		Rcsid = %q$Id: objectstore.rb,v 1.41 2004/02/29 18:34:18 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.42 $} )[1]
+		Rcsid = %q$Id: objectstore.rb,v 1.42 2004/03/03 16:06:50 aidan Exp $
 
 
 		# The default MemoryManager class
@@ -159,7 +159,7 @@ module MUES
 		def self.create( args )
 			TypeCheckFunctions::checkType( args, Hash )
 
-			config = args[:config] || {}
+			config = args[:config].hash || {}
 
 			# Check the name argument
 			name = args[:name].to_s
@@ -174,7 +174,7 @@ module MUES
 			# If they didn't supply a visitor, just use the default one
 			args[:visitor] ||= DefaultVisitor
 			if args[:visitor].is_a?( Class )
-				visitor = args[:visitor].new( config.visitor )
+				visitor = args[:visitor].new( config[:visitor] )
 			else
 				TypeCheckFunctions::checkType( args[:visitor], MUES::ObjectSpaceVisitor )
 				visitor = args[:visitor]
@@ -183,10 +183,10 @@ module MUES
 			# Build the list of objects we need for the store
 			backend	= 
 				ObjectStore::Backend::create( args[:backend] || DefaultBackend,
-											  name, indexes, config.backend )
+											  name, indexes, config[:backend] )
 			memmgr = 
 				ObjectStore::MemoryManager::create( args[:memmgr] || DefaultMemMgr,
-												    backend, config.memorymanager )
+												    backend, config[:memorymanager] )
 
 			# Return the new store after adding it to the instance list
 			return @@instances[ name ] = new( name, memmgr, backend, visitor )
