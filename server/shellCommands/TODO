@@ -27,3 +27,7 @@
 * restart - restart the server.
 
 * reload - reload the config file.
+
+* initmode - turn on/off init mode.
+
+* macro* - commands to deal with creating/editing/deleting macros.
