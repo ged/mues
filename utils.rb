@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.8 2002/10/13 23:30:55 deveiant Exp $
+#	$Id: utils.rb,v 1.9 2002/10/17 14:44:10 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -169,7 +169,7 @@ module UtilityFunctions
 		File.open( "CVS/Repository", "r").readline.chomp
 	end
 
-	def readManifest( manifestName="MANIFEST", verbose=false )
+	def readManifest( manifestName="MANIFEST" )
 		message "Building manifest..."
 		raise "Missing #{manifestName}, please remake it" unless File.exists? manifestName
 
@@ -181,7 +181,7 @@ module UtilityFunctions
 
 		filelist = []
 		for pat in manifest
-			$stderr.puts "Adding files that match '#{pat}' to the file list" if verbose
+			$stderr.puts "Adding files that match '#{pat}' to the file list" if $VERBOSE
 			filelist |= Dir.glob( pat ).find_all {|f| FileTest.file?(f)}
 		end
 
@@ -189,12 +189,12 @@ module UtilityFunctions
 		return filelist
 	end
 
-	def vetManifest( filelist, antimanifest=ANITMANIFEST, verbose=false )
+	def vetManifest( filelist, antimanifest=ANITMANIFEST )
 		origLength = filelist.length
 		message "Vetting manifest..."
 
 		for regex in antimanifest
-			if verbose
+			if $VERBOSE
 				message "\n\tPattern /#{regex.source}/ removed: " +
 					filelist.find_all {|file| regex.match(file)}.join(', ')
 			end
@@ -205,8 +205,8 @@ module UtilityFunctions
 		return filelist
 	end
 
-	def getVettedManifest( verbose=false, manifestName="MANIFEST", antimanifest=ANTIMANIFEST )
-		vetManifest( readManifest(manifestName, verbose), antimanifest, verbose )
+	def getVettedManifest( manifestName="MANIFEST", antimanifest=ANTIMANIFEST )
+		vetManifest( readManifest(manifestName), antimanifest )
 	end
 
 	def findRdocableFiles
