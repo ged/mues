@@ -95,7 +95,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.13 2002/07/21 16:40:41 deveiant Exp $
+# $Id: exceptions.rb,v 1.14 2002/08/01 01:09:28 deveiant Exp $
 # 
 # == Authors
 # 
@@ -170,7 +170,9 @@ module MUES
 	def_exception :MacroError,				"Macro error",									Exception
 
     # Exception class for ObjectStore errors
-    def_exception :ObjectStoreException,	"Objectstore internal error",					Exception
+    def_exception :ObjectStoreError,		"Objectstore internal error",					Exception
+	def_exception :BackendError,			"ObjectStore Backend Error",					ObjectStoreError
+
 	
 	### Event exceptions
 	class UnhandledEventError < Exception
