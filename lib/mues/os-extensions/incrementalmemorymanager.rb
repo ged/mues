@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: incrementalmemorymanager.rb,v 1.3 2002/07/15 22:22:25 stillflame Exp $
+# $Id: incrementalmemorymanager.rb,v 1.4 2002/08/01 01:18:04 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,8 +51,8 @@ module MUES
 		class IncrementalMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.3 2002/07/15 22:22:25 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.4 2002/08/01 01:18:04 deveiant Exp $
 
 			### Create a new IncrementalMemoryManager object.
 			def initialize( *args )
@@ -191,7 +191,7 @@ module MUES
 					unless o.shallow?
 						@mutex.synchronize( Sync::EX ) {
 							@objectStore.store(o)
-							o.become(ShallowReference.new( o.objectStoreID, @objectStore ))
+							o.become(ShallowReference.new( o.objectStoreId, @objectStore ))
 						}
 					end
 				}

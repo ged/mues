@@ -37,8 +37,8 @@ module MUES
 	    class ArundaDBBackend < MUES::ObjectStore::Backend
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-			Rcsid = %q$Id: arunadbbackend.rb,v 1.1 2002/07/10 18:22:50 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+			Rcsid = %q$Id: arunadbbackend.rb,v 1.2 2002/08/01 01:18:04 deveiant Exp $
 
 
 			include Sync_m
@@ -150,7 +150,7 @@ module MUES
 						o.respond_to?(ind[0]) ? o.send(ind[0]) : nil
 					}
 				}
-				ids = objects.collect {|o| o.objectStoreID}
+				ids = objects.collect {|o| o.objectStoreId}
 				serialized = objects.collect {|o| @dump_undump.call(o)}
 				@mutex.synchronize( Sync::EX ) {
 					trans = A_Transaction.new
@@ -191,7 +191,7 @@ module MUES
 			# Retrieves the object specified by the given id and value
 			# using the index named.
 			# Arguments:
-			# [id]      the objectStoreID of the object
+			# [id]      the objectStoreId of the object
 			# [index]   the name of the index to use
 			# [value]   the value the object has in the specified index
 			#           attribute
@@ -217,7 +217,7 @@ module MUES
 			    trans = A_Transaction.new()
 			    @mutex.synchronize( Sync::EX ) {
 				objects.each {|o|
-				    @table.delete(trans, o.objectStoreID)
+				    @table.delete(trans, o.objectStoreId)
 				}
 				trans.commit
 			    }
