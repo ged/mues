@@ -36,12 +36,14 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
+require "sync"
+
 class Search
 	include Enumerable
 
 	### Class constants
-	Version = %q$Revision: 1.1 $
-	Rcsid = %q$Id: Search.rb,v 1.1 2001/04/08 08:23:53 deveiant Exp $
+	Version = %q$Revision: 1.2 $
+	Rcsid = %q$Id: Search.rb,v 1.2 2001/07/18 02:27:36 deveiant Exp $
 
 	#######################################################################
 	###	C L A S S   M E T H O D S
@@ -123,7 +125,7 @@ class Search
 		@criteria		= []
 		@results		= nil
 		@resultsCursor	= nil
-		@resultsMutex	= RMutex.new
+		@resultsMutex	= Sync.new
 		@executed		= false
 
 		addCriteria( criteria ) if criteria
@@ -149,7 +151,7 @@ class Search
 	### method will discard it in favor of the new criteria.
 	def addCriteria( newCriteria )
 
-		@resultsMutex.synchronize {
+		@resultsMutex.synchronize( Sync::EX ) {
 			@results = nil
 			@executed = false
 			close() if @resultsCursor
@@ -195,7 +197,7 @@ class Search
 	### Set the sql string for this search object explicitly. All current
 	### criteria and results are discarded.
 	def queryString=( aString )
-		@resultsMutex.synchronize {
+		@resultsMutex.synchronize( Sync::EX ) {
 			finish() if @resultsCursor
 			@results = []
 			@criteria = aString
@@ -215,7 +217,7 @@ class Search
 
 		### Fetch results for the rows necessary to return the requested
 		### object
-		@resultsMutex.synchronize {
+		@resultsMutex.synchronize( Sync::EX ) {
 			until index <= @results.length - 1 || ! @resultsCursor
 				row = @resultsCursor.fetch_hash
 				if row.nil?
@@ -252,13 +254,18 @@ class Search
 	### elements, or returns a subarray specified by ((|aRange|)). Negative
 	### indices count backward from the end of the array (-1 is the last
 	### element). Returns nil if any indices are out of range.
-	def []( index, length=0 )
-		range = if index.is_a?( Range )
-				then index
-				else Range.new( index, index+length )
-				end
+	def []( index, length=nil )
 
-		range.collect {|i| self.at( i )}
+		if ( index.is_a?( Range ) || ! length.nil? )
+			range = if index.is_a?( Range )
+					then index
+					else Range.new( index, index+length )
+					end
+
+			return range.collect {|i| self.at( i )}
+		else
+			return self.at( index )
+		end
 	end
 
 
@@ -296,7 +303,7 @@ class Search
 	def execute
 
 		# Get the connection from the target class, build and run the query
-		@resultsMutex.synchronize {
+		@resultsMutex.synchronize( Sync::EX ) {
 			dbh = @targetClass.dbHandle
 			@resultsCursor = dbh.query( queryString )
 
@@ -309,7 +316,7 @@ class Search
 	### METHOD: finish
 	### Free the results cursor if it's still alive
 	def finish
-		@resultsMutex.synchronize {
+		@resultsMutex.synchronize( Sync::EX ) {
 			@resultsCursor = nil
 		}
 	end
