@@ -35,6 +35,7 @@
 # == Authors
 #
 # * Martin Chase <stillflame@FaerieMUD.org>
+# * Michael Granger <ged@FaerieMUD.org>
 #
 
 $: << ".."
@@ -74,8 +75,10 @@ class StorableObject < PolymorphicObject; include AbstractClass
   
   ### Check to see if this object needs to be deleted by the ObjectStoreGC.
   ###   return true: object goes away
+  ###   return false: object stays till its reference count goes to 1 (would be 
+  ###                 zero, but one reference is kept by the ObjectStore system).
   def os_gc_mark
-	  false
+    false
   end
 
 end

@@ -54,17 +54,24 @@
 # == Authors
 #
 # * Martin Chase <stillflame@FaerieMUD.org>
+# * Michael Granger <ged@FaerieMUD.org>
 #
 
 $: << "/home/touch/archives/arunadb_0_80" if File.directory?(
 				"/home/touch/archives/arunadb_0_80" )
 
+require "sync"
 require "a_catalog" #arunadb file
 require "a_table"   #arunadb file
 require "StorableObject/StorableObject.rb"
+require "ObjectStoreGC"
 
 class ObjectStore
 
+  include Sync_m
+
+        TRASH_RATIO = .1
+  
 	#########
 	# Class #
 	#########
@@ -153,44 +160,62 @@ class ObjectStore
 	  
 	  @database = database || create_database(@filename)
 	  @table = @database[-1]
-		@gc = ObjectStoreGC.new(self, :os_gc_mark)
+	  @table_mutex = Sync.new
+	  @gc = ObjectStoreGC.new(self, :os_gc_mark)
 	end
 	
 	######
 	public
 	######
 	
-	attr_reader :filename, :database, :table, :serialize, :deserialize, :indexes
+	attr_reader :filename, :database, :serialize, :deserialize, :indexes,
+	  :active_objects
+	def table
+	  @table_mutex.synchronize( Sync::EX ) {
+	    @table
+	  }
+	end
 
 	### Stores the objects into the database
 	### arguments:
 	###   objects - the objects to store
 	def store ( *objects )
-	  objects.flatten!
-	  ids = objects.collect {|o| o.objectStoreID}
-	  serialized = objects.collect {|o| @serializer ? o.send(@serializer) : o}
-	  trans = A_Transaction.new
-	  ids.each_index do |i|
-	    if @table.exists?(trans, ids[i])
-	      #update(transaction, pkey, column_names, values)
-	      @table.update(trans, ids[i], "obj", serialized[i])
-	    else
-	      @table.insert( trans, ['id', 'obj'], [ids[i], serialized[i]] )
+	  @table_mutex.synchronize( Sync::EX ) {
+	    objects.flatten!
+	    ids = objects.collect {|o| o.objectStoreID}
+	    serialized = objects.collect {|o| @serialize ? o.send(@serialize) : o}
+	    trans = A_Transaction.new
+	    ids.each_index do |i|
+	      if @table.exists?(trans, ids[i])
+		#update(transaction, pkey, column_names, values)
+		@table.update(trans, ids[i], "obj", serialized[i])
+	      else
+		@gc.register( objects[i] )
+		@table.insert( trans, ['id', 'obj'], [ids[i], serialized[i]] )
+	      end
+	      @indexes.each {|ind|
+		@table.update( trans, ids[i], ind[0].id2name, objects[i].send(ind) )
+	      }
 	    end
-	    @indexes.each {|ind|
-	      @table.update( trans, ids[i], ind[0].id2name, objects[i].send(ind) )
-	    }
-	  end
-	  trans.commit
+	    trans.commit
+	  }
 	end
 
 	### Closes the database.
-	### caveats:
-	###   This method does not have any way of telling if there are active objects
-	###   in the environment which need to be stored.  Use an ObjectStoreGC to keep
-	###   track of those objects.
 	def close 
-		@table.close
+	  @gc.shutdown
+	  @table_mutex.synchronize( Sync::EX ) {
+	    @table.close
+	  }
+	end
+	
+	### Opens the database again.  Starts a new garbage collector.
+	### That is, if the database isn't already open.
+	def open
+	  @table_mutex.synchronize( Sync::EX ) {
+	    @table.open
+	  }
+	  @gc.start( TRASH_RATIO )
 	end
 
 	### Gets the object specified by the given id out of the database
@@ -204,15 +229,25 @@ class ObjectStore
 	###   id - the id (objectStoreID) of the object
 	###   read_only - whether or not this lookup is read-only
 	def _retrieve ( id , read_only = false )
+	  @table_mutex.synchronize( Sync::EX ) {
+	    object = (@table.find( nil, id )).obj
+	    if read_only
+	      yield object
+	    else
+	      return object
+	    end
+	  }
 	end
 
 	def add_indexes ( *indexes )
 	  @indexes << indexes.flatten
-	  #:TODO:
+	  #:TODO: the auto-generation of 'retrieve_by_[index]' for each index.
 	end
 
 	def empty? 
-	  @table.nitems == 0
+	  @table_mutex.synchronize( Sync::SH ) {
+	    @table.nitems == 0
+	  }
 	end
 
 	def open? 
@@ -220,12 +255,16 @@ class ObjectStore
 	end
 
 	def entries 
-	  @table.nitems()
+	  @table_mutex.synchronize( Sync::SH ) {
+	    @table.nitems()
+	  }
 	end
 	alias size entries
 	alias count entries
 
 	def clear
-	  @table.clear
+	  @table_mutex.synchronize( Sync::EX ) {
+	    @table.clear
+	  }
 	end
 end
