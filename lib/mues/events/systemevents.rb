@@ -58,7 +58,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.10 2002/08/29 07:12:32 deveiant Exp $
+# $Id: systemevents.rb,v 1.11 2002/09/12 12:18:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -84,16 +84,22 @@ module MUES
 	###	A B S T R A C T   E V E N T   C L A S S E S
 	#################################################################
 
-	### An abstract base system event class. It is derived from the MUES::Event
+	### An abstract system event class. It is derived from the MUES::Event
 	### class.
 	class SystemEvent < Event ; implements MUES::AbstractClass
+	end
+
+
+	### An abstract privileged system event class. It is derived from the
+	### MUES::PrivilegedEvent class.
+	class PrivilegedSystemEvent < Event ; implements MUES::AbstractClass
 	end
 
 
 	### An abstract listener event class. Events which deal with MUES::Listener
 	### connections, errors, etc. are derived from this class. It derives from
 	### the MUES::SystemEvent class.
-	class ListenerEvent < SystemEvent ; implements MUES::AbstractClass
+	class ListenerEvent < PrivilegedSystemEvent ; implements MUES::AbstractClass
 
 		### Initialize a new ListenerEvent with the specified <tt>listener</tt>
 		### (a MUES::Listener object).
@@ -262,6 +268,7 @@ module MUES
 		end
 
 	end
+
 
 	### An event class used to instruct the MUES::Engine to shut down. It
 	### derives from the MUES::SystemEvent class.
