@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/02 20:03:44 $">
+#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/29 07:45:18 $">
 #	
 #	  <!-- General server configuration -->
 #	  <general>
@@ -173,7 +173,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
+# $Id: config.rb,v 1.12 2002/08/29 07:45:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -203,8 +203,8 @@ module MUES
 	class Config
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.12 2002/08/29 07:45:18 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -298,7 +298,11 @@ module MUES
 		# Autoloading auto-generating delegator method
 		def method_missing( sym, *args )
 			unless @mainSection.respond_to? sym
-				super( sym, *args )
+				begin
+					super( sym, *args )
+				rescue => e
+					Kernel::raise( e, "No such config item '#{sym.to_s}'", caller(1) )
+				end
 			end
 
 			# Get the name of the method being called, and a non-mutator version
@@ -336,7 +340,7 @@ module MUES
 					inDataSection = false
 					false
 
-				when /^__END__/
+				when /^__END__$/
 					inDataSection = true
 					false
 
@@ -599,11 +603,16 @@ module MUES
 					if method( methodName ).nil?
 				method( methodName ).call( *args )
 			end
-
+				
 
 			#########
 			protected
 			#########
+				
+			### Add an element to this section as a default if none already
+			### exists. 
+			def addDefaultSubelement( )
+			end
 
 			### Add the specified element to this section with the specified
 			### name.
@@ -1020,53 +1029,142 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN" "../docs/muesconfig.dtd">
+<muesconfig version="1.1" time-stamp="$Date: 2002/08/29 07:45:18 $">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/08/02 20:03:44 $">
+  <!-- General server configuration:
+	server-name:		The name of the server
+    server-description:	A short description of the server
+	server-admin:		The email address of the primary contact for the server.
+    root-dir:			The directory the server should consider its root. All
+						relative paths will have this path prepended.
+  -->
   <general>
-	<server-name>FaerieMUD</server-name>
-	<server-description>This is an experimental MUES server.</server-description>
-	<server-admin>ged@FaerieMUD.org</server-admin>
+	<server-name>Experimental MUD</server-name>
+	<server-description>An experimental MUES server.</server-description>
+	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
 	<root-dir>.</root-dir>
   </general>
 
+
+  <!-- Engine (core) configuration -->
   <engine>
+
+	<!-- Engine config:
+		tick-length:			Number of floating-point seconds between tick events
+		exception-stack-size:	Number of untrapped exceptions to keep around
+		debug-level:			Debugging level
+		poll-interval:			Floating-point seconds between poll (IO) loops.
+	-->
+	<tick-length>1.0</tick-length>
+	<exception-stack-size>10</exception-stack-size>
+	<debug-level>0</debug-level>
+	<poll-interval>0.05</poll-interval>
+
+	<!-- Engine's EventQueue configuration:
+		minworkers:		Minimum number of worker threads running
+		maxworkers:		Maximum number of worker threads running
+		threshold:		Number of floating point seconds between changes to
+						the worker thread count.
+		safelevel:		What worker threads will set their $SAFE to when
+						starting up.
+	 -->
 	<eventqueue>
-	  <maxworkers>50</maxworkers>
 	  <minworkers>5</minworkers>
+	  <maxworkers>50</maxworkers>
+	  <threshold>1.5</threshold>
 	  <safelevel>2</safelevel>
-	  <threshold>0.5</threshold>
 	</eventqueue>
+
+	<!-- Engine objectstore config -->
 	<objectstore name="engine">
 	  <backend class="Flatfile" />
 	  <memorymanager class="Null" />
 	</objectstore>
+
+	<!-- List of MUES::Listener objects to create on startup -->
 	<listeners>
-	  <listener name="telnet" class="Telnet" />
+
+	  <!-- Telnet listener for MUES::TelnetOutputFilter -->
+	  <listener class="Telnet" name="telnet">
+		<param name="bind-port">23</param>
+		<param name="bind-address">0.0.0.0</param>
+		<param name="use-wrapper">true</param>
+	  </listener>
+
+	  <!-- Console listener for MUES::ConsoleOutputFilter -->
+	  <!-- listener class="Console" name="console" / -->
 	</listeners>
   </engine>
 
+  <!-- MUES::LoginSession configuration:
+		maxtries:	Maximum number of login attempts before disconnecting.
+		timeout:	Number of seconds to allow for login before disconnecting.
+		banner:		Text to display before first login attempt
+		userprompt:	The text used to prompt for the username
+		passprompt:	The text used to prompt for the password
+	 -->
   <login>
 	<maxtries>3</maxtries>
-	<timeout>300</timeout>
-	<banner>FaerieMUD MUES</banner>
-	<userprompt>User: </userprompt>
-	<passprompt>Pass: </passprompt>
+	<timeout>120</timeout>
+	<banner>
+
+	  --- <?config general.server-name?> ---------------
+	  <?config general.server-description?>
+	  Contact: <?config general.server-admin?>
+
+	</banner>
+	<userprompt>Username: </userprompt>
+	<passprompt>Password: </passprompt>
   </login>
 
+
+  <!-- Logging system configuration (Log4R format) -->
   <logging>
 	<log4r_config>
+<!-- 	  <\!-- Log4R pre-config -\-> -->
+<!-- 	  <pre_config> -->
+<!-- 		<parameter name="logpath" value="server/log" /> -->
+<!-- 		<parameter name="mypattern" value="%l [%d] %m" /> -->
+<!-- 	  </pre_config> -->
+	  
+<!-- 	  <\!-- Log Outputters -\-> -->
+<!-- 	  <outputter type="IOOutputter" name="console" fdno="2" /> -->
+<!-- 	  <outputter type="FileOutputter" name="serverlog" -->
+<!-- 		filename="#{logpath}/server.log" trunc="false" /> -->
+<!-- 	  <outputter type="FileOutputter" name="errorlog" -->
+<!-- 		filename="#{logpath}/error.log" trunc="true" /> -->
+<!-- 	  <outputter type="FileOutputter" name="environmentlog" -->
+<!-- 		filename="#{logpath}/environments.log" trunc="false" /> -->
+<!-- 	  <outputter type="EmailOutputter" name="mailadmin" server="localhost" -->
+<!-- 		port="25" from="mueslogs@localhost" to="muesadmin@localhost" /> -->
+
+<!-- 	  <\!-- Loggers -\-> -->
+<!-- 	  <logger name="MUES"   level="INFO"  outputters="serverlog" /> -->
+<!-- 	  <logger name="error"  level="WARN"  outputters="errorlog,console" /> -->
+<!-- 	  <logger name="dire"   level="ERROR" outputters="errorlog,console,mailadmin" /> -->
 	</log4r_config>
   </logging>
 
+  
+  <!-- MUES::Environments which are to be loaded at startup -->
   <environments>
   </environments>
 
-  <commandshell>
-	<commandspath>
-	  <directory>server/shellCommands/</directory>
-	</commandspath>
-  </commandshell>
-</muesconfig>
+  
+  <!-- MUES::CommandShell configuration:
+	shell-class:	Which class to instantiate for users' command shells.
+	commandspath:	A list of directories to search for command definitions.
 
+    Parameters are specific to the configured class.
+  -->
+  <commandshell shell-class="MUES::CommandShell">
+	<commandspath>
+	  <directory>server/commands</directory>
+	  <directory>/some/other/directory/with/commands</directory>
+	</commandspath>
+	<param name="reload-interval">50</param>
+	<param name="default-prompt">mues&gt; </param>
+	<param name="command-prefix">/</param>
+  </commandshell>
+
+</muesconfig>
