@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.16 2003/08/03 20:06:03 deveiant Exp $
+#	$Id: utils.rb,v 1.17 2003/08/04 02:30:37 deveiant Exp $
 #
 #	Copyright (c) 2001-2003, The FaerieMUD Consortium.
 #
@@ -30,6 +30,9 @@ BEGIN {
 		$yaml = false
 	end
 }
+
+require 'rbconfig'
+include Config
 
 module UtilityFunctions
 
@@ -93,7 +96,10 @@ module UtilityFunctions
 	def testForLibrary( library, nicename=nil )
 		nicename ||= library
 		message( "Testing for the #{nicename} library..." )
-		if $:.detect {|dir| File.exists?(File.join(dir,"#{library}.rb")) || File.exists?(File.join(dir,"#{library}.so"))}
+		if $LOAD_PATH.detect {|dir|
+				File.exists?(File.join(dir,"#{library}.rb")) ||
+				File.exists?(File.join(dir,"#{library}.#{CONFIG['DLEXT']}"))
+			}
 			message( "found.\n" )
 			return true
 		else
