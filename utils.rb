@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.4 2002/08/01 00:17:14 deveiant Exp $
+#	$Id: utils.rb,v 1.5 2002/09/14 23:57:28 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -87,6 +87,7 @@ module UtilityFunctions
 	end
 
 	def debugMsg( msg )
+		return unless $DEBUG
 		msg.chomp!
 		$stderr.puts ansiCode( 'bold', 'red' ) + msg + ansiCode( 'reset' )
 		$stderr.flush
