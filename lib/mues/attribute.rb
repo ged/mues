@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: attribute.rb,v 1.7 2002/06/04 06:50:34 deveiant Exp $
+# $Id: attribute.rb,v 1.8 2002/07/28 01:17:37 scotus Exp $
 # 
 # == Authors
 # 
@@ -41,8 +41,8 @@ module Metaclass
 		DEFAULT_SCOPE = Scope::INSTANCE
 		DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: attribute.rb,v 1.7 2002/06/04 06:50:34 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: attribute.rb,v 1.8 2002/07/28 01:17:37 scotus Exp $
 
 		### Create and return a new attribute with the specified name. If the
 		### optional <tt>validTypes</tt> argument is specified, the attribute
@@ -95,7 +95,7 @@ module Metaclass
 		attr_accessor :scope
 
 		# The visibility of the attribute (one of the constants in
-		# Metaclass::Scope).
+		# Metaclass::Visibility).
 		attr_accessor :visibility
 
 		# The default value for the attribute
