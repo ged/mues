@@ -1,6 +1,7 @@
 #!/usr/bin/ruby -w
 
 require "mues/ObjectStore"
+require "mues/adapters/Adapter"
 require "mues/IOEventStream"
 require "mues/IOEventFilters"
 require "mues/Events"
@@ -15,15 +16,17 @@ def main
 	user = ARGV.shift
 	driver = ARGV.shift || "Mysql"
 
-	config = MUES::Config.new( "MUES.cfg" )
+	config = MUES::Config.new( "bin/MUES.cfg" )
 	engine = MUES::Engine.instance or raise Exception, "Failed to fetch engine instance"
 	engine.start( config )
 
-	puts "Fetching player record for '#{user}' from a #{driver} objectstore."
-	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
-	player = os.fetchPlayer( user ) or raise Exception, "Could not find player '#{user}'."
+	MUES::ObjectStore::Adapter.debugLevel = 5
 
-	puts "Player loaded. Creating IO event stream and filters."
+	puts "Fetching user record for '#{user}' from a #{driver} objectstore."
+	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
+	user = os.fetchUser( user ) or raise Exception, "Could not find user '#{user}'."
+
+	puts "User loaded. Creating IO event stream and filters."
 
 	consoleFilter = MUES::ConsoleOutputFilter.instance
 	consoleFilter.debugLevel = 0
@@ -32,9 +35,9 @@ def main
 	ios.debugLevel = 0
 	ios.addFilters( consoleFilter )
 
-	puts "Activating player."
+	puts "Activating user."
 
-	player.activate( ios )
+	user.activate( ios )
 	consoleFilter.ioThread.join
 
 	ios.shutdown
@@ -80,9 +83,14 @@ module MUES
 			events.each {|e|
 
 				case e
-				when PlayerLogoutEvent
-					$stderr.puts "--> Player logout event"
-					e.player.disconnect
+				when UserLogoutEvent
+					$stderr.puts "--> User logout event"
+					res = e.user.deactivate
+					unless res.flatten.empty?
+						$stderr.puts "Got result events: \n\t" + 
+							res.flatten.collect {|e| e.to_s}.join("\n\t") +
+							"\n\n"
+					end
 
 				when EngineShutdownEvent
 					$stderr.puts "--> No engine running. Try /quit instead."
