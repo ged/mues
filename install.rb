@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.5 2002/10/17 14:43:14 deveiant Exp $
+#	$Id: install.rb,v 1.6 2002/10/23 18:26:27 deveiant Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
@@ -13,9 +13,7 @@
 #
 
 require './utils.rb'
-
 include UtilityFunctions
-
 
 require 'rbconfig'
 require 'find'
@@ -25,12 +23,34 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.5 $
-$rcsId		= %q$Id: install.rb,v 1.5 2002/10/17 14:43:14 deveiant Exp $
+$version	= %q$Revision: 1.6 $
+$rcsId		= %q$Id: install.rb,v 1.6 2002/10/23 18:26:27 deveiant Exp $
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
 
+# Define required libraries
+RequiredLibraries = [
+	# libraryname, nice name, RAA URL, Download URL
+	[ 'poll', "Ruby-Poll", 
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=Ruby-Poll',
+		'http://www.devEiate.org/code/Ruby-Poll-0.03.tar.gz' ],
+	[ 'rexml/document', 'REXML',
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
+		'http://www.germane-software.com/archives/rexml_2.5.2.tgz' ],
+	[ 'forwardable', "Forwardable",
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=forwardable',
+		'ftp://ftp.ruby-lang.org/pub/ruby/contrib/forwardable-1.1.tgz' ],
+	[ 'hashslice', "HashSlice",
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=HashSlice',
+		'http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2' ],
+	[ 'pp', 'PrettyPrinter',
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=pp',
+		'http://cvs.m17n.org/~akr/pp/download.html' ],
+	[ 'log4r', 'Log4R',
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
+		'http://sourceforge.net/project/showfiles.php?group_id=43396' ],
+]
 
 class Installer
 
@@ -127,6 +147,10 @@ if $0 == __FILE__
 
 	unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
 		abort "MUES will not run under this version of Ruby. It requires at least 1.7.2 (CVS)."
+	end
+
+	for lib in RequiredLibraries
+		testForRequiredLibrary( *lib )
 	end
 
 	viewOnly = ARGV.include? '-n'
