@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.17 2002/10/04 05:08:44 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.18 2002/10/06 07:46:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -75,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.17 2002/10/04 05:08:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.18 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.18 2002/10/06 07:46:44 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -193,9 +193,16 @@ module MUES
 		end
 
 
+		### Equality -- returns true if the <tt>otherFilter</tt> is exactly the
+		### same as the receiver.
+		def ==( otherFilter )
+			return self.equal?( otherFilter )
+		end
+
+
 		### Comparison -- Returns -1, 0, or 1 if the receiver sorts higher,
-		### equal to, or lower than the other filter object, respectively,
-		### according to its sort position.
+		### equal to, or lower than the <tt>otherFilter</tt> object,
+		### respectively, according to its sort position.
 		def <=>( otherFilter )
 			checkType( otherFilter, MUES::IOEventFilter )
 			return ( @sortPosition <=> otherFilter.sortPosition ).nonzero? ||
