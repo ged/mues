@@ -36,11 +36,11 @@ associated, and information about the client.
 	Returns (({true})) if the user has been activated (ie., has a connected IO
 	stream).
 
---- MUES::User#remoteIp
+--- MUES::User#remoteHost
 
 	Return the user^s remote IP address.
 
---- MUES::User#remoteIp=( newIp )
+--- MUES::User#remoteHost=( newIp )
 
 	Set the user^s remote IP address to ((|newIp|)).
 
@@ -105,10 +105,10 @@ module MUES
 
 		### Class constants
 		module Role
-			USER		= 0
-			CREATOR		= 1
-			IMPLEMENTOR	= 2
-			ADMIN		= 3
+			USER		= 0		# Regular user
+			CREATOR		= 1		# Can world-interaction access
+			IMPLEMENTOR	= 2		# Has server-interaction access
+			ADMIN		= 3		# Unrestricted access
 		end
 		Role.freeze
 
@@ -129,7 +129,6 @@ module MUES
 			'role'				=> Role::USER,
 			'flags'				=> 0,
 			'preferences'		=> {},
-			'characters'		=> []
 		}
 
 		### METHOD: new( userDataHash )
@@ -139,7 +138,7 @@ module MUES
 			checkResponse( dbInfo, '[]', '[]=', 'has_key?' )
 			super()
 
-			@remoteIp = nil
+			@remoteHost = nil
 			@ioEventStream = nil
 			@activated = false
 
@@ -152,6 +151,7 @@ module MUES
 		public
 
 		### Accessors
+		### :FIXME: Do these need to be accessors? Or can they be readers?
 		attr_accessor	:ioEventStream, :dbInfo
 
 		### METHOD: activated?
@@ -160,19 +160,19 @@ module MUES
 			@activated
 		end
 
-		### METHOD: remoteIp
+		### METHOD: remoteHost
 		### Returns the remote IP (if any) that the client is connected from
-		def remoteIp
-			@remoteIp
+		def remoteHost
+			@remoteHost
 		end
 
-		### METHOD: remoteIp=( newIp )
+		### METHOD: remoteHost=( newIp )
 		### Sets the remote IP that the client is connected from, and sets the
 		### user's 'lastHost' attribute.
-		def remoteIp=( newIp )
+		def remoteHost=( newIp )
 			checkType( newIp, ::String )
 
-			@remoteIp = @dbInfo['lastHost'] = newIp
+			@remoteHost = @dbInfo['lastHost'] = newIp
 		end
 
 		### METHOD: isCreator?
@@ -199,8 +199,8 @@ module MUES
 		### METHOD: to_s
 		### Returns a stringified version of the user object
 		def to_s
-			if @remoteIp
-				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> [connected from #{@remoteIp}]"
+			if @remoteHost
+				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> [connected from #{@remoteHost}]"
 			else
 				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}>"
 			end
@@ -241,7 +241,7 @@ module MUES
 			@activated = true
 
 			OutputEvent.RegisterHandlers( self )
-			TickEvent.RegisterHandlers( self )
+			#TickEvent.RegisterHandlers( self )
 			return []
 		end
 
@@ -253,7 +253,7 @@ module MUES
 
 			### Unregister all our handlers
 			OutputEvent.UnregisterHandlers( self )
-			TickEvent.UnregisterHandlers( self )
+			#TickEvent.UnregisterHandlers( self )
 
 			### Shut down the IO event stream
 			@activated = false
@@ -279,13 +279,13 @@ module MUES
 			### Get the current stream's socket output filter/s and flush 'em
 			### before closing it and replacing it with the new one.
 			@ioEventStream.removeFiltersOfType( SocketOutputFilter ).each {|filter|
-				filter.puts( "[Reconnect from #{remoteIp}]" )
+				filter.puts( "[Reconnect from #{newFilter.remoteHost}]" )
 				results << filter.shutdown
 				newFilter.sortPosition = filter.sortPosition
 			}
 			
-			@ioEventStream.addFilter( newFilter )
-			@ioEventStream.handleEvents( InputEvent.new("") )
+			@ioEventStream.addFilters( newFilter )
+			@ioEventStream.addEvents( InputEvent.new("") )
 
 			return results
 		end
@@ -340,9 +340,9 @@ module MUES
 		### (PROTECTED) METHOD: _handleTickEvent
 		### Handle server tick events by delegating them to any subordinate objects
 		### that need them.
-		def _handleTickEvent( event )
-			[]
-		end
+		#def _handleTickEvent( event )
+		#	[]
+		#end
 
 
 		### (PROTECTED) METHOD: _handleOtherEvent
