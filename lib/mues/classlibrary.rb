@@ -1,98 +1,62 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# This file contains the MUES::ClassLibrary class, which is an AbstractFactory
+# class for environment metaclass libraries. It's purpose is to contain
+# libraries of Environment classes which can be instantiated outside of the main
+# Ruby namespace, and can be recombined and manipulated at runtime with greater
+# ease.
+#
+# The MUES::ClassLibrary class is an implementation of the AbstractFactory
+# design pattern [Design Patterns] that instantiates classes from a set of
+# Metaclasses, as expressed in the Reflection design pattern[A System of
+# Patterns, Volume 1]. It decouples the Metaclass implementation from the
+# Environment.
+# 
+# == Synopsis
+# 
+#   require "mues/ClassLibrary"
+# 
+#   class MyLibrary < MUES::ClassLibrary
+# 	
+# 	  def initialize
+# 	    ...
+# 	  end
+# 
+#   end
+#   
+# == Rcsid
+# 
+# $Id: classlibrary.rb,v 1.5 2002/04/01 15:53:38 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=ClassLibrary.rb
-
-== Name
-
-ClassLibrary - An AbstractFactory for environment class libraries
-
-== Synopsis
-
-  require "mues/ClassLibrary"
-
-  class MyLibrary < MUES::ClassLibrary
-	
-	def initialize
-	  ...
-	end
-
-  end
-  
-== Description
-
-This class is an implementation of the AbstractFactory design pattern((-Design
-Patterns-)) that instantiates classes from a set of Metaclasses, as expressed in
-the Reflection design pattern((-A System of Patterns, Volume 1-)). It decouples
-the Metaclass implementation from the Environment.
-
-== Classes
-=== MUES::ClassError
-
-An exception class for the ClassLibrary.
-
-=== MUES::ClassLibrary
-==== Public Methods
-
---- MUES::ClassLibrary#addClass( classObject=Metaclass::Class[, altClassName] )
-
-    Adds the specified ((|classObject|)) to the library, associating it with the
-    specified ((|altClassName|)), or the same name as the name attribute of the
-    class object if no ((|altClassName|)) is specified.
-
---- MUES::ClassLibrary#addInterface( interface=Metaclass::Interface[, altInterfaceName] )
-
-    Adds the specified ((|interface|)) to the library, associating it with the
-    specified ((|altInterfaceName|)) or the same name as the name attribute of
-    the interface object if no ((|altInterfaceName|)) is specified.
-
---- MUES::ClassLibrary#getClassAncestry( className )
-
-	Returns the ancestors of the class associated with the ((|className|)) given
-	as an (({Array})) of ((<Metaclass::Class>)) objects.
-
---- MUES::ClassLibrary#getClassDefinition( className )
-
-	Returns the evalable definition of the class associated with the given
-	((|className|)).
-
---- MUES::ClassLibrary#new( libraryName )
-
-	Create a new (({MUES::ClassLibrary})) instance with the ((|libraryName|))
-	specified.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-((<URL:http://language.perl.com/misc/Artistic.html>)))
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 
 require "metaclass/Class"
 
 module MUES
+
+	### An error class for problems in metaclass objects.
 	class ClassError < Exception; end
+
+	### An AbstractFactory class for environment metaclass libraries
 	class ClassLibrary < Object
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.4 2001/11/01 16:54:06 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.5 2002/04/01 15:53:38 deveiant Exp $
 
-		attr_reader :name
-
-		### METHOD: initialize( libraryName )
-		### Initializes a class library object, setting the name of the library
-		### to the one given.
+		### Return a new ClassLibrary object with the specified name.
 		def initialize( libraryName )
 			super
 			@name = libraryName
@@ -101,10 +65,17 @@ module MUES
 			@namespaces = {}
 		end
 
-		### METHOD: addInterface( interface[, altInterfaceName] )
-		### Adds an interface to the library, either by the name specified or
-		### the same name as the name attribute of the interface object if no
-		### name is specified.
+
+		######
+		public
+		######
+
+		### Returns the name of the class library.
+		attr_reader :name
+
+		### Add an interface to the library, either by the name specified or the
+		### same name as the name attribute of the interface object if no name
+		### is specified.
 		def addInterface( interface, altInterfaceName = nil )
 			interfaceName = if altInterfaceName.nil?
 							then interface.name
@@ -114,10 +85,8 @@ module MUES
 			@interfaces[ interfaceName ] = klass
 		end
 
-		### METHOD: addClass( classObject[, altClassName] )
-		### Adds a class to the library, either by the name specified or the
-		### same name as the name attribute of the class object if no name is
-		### specified.
+		### Add a class to the library.If no <tt>alternateClassName<tt> is
+		### specified, <tt>klass.name<tt> will be used.
 		def addClass( klass, altClassName = nil )
 			klassName = if altClassName.nil?
 						then klass.name
@@ -127,13 +96,11 @@ module MUES
 			@classes[ klassName ] = klass
 		end
 
-		### METHOD: getClassAncestry( className )
 		### Returns the ancestors of the class specified as an Array.
 		def getClassAncestry( className )
 			return []
 		end
 
-		### METHOD: getClassDefinition( className )
 		### Returns the eval-able definition of the class specified.
 		def getClassDefinition( className )
 			return ""
