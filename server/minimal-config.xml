@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
+
+<muesconfig version="1.1" time-stamp="$Date: 2002/09/14 23:48:40 $">
+
+  <!--
+
+  This is an example of a minimal configuration file. It is fairly close to what
+  is used as the default configuration if a MUES::Config object is instantiated
+  without any argument. For the actual defaults, see the end of
+  lib/mues/Config.rb.
+
+  -->
+
+  <!-- General server configuration:
+	server-name:		The name of the server
+    server-description:	A short description of the server
+	server-admin:		The email address of the primary contact for the server.
+    root-dir:			The directory the server should consider its root. All
+						relative paths will have this path prepended.
+  -->
+  <general>
+	<server-name>Experimental MUD</server-name>
+	<server-description>An experimental MUES server.</server-description>
+	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
+	<root-dir>server</root-dir>
+	<motd>== Message of the day ==</motd>
+  </general>
+
+
+  <!-- Engine (core) configuration -->
+  <engine>
+
+	<!-- Engine config:
+		tick-length:			Number of floating-point seconds between tick events
+		exception-stack-size:	Number of untrapped exceptions to keep around
+								for diagnostics
+		debug-level:			Starting Engine debugging level
+		poll-interval:			Floating-point seconds between poll (IO) loops.
+	-->
+	<tick-length>1.0</tick-length>
+	<exception-stack-size>10</exception-stack-size>
+	<debug-level>0</debug-level>
+	<poll-interval>0.5</poll-interval>
+
+	<!-- Engine's EventQueue configuration:
+		minworkers:		Minimum number of worker threads running
+		maxworkers:		Maximum number of worker threads running
+		threshold:		Number of floating point seconds between changes to
+						the worker thread count.
+		safelevel:		What worker threads will set their $SAFE to when
+						starting up. Change this at your peril. =:)
+	 -->
+	<eventqueue>
+	  <minworkers>5</minworkers>
+	  <maxworkers>50</maxworkers>
+	  <threshold>2</threshold>
+	  <safelevel>2</safelevel>
+	</eventqueue>
+
+	<privilegedeventqueue>
+	  <minworkers>1</minworkers>
+	  <maxworkers>5</maxworkers>
+	  <threshold>1.5</threshold>
+	  <safelevel>1</safelevel>
+	</privilegedeventqueue>
+
+	<!-- Engine objectstore config -->
+	<objectstore name="engine">
+	  <backend class="Flatfile" />
+	  <memorymanager class="Null" />
+	</objectstore>
+
+	<!-- List of MUES::Listener objects to create on startup -->
+	<listeners>
+
+	  <!-- Telnet listener: MUES::TelnetOutputFilter -->
+	  <listener class="Telnet" name="telnet">
+		<param name="bind-port">4848</param>
+		<param name="bind-address">0.0.0.0</param>
+		<param name="use-wrapper">false</param>
+	  </listener>
+
+	</listeners>
+  </engine>
+
+  <!-- MUES::LoginSession configuration:
+		maxtries:	Maximum number of login attempts before disconnecting.
+		timeout:	Number of seconds to allow for login before disconnecting.
+		banner:		Text to display before first login attempt
+		userprompt:	The text used to prompt for the username
+		passprompt:	The text used to prompt for the password
+	 -->
+  <login>
+	<maxtries>3</maxtries>
+	<timeout>120</timeout>
+	<banner>
+
+	  --- <?config general.server-name?> ---------------
+	  <?config general.server-description?>
+	  Contact: <?config general.server-admin?>
+
+	</banner>
+	<userprompt>Username: </userprompt>
+	<passprompt>Password: </passprompt>
+  </login>
+
+
+  <!-- Logging system configuration (Log4R format). Empty means log everything
+       to STDERR. -->
+  <logging>
+	<log4r_config>
+	</log4r_config>
+  </logging>
+
+  
+  <!-- MUES::Environments which are to be loaded at startup:
+	name:		The name of the environment instance in the Engine. This is the
+				name that will be used to connect or refer to the environment
+				from the command shell.
+	class:		The MUES::Environment derivative that should be used as the
+				argument to the Environment factory. This accepts any valid
+				MUES::FactoryMethods-style class name. See
+				MUES::FactoryMethods::create for more about how to specify a
+				valid class name.
+	description: The description string that is shown when listing environments
+				in the server.
+  -->
+  <environments>
+	<environment name="null" class="Null">
+	  <description>A testing environment without any surroundings.</description>
+	</environment>
+  </environments>
+
+  
+  <!-- MUES::CommandShell configuration:
+	shell-class:	Which class to instantiate for users' command shells.
+    table-class:	Which class to instantiate for the users' command shell
+					command lookup table.
+    parser-class:	Which class to instantiate to parse command files.
+	commandspath:	A list of directories to search for command definitions.
+
+    Parameters are specific to the configured class.
+  -->
+  <commandshell shell-class="MUES::CommandShell">
+	<commandpath>
+	  <directory>server/shellCommands</directory>
+	</commandpath>
+	<param name="reload-interval">50</param>
+	<param name="default-prompt">mues&gt; </param>
+	<param name="command-prefix">/</param>
+  </commandshell>
+
+</muesconfig>
