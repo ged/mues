@@ -19,6 +19,84 @@ MUES::EventQueue - a scalable thread work crew class for the FaerieMUD server.
 MUES::EventQueue is a thread work crew for the MUES Engine. It^s still experimental at
 this point.
 
+== Classes
+
+=== MUES::EventQueue
+==== Public Methods
+
+--- MUES::EventQueue#<<( *events )
+
+    Alias for ((<MUES::EventQueue#enqueue>)).
+
+--- MUES::EventQueue#dequeue( [nonBlocking] )
+
+    Remove and return a pending event from the queue. If ((|nonBlocking|)) is
+    set to (({false})) (the default), the call will block until there is an
+    event to return. If ((|nonBlocking|)) is (({true})), the method will return
+    nil if there aren^t any currently queued events.
+
+--- MUES::EventQueue#enqueue( *events )
+
+    Add the specified ((|events|)) to the end of the queue of pending events.
+
+--- MUES::EventQueue#halt()
+
+    Forcefully halt the queue, killing any current worker threads.
+
+--- MUES::EventQueue#priorityEnqueue( *events )
+
+    Add the specified ((|events|)) to the beginning of the queue of pending events.
+
+--- MUES::EventQueue#running?
+
+    Returns (({true})) if the queue is currently started and running.
+
+--- MUES::EventQueue#shutdown( [secondsToWait] )
+
+    Inform the supervisor thread that the queue needs to be shut down. If the
+    optional ((|secondsToWait|)) argument is specified, the supervisor will wait
+    the specified number of seconds before killing any worker threads that are
+    still running. If ((|secondsToWait|)) is (({0})) (the default), the
+    supervisor waits on all worker threads. Returns an array of any unprocessed
+    events that remained in the queue.
+
+--- MUES::EventQueue#start()
+
+    Start the supervisor thread and begin processing events.
+
+==== Protected Methods
+
+--- MUES::EventQueue#_killWorkerThread( workerThread )
+
+    Kill the specified ((|workerThread|)) and join it immediately.
+
+--- MUES::EventQueue#_dispatchEvent( event )
+
+    Dispatch the given ((|event|)) to the handlers which have registered themselves
+    with the event^s class. See ((<MUES::Event.RegisterHandlers>)).
+
+--- MUES::EventQueue#_startWorker()
+
+    Start a new worker thread.
+
+--- MUES::EventQueue#_supervisorThreadRoutine()
+
+    The supervisor thread routine.
+
+--- MUES::EventQueue#_workerThreadRoutine()
+
+    The worker thread routine.
+
+--- MUES::EventQueue#initialize( [minWorkers[, maxWorkers[, threadThreshold[, safeLevel]]]] )
+
+    Initialize the queue object. The ((|minWorkers|)) argument specifies the
+    minimum number of threads which should be running at all times, and the
+    ((|maxWorkers|)) specifies the maximum number. The ((|threadThreshold|))
+    value specifies the number of seconds the supervisor thread should wait
+    before either starting or killing a worker thread in reaction to the queue^s
+    event load. The ((|safeLevel|)) argument specifies what (({$SAFE})) should
+    be set to inside of the worker threads for security. 
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -46,8 +124,8 @@ module MUES
 	class EventQueue < Object ; implements Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.8 2001/09/26 12:43:59 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.9 2001/11/01 17:06:49 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2
@@ -373,8 +451,8 @@ module MUES
 			@running = false
 			_debugMsg( 1, "Supervisor: Exiting throttle loop. Entering shutdown cycle." )
 
-			### Queue thread shutdown events for any idle threads, and wait on ones that are still
-			###		working.
+			### Queue thread shutdown events for any idle threads, and wait on
+			### ones that are still working.
 			### :FIXME: Is there a race condition here because a thread could
 			### grab an event and move from the idleWorkers list to the workers
 			### list in between the tests? Maybe not, as nothing touches the
@@ -383,7 +461,8 @@ module MUES
 
 				if ! @idleWorkers.list.empty?
 					workersRemaining = @idleWorkers.list.length
-					_debugMsg( 1, "Supervisor: Sending shutdown events to #{workersRemaining} idle workers. #{@workers.list.length} active workers remain." )
+					_debugMsg( 1, "Supervisor: Sending shutdown events to #{workersRemaining} " +
+							  "idle workers. #{@workers.list.length} active workers remain." )
 					@queueMutex.synchronize {
 						@idleWorkers.list.each do
 							@queuedEvents.push( ThreadShutdownEvent.new )
@@ -408,7 +487,6 @@ module MUES
 		def _workerThreadRoutine( threadNumber )
 			_debugMsg( 1, "Worker #{WorkerThread.current.id} reporting for duty." )
 			$SAFE = @safeLevel
-			thr = WorkerThread.current
 
 			### Get the first event
 			event = dequeue()
@@ -422,13 +500,14 @@ module MUES
 				begin
 					consequences = _dispatchEvent( event )
 					enqueue( *consequences ) if consequences.size > 0
-					event = nil
 				end
 
+				event = nil
 				event = dequeue()
 				_debugMsg( 1, "Dequeued event (#{event.class.name}) #{event.to_s}" )
 			end
 
+			thr = WorkerThread.current
 			_debugMsg( 1, "Worker #{thr.id} going home after #{thr.runtime} seconds of faithful service." )
 		end
 
@@ -493,7 +572,7 @@ module MUES
 
 
 		### (PROITECTED) METHOD: _killWorkerThread( workerThread )
-		### Kill the specified worker thread and join it right away
+		### Kill the specified worker thread and join it immediately.
 		def _killWorkerThread( workerThread )
 			raise ArgumentError, "Cannot kill the current thread" if workerThread == Thread.current
 			raise ArgumentError, "Argument must be a worker thread" unless workerThread.is_a?( WorkerThread )
