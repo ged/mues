@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.21 2002/10/13 23:09:05 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.22 2002/10/25 00:24:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.21 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.21 2002/10/13 23:09:05 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.22 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.22 2002/10/25 00:24:06 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
@@ -129,7 +129,6 @@ module MUES
 			@idle = false
 			@paused = false
 			@streamThread = Thread.new { streamThreadRoutine() }
-			@streamThread.abort_on_exception = true
 			@streamThread.desc = "IOEventStream thread [Stream #{self.id}]"
 		end
 
@@ -420,12 +419,22 @@ module MUES
 				@filterMutex.synchronize( Sync::SH ) {
 					if ! @notifyingInputObjects.empty?
 						debugMsg( 4, "#{@notifyingInputObjects.length} input notifications." )
-						filterInputEvents()
+						begin
+							filterInputEvents()
+						rescue ::Exception => err
+							self.log.error "Error while filtering input events: %s\n\t%s" %
+								[ err.message, err.backtrace.join("\n\t") ]
+						end
 					end
 
 					if ! @notifyingOutputObjects.empty?
 						debugMsg( 4, "#{@notifyingOutputObjects.length} output notifications." )
-						filterOutputEvents()
+						begin
+							filterOutputEvents()
+						rescue ::Exception => err
+							self.log.error "Error while filtering output events: %s\n\t%s" %
+								[ err.message, err.backtrace.join("\n\t") ]
+						end
 					end
 				}
 
@@ -442,7 +451,6 @@ module MUES
 					end
 				}
 			end
-			
 		end
 
 
