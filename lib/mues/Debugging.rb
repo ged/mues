@@ -17,7 +17,7 @@ Debuggable - a mixin module for debugging methods
 	include Debuggable
 
 	def initialize
-	  _debugMsg( "Initializing..." )
+	  _debugMsg( 1, "Initializing..." )
 	end
   end
 
@@ -42,17 +42,9 @@ http://language.perl.com/misc/Artistic.html)
 
 module Debuggable
 
-	def Debuggable.append_features( klass )
-		klass.class_eval {
-			@debugged = false
-		}
-		super
-	end
-
 	def _debugMsg( *messages )
-		return nil unless debugged?
 		level = messages[0].is_a?( Fixnum ) ? messages.shift : 5
-		return unless debugged() >= level
+		return unless debugged?( level )
 
 		logMessage = messages.collect {|m| m.to_s}.join('')
 		frame = caller(1)[0]
@@ -63,17 +55,27 @@ module Debuggable
 		end
 	end
 
-	def debugged
-		return false unless debugged?
-		@debugged
+	def debugLevel
+		defined?( @debugLevel ) ? @debugLevel : 0
 	end
 
-	def debugged=( value )
-		@debugged = value
+	def debugLevel=( value )
+		case value
+		when true
+			@debugLevel = 1
+		when false
+			@debugLevel = 0
+		when Fixnum
+			level = 5 if level > 5
+			level = 0 if level < 0
+			@debugLevel = level
+		else
+			raise TypeError, "Cannot set debugging level to #{value.to_s}"
+		end
 	end
 
-	def debugged?
-		defined?( @debugged ) && @debugged > 0
+	def debugged?( level=1 )
+		debugLevel() >= level
 	end
 
 end
