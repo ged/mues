@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
 =DummyAdapter.rb
@@ -10,11 +10,73 @@ DummyAdapter - An ObjectStore debugging adapter class
 
 == Synopsis
 
-  
+   require "mues/ObjectStore"
+   oStore = MUES::ObjectStore.new( "Dummy", "faeriemud", "localhost", "fmuser", "somepass" )
 
 == Description
 
-A testing filesystem-based objectstore adapter class.
+A testing filesystem-based objectstore adapter class. This class shouldn^t be
+required directly; you should instead specify "Dummy" as the first argument to
+the MUES::ObjectStore class^s constructor.
+
+== Methods
+=== Protected Methods
+
+--- initialize( db, host, user, password )
+
+	Initialize the adapter object with the specified ((|db|)), ((|host|)),
+	((|user|)), and ((|password|)) values.
+
+=== Attribute Accessor Methods
+
+--- db
+
+    Return the database name associated with the adapter.
+
+--- host
+
+    Returns the host associated with the adapter.
+
+--- user
+
+    Returns the user associated with the adapter.
+
+=== Abstract Methods
+
+--- storeObjects( *objects )
+
+    Store the specified ((|objects|)) in the ObjectStore and return their
+    (({oids})).
+
+--- fetchObject( *oids )
+
+    Fetch the objects specified by the given ((|oids|)) from the ObjectStore and
+    return them.
+
+--- stored?( oid )
+
+    Returns true if an object with the specified ((|oid|)) exists in the
+    ObjectStore.
+
+--- storeUserData( username, data )
+
+    Store the specified ((|userdata|)) associated with the specified
+    ((|username|)).
+
+--- fetchUserData( username )
+
+    Fetch a user record for the specified ((|username|)). Throws a
+    (({NoSuchObjectError})) if no user is associated with the specified
+    ((|username|)).
+
+--- createUserData( username )
+
+    Create a new user record and associate it with the given ((|username|))
+    before returning it.
+
+--- deleteUserData( username )
+
+    Delete the user data associated with the specified ((|username|)).
 
 == Author
 
@@ -27,7 +89,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "mues/Namespace"
 require "mues/Exceptions"
@@ -40,23 +102,18 @@ module MUES
 
 			include Debuggable
 
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: DummyAdapter.rb,v 1.4 2001/07/18 02:04:19 deveiant Exp $
-
-			attr_accessor :db, :host, :user, :password
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: DummyAdapter.rb,v 1.5 2001/07/30 12:06:09 deveiant Exp $
 
 			### METHOD: new( db, host, user, password )
 			### Create a new DummyAdapter ObjectStore adapter object.
-			def initialize( db, host, user, password )
-				@db = db
-				@host = host
-				@user = user
-				@password = password
+			def initialize( *args )
+				super( *args )
 
 				@dbDir = "%s/%s" % [ "objectstore", @db.gsub(%r{\W+}, "") ]
 				unless FileTest.directory?( @dbDir )
 					Dir.mkdir( @dbDir, 0755 )
-					Dir.mkdir( "#{@dbDir}/players", 0755 )
+					Dir.mkdir( "#{@dbDir}/users", 0755 )
 				end
 			end
 
@@ -120,13 +177,13 @@ module MUES
 			end
 
 
-			### METHOD: storePlayerData( username, data )
-			### Store the given data as the player record for the specified username
-			def storePlayerData( username, data )
+			### METHOD: storeUserData( username, data )
+			### Store the given data as the user record for the specified username
+			def storeUserData( username, data )
 				filename = _safeifyId( username )
 				
-				# Open a file with the playername as the name and dump the object to it
-				File.open( "#{@dbDir}/players/#{filename}", File::CREAT|File::TRUNC|File::RDWR, 0644 ) { |f|
+				# Open a file with the username as the name and dump the object to it
+				File.open( "#{@dbDir}/users/#{filename}", File::CREAT|File::TRUNC|File::RDWR, 0644 ) { |f|
 					until f.flock( File::LOCK_EX|File::LOCK_NB )
 						sleep 0.2
 					end
@@ -135,17 +192,17 @@ module MUES
 				}
 			end
 
-			### METHOD: fetchPlayerData( username )
-			### Fetch the player record for the given username. Throws a
-			### NoSuchObjectError exception if the player record does not exist.
-			def fetchPlayerData( username )
+			### METHOD: fetchUserData( username )
+			### Fetch the user record for the given username. Throws a
+			### NoSuchObjectError exception if the user record does not exist.
+			def fetchUserData( username )
 				filename = _safeifyId( username )
 				obj = nil
 
 				# Try to open the corresponding file, returning nil if we fail
 				# After opening and locking, delete the file before reading.
 				begin
-					File.open( "#{@dbDir}/players/#{filename}", File::RDONLY ) { |f|
+					File.open( "#{@dbDir}/users/#{filename}", File::RDONLY ) { |f|
 						until f.flock( File::LOCK_EX|File::LOCK_NB )
 							sleep 0.2
 						end
@@ -159,27 +216,27 @@ module MUES
 				return obj
 			end
 
-			### METHOD: createPlayerData( username )
-			### Create a player record for the given username and return it
-			def createPlayerData( username )
+			### METHOD: createUserData( username )
+			### Create a user record for the given username and return it
+			def createUserData( username )
 				filename = _safeifyId( username )
-				raise AdapterError, "A player with the name '#{username}' already exists" if
-					FileTest.exists?( "#{@dbDir}/players/#{filename}" )
+				raise AdapterError, "A user with the name '#{username}' already exists" if
+					FileTest.exists?( "#{@dbDir}/users/#{filename}" )
 
-				data = MUES::Player::DefaultDbInfo.dup
-				storePlayerData( username, data )
+				data = MUES::User::DefaultDbInfo.dup
+				storeUserData( username, data )
 
 				return data
 			end
 
-			### METHOD: deletePlayerData( username )
-			### Delete the player data associated with the given username
-			def deletePlayerData( username )
+			### METHOD: deleteUserData( username )
+			### Delete the user data associated with the given username
+			def deleteUserData( username )
 				filename = _safeifyId( username )
-				raise AdapterError, "No player with the name '#{username}' exists" unless
-					FileTest.exists?( "#{@dbDir}/players/#{filename}" )
+				raise AdapterError, "No user with the name '#{username}' exists" unless
+					FileTest.exists?( "#{@dbDir}/users/#{filename}" )
 
-				File.delete( "#{@dbDir}/players/#{filename}" )
+				File.delete( "#{@dbDir}/users/#{filename}" )
 			end
 				
 			protected
