@@ -2,10 +2,10 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-	$Id: muesconfig.dtd,v 1.9 2002/10/27 21:01:46 deveiant Exp $
+	$Id: muesconfig.dtd,v 1.10 2003/04/21 04:24:07 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
-	Time-stamp: "27-Oct-2002 12:05:46 deveiant"
+	Time-stamp: "03-Dec-2002 07:21:42 deveiant"
 
 	Copyright (c) 2002, The FaerieMUD Consortium. All rights reserved.
 
@@ -27,7 +27,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.9 $ -->
+<!-- A version string like $Revision: 1.10 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -55,14 +55,14 @@
 
 
 <!-- General config section -->
-<!ELEMENT general               (server-name,server-description,server-admin,root-dir,motd)>
+<!ELEMENT general               (server-name,server-description,server-admin,root-dir,motd,includepath?)>
 
 <!ELEMENT server-name           (#PCDATA)>
 <!ELEMENT server-description    (#PCDATA)>
 <!ELEMENT server-admin          (#PCDATA)>
 <!ELEMENT root-dir              (#PCDATA)>
 <!ELEMENT motd                  (#PCDATA)>
-
+<!ELEMENT includepath           (directory+)>
 
 <!-- Engine config section -->
 <!ELEMENT engine                (tick-length,exception-stack-size,debug-level,poll-interval,
