@@ -29,7 +29,7 @@
 # 
 # == Version
 #
-#  $Id: simplememorymanager.rb,v 1.3 2002/07/09 22:30:22 stillflame Exp $
+#  $Id: simplememorymanager.rb,v 1.4 2002/07/09 23:09:32 stillflame Exp $
 # 
 # == Authors
 #
@@ -51,12 +51,11 @@ module MUES
 		class SimpleMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-			Rcsid = %q$Id: simplememorymanager.rb,v 1.3 2002/07/09 22:30:22 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: simplememorymanager.rb,v 1.4 2002/07/09 23:09:32 stillflame Exp $
 
 			### The symbol of the default method to call to "mark" objects.
 			DefaultMarkMethod = :os_gc_mark
-
 
 			### Create and return a new MemoryManager:
 			### [objectStore]
@@ -64,16 +63,10 @@ module MUES
 			### [interval]
 			###   The minimum number of seconds between swap runs. Defaults to
 			###   50.
-			def initialize( objectStore, interval = 50 )
-				@interval = interval
-				@mark = mark
-
-				super( objectStore )
-				
-				return self
+			def initialize( *args )
+				super( args )
+				@interval = @config['interval']
 			end
-
-
 
 			#########
 			protected
