@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.18 2002/10/26 18:59:11 deveiant Exp $
+# $Id: loginsession.rb,v 1.19 2002/10/31 02:16:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module MUES
 			MUES::FactoryMethods,
 			MUES::UtilityFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
-		Rcsid = %q$Id: loginsession.rb,v 1.18 2002/10/26 18:59:11 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
+		Rcsid = %q$Id: loginsession.rb,v 1.19 2002/10/31 02:16:31 deveiant Exp $
 
 		# Pattern for untainting user input for username and password
 		LoginUntaintPattern		= %r{([a-z]\w+)}
@@ -79,6 +79,8 @@ module MUES
 
 			super()
 
+			delegator = MUES::EventDelegator::new( self, :handleInputEvents, false )
+
 			# Set up instance variables, creating the login proxy we'll use to
 			# get and send IOEvents to the stream
 			@config				= config
@@ -90,13 +92,13 @@ module MUES
 
 			@waitingOnEngine	= false
 			@finished			= false
-			@delegator			= MUES::EventDelegator::new( self )
+			@delegator			= delegator
 			@timeoutEvent		= nil
 			@queuedInput		= []
 			@currentLogin		= nil
 			@authMutex			= Mutex.new
 
-			@stream.addFilters( @delegator )
+			@stream.addFilters( delegator )
 
 			# Get the timeout from the config, and if there is one, create a
 			# scheduled event to kill us after the timeout expires
@@ -112,8 +114,8 @@ module MUES
 
 			# Now queue the login banner and the first username prompt output
 			# events
-			@delegator.queueOutputEvents( MUES::OutputEvent::new(banner),
-										  MUES::PromptEvent::new(userprompt) )
+			delegator.queueOutputEvents( MUES::OutputEvent::new(banner),
+										 MUES::PromptEvent::new(userprompt) )
 		end
 		
 
@@ -154,13 +156,13 @@ module MUES
 					# If we've finished authentication and we're just waiting
 					# around to be cleaned up, just return any events we're given.
 					if @finished
-						debugMsg( 4, "Session is finished. Giving events back to caller." )
+						debugMsg 4, "Session is finished. Giving events back to caller."
 						returnEvents = events
 						break
 
 					# If we've waiting on a pending authevent, queue all events
 					elsif @waitingOnEngine
-						debugMsg( 4, "Session is waiting on engine. Queueing events for later." )
+						debugMsg 4, "Session is waiting on engine. Queueing events for later."
 						@queuedInput += events
 						returnEvents.clear
 						break
@@ -171,7 +173,8 @@ module MUES
 						login = untaintString( events.shift.data, LoginUntaintPattern ).to_s
 						debugMsg( 4, "Setting login name to '#{login}'." )
 						@currentLogin = login
-						@delegator.queueOutputEvents( HiddenInputPromptEvent.new(@config.login.passprompt) )
+						event = HiddenInputPromptEvent::new( @config.login.passprompt )
+						@delegator.queueOutputEvents( event )
 						next
 
 					# If we've got a login already, and we're not finished or
@@ -180,7 +183,8 @@ module MUES
 					else
 						pass = untaintString( events.shift.data, PasswordUntaintPattern ).to_s
 
-						debugMsg( 4, "Setting password to '#{pass}', and dispatching a LoginSessionAuthEvent." )
+						debugMsg 4, "Setting password to '#{pass}', and dispatching " \
+							"a LoginSessionAuthEvent."
 						authEvent = MUES::LoginSessionAuthEvent::new self,
 							@currentLogin,
 							pass,
