@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.10 2002/06/16 07:27:13 scotus Exp $
+# $Id: class.rb,v 1.11 2002/06/23 04:46:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module Metaclass
 	### to build other classes.
 	class Class
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: class.rb,v 1.10 2002/06/16 07:27:13 scotus Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: class.rb,v 1.11 2002/06/23 04:46:06 deveiant Exp $
 
 		# Mix in comparison methods
 		include Comparable
@@ -185,6 +185,27 @@ module Metaclass
 		end
 
 
+		### Returns true if the class object is an abstract class (ie., has one
+		### or more operations without implementations).
+		def abstract?
+			seenOps = {}
+			catch( :foundVirtual ) {
+				self.ancestors.each {|klass|
+					next unless klass.is_a? Metaclass::Class
+					klass.operations.each {|name,op|
+						next if seenOps[name]
+						if op.virtual?
+							throw :foundVirtual, true
+						else
+							seenOps[name] = true
+						end
+					}
+				}
+				return false
+			}
+		end
+
+
 		### Return the metaclass as evalable code. If
 		### <tt>includeClassDeclaration</tt> is <tt>true</tt>, the code is
 		### wrapped in a class declaration. If <tt>includeComments</tt> is true,
@@ -192,6 +213,14 @@ module Metaclass
 		### legibility.
 		def classDefinition( includeClassDeclaration = true, includeComments = true )
 			decl = []
+
+			### Add code to make :new a private class method if this class is an
+			### abstract class.
+			if self.abstract?
+				decl << "private_class_method :new"
+			else
+				decl << "public_class_method :new"
+			end
 
 			### Assemble the class attributes, class operations, and instance
 			### operations declarations.
