@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.9 2002/06/04 07:00:21 deveiant Exp $
+# $Id: loginsession.rb,v 1.10 2002/08/01 02:54:02 deveiant Exp $
 # 
 # == Authors
 # 
@@ -56,28 +56,29 @@ module MUES
 	### Login session class: encapsulates the task of authenticating a user.
 	class LoginSession < Object; implements MUES::Debuggable
 
-		include MUES::TypeCheckFunctions
+		include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
-		Version = %q$Revision: 1.9 $
-		Rcsid = %q$Id: loginsession.rb,v 1.9 2002/06/04 07:00:21 deveiant Exp $
+		Version = %q$Revision: 1.10 $
+		Rcsid = %q$Id: loginsession.rb,v 1.10 2002/08/01 02:54:02 deveiant Exp $
 
 
 		### Create and initialize a new login session object with the
-		### configuration, IOEventStream, and IP address specified
-		def initialize( aConfig, anIOEventStream, remoteHost )
-			checkType( aConfig, MUES::Config )
-			checkType( anIOEventStream, MUES::IOEventStream )
+		### <tt>config</tt> (MUES::Config object), <tt>stream</tt>
+		### (MUES::IOEventStream object), and <tt>remoteHost</tt> specified.
+		def initialize( config, stream, remoteHost )
+			checkType( config, MUES::Config )
+			checkType( stream, MUES::IOEventStream )
 
 			super()
 
 			# Set up instance variables, creating the login proxy we'll use to
 			# get and send IOEvents to the stream
-			@config				= aConfig
-			@stream				= anIOEventStream
+			@config				= config
+			@stream				= stream
 			@remoteHost			= remoteHost
 
 			@loginAttemptCount	= 0
-			@maxTries			= @config['login']['maxtries'].to_i
+			@maxTries			= @config.login.maxtries
 
 			@waitingOnEngine	= false
 			@finished			= false
@@ -92,15 +93,15 @@ module MUES
 
 			# Get the timeout from the config, and if there is one, create a
 			# scheduled event to kill us after the timeout expires
-			timeout = @config['login']['timeout'].to_i
+			timeout = @config.login.timeout
 			if timeout > 0 
 				@myTimeoutEvent = LoginSessionFailureEvent.new( self, "Timeout (#{timeout} seconds)." )
 				engine.scheduleEvents( Time.now + timeout, @myTimeoutEvent )
 			end
 
 			# Now queue the motd and the first username prompt output events
-			@myProxy.queueOutputEvents( OutputEvent.new(@config["login"]["banner"]),
-									    PromptEvent.new(@config["login"]["userprompt"]) )
+			@myProxy.queueOutputEvents( OutputEvent.new(@config.login.banner),
+									    PromptEvent.new(@config.login.userprompt) )
 		end
 		
 
@@ -123,7 +124,7 @@ module MUES
 		def handleInputEvents( *newEvents )
 			returnEvents = []
 
-			_debugMsg( 3, "Handling input events." )
+			debugMsg( 3, "Handling input events." )
 			
 			# Combine the events we've been saving with the new ones and put
 			# them through our little state-machine thingie.
@@ -136,13 +137,13 @@ module MUES
 					# If we've finished authentication and we're just waiting
 					# around to be cleaned up, just return any events we're given.
 					if @finished
-						_debugMsg( 4, "Session is finished. Giving events back to caller." )
+						debugMsg( 4, "Session is finished. Giving events back to caller." )
 						returnEvents = events
 						break
 
 					# If we've waiting on a pending authevent, queue all events
 					elsif @waitingOnEngine
-						_debugMsg( 4, "Session is waiting on engine. Queueing events for later." )
+						debugMsg( 4, "Session is waiting on engine. Queueing events for later." )
 						@queuedInput += events
 						returnEvents.clear
 						break
@@ -151,9 +152,9 @@ module MUES
 					# login
 					elsif ! @currentLogin
 						ev = events.shift
-						_debugMsg( 4, "Setting login name to '#{ev.data}'." )
+						debugMsg( 4, "Setting login name to '#{ev.data}'." )
 						@currentLogin = ev.data
-						@myProxy.queueOutputEvents( HiddenInputPromptEvent.new(@config["login"]["passprompt"]) )
+						@myProxy.queueOutputEvents( HiddenInputPromptEvent.new(@config.login.passprompt) )
 						next
 
 					# If we've got a login already, and we're not finished or
@@ -161,7 +162,7 @@ module MUES
 					# contains the password, so do authentication
 					else
 						ev = events.shift
-						_debugMsg( 4, "Setting password to #{ev.data}, and dispatching a LoginSessionAuthEvent." )
+						debugMsg( 4, "Setting password to #{ev.data}, and dispatching a LoginSessionAuthEvent." )
 						authEvent = LoginSessionAuthEvent.new( self,
 															   @currentLogin,
 															   ev.data,
@@ -183,7 +184,7 @@ module MUES
 		### Callback for authentication success. Called by the MUES::Engine
 		### after the +user+ successfully authenticates. 
 		def authSuccessCallback( user )
-			_debugMsg( 1, "User authenticated successfully." )
+			debugMsg( 1, "User authenticated successfully." )
 
 			stream = nil
 			@authMutex.synchronize {
@@ -214,7 +215,7 @@ module MUES
 		### the user fails to authenticate for the specified +reason+ (a
 		### String).
 		def authFailureCallback( reason="None given" )
-			_debugMsg( 1, "Login failed: #{reason}." )
+			debugMsg( 1, "Login failed: #{reason}." )
 			@loginAttemptCount += 1
 
 			@myProxy.queueOutputEvents( OutputEvent.new("\nAuthentication failure.\n") )
@@ -224,7 +225,7 @@ module MUES
 			### log the failure
 			if @maxTries > 0 && @loginAttemptCount >= @maxTries
 				logMsg = "Max login tries exceeded for session #{self.id} from #{@remoteHost}."
-				_debugMsg( 1, logMsg )
+				debugMsg( 1, logMsg )
 				@myProxy.queueOutputEvents( OutputEvent.new(">>> Max tries exceeded. <<<") )
 				return [ LoginSessionFailureEvent.new(self,"Too many attempts"), LogEvent.new( logMsg ) ]
 
@@ -232,9 +233,9 @@ module MUES
 			### Prompt for login and try again
 			else
 				logMsg = "Failed login attempt #{@loginAttemptCount} from #{@remoteHost}."
-				_debugMsg( 1, logMsg )
+				debugMsg( 1, logMsg )
 				engine.dispatchEvents( LogEvent.new("notice", logMsg) )
-				@myProxy.queueOutputEvents( OutputEvent.new("\n" + @config["login"]["userprompt"]) )
+				@myProxy.queueOutputEvents( OutputEvent.new("\n" + @config.login.userprompt) )
 
 				@authMutex.synchronize {
 					@currentLogin = nil
@@ -249,7 +250,7 @@ module MUES
 
 		### Terminate the session and clean up.
 		def terminate
-			_debugMsg( 1, "Terminating login session." )
+			debugMsg( 1, "Terminating login session." )
 			@authMutex.synchronize {
 				@stream.shutdown if @stream
 				@stream = nil
