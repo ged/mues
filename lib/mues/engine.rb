@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.23 2002/10/13 23:10:34 deveiant Exp $
+# $Id: engine.rb,v 1.24 2002/10/14 09:30:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,7 +146,7 @@ module MUES
 		# dispatch method
 		include MUES::TypeCheckFunctions,
 			MUES::SafeCheckFunctions,
-			MUES::UntaintingFunctions,
+			MUES::UtilityFunctions,
 			MUES::Event::Handler
 
 
@@ -170,8 +170,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.23 2002/10/13 23:10:34 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.24 2002/10/14 09:30:45 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -179,7 +179,7 @@ module MUES
 		DefaultPollInterval	= 0.25
 
 		### Prototype for scheduled events hash (duped before use)
-		ScheduledEventsHash = { 'timed' => {}, 'ticked' => {}, 'repeating' => {} }
+		ScheduledEventsHash = { :timed => {}, :ticked => {}, :repeating => {} }
 
 		### Class variables
 		@@Instance		= nil
@@ -278,6 +278,7 @@ module MUES
 			ignoreSignals()
 
 			@initMode = initMode
+			@initMode.freeze unless @initMode
 			@state = State::STARTING
 			@config = config
 			startupEvents = []
@@ -322,6 +323,16 @@ module MUES
 		### with initialization)
 		def running?
 			return @state == State::RUNNING
+		end
+
+
+		### Turn init mode off if it was on and freeze it. Returns true if it
+		### was turned off, and false if it was already off.
+		def cancelInitMode
+			return false if @initMode.frozen?
+			@initMode = false
+			@initMode.freeze
+			return true
 		end
 
 
@@ -420,11 +431,13 @@ module MUES
 		end
 
 
-		### Add a new user (a MUES::User object) to the Engine's objectstore.
+		### Save a user (a MUES::User object) to the Engine's objectstore.
 		def registerUser( user )
 			checkSafeLevel( 2 )
 			checkType( user, MUES::User )
-			checkStateRunning( "register a new user" )
+			checkStateRunning( "register a user" )
+
+			self.log.info( "Registering user object for '%s'" % user.login )
 			@objectStore.store( user )
 		end
 
@@ -435,7 +448,9 @@ module MUES
 			checkSafeLevel( 2 )
 			checkType( user, MUES::User )
 			checkStateRunning( "unregister a user" )
-			@objectStore.remote( user )
+
+			self.log.info( "Unregistering user object for '%s'" % user.login )
+			@objectStore.remove( user )
 		end
 
 
@@ -458,10 +473,11 @@ module MUES
 		#############################################################
 
 		### Return a multi-line string indicating the current status of the engine.
-		def statusString
+		def getStatusString
 			status =	"#{@name}\n" 
-			status +=	" MUES Engine %s\n" % [ Version ]
-			status +=	" Up %0.2f seconds at tick %s " % [ Time.now - @startTime, @tick ]
+			status +=	" MUES Engine %s\n" % self.version
+			status +=   " *** Init Mode ***\n" if self.initMode?
+			status +=	" Up %s at tick %s " % [ timeDelta(Time::now - @startTime), @tick ]
 			status +=	" %d users logging in\n" % [ @loginSessions.length ]
 			@usersMutex.synchronize(Sync::SH) {
 				status +=	" %d users active, %d linkdead\n\n" % 
@@ -475,6 +491,61 @@ module MUES
 
 			status += "\n"
 			return status
+		end
+
+
+		### Return a multi-line string containing a table listing the
+		### currently-scheduled events registered with the engine.
+		def getScheduledEventsString
+			table  =	"Scheduled Events Table:\n"
+			table +=	" Time: %s  Tick: %d\n\n" %
+				[ Time::now.strftime("%Y/%m/%d %H:%M:%S"), @tick ]
+			table +=	"  %-35s  %-15s\n" % [ "Event", "When" ]
+			table +=   ("-" * 60) + "\n"
+
+			rows = []
+			@scheduledEventsMutex.synchronize( Sync::SH ) {
+				[:timed, :ticked, :repeating].each {|type|
+					next if @scheduledEvents[type].empty?
+
+					@scheduledEvents[type].keys.sort.each {|tickOrTime|
+						@scheduledEvents[type][tickOrTime].each {|event|
+							case type
+							when :timed
+								rows << "  %-35s  %-25s" % [
+									event.to_s[0,35],
+									tickOrTime.strftime("at %Y/%m/%d %H:%M:%S")
+								]
+
+							when :ticked
+								rows << "  %-35s  %-25s" % [
+									event.to_s[0,35],
+									"once at tick #{tickOrTime}"
+								]
+
+							when :repeating
+								rows << "  %-35s  %-25s" % [
+									event.to_s[0,35],
+									"every #{tickOrTime[1]} ticks (next at #{tickOrTime[0]})"
+								]
+
+							else
+								raise "Illegal type of scheduled event '%s' seen" %
+									type.inspect
+							end
+						}
+					}
+				}
+			}
+							
+			if rows.empty?
+				table += " [No scheduled events]\n\n"
+			else
+				table += rows.join("\n")
+			end
+
+			table += "\n\n"
+			return table
 		end
 
 
@@ -510,6 +581,8 @@ module MUES
 			checkType( time, ::Time, ::Integer )
 			checkEachType( events, MUES::Event )
 
+			debugMsg 2, "Scheduling %d event/s." % events.length
+
 			# Schedule the events based on what kind of thing 'time' is. In any
 			# case, if the time specified has already passed, dispatch the
 			# events immediately without scheduling them.
@@ -523,8 +596,8 @@ module MUES
 					dispatchEvents( *events )
 				else
 					@scheduledEventsMutex.synchronize(Sync::EX) {
-						@scheduledEvents['timed'][ time ] ||= []
-						@scheduledEvents['timed'][ time ] += events
+						@scheduledEvents[:timed][ time ] ||= []
+						@scheduledEvents[:timed][ time ] += events
 					}
 				end
 
@@ -541,8 +614,8 @@ module MUES
 					debugMsg( 3, "Scheduling #{events.length} events to repeat every " +
 							    "#{tickInterval} ticks (next at #{nextTick})" )
 					@scheduledEventsMutex.synchronize(Sync::EX) {
-						@scheduledEvents['repeating'][[ nextTick, tickInterval ]] ||= []
-						@scheduledEvents['repeating'][[ nextTick, tickInterval ]] += events
+						@scheduledEvents[:repeating][[ nextTick, tickInterval ]] ||= []
+						@scheduledEvents[:repeating][[ nextTick, tickInterval ]] += events
 					}
 
 				# One-time tick-fired events, keyed by tick number
@@ -551,8 +624,8 @@ module MUES
 					time += @tick
 					debugMsg( 3, "Scheduling #{events.length} events for tick #{time}" )
 					@scheduledEventsMutex.synchronize(Sync::EX) {
-						@scheduledEvents['ticked'][ time ] ||= []
-						@scheduledEvents['ticked'][ time ] += events
+						@scheduledEvents[:ticked][ time ] ||= []
+						@scheduledEvents[:ticked][ time ] += events
 					}
 
 				# If the tick is 0, dispatch 'em right away
@@ -670,7 +743,9 @@ module MUES
 									  SignalEvent,
 									  UserEvent,
 									  LoginSessionEvent,
-									  EnvironmentEvent
+									  EnvironmentEvent,
+									  CallbackEvent,
+									  RebuildCommandRegistryEvent
 									 )
 		end
 
@@ -716,7 +791,7 @@ module MUES
 			@commandShellFactory = config.createCommandShellFactory
 
 			# Schedule an event to periodically update commands
-			reloadEvent = CallbackEvent.new( @commandShellFactory.method('rebuildCommandRegistry') )
+			reloadEvent = MUES::RebuildCommandRegistryEvent::new
 			self.scheduleEvents( @commandShellFactory.reloadInterval, reloadEvent ) if
 				@commandShellFactory.reloadInterval.nonzero?
 
@@ -1028,6 +1103,7 @@ module MUES
 					debugMsg( 5, "In tick #{@tick}..." )
 					pendingEvents = getPendingEvents( @tick )
 					dispatchEvents( TickEvent.new(@tick), *pendingEvents ) 
+
 				rescue StandardError => e
 					if self.running?
 						dispatchEvents( UntrappedExceptionEvent.new(e) )
@@ -1037,10 +1113,13 @@ module MUES
 							[ e.message, e.backtrace.join("\n\t") ]
 					end
 					next
+
 				rescue Interrupt
 					dispatchEvents( UntrappedSignalEvent.new("INT") )
+
 				rescue SignalException => e
 					dispatchEvents( UntrappedSignalEvent.new(e) )
+
 				ensure
 					sleep tickLength if self.running?
 				end
@@ -1207,18 +1286,24 @@ module MUES
 			currentTime = Time.now
 
 			# Find and remove pending events, adding them to pendingEvents
-			@scheduledEventsMutex.synchronize(Sync::EX) {
+			@scheduledEventsMutex.synchronize(Sync::SH) {
 
 				# Time-fired events
-				@scheduledEvents['timed'].keys.sort.each {|time|
+				@scheduledEvents[:timed].keys.sort.each {|time|
 					break if time > currentTime
-					pendingEvents += @scheduledEvents['timed'].delete( time )
+					debugMsg 3, "One or more timed events are due (%s)." % time.to_s
+					@scheduledEventsMutex.synchronize(Sync::EX) {
+						pendingEvents += @scheduledEvents[:timed].delete( time )
+					}
 				}
 
 				# Tick-fired events
-				@scheduledEvents['ticked'].keys.sort.each {|tick|
+				@scheduledEvents[:ticked].keys.sort.each {|tick|
 					break if tick > currentTick
-					pendingEvents += @scheduledEvents['ticked'].delete( tick )
+					debugMsg 3, "One or more ticked events are due (tick %d)." % tick
+					@scheduledEventsMutex.synchronize(Sync::EX) {
+						pendingEvents += @scheduledEvents[:ticked].delete( tick )
+					}
 				}
 
 				# Repeating events -- sort works with the interval arrays, too,
@@ -1226,15 +1311,23 @@ module MUES
 				# first. We delete the old scheduled group, update the interval
 				# values, and merge with any already-extant group at the new
 				# interval.
-				@scheduledEvents['repeating'].keys.sort.each {|interval|
+				@scheduledEvents[:repeating].keys.sort.each {|interval|
 					break if interval[0] > currentTick
+					debugMsg 3, "One or more repeating events are due (%d:every %d)" % interval
+					events = []
 					newInterval = [ interval[0]+interval[1], interval[1] ]
-					events = @scheduledEvents['repeating'].delete( interval )
-					@scheduledEvents['repeating'][newInterval] ||= []
-					@scheduledEvents['repeating'][newInterval] += events
+					@scheduledEventsMutex.synchronize(Sync::EX) {
+						events = @scheduledEvents[:repeating].delete( interval )
+						@scheduledEvents[:repeating][newInterval] ||= []
+						@scheduledEvents[:repeating][newInterval] += events
+					}
 					pendingEvents += events
 				}
 			}
+
+			unless pendingEvents.empty?
+				debugMsg 2, "Returning %d events that came due." % pendingEvents.length
+			end
 
 			return pendingEvents.flatten
 		end
@@ -1272,6 +1365,12 @@ module MUES
 		def handleListenerCleanupEvent( event )
 			results = event.listener.releaseOutputFilter( event.filter ) || []
 			return *results
+		end
+
+		
+		### Handle reload requests for the CommandShell::Factory.
+		def handleRebuildCommandRegistryEvent( event )
+			return @commandShellFactory.rebuildCommandRegistry
 		end
 
 
@@ -1446,8 +1545,8 @@ module MUES
 		def handleLoadEnvironmentEvent( event )
 			checkType( event, MUES::EnvironmentEvent )
 			
-			envClass = *untaint( event.envClassName, /([a-z][\w:]+)/i )
-			envName  = *untaint( event.name, /(\w+)/ )
+			envClass = *untaintString( event.envClassName, /([a-z][\w:]+)/i )
+			envName  = *untaintString( event.name, /(\w+)/ )
 			results = self.loadEnvironment( envClass, envName )
 
 			# Report success
@@ -1509,6 +1608,12 @@ module MUES
 							   event.exception.backtrace.join("\n\t"),
 						   ])
 			return []
+		end
+
+
+		### Handle callback events.
+		def handleCallbackEvent( event )
+			return event.call
 		end
 
 
