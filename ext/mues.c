@@ -1,6 +1,6 @@
 /*
  *	mues.c - C extensions for MUES
- *	$Id: mues.c,v 1.1 2002/06/04 06:44:21 deveiant Exp $
+ *	$Id: mues.c,v 1.2 2002/06/04 15:24:28 deveiant Exp $
  *
  *	This module loads various subordinate C extensions for MUES.
  *
@@ -44,7 +44,7 @@ mues_debug(fmt, va_alist)
   char		buf[BUFSIZ], buf2[BUFSIZ];
   va_list	args;
 
-  if (!RTEST(ruby_verbose)) return;
+  if (!RTEST(ruby_debug)) return;
 
   snprintf( buf, BUFSIZ, "MUES Debug>>> %s", fmt );
 
