@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.25 2002/10/13 20:07:12 deveiant Exp $
+# $Id: user.rb,v 1.26 2002/10/14 09:35:55 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.25 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.25 2002/10/13 20:07:12 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.26 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.26 2002/10/14 09:35:55 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -108,43 +108,58 @@ module MUES
 			qnaire = Questionnaire::new( "Create User", *CreateUserQuestions ) {|qnaire|
 				user = MUES::User::new( qnaire.answers )
 				MUES::ServerFunctions::registerUser( user )
+
+				qnaire.message( "User '%s' created." % user.login.capitalize )
 			}
 			qnaire.debugLevel = 5
 			return qnaire
 		end
 
+
 		### Return a MUES::Questionnaire IOEventFilter object suitable for
 		### insertion into a user's IOEventStream to query for a new password.
 		def self.getPasswordQuestionnaire( user, isOther )
-			setPass = Proc::new {|qnaire| user.password = qnaire.answers[:newPassword]}
+			questions = nil
+
+			# If we're changing another user's password, don't prompt for the
+			# old password
 			if isOther
-				qnaire = Questionnaire::new( "Change password", *ChangeOtherPasswordQuestions, &setPass )
-			else # have to create one of the questions with the user object in
-				# the scope of its validator.
-				old_pass_question = {
-					:name		=> 'oldPassword',
-					:hidden		=> true,
-					:question   => "Old passowrd: ",
-					:validator	=> Proc::new {|qnaire, answer|
-						callcc {|rval|
-							if answer.empty?
-								if user.cryptedPass == '*'
-									rval.call(true)
-								else
-									qnaire.abort
-								end
-							elsif user.passwordMatches?(answer)
-								rval.call(true)
-							else
-								qnaire.error("Old password does not match.\n\n")
-								rval.call(false)
-							end
-						} # callcc
-					} # Proc
-				}
-				qnaire = Questionnaire::new( "Change password", old_pass_question, 
-											 *ChangeOtherPasswordQuestions, &setPass )
+				questions = ChangePasswordQuestions[1..-1]
+			else
+				questions = ChangePasswordQuestions
 			end
+
+			name = "Changing %s's password" % user.login.capitalize
+			qnaire = Questionnaire::new( name, *questions ) {|qnaire|
+				user.password = qnaire.answers[:newPassword]
+				qnaire.message( "Password changed.\n\n" )
+			}
+
+			# Add the user to the support data so the questionnaire's validators
+			# can get at it
+			qnaire.debugLevel = 5
+			qnaire.supportData[:user] = user
+
+			return qnaire
+		end
+
+
+		### Return a MUES::Questionnaire IOEventFilter object suitable for
+		### insertion into a user's IOEventStream to query for altering an
+		### attribute of a user.
+		def self.getAttributeQuestionnaire(user, attribute)
+			question = CreateUserQuestions.find {|question| question[:name] == attribute} or
+				raise RuntimeError, "Can't build a questionnaire for '%s': No question with that name." %
+				attribute
+
+			qnaire = Questionnaire::new( "Change #{attribute}", question ) {|qnaire|
+				MUES::ServerFunctions::unregisterUser( user )
+				user.send("#{attribute}=", qnaire.answers[attribute.intern])
+				MUES::ServerFunctions::registerUser( user )
+				qnaire.message "Changed '%s' for %s to '%s'\n\n" %
+					[ attribute, user.login.capitalize, user.send(attribute.intern) ]
+			}
+
 			qnaire.debugLevel = 5
 			return qnaire
 		end
@@ -175,7 +190,6 @@ module MUES
 			checkResponse( attributes, '[]', '[]=', 'has_key?' )
 			super()
 
-			@userVersion		= Version.dup
 			@remoteHost			= nil
 			@ioEventStream		= nil
 			@activated			= false
@@ -253,9 +267,6 @@ module MUES
 
 		# Date from when the user was created
 		attr_reader		:timeCreated
-
-		# User class version number
-		attr_reader		:userVersion
 
 		# The user's encrypted password
 		attr_reader		:cryptedPass
@@ -428,8 +439,6 @@ module MUES
 		end
 
 
-
-
 		# The list of questions for the user-creation questionnaire.
 		CreateUserQuestions = [
 
@@ -592,8 +601,33 @@ module MUES
 
 		]
 
+
 		# The list of questions for admin password changing questionnaire.
-		ChangeOtherPasswordQuestions = [
+		ChangePasswordQuestions = [
+
+			{
+				:name		=> 'oldPassword',
+				:hidden		=> true,
+				:question   => "Old password: ",
+				:validator	=> Proc::new {|qnaire, answer|
+					user = qnaire.data[:user]
+
+					callcc {|rval|
+						if answer.empty?
+							if user.cryptedPass == '*'
+								rval.call(true)
+							else
+								qnaire.abort
+							end
+						elsif user.passwordMatches?(answer)
+							rval.call(true)
+						else
+							qnaire.error("Old password does not match.\n\n")
+							rval.call(false)
+						end
+					} # callcc
+				} # Proc
+			},
 
 			# Password
 			{
