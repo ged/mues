@@ -28,7 +28,7 @@
 #
 # == Rcsid
 # 
-# $Id: eventdelegator.rb,v 1.11 2002/09/28 12:11:23 deveiant Exp $
+# $Id: eventdelegator.rb,v 1.12 2002/09/28 12:55:03 deveiant Exp $
 # 
 # == Authors
 # 
@@ -53,8 +53,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.11 2002/09/28 12:11:23 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.12 2002/09/28 12:55:03 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### Create and return a EventDelegator object for the given client. The
@@ -62,7 +62,7 @@ module MUES
 		def initialize( delegate, sortPosition=DefaultSortPosition )
 			super( sortPosition )
 
-			unless delete.respond_to?(:handleInputEvents) ||
+			unless delegate.respond_to?(:handleInputEvents) ||
 					delegate.respond_to?(:handleOutputEvents)
 				raise ArgumentError, "Delegate must respond to either :handleInputEvents, "
 					":handleOutputEvents, or both"
