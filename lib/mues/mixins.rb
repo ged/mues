@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.17 2003/04/19 06:57:07 deveiant Exp $
+# $Id: mixins.rb,v 1.18 2003/05/26 20:13:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,13 +72,16 @@ module MUES
 		### module. The method raises an exception if called on the class
 		### itself, but not if called via <tt>super()</tt> from a subclass.
 		def self.included( klass )
-			klass.instance_eval do @isAbstract = true end
+			klass.instance_variable_set( :@isAbstract, true )
 
 			def klass.new( *args, &block )
 				if self.instance_variables.include?("@isAbstract")
-					raise InstantiationError if self.instance_eval do @isAbstract end
+					raise InstantiationError if self.instance_variable_get( :@isAbstract )
 				end
 				super( *args, &block )
+			rescue Exception
+				$@.delete_if {|frame| /Mixins\.rb:\d+:in/ =~ frame}
+				raise
 			end
 
 			super( klass )
@@ -234,7 +237,7 @@ module MUES
 					else
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{anObject.class.name}",
-							caller(1).find_all {|frame| frame !~ __FILE__}
+							caller(1).find_all {|frame| /#{__FILE__}/ !~ frame}
 					end
 				end
 			else
@@ -244,7 +247,7 @@ module MUES
 					else
 						raise ArgumentError, 
 							"Argument missing.",
-							caller(1).find_all {|frame| frame !~ __FILE__}
+							caller(1).find_all {|frame| /#{__FILE__}/ !~ frame}
 					end
 				end
 			end
@@ -267,7 +270,7 @@ module MUES
 						typeList = vTypes.collect {|type| type.name}.join(" or ")
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{obj.class.name}",
-							caller(1).find_all {|frame| frame !~ __FILE__}
+							caller(1).find_all {|frame| /#{__FILE__}/ !~ frame}
 					}
 				end
 			end
