@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/23 18:28:55 $">
+#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/27 18:11:52 $">
 #	
 # 	  <!-- General server configuration:
 # 		  server-name:			The name of the server
@@ -218,7 +218,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.19 2002/10/23 18:28:55 deveiant Exp $
+# $Id: config.rb,v 1.20 2002/10/27 18:11:52 deveiant Exp $
 # 
 # == Authors
 # 
@@ -255,8 +255,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.19 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.19 2002/10/23 18:28:55 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.20 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.20 2002/10/27 18:11:52 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -436,6 +436,7 @@ module MUES
 		### Instantiate and return one or more MUES::Environment objects from
 		### the configuration.
 		def createConfiguredEnvironments
+			MUES::Environment.derivativeDirs.replace = self.environments.envPath
 			return self.environments.collect {|name,confighash|
 				MUES::Environment::create( confighash['class'],
 										   name,
@@ -1005,6 +1006,24 @@ module MUES
 		### MUES::Environment objects to load at server startup.
 		class EnvironmentsSection < MUES::Config::EnumerableSection # :nodoc:
 
+			### Create and return a new <tt>environments</tt> section object
+			### from the specified element and parent element.
+			def initialize( element, parent )
+				@envPath = ['server/environments']
+				super( element, parent )
+			end
+
+
+			######
+			public
+			######
+
+			# The Array of directories to search in when looking for
+			# environments
+			attr_accessor :envPath
+
+
+
 			#########
 			protected
 			#########
@@ -1012,21 +1031,30 @@ module MUES
 			### Extract the configuration information from the specified
 			### <tt>env</tt> REXML::Element, and add it to the array of
 			### environments.
-			def addSubelement( env )
-				checkType( env, REXML::Element )
+			def addSubelement( elem )
+				checkType( elem, REXML::Element )
 
-				if env.name == 'environment'
+				case elem.name
+				when 'environment'
 					parameters = {}
-					env.elements.each("param") {|param|
+					elem.elements.each("param") {|param|
 						parameters[ param.attributes["name"] ] = self.processValue( param )
 					}
 
-					description = env.elements["description"].text
+					description = elem.elements["description"].text
 
-					@items[ env.attributes["name"] ] = {
-						'class'			=> env.attributes["class"],
+					@items[ elem.attributes["name"] ] = {
+						'class'			=> elem.attributes["class"],
 						'description'	=> description,
 						'parameters'	=> parameters,
+					}
+
+				when 'envpath'
+					elem.each_element {|dir|
+						raise MUES::ConfigError,
+							"Unknown element #{dir.name} in commandshell/commandpath" unless
+							dir.name = 'directory'
+						@envPath.unshift( self.processValue(dir) )
 					}
 
 				else
@@ -1212,7 +1240,7 @@ module MUES
 						raise MUES::ConfigError,
 							"Unknown element #{dir.name} in commandshell/commandpath" unless
 							dir.name = 'directory'
-						@commandPath << dir.text
+						@commandPath.unshift( self.processValue(dir) )
 					}
 
 				when 'param'
@@ -1242,7 +1270,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/23 18:28:55 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/27 18:11:52 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
