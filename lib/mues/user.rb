@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.19 2002/09/12 12:13:43 deveiant Exp $
+# $Id: user.rb,v 1.20 2002/09/27 16:16:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,6 +38,8 @@ require "mues/Object"
 require "mues/StorableObject"
 require "mues/Events"
 require "mues/Exceptions"
+require "mues/filters/MacroFilter"
+require "mues/filters/Questionnaire"
 
 module MUES
 
@@ -57,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.19 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.19 2002/09/12 12:13:43 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.20 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.20 2002/09/27 16:16:14 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -90,11 +92,32 @@ module MUES
 				Name.each_with_index {|name,i| hash[name.downcase] = i}
 				hash
 			end
+
+			# Pick out the name of the lowest-privileged account type, which
+			# becomes the default.
+			Default = Map.inject {|akvp,bkvp|
+				akvp[1] < bkvp[1] ? akvp : bkvp
+			}[0]
+			
 		end
 		AccountType.freeze
 
 
-		### Create a new user object with the hash of attributes specified The
+		### Class methods
+
+		### Return a MUES::Questionnaire IOEventFilter object suitable for
+		### insertion into a user's IOEventStream to query for the information
+		### necessary to create a new user. 
+		def self.getCreationQuestionnaire
+			return Questionnaire::new( "Create User", CreateUserQuestions ) {|qnaire|
+				user = MUES::User::new( qnaire.answers )
+				MUES::ServerFunctions::registerUser( user )
+			}
+		end
+
+
+
+		### Create a new user object with the hash of attributes specified. The
 		### valid attributes are:
 		###
 		### [<tt>:accountType</tt>]
@@ -112,6 +135,8 @@ module MUES
 		###   The date of the user's last connection.
 		### [<tt>:lastHost</tt>]
 		###   The hostname or IP of host the user last connected from.
+		### [<tt>:password</tt>]
+		###   The user's unencrypted password.
 		def initialize( attributes={} )
 			checkResponse( attributes, '[]', '[]=', 'has_key?' )
 			super()
@@ -147,6 +172,7 @@ module MUES
 			@preferences		= {}
 
 			@cryptedPass		= '*'
+			self.password		= attributes[:password] if attributes.has_key?( :password )
 		end
 
 
@@ -280,20 +306,21 @@ module MUES
 			checkType( cshell, MUES::CommandShell )
 
 			# Create the command shell and macro filters and add them
-			macros = MacroFilter.new( self )
+			macros = MUES::MacroFilter.new( self )
 			stream.addFilters( cshell, macros )
 
 			# Set the stream, send the MOTD if it was specified, and flag the
 			# object as activated
 			@ioEventStream = stream
 			@ioEventStream.unpause
-			@ioEventStream.addEvents( OutputEvent::new("\n\n" + motd.strip + "\n\n") ) if motd
+			@ioEventStream.
+				addEvents( MUES::OutputEvent::new("\n\n" + motd.strip + "\n\n") ) if motd
 
 			@activated = true
 
 			debugMsg( 1, "MOTD is: #{motd.inspect}" )
 
-			OutputEvent.RegisterHandlers( self )
+			MUES::OutputEvent::RegisterHandlers( self )
 			#TickEvent.RegisterHandlers( self )
 			return []
 		end
@@ -304,8 +331,8 @@ module MUES
 			results = []
 
 			### Unregister all our handlers
-			OutputEvent.UnregisterHandlers( self )
-			#TickEvent.UnregisterHandlers( self )
+			MUES::OutputEvent::UnregisterHandlers( self )
+			#MUES::TickEvent.UnregisterHandlers( self )
 
 			### Shut down the IO event stream
 			@activated = false
@@ -324,20 +351,20 @@ module MUES
 
 			### :FIXME: This shouldn't explicitly refer to the output filter
 			### class, since it may not even be a SocketOutputFilter at all.
-			newFilter = stream.removeFiltersOfType( SocketOutputFilter )[0]
+			newFilter = stream.removeFiltersOfType( MUES::SocketOutputFilter )[0]
 			raise RuntimeError, "Cannot reconnect from a stream with no SocketOutputFilter" unless newFilter
 			newFilter.puts( "Reconnecting..." )
 
 			### Get the current stream's socket output filter/s and flush 'em
 			### before closing it and replacing it with the new one.
-			@ioEventStream.removeFiltersOfType( SocketOutputFilter ).each {|filter|
+			@ioEventStream.removeFiltersOfType( MUES::SocketOutputFilter ).each {|filter|
 				filter.puts( "[Reconnect from #{newFilter.remoteHost}]" )
 				results << filter.shutdown
 				newFilter.sortPosition = filter.sortPosition
 			}
 			
 			@ioEventStream.addFilters( newFilter )
-			@ioEventStream.addEvents( InputEvent.new("") )
+			@ioEventStream.addEvents( MUES::InputEvent.new("") )
 
 			return results
 		end
@@ -351,6 +378,165 @@ module MUES
 		def handleIOEvent( event )
 			@ioEventStream.addEvents( event )
 		end
+
+
+
+
+		# The list of questions for the user-creation questionnaire.
+		CreateUserQuestions = [
+
+			# Username
+			{
+				:name		=> "username",
+				:question   => "Username: ",
+				:validator	=> Proc::new {|questionnaire,answer|
+					questionnaire.abort() if answer.strip.empty?
+
+					# 'return' isn't allowed in an anonymous Proc, so we have to
+					# use continuations to allow the return value to be
+					# decided in more than one place.
+					callcc {|rval|
+						if answer !~ /^[a-z]\w{2,}$/i
+							questionnaire.sendError( "Username must begin with a-z " \
+													"character, and contain only " \
+													"alphanumerics." )
+							rval.call( false )
+						end
+
+						if MUES::ServerFunctions::getUserNames.include?( answer.downcase )
+							questionnaire.sendError( "User '#{answer}' already exists" )
+							rval.call( false )
+						end
+
+						true
+					}
+				},
+			},
+
+			# Account type
+			{
+				:name		=> "accountType",
+				:question	=> "Account type [#{AccountType::Map.keys.join(',')}]: ",
+				:default	=> AccountType::Default,
+				:validator	=> Proc::new {|questionnaire,answer|
+
+					# 'return' isn't allowed in an anonymous Proc, so we have to
+					# use continuations to allow the return value to be
+					# decided in more than one place.
+					callcc {|rval|
+
+						# Normalize the input and return an error condition if it's
+						# empty.
+						answer = answer.strip.gsub(/\W+/, '').downcase
+						if answer.empty?
+							questionnaire.sendError( "Invalid response." )
+							rval.call( false )
+						end
+
+						# Use matching to allow abbreviations
+						pat = Regexp::new("^#{answer}")
+						res = accountTypeMap.find_all {|name,val| pat.match(name)}
+
+						# If it didn't match anything, it's an error
+						if res.empty?
+							questionnaire.
+								sendError( "Invalid account type '%s': "\
+										   "Must specify one of %s" %
+										   [answer, accountTypeMap.keys.join(',')] )
+							rval.call( false )
+
+						# If it matched more than one thing, it was un-ambiguous.
+						elsif res.length > 1
+							matched = res.collect {|name,val| name}.join(', ')
+							questionnaire.
+								sendError( "Ambiguous type '%s': Matched %s" %
+										   [answer, matched] )
+							rval.call( false )
+
+						# Otherwise, return the Integer value associated with the
+						# answer.
+						else
+							rval.call( res[1] )
+						end
+					}
+				},
+			},
+
+			# Real name
+			{
+				:name		=> "realname",
+				:question	=> "Real name: ",
+				:validator	=> /[a-z ]+/i,
+				:errorMsg	=> "Invalid input. Real name must consist only of "\
+								"letters and spaces.",
+			},
+
+			# Email address
+			{
+				:name		=> "emailAddress",
+				:question	=> "Email address: ",
+
+				# This is pretty simplistic, but we really only need to be
+				# mostly correct. Perhaps replace this with something like
+				# Perl's Email::Valid if it becomes an issue.
+				:validator	=> /[a-z0-9][-\.!\w]+@[-\.\w]+\.[a-z]/i,
+				:errorMsg	=> "Invalid input. Please confirm the address you " \
+								"are typing is valid.",
+			},
+
+			# Password
+			{
+				:name		=> 'password',
+				:hidden		=> true,
+				:question	=> "Password: ",
+				:validator	=> Proc::new {|questionnaire,answer|
+
+					# 'return' isn't allowed in an anonymous Proc, so we have to
+					# use continuations to allow the return value to be
+					# decided in more than one place.
+					callcc {|rval|
+						if answer.length < 6
+							questionnaire.sendError( "Invalid password: Must be at "\
+													 "least 6 characters." )
+							rval.call( false )
+
+						elsif answer !~ /\W/
+							questionnaire.sendError( "Invalid password: Must have at "\
+													 "least one alphanumeric character." )
+							rval.call( false )
+
+						else
+							rval.call( true )
+						end
+					}
+				},
+			},
+
+			# Password confirmation
+			{
+				:name		=> 'passwordConfirm',
+				:hidden		=> true,
+				:question	=> " (again): ",
+				:validator	=> Proc::new {|questionnaire,answer|
+
+					# 'return' isn't allowed in an anonymous Proc, so we have to
+					# use continuations to allow the return value to be
+					# decided in more than one place.
+					callcc {|rval|
+						if answer != questionnaire.answers[:answer1]
+							questionnaire.sendError( "Passwords didn't match." )
+							rval.call( false )
+						else
+							rval.call( true )
+						end
+					}
+				},
+
+			},
+
+		]
+
+		
 
 	end #class User
 end #module MUES
