@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.33 2002/09/27 16:13:37 deveiant Exp $
+#  $Id: objectstore.rb,v 1.34 2002/10/13 23:14:13 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.33 $
-		RcsId	= %q$Id: objectstore.rb,v 1.33 2002/09/27 16:13:37 deveiant Exp $
+		Version	= %q$Revision: 1.34 $
+		RcsId	= %q$Id: objectstore.rb,v 1.34 2002/10/13 23:14:13 deveiant Exp $
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -302,14 +302,20 @@ module MUES
 		alias :do_read_only :fetch_read_only
 		alias :doReadOnly :fetch_read_only
 
-		
+
+		### Synchronizes the loaded objects with the data on disk.
+		def sync
+			@backend.store( *@memmgr.unswappedObjects )
+		end
+
+
 		### Closes the database.
 		def close
 			self.log.info( "Closing objectstore #@name" )
 			objects = @memmgr.shutdown
 
 			self.log.info { "Syncing objectspace (%d objects) to backing store" % objects.length }
-			@backend.store( *objects )
+			self.put( *objects )
 
 			self.log.debug { "Closing backend" }
 			@backend.close
