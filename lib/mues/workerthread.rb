@@ -6,7 +6,7 @@
 
 == Name
 
-WorkerThread - A $SAFE-ified worker object class
+WorkerThread - A worker object class
 
 == Synopsis
 
@@ -29,8 +29,8 @@ thread has been in an idle state.
 
 --- MUES::WorkerThread#initialize( *args )
 
-	Set up and initialize the thread. Sets the thread^s (({$SAFE})) level to 2,
-	sets the timestamp, and then calls ((<Thread#initialize>)).
+	Set up and initialize the thread. Sets the thread^s timestamp, and then
+	calls ((<Thread#initialize>)).
 
 ==== Instance Methods
 
@@ -78,7 +78,6 @@ module MUES
 		### Initialize the thread with the given arguments.
 		protected
 		def initialize( *args )
-			$SAFE = 2
 			@startTime = Time.now
 			_debugMsg( 1, "Initializing worker thread at #{@startTime.ctime}" )
 			super { yield(args[0]) }
