@@ -16,7 +16,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.25 2002/08/29 07:14:07 deveiant Exp $
+# $Id: mues.rb,v 1.26 2002/09/12 09:59:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,28 +36,6 @@ unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
 	fail "MUES requires at least Ruby 1.7.2. This is #{RUBY_VERSION}."
 end
 
-###
-### Add a couple of syntactic sugar aliases to the Module class.  (Borrowed from
-### Hipster's component "conceptual script" - http://www.xs4all.nl/~hipster/):
-###
-### [<tt>Module::implements</tt>]
-###     An alias for <tt>include</tt>. This allows syntax of the form:
-###       class MyClass < MUES::Object; implements MUES::Debuggable, AbstracClass
-###         ...
-###       end
-###
-### [<tt>Module::implements?</tt>]
-###     An alias for <tt>Module#<</tt>, which allows one to ask
-###     <tt>SomeClass.implements?( Debuggable )</tt>.
-###
-class Module
-
-	# Syntactic sugar for mixin/interface modules
-	alias :implements :include
-	alias :implements? :include?
-end
-
-require 'mues/Object'
 require 'mues.so'
 require 'mues/Engine'
 
