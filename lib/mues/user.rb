@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 ###########################################################################
-=begin
+=begin 
 = Player.rb
 == Name
 
@@ -9,8 +9,6 @@ MUES::Player - a user connection class for the MUES Engine
 == Synopsis
 
   require "mues/Player"
-
-  player = MUES::Player.new( '127.0.0.1' )
 
 == Description
 
@@ -33,10 +31,14 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
+require "date"
+require "md5"
+
 require "mues/Namespace"
 require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
+require "mues/IOEventFilters"
 
 module MUES
 	class Player < Object
@@ -44,6 +46,7 @@ module MUES
 		include Debuggable
 		include Event::Handler
 
+		### Class constants
 		module Role
 			PLAYER		= 0
 			CREATOR		= 1
@@ -52,19 +55,36 @@ module MUES
 		end
 		Role.freeze
 
-		### Class attributes
-		@@DefaultPrompt = 'mues> '
+		### :SYNC: Changes in this structure should be accompanied by changes in
+		### the corresponding table definition in '../sql/mues.player.sql'
+		### :FIXME: Obviously, manually keeping these two the same is non-optimal...
+		DefaultDbInfo = {
+			'username'			=> 'guest',
+			'cryptedPass'		=> MD5.new( '' ).hexdigest,
+			'realname'			=> 'Guest User',
+			'emailAddress'		=> 'guestAccount@localhost',
+			'lastLogin'			=> '',
+			'lastHost'			=> '',
 
-		### (PROTECTED) METHOD: initialize( playerDataHash )
+			'timeCreated'		=> Time.new,
+			'firstLoginTick'	=> 0,
+
+			'role'				=> Role::PLAYER,
+			'flags'				=> 0,
+			'preferences'		=> {},
+			'characters'		=> []
+		}
+
+		### METHOD: new( playerDataHash )
 		### Initialize a new player object with the hash of attributes specified
 		protected
 		def initialize( dbInfo )
-			checkType( dbInfo, Hash )
+			checkResponse( dbInfo, '[]', '[]=' )
 			super()
 
 			@remoteIp = nil
 			@ioEventStream = nil
-			@prompt = @@DefaultPrompt
+			@activated = false
 
 			@dbInfo = dbInfo
 
@@ -78,8 +98,29 @@ module MUES
 		public
 
 		### Accessors
-		attr_accessor	:ioEventStream, :prompt
-		attr_reader		:remoteIp, :dbInfo
+		attr_accessor	:ioEventStream
+		attr_accessor	:dbInfo
+
+		### METHOD: activated?
+		### Returns true if the engine has activated this player object
+		def activated?
+			@activated
+		end
+
+		### METHOD: remoteIp
+		### Returns the remote IP (if any) that the client is connected from
+		def remoteIp
+			@remoteIp
+		end
+
+		### METHOD: remoteIp=( newIp )
+		### Sets the remote IP that the client is connected from, and sets the
+		### player's 'lastHost' attribute.
+		def remoteIp=( newIp )
+			checkType( newIp, ::String )
+
+			@remoteIp = @dbInfo.lastHost = newIp
+		end
 
 		### METHOD: isCreator?
 		### Returns true if this player has creator permissions
@@ -87,11 +128,13 @@ module MUES
 			return @dbInfo['role'] >= Role::CREATOR
 		end
 
+
 		### METHOD: isImplementor?
 		### Returns true if this player has implementor permissions
 		def isImplementor?
 			return @dbInfo['role'] >= Role::IMPLEMENTOR
 		end
+
 
 		### METHOD: isAdmin?
 		### Returns true if this player has admin permissions
@@ -99,34 +142,78 @@ module MUES
 			return @dbInfo['role'] >= Role::ADMIN
 		end
 
+
 		### METHOD: to_s
 		### Returns a stringified version of the player object
 		def to_s
 			if @remoteIp
-				return "#{@name.capitalize} <#{@dbInfo['emailAddress']}> [connected from #{@remoteIp}]"
+				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> [connected from #{@remoteIp}]"
 			else
-				return "#{@name.capitalize} <#{@dbInfo['emailAddress']}>"
+				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}>"
 			end
 		end
+
+
+		### METHOD: password=( newPassword )
+		### Reset the player's password to ((|newPassword|)).
+		def password=( newPassword )
+			checkType( newPassword, String )
+
+			self.cryptedPass = MD5.new( newPassword ).hexdigest
+		end
+
+
+		### METHOD: activate( anIOEventStream )
+		### Activate the player and set up their environment with the given stream
+		def activate( stream )
+			checkType( stream, MUES::IOEventStream )
+
+			# Create the command shell and macro filters and add them
+			shell = CommandShell.new( self )
+			macros = MacroFilter.new( self )
+			stream.addFilters( shell, macros )
+
+			# Set the stream attribute and flag the object as activated
+			@ioEventStream = stream
+			@activated = true
+		end
+
 
 		### METHOD: disconnect( )
 		### Disconnect our IOEventStream and prepare to be destroyed
 		def disconnect
-
-			### Tell the character object that we're going bye-bye
-			if @currentCharacter
-			end
 
 			### Unregister all our handlers
 			OutputEvent.UnregisterHandlers( self )
 			TickEvent.UnregisterHandlers( self )
 
 			### Shut down the IO event stream
+			@activated = false
 			@ioEventStream.shutdown if @ioEventStream
 			
 			### Save ourselves
-			engine().dispatchEvents( PlayerSaveEvent.new(self) )
+			engine.dispatchEvents( PlayerSaveEvent.new(self) )
 		end
+
+
+		### METHOD: reconnect( remoteIp, aSocketOutputFilter )
+		### Reconnect with a new socket output filter
+		def reconnect( remoteIp, newSocketFilter )
+			checkType( newSocketFilter, SocketOutputFilter )
+			newSocketFilter.puts( "Reconnecting..." )
+
+			### Get the current stream's socket output filter/s and flush 'em
+			### before closing it and replacing it with the new one.
+			@ioEventStream.removeFiltersOfType( SocketOutputFilter ).each {|filter|
+				filter.puts( "[Reconnect from #{remoteIp}]" )
+				filter.shutdown
+				newFilter.sortPosition = filter.sortPosition
+			}
+			
+			@ioEventStream.addFilter( newFilter )
+			@ioEventStream.handleEvents( InputEvent.new("") )
+		end
+
 
 		### METHOD: method_missing( aSymbol, *args )
 		### Create and call methods that are the same as player data keys
@@ -135,9 +222,13 @@ module MUES
 			methName = origMethName.sub( /=$/, '' )
 			super unless @dbInfo.has_key?( methName )
 
+			### :TODO: Does this need to be synchronized? Probably.
+
+			### Turn off -w for this eval
 			oldVerbose = $VERBOSE
 			$VERBOSE = false
 
+			### Create the new methods
 			self.class.class_eval <<-"end_eval"
 			def #{methName}( arg=nil )
 				if !arg.nil?
@@ -150,6 +241,7 @@ module MUES
 			end
 			end_eval
 
+			### Restore old -w setting
 			$VERBOSE = oldVerbose
 
 			raise RuntimeError, "Method definition for '#{methName}' failed." if method( methName ).nil?
@@ -167,16 +259,18 @@ module MUES
 		def _handleIOEvent( event )
 			return nil unless @ioEventStream
 			@ioEventStream.addEvent( event )
+
+			[]
 		end
+
 
 		### (PROTECTED) METHOD: _handleTickEvent
 		### Handle server tick events by delegating them to any subordinate objects
 		### that need them.
 		def _handleTickEvent( event )
-			if @currentCharacter then
-				@currentCharacter.heartbeat( event.tickNumber )
-			end
+			@ioEventStream.addEvent( event )
 		end
+
 
 		### (PROTECTED) METHOD: _handleOtherEvent
 		### Handle any event that doesn't have an explicit handler by raising an
