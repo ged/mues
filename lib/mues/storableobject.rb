@@ -19,7 +19,9 @@
 #
 #   require "StorableObject"
 #
-#   #do ObjectStore stuff with it ^_^
+#   fake_obj = StorableObject.new( an_id_in_,the_object_store )
+#   fake_obj.read_only {|x| puts x.to_s}
+#   puts fake_obj.to_s  #no longer fake
 #
 # == Description
 #
