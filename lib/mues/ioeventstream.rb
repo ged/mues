@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.20 2002/10/06 07:44:34 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.21 2002/10/13 23:09:05 deveiant Exp $
 # 
 # == Authors
 # 
@@ -93,6 +93,10 @@ module MUES
 		end
 		include State
 
+
+		### Class constants
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.21 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.21 2002/10/13 23:09:05 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
