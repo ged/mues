@@ -34,7 +34,7 @@
 #
 # == Rcsid
 # 
-# $Id: service.rb,v 1.4 2002/04/01 16:27:31 deveiant Exp $
+# $Id: service.rb,v 1.5 2002/05/16 03:48:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -56,11 +56,11 @@ require "mues/Events"
 module MUES
 
 	### Abstract base class for MUES::Engine subsystems (services)
-	class Service < Object ; implements MUES::Notifiable, MUES::AbstractClass
+	class Service < Object ; implements MUES::Notifiable, MUES::AbstractClass, MUES::Event::Handler
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.4 2002/04/01 16:27:31 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.5 2002/05/16 03:48:43 deveiant Exp $
 
 
 		### Initialize a new service object with the specified +name+ and
@@ -75,7 +75,7 @@ module MUES
 		### Class methods
 		class << self
 
-			### Get the service specified by the given ((|name|)), instantiating
+			### Get the service specified by the given +name+, instantiating
 			### it if necessary.
 			def getService( type )
 			end
@@ -98,6 +98,7 @@ module MUES
 
 		# The description of the service
 		attr_reader :description
+
 
 	end # class Service
 end # module MUES
