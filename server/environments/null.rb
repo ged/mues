@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: null.rb,v 1.7 2002/09/15 07:43:47 deveiant Exp $
+# $Id: null.rb,v 1.8 2002/10/12 17:48:12 stillflame Exp $
 # 
 # == Authors
 # 
@@ -65,8 +65,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.7 2002/09/15 07:43:47 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.8 2002/10/12 17:48:12 stillflame Exp $
 
 		DefaultDescription = %Q{
 		This is a barebones environment used in testing. It doesn't really contain any
@@ -109,17 +109,18 @@ module MUES
 		#
 
 		### Start the world instance
-		def start
+		def start 
 			self.log.notice( "Starting Null environment #{self.muesid}" )
 			return []
 		end
 
 		### Stop the world instance
-		def stop
+		def stop 
 			# Stop participants
 			self.log.notice( "Stopping Null environment #{self.muesid}" )
 			return []
 		end
+		alias :shutdown :stop
 
 
 		### Return a MUES::ParticipantProxy object for the specified +user+ and
@@ -196,7 +197,7 @@ module MUES
 
 		### Return a string listing the connected users, suitable for the 'who'
 		### command.
-		def getUserlist
+		def getUserlist 
 
 			# Iterate over the list of connected users, adding a line for each
 			# of 'em
