@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: loginsessionevents.rb,v 1.10 2002/09/12 12:16:43 deveiant Exp $
+# $Id: loginsessionevents.rb,v 1.11 2002/10/25 03:11:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -97,35 +97,22 @@ module MUES
 	### authentication, and one for failed authentication.
 	class LoginSessionAuthEvent < LoginSessionEvent
 
-		# The username entered by the user
-		attr_reader :username
-
-		# The unencrypted password entered by the user
-		attr_reader :password
-
-		# The name or IP address of the host the user is connecting from
-		attr_reader :remoteHost
-
-		# The callback (a Method object) for indicating a successful attempt
-		attr_reader :successCallback
-
-		# The callback (a Method object) for indicating a failed attempt
-		attr_reader :failureCallback
-
 		### Create a new authorization event with the specified values and
-		### return it. The <tt>session</tt> argument is the <tt>LoginSession</tt> that
-		### contains the socket connection, the <tt>user</tt> and <tt>pass</tt>
-		### arguments are the username and password that has been given by the
-		### connecting client, the <tt>remoteHostname</tt> is the name of the host
-		### the client is connecting from, and the <tt>successCallback</tt> and
-		### <tt>failureCallback</tt> are <tt>String</tt>, <tt>Method</tt>, or <tt>Proc</tt>
-		### objects which specify a function to call to indicate successful or
-		### failed authentication. If the callback is a <tt>String</tt>, it is
-		### assumed to be the name of the method to call on the specified
+		### return it. The <tt>session</tt> argument is the
+		### <tt>LoginSession</tt> that contains the socket connection, the
+		### <tt>user</tt> and <tt>pass</tt> arguments are the username and
+		### password that has been given by the connecting client, the
+		### <tt>filter</tt> is the output filter containing the client
+		### connection, and the <tt>sCall</tt> and <tt>fCall</tt> are
+		### <tt>String</tt>, <tt>Method</tt>, or <tt>Proc</tt> objects which
+		### specify a function to call to indicate successful or failed
+		### authentication. If the callback is a <tt>String</tt>, it is assumed
+		### to be the name of the method to call on the specified
 		### <tt>LoginSession</tt> object.
-		def initialize( session, user, pass, host, sCall, fCall )
-			checkEachType( [user,pass], String )
-			checkEachType( [sCall,fCall], String, Method, Proc )
+		def initialize( session, user, pass, filter, sCall, fCall )
+			checkEachType( [user,pass], ::String )
+			checkType( filter, MUES::OutputFilter )
+			checkEachType( [sCall,fCall], ::String, ::Method, ::Proc )
 
 			successCallback = case sCall
 							  when String
@@ -144,10 +131,39 @@ module MUES
 			super( session )
 			@username			= user
 			@password			= pass
-			@remoteHost			= host
+			@filter				= filter
 			@successCallback	= successCallback
 			@failureCallback	= failureCallback
 		end
+
+
+		######
+		public
+		######
+
+		# The username entered by the user
+		attr_reader :username
+
+		# The unencrypted password entered by the user
+		attr_reader :password
+
+		# The MUES::OutputFilter that contains the user's connection
+		attr_reader :filter
+
+		# The callback (a Method object) for indicating a successful attempt
+		attr_reader :successCallback
+
+		# The callback (a Method object) for indicating a failed attempt
+		attr_reader :failureCallback
+
+
+		### Returns the 'peer name' of the MUES::OutputFilter that contains the
+		### authenticating user's connection.
+		def peerName
+			@filter.peerName
+		end
+		deprecate_method :remoteHost, :peerName
+
 
 		### METHOD: to_s
 		### Returns a stringified version of the event
@@ -156,7 +172,7 @@ module MUES
 				super(),
 				@username,
 				@password,
-				@remoteHost
+				@filter.peerName
 			]
 		end
 	end
