@@ -9,7 +9,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.8 2002/04/01 16:29:13 deveiant Exp $
+# $Id: mues.rb,v 1.9 2002/09/12 12:45:19 deveiant Exp $
 # 
 # == Authors
 # 
@@ -22,21 +22,19 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
+require "getoptlong"
+
+Options = [
+	[ "--fork",		"-f",		GetoptLong::NO_ARGUMENT ],
+	[ "--loglevel",	"-l",		GetoptLong::REQUIRED_ARGUMENT ],
+	[ "--init",		"-i",		GetoptLong::NO_ARGUMENT ],
+	[ "--debug",	"-d",		GetoptLong::REQUIRED_ARGUMENT ],
+]
+
 
 ### Set the include path and config file based on where we're executing from
-if $0 =~ /server#{File::Separator}bin#{File::Separator}/
-	baseDir = $0.gsub( /server#{File::Separator}bin#{File::Separator}.*/, '' )
-	baseDir = '.' if baseDir.empty?
-	$: << File.join( baseDir, "lib" )
-	DefaultConfigFile = File.join( baseDir, "MUES.cfg" )
-elsif $0 =~ /#{File::Separator}bin#{File::Separator}/
-	baseDir = $0.gsub( /#{File::Separator}bin#{File::Separator}.*/, '' )
-	baseDir = '.' if baseDir.empty?
-	DefaultConfigFile = File.join( baseDir, "MUES.cfg" )
-else
-	DefaultConfigFile = "MUES.cfg"
-end
-
+baseDir = File::expand_path( File::dirname($0) ).sub( %r{\Wbin$}, '' )
+libDir = File::join( baseDir, "lib" )
 
 require "mues"
 
@@ -44,26 +42,60 @@ require "mues"
 ### Main function
 def main
 
-	configFile = ARGV.shift || DefaultConfigFile
+	# Initial option values
+	fork = false
+	loglevel = "info"
+	initmode = false
+	debugLevel = 0
+
+	# Read command-line options
+	opts = GetoptLong::new( *Options )
+	opts.each do |opt, arg|
+		case opt
+
+		when '--fork'
+			fork = true
+
+		when '--loglevel'
+			raise "Log level must be one of "+
+				MUES::Log::LogLevels.collect {|ll| ll.to_s}.join(', ') +
+				", no '#{arg}'" unless MUES::Log::LogLevels.include?( arg.intern )
+			loglevel = arg
+
+		when '--init'
+			initmode = true
+			puts "Will start the server in 'init' mode."
+
+		when '--debug'
+			debugLevel = arg.to_i
+
+		else
+			MUES::Log.error( "No such option '#{opt}'" )
+		end
+			
+	end
+
+	configFile = ARGV.shift
 
 	# Instantiate the configuration object, aborting if we can't find it
 	begin
-		config = MUES::Config.new( configFile )
+		config = if configFile 
+					 MUES::Config::new( configFile )
+				 else
+					 MUES::Config::new
+				 end
 	rescue Errno::ENOENT
 		$stderr.puts( "Cannot find config file '#{configFile}'.\nPlease double-check the path and try again." )
 		exit 1
 	end
 
 	# Instantiate the server object
-	engine = MUES::Engine.instance
-	engine.debugLevel = config['engine']['debuglevel']
+	engine = MUES::Engine::instance
+	engine.debugLevel = debugLevel
 
 	# Start up and run the server as a daemon
-	if config['startasdaemon']
+	if fork
 		puts "Starting the MUES server in the background...\n"
-
-		# Fully-qualify the root dir while we still have a cwd
-		config['rootdir'] = File.expand_path( config['rootdir'] )
 
 		# Fork into the background
 		daemonize( config )
@@ -71,7 +103,7 @@ def main
 		puts "Starting the MUES server in the foreground...\n"
 	end
 
-	engine.start( config )
+	engine.start( config, initmode )
 end
 
 
@@ -104,11 +136,7 @@ def daemonize( config )
 	File.open( "/dev/null", File::TRUNC|File::RDWR ) {|devnull|
 		$stdin.close	&& $stdin.reopen( devnull )
 		$stdout.close	&& $stdout.reopen( devnull )
-	}
-
-	# Close STDERR and reopen it to a debug log in the root directory
-	File.open( File.join(config['rootdir'],'MUES.debug'), File::TRUNC|File::WRONLY|File::CREAT ) {|debuglog|
-		$stderr.close && $stderr.reopen( debuglog )
+		$stderr.close	&& $stderr.reopen( debuglog )
 	}
 
 	return true
