@@ -1,25 +1,26 @@
 #!/usr/bin/env ruby
 # 
-# MUES::EventQueue is a thread work crew/thread pool for dispatching MUES Engine
-# events. It provides a way of managing the execution of many sequential tasks
-# in a task-per-thread model without the expense of creating and destroying a
-# thread for each event which requires execution. It contains a supervisor
-# thread, which is responsible for maintaining a pool of worker threads which it
-# starts and kills as they become more or less tasked. As events are enqueued
-# (via #enqueue), they are retrieved by a worker thread and executed. If the
-# execution of the event creates result events, they are enqueued after
-# execution, and the thread goes back into the pool.
+# MUES::EventQueue is a thread work crew/thread pool for dispatching
+# MUES::Engine events (MUES::Event objects). It provides a way of managing the
+# execution of many sequential tasks in a task-per-thread model without the
+# expense of creating and destroying a thread for each event which requires
+# execution. It contains a supervisor thread, which is responsible for
+# maintaining a pool of worker threads which it starts and kills as they become
+# more or less tasked. As events are enqueued (via #enqueue), they are retrieved
+# by a worker thread and executed. If the execution of the event creates
+# consequential events, they are dispatched back to the Engine, and the thread
+# goes back into the pool.
 # 
 # == Synopsis
 # 
 #   require "mues/EventQueue"
 # 
-#   queue = MUES::EventQueue.new( 2, 10, 1.5, events )
-#   queue.enqueue( moreEvents )
+#   queue = MUES::EventQueue.new( 2, 10, 1.5, 2 )
+#   queue.enqueue( *events )
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
+# $Id: eventqueue.rb,v 1.15 2002/09/12 11:34:02 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,62 +49,59 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.15 2002/09/12 11:34:02 deveiant Exp $
 
 		### Class attributes
-		@@DefaultMinWorkers	= 2
-		@@DefaultMaxWorkers	= 20
-		@@DefaultThreshold	= 0.2
-		@@DefaultSafeLevel	= 2
+		DefaultMinWorkers	= 2
+		DefaultMaxWorkers	= 20
+		DefaultThreshold	= 0.2
+		DefaultSafeLevel	= 2
 
-		### Class methods
-		def self.createFromConfig( config )
-			MUES::TypeCheckFunctions::checkType( config, MUES::Config )
+		# Maximum number of floating-point seconds to wait for workers when
+		# shutting down.
+		MaxShutdownWaitTime = 5.0
 
-			qconfig = config.engine.eventqueue
-
-			return self.new( qconfig.minworkers,
-							 qconfig.maxworkers,
-							 qconfig.threshold,
-							 qconfig.safelevel )
-		end
-
-
-		### Constructor
 
 		### Create and return a new MUES::EventQueue object with the specified
 		### configuration. The queue will not be running -- you'll need to call
-		### #start before events will be processed.
-		def initialize( minWorkers=@@DefaultMinWorkers, 
-					    maxWorkers=@@DefaultMaxWorkers, 
-					    thresh=@@DefaultThreshold, 
-					    safeLevel=@@DefaultSafeLevel )
+		### #start before events will be processed. The optional <tt>name</tt>
+		### #argument can be used if more than one queue is used at a time to
+		### #differentiate log messages and other output. If one is not
+		### #provided, a generic one is created.
+		def initialize( minWorkers=DefaultMinWorkers, 
+					    maxWorkers=DefaultMaxWorkers, 
+					    threshold=DefaultThreshold, 
+					    safeLevel=DefaultSafeLevel,
+					    name=nil )
 
 			super()
 			WorkerThread.abort_on_exception = 1
 
 			### Set config variables
-			@minWorkers = minWorkers.to_i
+			@minWorkers	= minWorkers.to_i
 			@maxWorkers = maxWorkers.to_i
-			@threshold = thresh.to_f
-			@safeLevel = safeLevel.to_i
+			@threshold	= threshold.to_f
+			@safeLevel	= safeLevel.to_i
+			@name		= name || "EventQueue %d" % self.id
 
-			debugMsg( 1, "Initializing event queue: max = #{@maxWorkers}, min = #{@minWorkers}" )
+			debugMsg( 1, "Initializing #{@name}: max = #{@maxWorkers}, min = #{@minWorkers}, safe = #{safeLevel}" )
 
 			### Flags
-			@running = false			# Is the supervisor running?
-			@shuttingDown = false		# Is the queue shutting down?
+			@running		= false			# Is the supervisor running?
+			@shuttingDown	= false		# Is the queue shutting down?
 
 			### Instance variables
-			@workerCount = 0;
-			@queuedEvents = []
-			@queueMutex = Mutex.new
-			@queueCond = ConditionVariable.new
-			@idleWorkers = ThreadGroup.new
-			@workers = ThreadGroup.new
-			@supervisor = nil
-			@supervisorMutex = Mutex.new
+			@workerCount	= 0;
+			@queuedEvents	= []
+			@queueMutex		= Mutex.new
+			@queueCond		= ConditionVariable.new
+			@idleWorkers	= WorkerThreadGroup.new
+			@workers		= WorkerThreadGroup.new
+			@supervisor		= nil
+			@strayThreads	= ThreadGroup.new
+
+			@engine			= nil
 		end
 
 
@@ -121,7 +119,6 @@ module MUES
 		# pause at the end of each cycle.
 		attr_accessor :threshold
 
-
 		# The supervisor thread object
 		attr_reader :supervisor
 
@@ -133,17 +130,23 @@ module MUES
 		# dispatching an event.
 		attr_reader :workers
 
+		# The name of the queue
+		attr_reader :name
 
-		### Start the supervisor thread and begin processing events
-		def start
+
+		### Start the supervisor thread and begin processing events. The
+		### <tt>engine</tt> argument is the controlling MUES::Engine object, and
+		### is used for propagating consequence events.
+		def start( engine )
+			checkType( engine, MUES::Engine )
 			debugMsg( 1, "In start()" )
-			@supervisorMutex.synchronize {
-				unless @supervisor
-					@supervisor = Thread.new { supervisorThreadRoutine() }
-					@supervisor.abort_on_exception = true
-					@supervisor.desc = "Supervisor thread for EventQueue #{self.id}"
-				end
-			}
+			@engine = engine
+
+			unless @supervisor
+				@supervisor = Thread.new { supervisorThreadRoutine() }
+				@supervisor.abort_on_exception = true
+				@supervisor.desc = "Supervisor thread for #{self.name}"
+			end
 
 			### Idle a while to let the supervisor set up
 			until running?
@@ -162,9 +165,7 @@ module MUES
 
 			debugMsg( 1, "Enqueuing " + events.length.to_s + " events." )
 
-			@queueMutex.synchronize {
-				@queuedEvents.push( *events )
-			}
+			@queueMutex.synchronize { @queuedEvents.push( *events ) }
 
 			return true
 		end
@@ -238,44 +239,42 @@ module MUES
 		def shutdown( timeout=0 )
 			discardedEvents = []
 
-			@supervisorMutex.synchronize {
-				if @running
-					raise ThreadError, "Ack! Supervisor disappeared" unless @supervisor
+			if @running
+				raise ThreadError, "Ack! Supervisor disappeared" unless @supervisor
 
-					### Synchronize around the queue mutex, setting the shutdown flag 
-					debugMsg( 1, "Shutting down." )
-					@queueMutex.synchronize {
-						@shuttingDown = true
-						# debugMsg( 1, "Clearing #{@queuedEvents.length.to_s} pending events from the queue." )
-						# discardedEvents << @queuedEvents
-						# @queuedEvents.clear
-					}
+				### Synchronize around the queue mutex, setting the shutdown flag 
+				debugMsg( 1, "Shutting down." )
+				@queueMutex.synchronize {
+					@shuttingDown = true
+					# debugMsg( 1, "Clearing #{@queuedEvents.length.to_s} pending events from the queue." )
+					# discardedEvents << @queuedEvents
+					# @queuedEvents.clear
+				}
 
-					### If we got a timeout, allow that length of time before
-					### halting all threads forcefully
-					if timeout.nonzero?
-						until( ! @running || timeout < 1 )
-							sleep 1
-							timeout -= 1
-						end
+				### If we got a timeout, allow that length of time before
+				### halting all threads forcefully
+				if timeout.nonzero?
+					until( ! @running || timeout < 1 )
+						sleep 1
+						timeout -= 1
+					end
 
-						if ( ! @running ) then
-							@supervisor.join
-						else
-							halt()
-						end
+					if ( ! @running ) then
+						@supervisor.join
+					else
+						halt()
+					end
 
 					### If we didn't get a timeout, just wait until the
 					### queue has shut down on its own
-					else
-						until( ! @running )
-							sleep 1
-						end
-
-						@supervisor.join
+				else
+					until( ! @running )
+						sleep 1
 					end
+
+					@supervisor.join
 				end
-			}
+			end
 
 			return true
 		end
@@ -335,9 +334,6 @@ module MUES
 		### The supervisor thread routine.
 		def supervisorThreadRoutine
 
-			# Define a thread group where threads go when they're killed off
-			workerCemetary = ThreadGroup.new
-
 			###	Start the minimum number of worker threads
 			@queueMutex.synchronize {
 				debugMsg( 1, "Starting #{@minWorkers} initial worker threads." )
@@ -345,18 +341,33 @@ module MUES
 					debugMsg( 4, "Starting initial worker #{i}." )
 					startWorker()
 				end
-				debugMsg( 2, "Done starting worker threads." )
+				debugMsg( 2, "Initial worker threads started." )
 			}
 
 			### Toggle the running flag
-			debugMsg( 1, "Started initial workers. Setting state to 'running'." )
+			self.log.info( "#{self.name}: Started initial workers. Setting state to 'running'." )
 			@running = true
+			throttleLoop()
+			@running = false
+			self.log.info( "#{self.name}: Exiting throttle loop. Entering shutdown cycle." )
 
-			### Maintain the thread crew until the queue shuts down and there
-			### are no more events to process.
+			shutWorkersDown()
+
+			self.log.notice( "#{self.name}: Supervisor thread exiting." )
+		end
+
+		
+		### Supervisor routine: Maintains the thread crew until the queue shuts
+		### down and there are no more events to process.
+		def throttleLoop
+
+			# Define a thread group where threads go when they're killed off
+			workerCemetary = ThreadGroup.new
+
 			until @queuedEvents.empty? && @shuttingDown
 
 				debugMsg( 3, "Supervisor: In throttle loop" )
+				removeStrayThreads()
 
 				### Wake the waiting worker threads if there's events to process
 				@queueMutex.synchronize {
@@ -399,37 +410,49 @@ module MUES
 				sleep @threshold
 			end
 
-			@running = false
-			debugMsg( 1, "Supervisor: Exiting throttle loop. Entering shutdown cycle." )
+		end
 
-			### Queue thread shutdown events for any idle threads, and wait on
-			### ones that are still working.
+
+		### Supervisor routine: Queues thread shutdown events for any idle
+		### threads, and waits on ones that are still working until all are shut
+		### down.
+		def shutWorkersDown
+			startTime = Time::now
+			removeStrayThreads()
+
 			### :FIXME: Is there a race condition here because a thread could
 			### grab an event and move from the idleWorkers list to the workers
 			### list in between the tests? Maybe not, as nothing touches the
 			### condition variable outside of a synchronized block...
-			until @workers.list.empty? && @idleWorkers.list.empty?
+			until ( (@workers.list.empty? && @idleWorkers.list.empty?) ||
+				Time::now - startTime > MaxShutdownWaitTime )
 
 				if ! @idleWorkers.list.empty?
 					workersRemaining = @idleWorkers.list.length
-					debugMsg( 1, "Supervisor: Sending shutdown events to #{workersRemaining} " +
-							  "idle workers. #{@workers.list.length} active workers remain." )
+					self.log.info( "%s: Sending shutdown events to %d idle workers. %d active workers remain." % [
+									  self.name, workersRemaining, @workers.list.length ] )
 					@queueMutex.synchronize {
 						@idleWorkers.list.each do
-							@queuedEvents.push( ThreadShutdownEvent.new )
+							@queuedEvents.push( ThreadShutdownEvent::new )
 						end
 						@queueCond.broadcast
 					}
+				else
+					self.log.info( "%s: %d workers still busy after %0.2f seconds." % 
+								   [self.name, @workers.list.length, Time::now - startTime] )
 				end
 
 				### :TODO: We should join the exiting threads here, probably,
 				### but how to ensure we're joining an exiting thread?
 
-				sleep 0.25
+				sleep 0.5
 			end
 
-			debugMsg( 1, "Supervisor: Exiting" )
-
+			# If there are still threads around, kill 'em.
+			@workers.list.each {|worker|
+				self.log.warn( "Forcefully killing worker thread #{worker.desc}" )
+				killWorkerThread( worker )
+			}
 		end
 
 
@@ -449,11 +472,12 @@ module MUES
 				# references after enqueuing them
 				begin
 					consequences = dispatchEvent( event )
-					enqueue( *consequences ) if consequences.size > 0
+					#enqueue( *consequences ) unless consequences.empty?
+					@engine.dispatchEvents( *consequences ) unless consequences.empty?
 				end
 
-				event = nil
 				event = dequeue()
+
 				debugMsg( 1, "Dequeued event (#{event.class.name}) #{event.to_s}" )
 			end
 
@@ -462,46 +486,54 @@ module MUES
 		end
 
 
+		### Remove any threads started by worker threads from the worker thread
+		### groups.
+		def removeStrayThreads
+			# Clean out any stray sub-threads from the our threadgroups so we're
+			# only trying to kill ones we can talk to.
+			(@workers.list + @idleWorkers.list).find_all {|thr|
+				!thr.kind_of? WorkerThread
+			}.each {|thr|
+				@strayThreads.add thr
+			}
+		end
+
+
 		### Dispatch the given +event+.
 		def dispatchEvent( event )
-			unless event.is_a?( Event ) then
-				raise ArgumentError, "Argument '#{event.class.name}' is not an event object."
-			end
+			checkType( event, MUES::Event )
 
-			debugMsg( 1, "Dispatching a #{event.class.name}" )
+			debugMsg( 1, "Dispatching a #{event.class.name} in $SAFE = #{$SAFE}" )
 			consequences = []
 
-			### Iterate over each handler for this kind of event, calling each ones
-			### handleEvent() method, adding any events that are returned to the consequences.
+			### Iterate over each handler for this kind of event, calling each
+			### one's handleEvent() method, adding any events that are returned
+			### to the consequences.
 			event.class.GetHandlers.each do |handler|
-				debugMsg( 1, "Invoking #{event.class.name} handler (a #{handler.class} object)." )
-				begin
-					result = handler.handleEvent( event )
-					if result.is_a?( Array ) then
-						debugMsg( 2, "Got an array of #{result.length} result objects in response." )
-						recurseEvent = result.detect {|e| e == event}
-						if recurseEvent
-							debugMsg( 1, "Recursion error. Result for event #{e} contained a copy of itself." )
-							raise EventRecursionError( recurseEvent )
-						end
-						consequences += result
-					elsif result.is_a?( Event ) then
-						debugMsg( 2, "Got a single event object as a result." )
-						if result == event
-							debugMsg( 1, "Recursion error. Result for event #{e} was a copy of itself." )
-							raise EventRecursionError( result )
-						end
-						consequences << result
+				debugMsg( 2, "Invoking #{event.class.name} handler (a #{handler.class} object)." )
+
+				results = handler.handleEvent( event )
+				results = [ results ] unless results.is_a? Array
+
+				results.flatten.compact.each {|resultEvent|
+					raise EventRecursionError, event if resultEvent == event
+
+					unless resultEvent.kind_of?( MUES::Event )
+						self.log.error( "%s: Discarding non-event result '%s' from consequences of %s" % 
+									   [self.name, resultEvent.inspect, event.inspect] )
+						next
 					end
-				rescue StandardError => e
-					debugMsg( 1, "Encountered untrapped exception #{e.type.name}: #{e.message}" )
-					consequences << UntrappedExceptionEvent.new( e )
-				end
+
+					consequences << resultEvent
+				}
 			end
 
-			### Return a flattened version of the result events
+			### Return the result events
 			debugMsg( 2, "Returning #{consequences.length} consequential events." )
-			return consequences.flatten
+			return consequences
+		rescue => e
+			self.log.error( "#{self.name}: Untrapped exception #{e.type.name}: #{e.message}" )
+			return [UntrappedExceptionEvent::new( e )]
 		end
 
 
@@ -513,7 +545,7 @@ module MUES
 				workerThreadRoutine( @workerCount )
 			}
 			worker.abort_on_exception = true
-			worker.desc = "Worker thread #{@workerCount} [Queue #{self.id}]"
+			worker.desc = "Worker thread #{@workerCount} [#{self.name}]"
 			@workers.add( worker )
 		end
 
@@ -523,6 +555,7 @@ module MUES
 			raise ArgumentError, "Cannot kill the current thread" if workerThread == Thread.current
 			raise ArgumentError, "Argument must be a worker thread" unless workerThread.is_a?( WorkerThread )
 
+			# :TODO: Use join with timeout to prevent freezing on thread death?
 			begin
 				workerThread.kill
 				workerThread.join
