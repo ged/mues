@@ -25,16 +25,16 @@
 #   require "mues/Events"
 #   require "ObjectStoreService"
 #
-#   ...uh, i'm not really sure how services are implemented through mues,
-#      but it involves creating events for the service to handle.  for more
-#      info on specific usage of this service, see the postscript or uml
-#      files included.
+#   event = MUES::ObjectStoreGCEvent.new
+#   eventQueue.enqueue( event )
+#
+#   # for more info on specific usage of this service, see the postscript or uml
+#   # files included.
 #   
 # == Caveats
 #
 #   All objects stored must inherit from the class StorableObject, for
-#   the required ability to be a shallow reference and for the finalizer
-#   that sends an event for the object to be stored before it's deleted.
+#   the required ability to be a shallow reference.
 #
 # == Authors
 #
@@ -43,8 +43,12 @@
 
 require "mues"
 require "mues/Service"
+require "mues/Events"
+require "mues/Exceptions"
+#:?: do i need to include the events, or does this even look at those objects?
 require "ObjectStoreEvents"
 require "ObjectStore"
+require "ObjectStoreGC"
 
 module MUES
   
@@ -53,8 +57,9 @@ module MUES
     include Event::Handler
 
     ### Class constants
-    Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-    Rcsid = %q$Id: objectstoreservice.rb,v 1.2 2002/02/24 07:00:26 stillflame Exp $
+	  #:!: MUES has its own, i shouldn't tread.
+#    Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+#    Rcsid = %q$Id: objectstoreservice.rb,v 1.3 2002/03/04 06:16:50 stillflame Exp $
 
     #########
     protected
@@ -62,8 +67,9 @@ module MUES
 
     ### Initialize a new ObjectStoreService object, passing in a hash of
     ### values with the following keys:
+    ### 'name' -> the name to give this ObjectStoreService.
+    ### 'filename' -> the filename of the ObjectStore to associate this with.
     ### 'objects' -> an array of objects to be stored.
-    ### 'name' -> the name to give this ObjectStore.
     ### 'indexes' -> an array of symbols corresponding to the methods that will
     ###              be used to generate the desired indices.
     ### 'serialize' -> the symbol for the method to be used for object
@@ -73,14 +79,34 @@ module MUES
     ### 'mark' -> the symbol for the method to be used for marking objects for
     ###           garbage collection.
     ### 'GC_delay' -> the period of time inbetween garbage collection sweeps
-    def initialize
+    def initialize(name, filename=nil, objects = nil, indexes = nil,
+		   serialize = nil, deserialize = nil, mark = nil, gc_delay = nil)
+
+### :!: This NEEDS lots of work.  do i let them pass everything into the initialization,
+###     or do i make them use events?
+
+		# :!: didn't work, didn't find out why not
+#		registerHandlerForEvents(ObjectStoreGCEvent,
+#								 CloseObjectStoreEvent,
+#								 NewObjectStoreEvent,
+#								 LoadObjectStoreEvent,
+#								 StoreObjectEvent,
+#								 RequestObjectEvent)
+		@name = name
+		if(filename)
+			@objectStore = ObjectStore.new(filename)
+		end
+		###:?: maybe all this shouldn't happen here...
+		@gc = ObjectStoreGC.new(@objectStore, mark, gc_delay)
     end
 
     ### Class methods
     class << self
       
-      ### Make sure no more objects are unsotred
-      def atEngineShutdown( theEngine )
+		### Make sure no more objects are unsotred
+		def atEngineShutdown( theEngine )
+			###:!: maybe a GC function?
+		  @gc.shutdown
       end
 
     end
@@ -89,11 +115,28 @@ module MUES
     public
     ######
 
-    ### Handles the  event.
-    
+    ### Handle the events.
+
+    def _handleCloseObjectStoreEvent (event)
+    end
+
+    def _handleNewObjectStoreEvent (event)
+    end
+
+    def _handleLoadObjectStoreEvent (event)
+    end
+
+    def _handleObjectStoreGCEvent (event)
+    end
+
+    def _handleStoreObjectEvent (event)
+    end
+
+    def _handleRequestObjectEvent (event)
+    end
+
+	def _debugMsg (*args)
+	end
   end
+
 end
-
-
-
-
