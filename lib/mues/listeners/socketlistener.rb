@@ -3,53 +3,28 @@
 # This file contains the MUES::SocketListener class: A MUES::Listener derivative
 # for raw TCP/IP socket connections.
 #
-# This listener understands the following parameters in addition to those
-# understood by MUES::Listener:
-#
-# [<tt>bindPort</tt>]
-#   Specify the port the listening socket will be bound to. Defaults to port
-#   4848.
-# [<tt>bindAddr</tt>]
-#   Specify the address which the listening socket will be bound to. The default
-#   of '0.0.0.0' means to bind all available interfaces.
-# [<tt>useWrappers</tt>]
-#   If set to <tt>true</tt>, the listener will attempt to wrap the listening
-#   socket in a TCPWrapper object. This requires the 'tcpwrap' library
-#   (http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap).
-# [<tt>wrapName</tt> (optional)]
-#   If <tt>useWrappers</tt> is <tt>true</tt>, the value specified by this
-#   parameter is used as the "daemon process" name. The default is to use the
-#   <tt>name</tt> argument to MUES::Listener#new. See hosts_access(5) for more
-#   information. If <tt>useWrappers</tt> is false, this parameter is ignored.
-# [<tt>wrapIdentLookup</tt> (optional)]
-#   If both <tt>useWrappers</tt> and this parameter are <tt>true</tt>, the
-#   access control lookup also requests RFC 1413 (ident) information from the
-#   connecting client. If <tt>useWrappers</tt> is false, this parameter is
-#   ignored. This parameter defaults to <tt>false</tt>.
-# [<tt>wrapIdentTimeout</tt> (optional)]
-#   The number of seconds to wait for an RFC 1413 reply upon connection. The
-#   default timeout is 30.
-# 
 # == Synopsis
 # 
 #   use 'mues/Listener'
 #
-#	# Bind a listener to port 4848 on all interfaces
-#	sockListener = MUES::Listener::create 'Socket',
-#										  'mues-socket',
-#										  bindPort => 4848,
-#										  bindAddr => '0.0.0.0',
+#   # Bind a listener to port 4848 on all interfaces
+#   sockListener = MUES::Listener::create 'Socket',
+#                                         'mues-socket',
+#                                         'bind-port' => 4848,
+#                                         'bind-addr' => '0.0.0.0',
 #
-#	# Do the same, but use tcp_wrappers for access control.
-#	sockListener = MUES::Listener::create 'Socket',
-#										  'mues-socket',
-#										  bindPort => 4848,
-#										  bindAddr => '0.0.0.0',
-#										  useWrappers => true
+#   # Bind to port 1248 on one IP, and use tcp_wrappers for access control.
+#   sockListener = MUES::Listener::create 'Socket',
+#                                         'mues-socket',
+#                                         'bind-port'           => 1248,
+#                                         'bind-addr'           => '10.2.1.13',
+#                                         'use-wrappers'        => true,
+#                                         'wrap-ident-lookup'   => true,
+#                                         'wrap-ident-timeout'  => 15
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.4 2002/08/29 07:29:45 deveiant Exp $
+# $Id: socketlistener.rb,v 1.5 2002/10/23 02:13:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,23 +47,54 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.4 2002/08/29 07:29:45 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.5 2002/10/23 02:13:25 deveiant Exp $
 
-		### Create a new SocketListener object.
+		### Create a new SocketListener object with the specified
+		### <tt>name</tt>. This listener understands the following
+		### <tt>parameters</tt> in addition to those understood by
+		### MUES::Listener:
+		###
+		### [<tt>bind-port</tt>]
+		###   Specify the port the listening socket will be bound to. Defaults to port
+		###   4848.
+		### [<tt>bind-address</tt>]
+		###   Specify the address which the listening socket will be bound to. The default
+		###   of '0.0.0.0' means to bind all available interfaces.
+		### [<tt>use-wrappers</tt>]
+		###   If set to <tt>true</tt>, the listener will attempt to wrap the listening
+		###   socket in a TCPWrapper object. This requires the 'tcpwrap' library
+		###   (http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap).
+		### [<tt>wrap-name</tt> (optional)]
+		###   If <tt>use-wrappers</tt> is <tt>true</tt>, the value specified by this
+		###   parameter is used as the "daemon process" name. The default is to use the
+		###   <tt>name</tt> argument to MUES::Listener#new. See hosts_access(5) for more
+		###   information. If <tt>use-wrappers</tt> is false, this parameter is ignored.
+		### [<tt>wrap-ident-lookup</tt> (optional)]
+		###   If both <tt>use-wrappers</tt> and this parameter are <tt>true</tt>, the
+		###   access control lookup also requests RFC 1413 (ident) information from the
+		###   connecting client. If <tt>use-wrappers</tt> is false, this parameter is
+		###   ignored. This parameter defaults to <tt>false</tt>.
+		### [<tt>wrap-ident-timeout</tt> (optional)]
+		###   The number of seconds to wait for an RFC 1413 reply upon connection. The
+		###   default timeout is 30.
+		### [<tt>filter-debug</tt> (optional)]
+		###	The debugging level set on filters created by this listener.
 		def initialize( name, parameters={} )
 			@io					= nil
 			@name				= name
-			@bindAddr			= parameters['bindAddr'] || '0.0.0.0'
-			@bindPort			= parameters['bindPort'] || 4848
+			@bindAddr			= parameters['bind-address'] || '0.0.0.0'
+			@bindPort			= parameters['bind-port'] || 4848
 			@wrappered			= false
-			@wrapName			= parameters['wrapName'] || name
-			@wrapIdent			= parameters['wrapIdent'] || false
-			@wrapIdentTimeout	= parameters['wrapIdentTimeout'] || 30
+			@wrapName			= parameters['wrap-name'] || name
+			@wrapIdent			= parameters['wrap-ident'] || false
+			@wrapIdentTimeout	= parameters['wrap-ident-timeout'] || 30
+
+			@filterDebugLevel	= parameters['filter-debug'].to_i
 
 			# If the listener's configured to use tcp_wrappers, load the tcpwrap
 			# library and set the wrappered flag.
-			if parameters['use_wrapper']
+			if parameters['use-wrapper']
 				require 'tcpwrap'
 				@wrappered			= true
 			end
@@ -137,6 +143,8 @@ module MUES
 		# The number of seconds to wait for an ident lookup before timing out
 		attr_reader :wrapIdentTimeout
 
+		# The debugging level set on filters created by this listener
+		attr_accessor :filterDebugLevel
 
 		### Return a human-readable version of the listener suitable for log
 		### messages, etc.
@@ -156,7 +164,10 @@ module MUES
 		def createOutputFilter( poll )
 			clientSocket = @io.accept
 			pollProxy = MUES::PollProxy::new( poll, clientSocket )
-			return MUES::SocketOutputFilter::new( clientSocket, pollProxy, self )
+			filter = MUES::SocketOutputFilter::new( clientSocket, pollProxy, self )
+			filter.debugLevel = self.filterDebugLevel
+
+			return filter
 		end
 
 
