@@ -2,8 +2,8 @@
 #
 # The printobject MUES::CommandShell command.
 #
-#   Time-stamp: <13-Oct-2002 21:51:47 deveiant>
-#   $Id: printobject.cmd,v 1.4 2002/10/14 09:48:04 deveiant Exp $
+#   Time-stamp: <17-Oct-2002 10:17:04 deveiant>
+#   $Id: printobject.cmd,v 1.5 2002/10/23 02:17:45 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -114,11 +114,7 @@ yp
   if argString =~ /^\s*(\d+)\s*$/
     targetId = $1.to_i
     
-	ObjectSpace.each_object( MUES::Object ) {|obj|
-		next unless obj.id == targetId
-		targetObject = obj
-		break 
-	}
+	targetObject = MUES::UtilityFunctions::getObjectByRubyId( targetId )
 	return OutputEvent.new( "No object found with id '#{targetId}'.\n\n" ) if
 		targetObject.nil?
 
