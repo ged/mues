@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.29 2002/10/23 13:18:32 deveiant Exp $
+# $Id: user.rb,v 1.30 2002/10/26 19:02:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.29 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.29 2002/10/23 13:18:32 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.30 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.30 2002/10/26 19:02:12 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -363,12 +363,13 @@ module MUES
 			# Set the stream, send the MOTD if it was specified, and flag the
 			# object as activated
 			@ioEventStream = stream
-			@ioEventStream.addEvents( MUES::OutputEvent::new("\n\n" + motd.strip + "\n\n") ) if motd
+			if motd
+				@ioEventStream.addEvents \
+					MUES::OutputEvent::new("\n\n" + motd.gsub(/^\t+/m, '').strip + "\n\n")
+			end
 			@ioEventStream.unpause
 
 			@activated = true
-
-			debugMsg( 1, "MOTD is: #{motd.inspect}" )
 
 			registerHandlerForEvents( self, MUES::OutputEvent ) #MUES::TickEvent )
 			return []
@@ -384,10 +385,13 @@ module MUES
 
 			# Shut down the IO event stream
 			@activated = false
-			results << @ioEventStream.shutdown if @ioEventStream
+			results.replace @ioEventStream.shutdown if @ioEventStream
+			results.flatten!
 			
 			# Return any events that need dispatching
-			return results.flatten
+			debugMsg 1, "Returning %d result events from deactivation." %
+				results.length
+			return results
 		end
 
 
@@ -397,22 +401,23 @@ module MUES
 
 			results = []
 
-			# :FIXME: This shouldn't explicitly refer to the output filter
-			# class, since it may not even be a SocketOutputFilter at all.
-			newFilter = stream.removeFiltersOfType( MUES::SocketOutputFilter )[0]
-			raise RuntimeError, "Cannot reconnect from a stream with no SocketOutputFilter" unless newFilter
+			stream.pause
+			newFilter = stream.removeFiltersOfType( MUES::OutputFilter )[0]
+			raise RuntimeError, "Cannot reconnect from a stream with no OutputFilter" unless newFilter
 			newFilter.puts( "Reconnecting..." )
+			stream.unpause
 
 			# Get the current stream's socket output filter/s and flush 'em
 			# before closing it and replacing it with the new one.
-			@ioEventStream.removeFiltersOfType( MUES::SocketOutputFilter ).each {|filter|
+			@ioEventStream.pause
+			results.replace @ioEventStream.stopFiltersOfType( MUES::OutputFilter ) {|filter|
 				filter.puts( "[Reconnect from #{newFilter.remoteHost}]" )
-				results << filter.shutdown
 				newFilter.sortPosition = filter.sortPosition
 			}
 			
 			@ioEventStream.addFilters( newFilter )
 			@ioEventStream.addEvents( MUES::InputEvent.new("") )
+			@ioEventStream.unpause
 
 			return results
 		end
