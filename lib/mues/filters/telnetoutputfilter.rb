@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.6 2002/06/04 07:09:38 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.7 2002/07/09 15:03:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -58,8 +58,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.6 2002/06/04 07:09:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.7 2002/07/09 15:03:14 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {
@@ -1108,7 +1108,7 @@ module MUES
 		def _handleWillTtype()
 			debugMsg( 4, "Handling a WILL TTYPE from the client: Sending 'IAC SB TTYPE SEND IAC SE'" )
 			_addStateTrace( "<-- Okay, send me your terminal type." )
-			sendInBand( IAC SB TELOPT_TTYPE TELQUAL_SEND IAC SE )
+			sendInBand( IAC + SB + TELOPT_TTYPE + TELQUAL_SEND + IAC + SE )
 			return true
 		end
 
