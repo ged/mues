@@ -54,7 +54,7 @@
 # 
 # == Rcsid
 # 
-# $Id: objectspacevisitor.rb,v 1.4 2002/07/12 15:02:58 deveiant Exp $
+# $Id: objectspacevisitor.rb,v 1.5 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -68,7 +68,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
+require 'mues/Object'
 
 
 module MUES
@@ -79,12 +79,12 @@ module MUES
 	class ObjectSpaceVisitor < MUES::Object
 
 		### Class constants
-		Version	= %q$Revision: 1.4 $
-		RcsId	= %q$Id: objectspacevisitor.rb,v 1.4 2002/07/12 15:02:58 deveiant Exp $
+		Version	= %q$Revision: 1.5 $
+		RcsId	= %q$Id: objectspacevisitor.rb,v 1.5 2002/08/02 20:03:44 deveiant Exp $
 
 
 		### Instantiate and return a new ObjectSpaceVisitor object.
-		def initialize
+		def initialize( config=nil )
 			super()
 		end
 

@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.1 2002/08/01 03:15:21 deveiant Exp $
+# $Id: socketlistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,8 +72,8 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.1 2002/08/01 03:15:21 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 
 		### Create a new SocketListener object.
 		def initialize( name, parameters={} )
@@ -85,6 +85,8 @@ module MUES
 			@wrapIdent			= parameters['wrapIdent'] || false
 			@wrapIdentTimeout	= parameters['wrapIdentTimeout'] || 30
 
+			# If the listener's configured to use tcp_wrappers, load the tcpwrap
+			# library and set the wrappered flag.
 			if parameters['use_wrapper']
 				require 'tcpwrap'
 				@wrappered			= true
@@ -128,6 +130,19 @@ module MUES
 
 		# The number of seconds to wait for an ident lookup before timing out
 		attr_reader :wrapIdentTimeout
+
+
+		### Return a human-readable version of the listener suitable for log
+		### messages, etc.
+		def to_s
+			"%s (a %s) on %s, port %d%s" % [
+				self.name,
+				self.class.name,
+				self.bindAddr,
+				self.bindPort,
+				self.wrappered? ? " (wrappered)" : "",
+			]
+		end
 
 
 		### Listener callback: Create a new MUES::SocketOutputFilter from the

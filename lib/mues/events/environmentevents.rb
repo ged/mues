@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: environmentevents.rb,v 1.6 2002/06/04 07:07:22 deveiant Exp $
+# $Id: environmentevents.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,7 +43,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 
 require "mues/events/BaseClass"

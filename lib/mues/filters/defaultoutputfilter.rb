@@ -10,7 +10,7 @@
 # 
 # == Rcsid
 # 
-# $Id: defaultoutputfilter.rb,v 1.4 2002/04/01 16:27:29 deveiant Exp $
+# $Id: defaultoutputfilter.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,7 +24,7 @@
 #
 
 
-require "mues"
+require "mues/Object"
 require "mues/filters/IOEventFilter"
 
 module MUES
@@ -35,8 +35,8 @@ module MUES
 	class DefaultOutputFilter < IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.4 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
 		DefaultSortPosition = 0
 
 		### Create and return a new default output filter with a history of the

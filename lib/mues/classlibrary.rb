@@ -26,7 +26,7 @@
 #   
 # == Rcsid
 # 
-# $Id: classlibrary.rb,v 1.7 2002/07/07 18:24:18 deveiant Exp $
+# $Id: classlibrary.rb,v 1.8 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,7 +39,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues"
+require "mues/Object"
 require "mues/Events"
 require "mues/Exceptions"
 
@@ -53,8 +53,8 @@ module MUES
 	### An AbstractFactory class for environment metaclass libraries
 	class ClassLibrary < Object
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.7 2002/07/07 18:24:18 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.8 2002/08/02 20:03:44 deveiant Exp $
 
 		### Return a new ClassLibrary object with the specified name.
 		def initialize( libraryName )

@@ -8,7 +8,7 @@ $LOAD_PATH.unshift ".", "..", "lib", "../lib", "ext", "../ext"
 require "utils"
 include UtilityFunctions
 
-require 'mues'
+require 'mues/Object'
 require 'mues/ObjectStore'
 require 'mues/User'
 

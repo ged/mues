@@ -44,7 +44,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.15 2002/08/01 01:14:08 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.16 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -60,7 +60,7 @@
 require "sync"
 require "timeout"
 
-require "mues"
+require "mues/Object"
 require "mues/IOEventFilters"
 require "mues/Events"
 require "mues/WorkerThread"

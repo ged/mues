@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: flatfilebackend.rb,v 1.3 2002/08/01 01:15:22 deveiant Exp $
+# $Id: flatfilebackend.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,7 +28,7 @@
 require 'sync'
 require 'pstore'
 
-require 'mues'
+require 'mues/Object'
 require 'mues/Exceptions'
 require 'mues/ObjectStore'
 require 'mues/StorableObject'
@@ -43,8 +43,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-			Rcsid = %q$Id: flatfilebackend.rb,v 1.3 2002/08/01 01:15:22 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: flatfilebackend.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
 
 			### Create a new BerkeleyDBBackend object.
 			def initialize( name, indexes=[], configHash={} )

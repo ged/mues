@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: macrofilter.rb,v 1.6 2002/06/04 07:09:06 deveiant Exp $
+# $Id: macrofilter.rb,v 1.7 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,7 +25,7 @@
 #
 
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/filters/IOEventFilter"
@@ -39,8 +39,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.6 2002/06/04 07:09:06 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.7 2002/08/02 20:03:43 deveiant Exp $
 		DefaultSortPosition = 650
 
 		### Class variables

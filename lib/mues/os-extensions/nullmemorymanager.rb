@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: nullmemorymanager.rb,v 1.3 2002/08/01 01:23:15 deveiant Exp $
+# $Id: nullmemorymanager.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -26,7 +26,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
+require 'mues/Object'
 require 'mues/ObjectStore'
 require 'mues/StorableObject'
 
@@ -41,8 +41,8 @@ module MUES
 		class NullMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-			Rcsid = %q$Id: nullmemorymanager.rb,v 1.3 2002/08/01 01:23:15 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+			Rcsid = %q$Id: nullmemorymanager.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
 
 
 			######

@@ -59,7 +59,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.8 2002/08/01 03:09:43 deveiant Exp $
+# $Id: systemevents.rb,v 1.9 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -74,7 +74,7 @@
 
 require 'poll'
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 require "mues/events/BaseClass"
 
@@ -244,6 +244,7 @@ module MUES
 	class GarbageCollectionEvent < SystemEvent
 	end
 
+
 	### An event that notifies the Engine that an item in the server
 	### configuration has changed. It derives from the MUES::SystemEvent class.
 	class ReconfigEvent < SystemEvent
@@ -331,6 +332,11 @@ module MUES
 
 		# The message describing the anticipated reaction to the signal
 		attr_reader :message
+
+		# Return a human-readable version of the event
+		def to_s
+			"SignalEvent: SIG#{@signal.upcase}"
+		end
 	end
 
 

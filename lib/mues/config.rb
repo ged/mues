@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 06:07:27 $">
+#	<muesconfig version="1.1" time-stamp="$Date: 2002/08/02 20:03:44 $">
 #	
 #	  <!-- General server configuration -->
 #	  <general>
@@ -173,7 +173,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.10 2002/08/01 06:07:27 deveiant Exp $
+# $Id: config.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -190,7 +190,7 @@
 require 'forwardable'
 require 'rexml/document'
 
-require 'mues'
+require 'mues/Mixins'
 require 'mues/Exceptions'
 
 
@@ -200,11 +200,11 @@ module MUES
 	### values from a String (after potentially having first read it in from an
 	### IO object), and creates one or more MUES::Config::Section objects to
 	### represent the configured values.
-	class Config < MUES::Object
+	class Config
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.10 2002/08/01 06:07:27 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -237,8 +237,6 @@ module MUES
 			end
 
 			@mainSection = MUES::Config::Section::create( @xmldoc.root )
-			super()
-
 			return true
 		end
 
@@ -616,7 +614,8 @@ module MUES
 				# Create a new item for whichever section is appropriate
 				# based on whether or not it has sub-elements, and set the
 				# target hash to the correct one.
-				if element.has_elements?
+				typeName = name.downcase
+				if @@SectionTypes.key?( typeName )
 					self.addSubsection( MUES::Config::Section::create(element, self), name )
 				else
 					self.addItem( MUES::Config::Item::new(element, self), name )
@@ -801,14 +800,12 @@ module MUES
 						parameters[ param.attributes["name"] ] = asBoolean( param.text )
 					}
 
-					ostore = Section::create( env.elements["objectstore"], self )
 					description = env.elements["description"].text
 
 					@items[ env.attributes["name"] ] = {
 						'class'			=> env.attributes["class"],
 						'description'	=> description,
 						'parameters'	=> parameters,
-						'ostore'		=> ostore,
 					}
 
 				else
@@ -954,7 +951,9 @@ module MUES
 
 			### Create and return a new MUES::Config::CommandShellSection object.
 			def initialize( element, parent )
-				@parameters		= {}
+				@parameters		= {
+					'reload_interval'	=> 3600,
+				}
 				@commandPath	= []
 				@shellClass		= element.attributes['shell-class']
 				@tableClass		= element.attributes['table-class']
@@ -1024,12 +1023,12 @@ __END__
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN" "../docs/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/08/01 06:07:27 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/08/02 20:03:44 $">
   <general>
 	<server-name>FaerieMUD</server-name>
 	<server-description>This is an experimental MUES server.</server-description>
 	<server-admin>ged@FaerieMUD.org</server-admin>
-	<root-dir>/var/mud</root-dir>
+	<root-dir>.</root-dir>
   </general>
 
   <engine>
@@ -1058,8 +1057,6 @@ __END__
 
   <logging>
 	<log4r_config>
-	  <pre_config>
-	  </pre_config>
 	</log4r_config>
   </logging>
 

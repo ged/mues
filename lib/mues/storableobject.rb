@@ -33,7 +33,7 @@
 #
 
 
-module MUES
+module MUES #:nodoc:
 
     # The base class for all objects which are storable in a
     # MUES::ObjectStore. MUES::StorableObjects can be polymorphically

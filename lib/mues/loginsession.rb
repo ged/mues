@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.10 2002/08/01 02:54:02 deveiant Exp $
+# $Id: loginsession.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -45,7 +45,7 @@
 require "timeout"
 require "thread"
 
-require "mues"
+require "mues/Object"
 require "mues/Config"
 require "mues/Exceptions"
 require "mues/Events"
@@ -58,8 +58,8 @@ module MUES
 
 		include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
-		Version = %q$Revision: 1.10 $
-		Rcsid = %q$Id: loginsession.rb,v 1.10 2002/08/01 02:54:02 deveiant Exp $
+		Version = %q$Revision: 1.11 $
+		Rcsid = %q$Id: loginsession.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
 
 
 		### Create and initialize a new login session object with the

@@ -19,8 +19,8 @@
 # 
 # == Synopsis
 # 
-#   require 'mues'
-#   require "mues/Log"
+#   require 'mues/Object'
+#   require 'mues/Log'
 # 
 #   logger = MUES::Log.new( 'MUES' )
 #	logger.outputters = Log4r::FileOutputter::new( :filename => 'mylog', :trunc => true )
@@ -41,7 +41,7 @@
 #
 # == Rcsid
 # 
-# $Id: log.rb,v 1.6 2002/08/01 02:51:36 deveiant Exp $
+# $Id: log.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -54,12 +54,12 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require 'mues'
 require 'mues/Config'
 
 require 'log4r'
 require 'log4r/logger'
 require 'log4r/outputter/outputter'
+require 'log4r/outputter/emailoutputter'
 require 'log4r/formatter/patternformatter'
 
 BEGIN {
@@ -91,8 +91,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: log.rb,v 1.6 2002/08/01 02:51:36 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: log.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
 
 
 		### Class methods
@@ -100,7 +100,7 @@ module MUES
 		### Set up the logging subsytem with the logging section of the
 		### specified config (a MUES::Config object).
 		def self.configure( config )
-			checkType( config, MUES::Config )
+			MUES::TypeCheckFunctions::checkType( config, MUES::Config )
 
 			# Configure the logger with the log4r section of the config file
 			Log4r::Configurator::load_xml_string( config.logging.logConfig )
@@ -145,6 +145,7 @@ module MUES
 		end
 
 	end
+
 
 end #module MUES
 

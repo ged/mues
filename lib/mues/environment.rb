@@ -47,7 +47,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.13 2002/08/01 01:07:46 deveiant Exp $
+# $Id: environment.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -62,7 +62,7 @@
 
 require "sync"
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/Role"
@@ -78,8 +78,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.13 2002/08/01 01:07:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
 
 
 		### Class methods
@@ -87,19 +87,13 @@ module MUES
 		### Create and return an Array of environments from the specified
 		### configuration (a MUES::Config::EnvironmentsSection).
 		def self.createFromConfig( config )
-			checkType( config, MUES::Config::EnvironmentSection )
+			MUES::TypeCheckFunctions::checkType( config, MUES::Config )
 
 			return config.environments.collect {|name,confighash|
-				ostore = if confighash['ostore']
-							 ostore = MUES::ObjectStore::createFromConfig( confighash['ostore'] )
-						 else
-							 nil
-						 end
 				self.create( confighash['class'],
 							 name,
 							 confighash['description'],
-							 confighash['parameters'],
-							 ostore )
+							 confighash['parameters'] )
 			}
 		end
 

@@ -70,7 +70,7 @@
 # 	
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.16 2002/08/01 01:01:58 deveiant Exp $
+# $Id: engine.rb,v 1.17 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -85,15 +85,15 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "socket"
 require "thread"
 require "sync"
 require "md5"
 require "poll"
 
-require "mues"
-require "mues/Log"
 require "mues/Config"
+require "mues/Mixins"
+require "mues/Object"
+require "mues/Log"
 require "mues/EventQueue"
 require "mues/Exceptions"
 require "mues/Events"
@@ -107,13 +107,20 @@ require "mues/Service"
 require "mues/Listener"
 require "mues/PollProxy"
 
+require "tracer"
+Tracer.off
 
 module MUES
 
 	### MUES server class (Singleton)
-	class Engine < Object ; implements MUES::Debuggable
+	class Engine < MUES::Object ; implements MUES::Debuggable
 
-		include MUES::TypeCheckFunctions, MUES::SafeCheckFunctions
+		# Import type/safe-checking functions and the default event handler
+		# dispatch method
+		include MUES::TypeCheckFunctions,
+			MUES::SafeCheckFunctions,
+			MUES::Event::Handler
+
 
 		### Container module for Engine State constants. This module contains the
 		### following status constants:
@@ -134,12 +141,9 @@ module MUES
 			SHUTDOWN	= 3
 		end
 
-		# Import the default event handler dispatch method
-		include MUES::Event::Handler
-
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.16 2002/08/01 01:01:58 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.17 2002/08/02 20:03:44 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -195,7 +199,7 @@ module MUES
 			@state 					= State::STOPPED
 
 			@startTime 				= nil
-			@tick 					= nil
+			@tick 					= 0
 
 			@commandShellFactory	= nil
 
@@ -241,7 +245,7 @@ module MUES
 		### Return (after potentially creating) the instance of the Engine,
 		### which is a Singleton.
 		def Engine.instance
-			MUES::SafeCheckFunctions::checkSafe( 2 )
+			MUES::SafeCheckFunctions::checkSafeLevel( 2 )
 
 			@@Instance = new() if ! @@Instance
 			@@Instance
@@ -253,11 +257,15 @@ module MUES
 		def start( config )
 			checkType( config, MUES::Config )
 
+			@log.debug {"Ignoring signals"}
 			ignoreSignals()
 
 			@state = State::STARTING
 			@config = config
 			startupEvents = []
+
+			$stderr.puts "[Engine id is #{self.muesid}]"
+			@log.notice( "Starting Engine..." )
 
 			# Set up the Engine
 			startupEvents += setupEngine( config )
@@ -268,11 +276,13 @@ module MUES
 			startupEvents += setupListeners( config )
 			
 			# Now enqueue any startup events
+			@log.info( "Dispatching %d events from startup" % startupEvents.length )
 			self.dispatchEvents( *(startupEvents.flatten.compact) ) unless startupEvents.empty?
 
 			# Reset the state to indicate we're running
 			@state = State::RUNNING
 			@startTime = Time.now
+			@log.notice( "Engine started. Start time is %s" % @startTime.to_s )
 
 			### Start the event loop
 			@log.info( "Starting main thread." )
@@ -287,8 +297,13 @@ module MUES
 		### specified configuration (a MUES::Config object).
 		def setupEngine( config )
 
+			@log.info( "Starting Engine setup." )
 			setupEvents = []
 
+			### Change working directory to that specified by the config file
+			@log.info( "Changing to root dir: %s" % @config.general.root_dir )
+			Dir.chdir( @config.general.root_dir )
+			
 			### Set up subsystems
 			setupEvents += setupLogging( config )
 			setupEvents += setupObjectStore( config )
@@ -296,13 +311,9 @@ module MUES
 			setupEvents += setupEventQueue( config )
 			setupEvents += setupCommandShellFactory( config )
 
-			### Change working directory to that specified by the config file
-			Dir.chdir( @config.engine.root_dir )
-			
 			# Set the server name to the one specified by the config
 			@name = @config.general.server_name
 			@admin = @config.general.server_admin
-			@tick = 0
 
 			return []
 		end
@@ -312,6 +323,7 @@ module MUES
 		### <tt>logging</tt> section of the specified config (a MUES::Config
 		### object).
 		def setupLogging( config )
+			@log.info( "Setting up logging." )
 			MUES::Log::configure( config )
 		end
 
@@ -319,6 +331,7 @@ module MUES
 		### Set up the Engine's MUES::ObjectStore according to the specified
 		### config (a MUES::Config object).
 		def setupObjectStore( config )
+			@log.info( "Setting up Engine objecstore." )
 			@engineObjectStore = MUES::ObjectStore::createFromConfig( @config.engine.objectstore )
 			@log.info( "Created Engine objectstore: #{@engineObjectStore.to_s}" )
 		end
@@ -328,13 +341,13 @@ module MUES
 		def setupEventHandlers( config )
 			# Register the server's handled event classes
 			# :TODO: Register other event handlers
-			@log.info( "Registering engine event handlers." )
+			@log.info( "Setting up event handlers." )
 			registerHandlerForEvents( self, 
 									  EngineShutdownEvent,
 									  ListenerConnectEvent, 
 									  UntrappedExceptionEvent, 
 									  LogEvent, 
-									  UntrappedSignalEvent,
+									  SignalEvent,
 									  UserEvent,
 									  LoginSessionEvent,
 									  EnvironmentEvent
@@ -351,6 +364,8 @@ module MUES
 			@eventQueue = EventQueue::createFromConfig( config )
 			@eventQueue.debugLevel = 0
 			@eventQueue.start
+
+			return []
 		end
 
 
@@ -372,6 +387,8 @@ module MUES
 		### MUES::Config object).
 		def setupEnvironments( config )
 
+			@log.info( "Setting up environments." )
+
 			# Load the configured environment classes
 			MUES::Environment.createFromConfig( config ).each {|env|
 				@environmentsMutex.synchronize( Sync::EX ) {
@@ -386,13 +403,14 @@ module MUES
 		### Set up the listener objects specified by the given config (a
 		### MUES::Config object) in a dedicated thread.
 		def setupListeners( config )
+			@log.info( "Setting up listeners." )
+
 			@listenersMutex.synchronize( Sync::EX ) {
 
 				# Load the listeners from the configuration, installing each one
 				# in the listeners hash
-				MUES::Listener.createFromConfig( config ).each {|listener|
-					self.addListener( listener )
-				}
+				listeners = MUES::Listener.createFromConfig( config )
+				self.addListeners( *listeners )
 
 				@log.notice( "Starting listener thread." )
 
@@ -405,17 +423,18 @@ module MUES
 				@listenerThread.abort_on_exception = true
 			}
 
+			@log.notice( "Listener thread started: %s" % @listenerThread.to_s )
 			return []
 		end
 
 
 		### Set up signal handlers to generate events.
 		def setupSignalHandlers( config )
-			self.log.info( "Installing signal handlers." )
+			@log.info( "Installing signal handlers." )
 
-			trap( "INT" ) { self.dispatchEvents(SignalEvent::new( :INT, "Server caught SIGINT" )) }
-			trap( "TERM" ) { self.dispatchEvents(SignalEvent::new( :TERM, "Server caught SIGTERM" )) }
-			trap( "HUP" ) { self.dispatchEvent(SignalEvent::new( :HUP, ">>> Server reset <<<" )) }
+# 			trap( "INT" ) { self.dispatchEvents(SignalEvent::new( :INT, "Server caught SIGINT" )) }
+# 			trap( "TERM" ) { self.dispatchEvents(SignalEvent::new( :TERM, "Server caught SIGTERM" )) }
+# 			trap( "HUP" ) { self.dispatchEvent(SignalEvent::new( :HUP, ">>> Server reset <<<" )) }
 
 			return []
 		end
@@ -424,11 +443,11 @@ module MUES
 		### Set signal handlers to ignore signals while the server is in startup
 		### or shutdown
 		def ignoreSignals
-			self.log.info( "Ignoring signals." )
+			@log.info( "Ignoring signals." )
 
-			trap( "INT", "SIG_IGN" )
-			trap( "TERM", "SIG_IGN" )
-			trap( "HUP", "SIG_IGN" )
+# 			trap( "INT", "SIG_IGN" )
+# 			trap( "TERM", "SIG_IGN" )
+# 			trap( "HUP", "SIG_IGN" )
 		end
 
 
@@ -436,11 +455,24 @@ module MUES
 		### have registered themselves as interested in receiving such
 		### notification (by implementing MUES::Notifiable).
 		def sendEngineStartupNotifications
+			startupEvents = []
+
 			# Notify all the Notifiables that we're started
 			@log.notice( "Sending onEngineStartup() notifications." )
 			MUES::Notifiable.classes.each {|klass|
-				startupEvents << klass.atEngineStartup( self )
+				res = klass.atEngineStartup( self )
+				case res
+				when Array
+					startupEvents.push *res
+				when MUES::Event
+					startupEvents.push res
+				else
+					self.log.notice( "Ignoring unknown return type '%s' from %s.atEngineStartup" % [
+									 res.type.name, klass.name ] )
+				end
 			}
+
+			return startupEvents
 		end
 
 		
@@ -573,6 +605,8 @@ module MUES
 		def addListeners( *listeners )
 			checkEachType( listeners, MUES::Listener )
 
+			@log.notice( "Adding %d listeners" % listeners.length )
+
 			@listenersMutex.synchronize( Sync::SH ) {
 				listeners.each {|listener|
 					@listenersMutex.synchronize( Sync::EX ) {
@@ -582,6 +616,7 @@ module MUES
 				}
 			}
 		end
+
 
 		### Remove the specified listeners (which may be either MUES::Listener
 		### objects, or the names they're registered as) from the Engine's hash
@@ -801,6 +836,8 @@ module MUES
 		def registerListener( listener )
 			checkType( listener, MUES::Listener )
 
+			@log.info( "Registering listener: %s " % listener.to_s )
+
 			# Define the callback Proc used for all Listeners if it hasn't been already
 			@@ListenerConnectCallback ||= Proc::new {|sock,mask,listener|
 				case mask
@@ -812,7 +849,7 @@ module MUES
 				# Error events
 				when Poll::ERR|Poll::HUP|Poll::NVAL
 					self.dispatchEvents( ListenerErrorEvent::new(listener, poll, mask) )
-					poll.unregister( listener.ioObject )
+					poll.unregister( listener.io )
 
 				# Everything else
 				else
@@ -822,10 +859,10 @@ module MUES
 
 			# Now register the listener with the poll object
 			@listenersMutex.synchronize( Sync::EX ) {
-				@pollObj.register( listener.ioObject, Poll::RDNORM, @@ListenerConnectCallback, listener )
+				@pollObj.register( listener.io, Poll::RDNORM, @@ListenerConnectCallback, listener )
 			}
 
-			return poll
+			return true
 		end
 
 
@@ -855,7 +892,7 @@ module MUES
 			### Start the event loop until the engine stops running
 			@log.notice( "Starting event loop." )
 			while running? do
-				setupSignalHandlers()
+				setupSignalHandlers( @config )
 
 				begin
 					@tick += 1
@@ -885,31 +922,31 @@ module MUES
 
 			begin
 
-				interval = @config.poll_interval.to_f || DefaultPollInterval
-				getRegisteredPollObject( *@listeners.values )
+				if @config.engine.has_item? 'poll_interval'
+					interval = @config.poll_interval.to_f
+				else
+					interval = DefaultPollInterval
+				end
 
 				### :TODO: Fix race condition: If a connection comes in after stop()
 				### has been called, but before the Shutdown exception has been
 				### dispatched.
 				while running? do
 					begin
-						pollObj.poll( @pollInterval )
-					rescue
-						dispatchEvents( UntrappedExceptionEvent.new($!) )
+						@listenersMutex.synchronize( Sync::SH ) {
+							@pollObj.poll( @pollInterval )
+						}
+					rescue StandardError => e
+						dispatchEvents( UntrappedExceptionEvent.new(e) )
 						next
 					end
 				end
 
 			rescue Reload
 				@log.notice( "Listener thread: Got notice of configuration reload." )
-				break
 			rescue Shutdown
 				@log.notice( "Listener thread: Got notice of server shutdown." )
-				break
 			end
-
-			listener.shutdown( 2 )
-			listener.close
 
 			@log.notice( "Listener thread exiting." )
 		end
@@ -1196,14 +1233,28 @@ module MUES
 		end
 
 
+		### Handle trapped signals.
+		def handleSignalEvent( event )
+			@log.crit( "Caught SIG#{event.signal}" )
+
+			case event.signal
+
+			when "HUP"
+				self.dispatchEvents( MUES::ReconfigEvent::new )
+
+			when "TERM", "INT"
+				self.dispatchEvents( MUES::EngineShutdownEvent::new(event) )
+
+			else
+				@log.error( "I don't know how to handle #{event.signal} signals. Ignoring." )
+			end
+		end
+
+
 		### Handle untrapped signals.
 		def handleUntrappedSignalEvent( event )
-			if event.exception.is_a?( Interrupt ) then
-				@log.crit( "Caught interrupt. Shutting down." )
-				stop()
-			else
-				handleUntrappedExceptionEvent( event )
-			end
+			@log.crit( "Caught untrapped signal #{event.signal}: Shutting down." )
+			stop()
 		end
 
 

@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consolelistener.rb,v 1.1 2002/08/01 03:15:21 deveiant Exp $
+# $Id: consolelistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,7 +24,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
+require 'mues/Object'
 require 'mues/Listener'
 
 
@@ -34,8 +34,8 @@ module MUES
 	class ConsoleListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: consolelistener.rb,v 1.1 2002/08/01 03:15:21 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: consolelistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 
 		### Create a new ConsoleListener object.
 		def initialize( name, parameters )

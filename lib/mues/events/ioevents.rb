@@ -28,17 +28,17 @@
 #
 # == Synopsis
 #
-#	require "mues"
+#	require "mues/Mixins"
 #   require "mues/Events"
 #
-#	include MUES::Functions
+#	include MUES::ServerFunctions
 #
 #   # Send a broadcast to all OutputEvent receivers
 #   engine.dispatchEvents( OuputEvent.new "The server is shutting down." )
 #
 # == Rcsid
 # 
-# $Id: ioevents.rb,v 1.7 2002/06/04 07:07:49 deveiant Exp $
+# $Id: ioevents.rb,v 1.8 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -52,7 +52,7 @@
 #
 
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 
 require "mues/events/BaseClass"

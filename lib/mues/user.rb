@@ -21,7 +21,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.17 2002/08/01 03:06:08 deveiant Exp $
+# $Id: user.rb,v 1.18 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,7 +38,7 @@
 require "date"
 require "md5"
 
-require "mues"
+require "mues/Object"
 require "mues/StorableObject"
 require "mues/Events"
 require "mues/Exceptions"
@@ -52,8 +52,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.17 2002/08/01 03:06:08 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.18 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.18 2002/08/02 20:03:44 deveiant Exp $
 
 		# User AccountType constants module. Contains the following constants:
 		# 

@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: dbibackend.rb,v 1.1 2002/08/01 03:18:54 deveiant Exp $
+# $Id: dbibackend.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,7 +28,7 @@
 require 'dbi'
 require 'sync'
 
-require 'mues'
+require 'mues/Object'
 require 'mues/Exceptions'
 require 'mues/ObjectStore'
 require 'mues/StorableObject'
@@ -60,8 +60,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-			Rcsid = %q$Id: dbibackend.rb,v 1.1 2002/08/01 03:18:54 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+			Rcsid = %q$Id: dbibackend.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 
 			# The default Data Source Name, username, and password to use when connecting.
 			DefaultDsn = {

@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.11 2002/08/01 03:14:40 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.12 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,7 +29,7 @@ require 'sync'
 require 'socket'
 require 'poll'
 
-require 'mues'
+require 'mues/Object'
 require 'mues/Events'
 require 'mues/Exceptions'
 require 'mues/filters/IOEventFilter'
@@ -49,8 +49,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.11 2002/08/01 03:14:40 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.12 2002/08/02 20:03:43 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 

@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.30 2002/08/01 03:00:35 deveiant Exp $
+#  $Id: objectstore.rb,v 1.31 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 #
@@ -67,7 +67,7 @@
 require 'forwardable'
 require 'sync'
 
-require 'mues'
+require 'mues/Object'
 require 'mues/Exceptions'
 require 'mues/StorableObject'
 require 'mues/ObjectSpaceVisitor'
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.30 $
-		RcsId	= %q$Id: objectstore.rb,v 1.30 2002/08/01 03:00:35 deveiant Exp $
+		Version	= %q$Revision: 1.31 $
+		RcsId	= %q$Id: objectstore.rb,v 1.31 2002/08/02 20:03:44 deveiant Exp $
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -195,7 +195,7 @@ module MUES
 		### Assemble an ObjectStores according to the specified <tt>config</tt>
 		### object, which must be a MUES::Config::ObjectStoreSection.
 		def self.createFromConfig( config )
-			checkType( config, MUES::Config::ObjectStoreSection )
+			MUES::TypeCheckFunctions::checkType( config, MUES::Config::ObjectStoreSection )
 
 			# Make a Hash out of all the construction arguments
 			configHash = {
@@ -206,7 +206,7 @@ module MUES
 			}
 
 			# Visitor element is optional, so don't add it if it's not defined.
-			configHash[:visitor] = config.visitor if config.visitor
+			configHash[:visitor] = config.visitor if config.has_item?( "visitor" )
 
 			return self.create( configHash )
 		end

@@ -18,10 +18,10 @@
 # 
 # == Version
 #
-#  $Id: serviceevents.rb,v 1.1 2002/05/12 01:12:24 deveiant Exp $
+#  $Id: serviceevents.rb,v 1.2 2002/08/02 20:03:44 deveiant Exp $
 # 
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 
 require "mues/events/BaseClass"

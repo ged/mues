@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: snoopfilter.rb,v 1.3 2002/04/01 16:27:29 deveiant Exp $
+# $Id: snoopfilter.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,7 +25,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues"
+require "mues/Object"
 require "mues/filters/IOEventFilter"
 
 module MUES
@@ -35,8 +35,8 @@ module MUES
 	### non-functional placeholder.</strong></em>.
 	class SnoopFilter < IOEventFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: snoopfilter.rb,v 1.3 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: snoopfilter.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
 		DefaultSortPosition = 300
 
 	end # class SnoopFilter

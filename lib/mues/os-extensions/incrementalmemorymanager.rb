@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: incrementalmemorymanager.rb,v 1.4 2002/08/01 01:18:04 deveiant Exp $
+# $Id: incrementalmemorymanager.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -37,7 +37,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
+require 'mues/Object'
 
 
 module MUES
@@ -51,8 +51,8 @@ module MUES
 		class IncrementalMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.4 2002/08/01 01:18:04 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
 
 			### Create a new IncrementalMemoryManager object.
 			def initialize( *args )

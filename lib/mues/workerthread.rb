@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: workerthread.rb,v 1.8 2002/08/01 01:14:08 deveiant Exp $
+# $Id: workerthread.rb,v 1.9 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -27,7 +27,7 @@
 
 
 require "thread"
-require "mues"
+require "mues/Object"
 
 ### Add a description attribute to the thread class for diagnostics
 class Thread

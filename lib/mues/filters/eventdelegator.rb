@@ -13,7 +13,7 @@
 #
 # == Rcsid
 # 
-# $Id: eventdelegator.rb,v 1.9 2002/08/01 01:14:08 deveiant Exp $
+# $Id: eventdelegator.rb,v 1.10 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -26,7 +26,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues"
+require "mues/Object"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
@@ -42,8 +42,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.9 2002/08/01 01:14:08 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.10 2002/08/02 20:03:43 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### Create and return a LoginProxy object for the given +session+ (a

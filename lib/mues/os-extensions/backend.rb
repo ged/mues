@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.4 2002/08/01 03:17:15 deveiant Exp $
+# $Id: backend.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -32,7 +32,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
+require 'mues/Object'
 require 'mues/Exceptions'
 require 'mues/ObjectStore'
 
@@ -51,8 +51,8 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version	= %q$Revision: 1.4 $
-			RcsId	= %q$Id: backend.rb,v 1.4 2002/08/01 03:17:15 deveiant Exp $
+			Version	= %q$Revision: 1.5 $
+			RcsId	= %q$Id: backend.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
 
 			# The directory in which file-based objectstores will be kept,
 			# relative to the base dir.

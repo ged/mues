@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.13 2002/08/01 01:08:36 deveiant Exp $
+# $Id: eventqueue.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -35,7 +35,7 @@
 require "thread"
 #require "sync"	<-- ConditionVariable doesn't grok these
 
-require "mues"
+require "mues/Object"
 require "mues/WorkerThread"
 require "mues/Exceptions"
 require "mues/Events"
@@ -48,8 +48,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.13 2002/08/01 01:08:36 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2
@@ -59,12 +59,14 @@ module MUES
 
 		### Class methods
 		def self.createFromConfig( config )
-			checkType( config, MUES::Config::EventQueueSection )
+			MUES::TypeCheckFunctions::checkType( config, MUES::Config )
 
-			return self.new( config.minworkers,
-							 config.maxworkers,
-							 config.threshold,
-							 config.safelevel )
+			qconfig = config.engine.eventqueue
+
+			return self.new( qconfig.minworkers,
+							 qconfig.maxworkers,
+							 qconfig.threshold,
+							 qconfig.safelevel )
 		end
 
 

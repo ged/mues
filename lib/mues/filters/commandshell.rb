@@ -44,7 +44,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.14 2002/08/01 03:13:42 deveiant Exp $
+# $Id: commandshell.rb,v 1.15 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -62,7 +62,7 @@ require "singleton"
 require "find"
 #require "Soundex"
 
-require "mues"
+require "mues/Object"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
@@ -80,8 +80,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.14 2002/08/01 03:13:42 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.15 2002/08/02 20:03:43 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -358,9 +358,11 @@ module MUES
 		### configured list of directories, reloading any that change.
 		class Factory < MUES::Object
 
+			include MUES::TypeCheckFunctions, MUES::ServerFunctions
+
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.14 2002/08/01 03:13:42 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.15 2002/08/02 20:03:43 deveiant Exp $
 
 			### Class globals
 			@@DefaultShellClass = MUES::CommandShell
@@ -386,7 +388,7 @@ module MUES
 				@reloadInterval		= -30
 
 				# Fully-qualify all the directories in the command path
-				@commandPath = @config.commandshell["commandpath"].collect {|cmdsdir|
+				@commandPath = @config.commandshell.commandPath.collect {|cmdsdir|
 					if cmdsdir !~ %r{^/}
 						cmdsdir = File.join( @config.general.root_dir, cmdsdir )
 					end
@@ -396,8 +398,8 @@ module MUES
 				buildCommandRegistry()
 
 				# Schedule an event to periodically update commands
-				@reloadEvent = CallbackEvent.new( self.method('rebuildRegistry') )
-				engine.scheduleEvents( config.commandshell['reload_interval'], @reloadEvent )
+				@reloadEvent = CallbackEvent.new( self.method('rebuildCommandRegistry') )
+				engine.scheduleEvents( @reloadInterval, @reloadEvent )
 
 				return self
 			end
@@ -481,7 +483,7 @@ module MUES
 			def buildCommandRegistry
 				
 				@mutex.synchronize(Sync::EX) {
-					return true if ! @@RegistryIsBuilt
+					return true if ! @registryIsBuilt
 					self.log.notice( "Building command registry" )
 					loadCommands()
 

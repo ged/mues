@@ -11,7 +11,7 @@ else
 end
 
 
-require 'mues'
+require 'mues/Mixins'
 
 puts "Defining base class"
 module Base

@@ -15,7 +15,7 @@
 # 
 # == Rcsid
 # 
-# $Id: reactorproxy.rb,v 1.1 2002/08/01 03:01:10 deveiant Exp $
+# $Id: reactorproxy.rb,v 1.2 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,7 +28,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
+require 'mues/Object'
 
 
 module MUES

@@ -12,43 +12,41 @@
 # Concrete derivatives of this class must provide implementations of the
 # following operations:
 #
-# [<tt>onConnect( <em>event</em> )</tt>]
-#   Called when the listener's IO object indicates it is readable. This method
+# [<tt>createOutputFilter( <em>pollObject</em> )</tt>]
+#   Called when the listener's IO object indicates it is readable, this method
 #   is responsbible for doing any preparation work (eg., calling #accept on the
-#   socket, etc.), and returning a MUES::IOEventFilter object that is suitable
-#   for constructing input events and handling output events for a connecting
-#   client IO object, such as MUES::SocketOutputFilter or
-#   MUES::ConsoleOutputFilter. The <tt>event</tt> parameter is the
-#   MUES::ListenerConnectEvent that was generated to indicate the incoming
-#   connection.
+#   socket, etc.), and returning an appropriate MUES::IOEventFilter object. The
+#   <tt>pollObject</tt> parameter is the Engine's Poll object, which the filter
+#   can use to drive its own IO, perhaps through a MUES::PollProxy object.
 #
-# [<tt>onDisconnect( <em>filter</em> )</tt>]
-#   Called after a filter created by this listener indicates it has an error
-#   condition or that its peer has disconnected, this method is responsible for
-#   returning any resources it has held for the filter to the system. The
+# [<tt>releaseOutputFilter( <em>filter</em> )</tt>]
+#   Called after a filter created by this listener indicates that its peer has
+#   disconnected or that it has an error condition, this method is responsible
+#   for returning any resources the filter has held to the system. The
 #   <tt>filter</tt> argument is the disconnecting MUES::IOEventFilter object.
 # 
 # == Synopsis
+#
+#	require "mues/PollProxy"
+#	require "mues/IOEventFilters"
 # 
-#   class MyListener < MUES::Listener
+#   class MySocketListener < MUES::Listener
 #
-#       def getIoObject
-#           ...
+#       def createOutputFilter( poll )
+#           clientSocket = self.io.accept
+#			proxy = MUES::PollProxy::new( poll, clientSocket )
+#			return MUES::SocketOutputFilter::new( clentSocket, pollProxy )
 #       end
 #
-#       def onConnect( event )
-#           ...
-#       end
-#
-#       def onDisconnect( filter, poll )
-#           ...
+#       def onDisconnect( filter )
+#           # no-op
 #       end
 #
 #   end
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.2 2002/08/01 02:49:32 deveiant Exp $
+# $Id: listener.rb,v 1.3 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,7 +59,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
+require 'mues/Object'
 require 'mues/PollProxy'
 
 
@@ -73,14 +71,14 @@ module MUES
 		include MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: listener.rb,v 1.2 2002/08/01 02:49:32 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: listener.rb,v 1.3 2002/08/02 20:03:44 deveiant Exp $
 
 		### Class methods
 
 		### Return a list of directories to search for listener classes.
 		def self.derivativeDirs
-			["listeners"]
+			["mues/listeners"]
 		end
 
 
@@ -128,8 +126,9 @@ module MUES
 		### Return a human-readable version of the listener suitable for log
 		### messages, etc.
 		def to_s
-			return "%s (%s)" % [ self.class.name, self.name ]
+			return "%s (a %s)" % [ self.name, self.class.name ]
 		end
+
 
 		#########
 		protected

@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: BaseClass.rb,v 1.9 2002/08/01 01:14:08 deveiant Exp $
+# $Id: BaseClass.rb,v 1.10 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,7 +79,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 
 module MUES

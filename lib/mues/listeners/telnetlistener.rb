@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetlistener.rb,v 1.1 2002/08/01 03:15:21 deveiant Exp $
+# $Id: telnetlistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,11 +36,11 @@ module MUES
 	class TelnetListener < MUES::SocketListener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: telnetlistener.rb,v 1.1 2002/08/01 03:15:21 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: telnetlistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
 
 		### Create a new TelnetListener object.
-		def initialize( name, parameters )
+		def initialize( name, parameters={} )
 			super( name, parameters )
 
 			# :TODO: Extract telnet filter options from parameters?

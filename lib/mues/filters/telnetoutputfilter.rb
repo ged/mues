@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.8 2002/08/01 03:14:40 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.9 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -30,7 +30,7 @@ require "thread"
 require "hashslice"
 require "sync"
 
-require "mues"
+require "mues/Object"
 require "mues/Exceptions"
 require "mues/filters/TelnetConstants"
 
@@ -58,8 +58,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.8 2002/08/01 03:14:40 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.9 2002/08/02 20:03:43 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {

@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: role.rb,v 1.6 2002/07/08 15:00:44 deveiant Exp $
+# $Id: role.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,7 +28,7 @@
 #
 
 
-require 'mues'
+require 'mues/Object'
 require 'mues/Exceptions'
 require 'mues/Events'
 require 'mues/StorableObject'
@@ -41,8 +41,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: role.rb,v 1.6 2002/07/08 15:00:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: role.rb,v 1.7 2002/08/02 20:03:44 deveiant Exp $
 
 		### Create and return a role object for the given environment with the name,
 		### and description string specified.

@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.7 2002/08/01 03:14:29 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.8 2002/08/02 20:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -27,7 +27,7 @@
 
 require "sync"
 
-require "mues"
+require "mues/Object"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/PollProxy"
@@ -39,8 +39,8 @@ module MUES
 	class ConsoleOutputFilter < IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.7 2002/08/01 03:14:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.8 2002/08/02 20:03:43 deveiant Exp $
 		DefaultSortPosition = 300
 
 		# Legibility constants
