@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.21 2002/10/26 18:55:12 deveiant Exp $
+# $Id: eventqueue.rb,v 1.22 2003/08/03 19:00:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.21 2002/10/26 18:55:12 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.22 2003/08/03 19:00:11 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -100,7 +100,7 @@ module MUES
 			@supervisor		= nil
 			@strayThreads	= ThreadGroup.new
 
-			@engine			= nil
+			@consequenceHandler	= self.method( :enqueue )
 		end
 
 
@@ -132,14 +132,17 @@ module MUES
 		# The name of the queue
 		attr_reader :name
 
+		# The handler Proc or Method which is to be called for consequence
+		# events. If this is +nil+, consequence events will be immediately
+		# queued.
+		attr_accessor :consequenceHandler
 
-		### Start the supervisor thread and begin processing events. The
-		### <tt>engine</tt> argument is the controlling MUES::Engine object, and
-		### is used for propagating consequence events.
-		def start( engine )
-			checkType( engine, MUES::Engine )
-			debugMsg( 1, "In start()" )
-			@engine = engine
+
+		### Start the supervisor thread and begin processing events. If a
+		### +consequenceHandler+ is given, it used to propagate consequence
+		### events.
+		def start( &consequenceHandler )
+			@consequenceHandler = consequenceHandler if consequenceHandler
 
 			unless @supervisor
 				@supervisor = Thread.new { supervisorThreadRoutine() }
@@ -155,6 +158,7 @@ module MUES
 			return true
 		end
 
+
 		### Add the specified +events+ to the end of the queue
 		def enqueue( *events )
 			events.flatten!
@@ -168,8 +172,6 @@ module MUES
 
 			return true
 		end
-
-		### Alias for #enqueue
 		alias :<< :enqueue
 
 
@@ -471,8 +473,7 @@ module MUES
 				# references after enqueuing them
 				begin
 					consequences = dispatchEvent( event )
-					#enqueue( *consequences ) unless consequences.empty?
-					@engine.dispatchEvents( *consequences ) unless consequences.empty?
+					@consequenceHandler.call( *consequences )
 				end
 
 				event = dequeue()
