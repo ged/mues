@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 # 
-# Instances of this class are used to add attributes to Metaclass::Class objects.
+# This file contains the Metaclass::Attribute metaclass: Instances of this class
+# are used to add attributes to Metaclass::Class objects.
 # 
 # == Synopsis
 # 
@@ -11,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: attribute.rb,v 1.4 2002/04/09 06:52:39 deveiant Exp $
+# $Id: attribute.rb,v 1.5 2002/04/11 15:51:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -30,7 +31,7 @@ require 'metaclass/MutatorOperation'
 
 module Metaclass
 
-	### Class attribute metaclass
+	### Attribute metaclass for Metaclass::Class objects.
 	class Attribute
 
 		include Comparable
@@ -39,8 +40,8 @@ module Metaclass
 		DEFAULT_SCOPE = Scope::INSTANCE
 		DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: attribute.rb,v 1.4 2002/04/09 06:52:39 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: attribute.rb,v 1.5 2002/04/11 15:51:23 deveiant Exp $
 
 		### Create and return a new attribute with the specified name. If the
 		### optional <tt>validTypes</tt> argument is specified, the attribute
@@ -71,6 +72,7 @@ module Metaclass
 			@scope = scope
 			@visibility = visibility
 			@validTypes = validTypes.to_a.flatten.compact
+			@defaultValue = nil
 
 			@accessorOp = nil
 			@mutatorOp = nil
@@ -95,6 +97,9 @@ module Metaclass
 		# Metaclass::Scope).
 		attr_accessor :visibility
 
+		# The default value for the attribute
+		attr_accessor :defaultValue
+
 
 		### <tt>Comparable</tt> interface method. Returns -1, 0, or 1 if this
 		### attribute should sort higher, the same, or lower than the specified
@@ -111,8 +116,8 @@ module Metaclass
 		### Metaclass::Class object as an accessor method.
 		def makeAccessorOp
 			@accessorOp ||= Metaclass::AccessorOperation.new( self.name,
-															 self.scope,
-															 self.visibility )
+															  self.scope,
+															  self.visibility )
 		end
 
 		### Returns a Metaclass::Operation object suitable for addition to a
@@ -121,9 +126,9 @@ module Metaclass
 		### those types with <tt>kind_of?</tt>.
 		def makeMutatorOp
 			@mutatorOp ||= Metaclass::MutatorOperation.new( "#{self.name}",
-														   self.validTypes,
-														   self.scope,
-														   self.visibility )
+														    self.validTypes,
+														    self.scope,
+														    self.visibility )
 		end
 
 	end
