@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: attribute.rb,v 1.5 2002/04/11 15:51:23 deveiant Exp $
+# $Id: attribute.rb,v 1.6 2002/05/16 04:04:45 deveiant Exp $
 # 
 # == Authors
 # 
@@ -40,8 +40,8 @@ module Metaclass
 		DEFAULT_SCOPE = Scope::INSTANCE
 		DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: attribute.rb,v 1.5 2002/04/11 15:51:23 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: attribute.rb,v 1.6 2002/05/16 04:04:45 deveiant Exp $
 
 		### Create and return a new attribute with the specified name. If the
 		### optional <tt>validTypes</tt> argument is specified, the attribute
@@ -113,23 +113,39 @@ module Metaclass
 
 
 		### Returns a Metaclass::Operation object suitable for addition to a
-		### Metaclass::Class object as an accessor method.
-		def makeAccessorOp
-			@accessorOp ||= Metaclass::AccessorOperation.new( self.name,
-															  self.scope,
-															  self.visibility )
+		### Metaclass::Class object as an accessor method. <em>Aliases:</em>
+		### makeAccessorOp.
+		def getAccessorOp
+			if self.visibility >= Visibility::PROTECTED
+				@accessorOp ||= Metaclass::AccessorOperation.new( self.name,
+																  self.scope,
+																  self.visibility )
+			else
+				@accessorOp = nil
+			end
+
+			return @accessorOp
 		end
+		alias :makeAccessorOp :getAccessorOp
+
 
 		### Returns a Metaclass::Operation object suitable for addition to a
 		### Metaclass::Class object as a mutator method. If the receiver has a
 		### list of #validTypes, the mutator will do type-checking for one of
-		### those types with <tt>kind_of?</tt>.
-		def makeMutatorOp
-			@mutatorOp ||= Metaclass::MutatorOperation.new( "#{self.name}",
-														    self.validTypes,
-														    self.scope,
-														    self.visibility )
+		### those types with <tt>kind_of?</tt>. <em>Aliases:</em> makeMutatorOp.
+		def getMutatorOp
+			if self.visibility >= Visibility::PROTECTED
+				@mutatorOp ||= Metaclass::MutatorOperation.new( "#{self.name}",
+															    self.validTypes,
+															    self.scope,
+															    self.visibility )
+			else
+				@mutatorOp = nil
+			end
+
+			return @mutatorOp
 		end
+		alias :makeMutatorOp :getMutatorOp
 
 	end
 
