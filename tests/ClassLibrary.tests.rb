@@ -7,38 +7,40 @@ require 'mues/ClassLibrary'
 
 ### Log tests
 module MUES
-	class TestClassLibrary < RUNIT::TestCase
+	class ClassLibraryTestCase < RUNIT::TestCase
 
 		CLASSLIB_NAME = "testLibrary"
 
+		@classLibrary = nil
+
 		def setup
-			$ClassLibrary = MUES::ClassLibrary.new( CLASSLIB_NAME )
+			@classLibrary = MUES::ClassLibrary.new( CLASSLIB_NAME )
 		end
 
 		def teardown
-			$ClassLibrary = nil
+			@classLibrary = nil
 		end
 
 		def test_Instance
-			assert_not_nil( $ClassLibrary )
-			assert_instance_of( MUES::ClassLibrary, $ClassLibrary )
+			assert_not_nil( @classLibrary )
+			assert_instance_of( MUES::ClassLibrary, @classLibrary )
 		end
 
 		def test_Name
-			assert_equals( CLASSLIB_NAME, $ClassLibrary.name )
+			assert_equals( CLASSLIB_NAME, @classLibrary.name )
 		end
 
 		def test_GetClassDefinition
 			classCode = nil
 			assert_no_exception {
-				classCode = $ClassLibrary.getClassDefinition( "TestClass" )
+				classCode = @classLibrary.getClassDefinition( "TestClass" )
 			}
 		end
 
 		def test_GetClassAncestry
 			heir = nil
 			assert_no_exception {
-				heir = $ClassLibrary.getClassAncestry( "TestClass" )
+				heir = @classLibrary.getClassAncestry( "TestClass" )
 			}
 		end
 
@@ -48,11 +50,11 @@ end
 
 if $0 == __FILE__
 	if ARGV.size == 0
-		suite = MUES::TestClassLibrary.suite
+		suite = MUES::ClassLibraryTestCase.suite
 	else
 		suite = RUNIT::TestSuite.new
 		ARGV.each do |testmethod|
-			suite.add_test(MUES::TestClassLibrary.new(testmethod))
+			suite.add_test(MUES::ClassLibraryTestCase.new(testmethod))
 		end
 	end
 	RUNIT::CUI::TestRunner.run(suite)
