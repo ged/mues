@@ -1,6 +1,6 @@
 /*
  *	polymorphic.c - Polymorphic backend for MUES::StorableObject
- *	$Id: polymorphic.c,v 1.12 2002/10/13 23:20:20 deveiant Exp $
+ *	$Id: polymorphic.c,v 1.13 2002/10/29 19:45:50 deveiant Exp $
  *
  *	This module defines the MUES::PolymorphicObject class which is a derivative
  *	of MUES::Object that allows it to exchange its identity with another
@@ -83,13 +83,23 @@ mues_polymorphic_polymorph( self, other )
 void
 Init_Mues_PolymorphicObject()
 {
+	static char
+		rcsid[]		= "$Id: polymorphic.c,v 1.13 2002/10/29 19:45:50 deveiant Exp $",
+		revision[]	= "$Revision: 1.13 $";
+
+	VALUE vstr		= rb_str_new( (revision+11), strlen(revision) - 11 - 2 );
+	VALUE rcsstr	= rb_str_new( rcsid, strlen(rcsid) );
+
 	mues_debug( "Initializing MUES::PolymorphicObject C extension." );
 
 #if FOR_RDOC_PARSER
 	mues_mMUES = rb_define_module( "MUES" );
 #endif
 
-	// Define the new class and the #polymorph method
+	// Define the new class, the Version and Rcsid constants, and the #polymorph
+	// method
 	mues_cMuesPolymorphicObject = rb_define_class_under( mues_mMUES, "PolymorphicObject", mues_cMuesObject );
+	rb_define_const( mues_cMuesPolymorphicObject, "Rcsid", rcsstr );
+	rb_define_const( mues_cMuesPolymorphicObject, "Version", vstr );
 	rb_define_method( mues_cMuesPolymorphicObject, "polymorph", mues_polymorphic_polymorph, 1 );
 }
