@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.33 2002/10/25 04:58:36 deveiant Exp $
+# $Id: engine.rb,v 1.34 2002/10/26 18:54:29 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.33 2002/10/25 04:58:36 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.34 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.34 2002/10/26 18:54:29 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -570,7 +570,8 @@ module MUES
 		### Queue the given +events+ for dispatch.
 		def dispatchEvents( *events )
 			checkEachType( events, MUES::Event )
-			checkStateRunning( "dispatch events" )
+			checkStateRunning "dispatch events: %s" %
+				events.collect {|ev| ev.to_s}.join(", ")
 
 			# self.log.debug( "Dispatching #{events.length} events." )
 			pevents = events.find_all {|ev| ev.kind_of?(MUES::PrivilegedEvent)}
@@ -761,7 +762,7 @@ module MUES
 			self.log.info( "Setting up event handlers." )
 			registerHandlerForEvents( self, 
 									  EngineShutdownEvent,
-									  ListenerConnectEvent, 
+									  ListenerEvent, 
 									  UntrappedExceptionEvent, 
 									  LogEvent, 
 									  SignalEvent,
@@ -893,8 +894,10 @@ module MUES
 			self.log.info( "Ignoring signals." )
 
  			trap( "INT", "SIG_IGN" )
- 			trap( "TERM", "SIG_IGN" )
  			trap( "HUP", "SIG_IGN" )
+
+			# Honor SIGTERM even while ignoring the others
+ 			trap( "TERM", "SIG_DFL" )
 		end
 
 
@@ -1214,6 +1217,7 @@ module MUES
 			self.log.info( "Starting listener thread routine" )
 			sleep 1 until running?
 
+			# Re-config loop
 			while running? do
 				begin
 
@@ -1228,6 +1232,8 @@ module MUES
 					### :TODO: Fix race condition: If a connection comes in after stop()
 					### has been called, but before the Shutdown exception has been
 					### dispatched.
+
+					# Poll loop
 					while running? do
 
 						startTime = Time::now
@@ -1372,7 +1378,6 @@ module MUES
 
 			### Create the event stream, add the new filters to the stream
 			ios = IOEventStream::new
-			ios.debugLevel = 0
 			ios.addFilters( event.filter )
 
 			### Create the login session and add it to our collection
@@ -1388,7 +1393,7 @@ module MUES
 
 		### Handle disconnections on filters created by listeners.
 		def handleListenerCleanupEvent( event )
-			results = event.listener.releaseOutputFilter( event.filter ) || []
+			results = event.listener.releaseOutputFilter( @pollObj, event.filter ) || []
 			return *results
 		end
 
@@ -1521,10 +1526,12 @@ module MUES
 			results = []
 			debugMsg( 3, "In handleUserLogoutEvent. Event is: #{event.to_s}" )
 
-			self.log.notice("User #{user.to_s} disconnected.")
+			self.log.notice "User #{user.to_s} disconnected."
 			@usersMutex.synchronize(Sync::EX) { @users.delete( user ) }
-			results << user.deactivate
+			results.replace user.deactivate
 
+			self.log.info "Returning %d result events from user logout: %s" %
+				[ results.length, results.collect {|ev| ev.to_s}.join(", ") ]
 			return results
 		end
 
@@ -1691,6 +1698,8 @@ module MUES
 			else
 				self.log.error( "I don't know how to handle #{event.signal} signals. Ignoring." )
 			end
+
+			return []
 		end
 
 
@@ -1698,6 +1707,8 @@ module MUES
 		def handleUntrappedSignalEvent( event )
 			self.log.crit( "Caught untrapped signal #{event.signal}: Shutting down." )
 			stop()
+
+			return []
 		end
 
 
