@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.9 2003/08/04 02:35:02 deveiant Exp $
+#	$Id: quickstart.rb,v 1.10 2003/09/12 04:16:55 deveiant Exp $
 #
 #	Copyright (c) 2001-2003, The FaerieMUD Consortium.
 #
@@ -26,24 +26,24 @@ $Ruby = File::join( CONFIG["bindir"], CONFIG["ruby_install_name"] )
 # Define required libraries
 RequiredLibraries = [
 	# libraryname, nice name, RAA URL, Download URL
-	[ 'poll', "Ruby-Poll", 
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=Ruby-Poll',
-		'http://www.devEiate.org/code/Ruby-Poll-0.03.tar.gz' ],
+	[ 'io/reactor', "IO-Reactor", 
+		'http://raa.ruby-lang.org/list.rhtml?name=IO-Reactor',
+		'http://www.devEiate.org/code/IO-Reactor-0.05.tar.gz' ],
 	[ 'rexml/document', 'REXML',
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
+		'http://raa.ruby-lang.org/list.rhtml?name=REXML',
 		'http://www.germane-software.com/archives/rexml_2.5.2.tgz' ],
 	[ 'forwardable', "Forwardable",
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=forwardable',
+		'http://raa.ruby-lang.org/list.rhtml?name=forwardable',
 		'ftp://ftp.ruby-lang.org/pub/ruby/contrib/forwardable-1.1.tgz' ],
 	[ 'hashslice', "HashSlice",
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=HashSlice',
+		'http://raa.ruby-lang.org/list.rhtml?name=HashSlice',
 		'http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2' ],
 	[ 'pp', 'PrettyPrinter',
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=pp',
+		'http://raa.ruby-lang.org/list.rhtml?name=pp',
 		'http://cvs.m17n.org/~akr/pp/download.html' ],
 	[ 'log4r', 'Log4R',
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
-		'http://sourceforge.net/project/showfiles.php?group_id=43396' ],
+		'http://raa.ruby-lang.org/list.rhtml?name=log4r',
+		'http://prdownloads.sourceforge.net/log4r/log4r-1.0.4.tgz?download' ],
 
 ]
 
