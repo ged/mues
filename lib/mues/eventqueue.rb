@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.23 2003/08/04 02:37:23 deveiant Exp $
+# $Id: eventqueue.rb,v 1.24 2003/09/12 02:10:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.23 2003/08/04 02:37:23 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.24 2003/09/12 02:10:18 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -82,7 +82,7 @@ module MUES
 			@maxWorkers = maxWorkers.to_i
 			@threshold	= threshold.to_f
 			@safeLevel	= safeLevel.to_i
-			@name		= name || "EventQueue %d" % self.id
+			@name		= name || "EventQueue %d" % self.object_id
 
 			debugMsg( 1, "Initializing #{@name}: max = #{@maxWorkers}, "\
 				"min = #{@minWorkers}, safe = #{safeLevel}" )
@@ -218,11 +218,11 @@ module MUES
 						### Add the current thread to the idle threadgroup, which removes it from 
 						###	the workers threadgroup, and wait on the queue mutex. Once we come out
 						###	of the wait, switch ourselves back into the workers group
-						debugMsg( 4, "Thread #{WorkerThread.current.id} going to sleep waiting for an event." )
+						debugMsg( 4, "Thread #{WorkerThread.current.object_id} going to sleep waiting for an event." )
 						@idleWorkers.add( WorkerThread.current )
 						@queueCond.wait( @queueMutex ) until @queuedEvents.length > 0
 						@workers.add( WorkerThread.current )
-						debugMsg( 4, "Thread #{WorkerThread.current.id} woke up. Event queue has #{@queuedEvents.size} events." )
+						debugMsg( 4, "Thread #{WorkerThread.current.object_id} woke up. Event queue has #{@queuedEvents.size} events." )
 					end
 				end
 
@@ -396,7 +396,7 @@ module MUES
 							targetWorker = @idleWorkers.list[0]
 							workerCemetary.add( targetWorker )
 
-							debugMsg( 1, "Killing worker thread #{targetWorker.id} at idle threshold" )
+							debugMsg( 1, "Killing worker thread #{targetWorker.object_id} at idle threshold" )
 							killWorkerThread( targetWorker )
 						end
 					}
@@ -460,7 +460,7 @@ module MUES
 
 		### The worker thread routine.
 		def workerThreadRoutine( threadNumber )
-			debugMsg( 1, "Worker #{WorkerThread.current.id} reporting for duty." )
+			debugMsg( 1, "Worker #{WorkerThread.current.object_id} reporting for duty." )
 			$SAFE = @safeLevel
 
 			### Get the first event
@@ -484,7 +484,7 @@ module MUES
 			end
 
 			thr = WorkerThread.current
-			debugMsg( 1, "Worker #{thr.id} going home after #{thr.runtime} seconds of faithful service." )
+			debugMsg( 1, "Worker #{thr.object_id} going home after #{thr.runtime} seconds of faithful service." )
 		rescue ::Exception => err
 			self.log.error "%s caught a fatal exception: %s\n\t%s" %
 				[ Thread.current.to_s, err.message, err.backtrace.join("\n\t") ]

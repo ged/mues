@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.27 2003/08/04 02:39:11 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.28 2003/09/12 02:10:39 deveiant Exp $
 # 
 # == Authors
 # 
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.27 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.27 2003/08/04 02:39:11 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.28 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.28 2003/09/12 02:10:39 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
@@ -130,7 +130,7 @@ module MUES
 			@paused = false
 			@streamThread = Thread.new { streamThreadRoutine() }
 			@streamThread.abort_on_exception = true
-			@streamThread.desc = "IOEventStream thread [Stream #{self.id}]"
+			@streamThread.desc = "IOEventStream thread [Stream #{self.object_id}]"
 
 			# self.debugLevel = 5
 		end
@@ -197,7 +197,7 @@ module MUES
 		### MUES::IOEventFilter#sortPosition).
 		def addFilters( *filters )
 			checkEachType( filters, MUES::IOEventFilter )
-			debugMsg( 1, "Adding #{filters.size} filters to stream #{self.id}" )
+			debugMsg( 1, "Adding #{filters.size} filters to stream #{self.object_id}" )
 
 			### Add each filter that isn't already in the stream, adding it to
 			### the array of filters, and notifying each one that it should
@@ -234,7 +234,7 @@ module MUES
 				@filters -= filters
 			}
 
-			debugMsg( 1, "Removed #{filters.size} filters from stream #{self.id}" )
+			debugMsg( 1, "Removed #{filters.size} filters from stream #{self.object_id}" )
 			return filters
 		end
 
@@ -394,7 +394,7 @@ module MUES
 			self.pause
 
 			# Set the state flag and remove all filters
-			debugMsg( 1, "Shutting down event stream #{self.id}." )
+			debugMsg( 1, "Shutting down event stream #{self.object_id}." )
 			@filterMutex.synchronize(Sync::EX) {
 				@state = SHUTDOWN
 				results.replace self.stopFilters
