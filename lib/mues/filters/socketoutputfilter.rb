@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.13 2002/08/29 07:26:38 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.14 2002/09/12 12:39:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -40,7 +40,7 @@ module MUES
 	### output to a TCPSocket.
 	class SocketOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
-		include MUES::ServerFunctions, MUES::TypeCheckFunctions
+		include MUES::TypeCheckFunctions
 
 		### A container module for MUES::SocketOutputFilter state contants.
 		module State
@@ -51,8 +51,8 @@ module MUES
 		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN|Poll::OUT
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.13 2002/08/29 07:26:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.14 2002/09/12 12:39:38 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
@@ -202,7 +202,7 @@ module MUES
 		### output events, sends it to the remote client, and creates new input
 		### events from user input via the socket.
 		def handlePollEvent( socket, mask )
-			self.log.debug {"Got poll event: #{mask.class.name}: %x" % mask}
+			debugMsg( 5, "Got poll event: #{mask.class.name}: %x" % mask )
 
 			### Handle invalid file descriptor
 			if (mask & (Poll::NVAL|Poll::HUP)).nonzero?
@@ -220,25 +220,24 @@ module MUES
 			### Read any input from the socket if it's ready
 			if (mask & Poll::IN).nonzero?
 				readData = socket.sysread( @@MTU )
-				self.log.debug { "Read %d bytes in poll event handler (readData = %s)." %
-						[ readData.length, readData.inspect ] }
+				debugMsg( 5, "Read %d bytes in poll event handler (readData = %s)." %
+						[ readData.length, readData.inspect ] )
 				handleRawInput( readData )
 			end
 
 			### Write any buffered output to the socket if we have output
 			### pending and the socket is writable
 			if (mask & Poll::OUT).nonzero?
-				self.log.debug { "Writing %d bytes in poll event handler (@writebuffer = %s)." % 
-						[ @writeBuffer.length, @writeBuffer.inspect ]
-				}
+				debugMsg( 5, "Writing %d bytes in poll event handler (@writebuffer = %s)." % 
+						  [ @writeBuffer.length, @writeBuffer.inspect ])
 
 				@writeMutex.synchronize(Sync::EX) {
 					bytesWritten = socket.syswrite( @writeBuffer )
-					self.log.debug( "Wrote %d bytes." % bytesWritten )
+					debugMsg( 5, "Wrote %d bytes." % bytesWritten )
 					@writeBuffer[0 .. bytesWritten] = ''
 
 					if @writeBuffer.empty?
-						self.log.debug( "Removing Poll::OUT mask" )
+						debugMsg( 4, "Removing Poll::OUT mask" )
 						@pollProxy.removeMask( Poll::OUT )
 					end
 				}
