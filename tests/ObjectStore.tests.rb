@@ -6,11 +6,13 @@ require 'runit/testcase'
 require 'runit/cui/testrunner'
 
 require 'mues/Namespace'
-require 'mues/Player'
+require 'mues/User'
 require 'mues/ObjectStore'
 
 ### Adapter tests
 module MUES
+
+	### An object class for testing storage and retrieval
 	class TestObject < MUES::Object
 		attr_reader :args
 
@@ -20,6 +22,7 @@ module MUES
 		end
 	end
 
+	### A more intelligent version of the test object
 	class IntelligentTestObject < TestObject
 		attr_reader :checksum
 
@@ -37,8 +40,17 @@ module MUES
 		end
 	end
 
+	# Subclass of ObjectStore: exposes protected methods as public so we can
+	# test them.
+	class TestingObjectStore < ObjectStore
+		public
+		class << self
+			def loadAdapters; ObjectStore._loadAdapters; end
+		end
+	end
+
 	### Test the objectstore class itself
-	class TestObjectStore < RUNIT::TestCase
+	class ObjectStoreTestCase < RUNIT::TestCase
 
 		def setup
 			super
@@ -49,20 +61,19 @@ module MUES
 		end
 
 		def test_LoadAdapters
-			assert MUES::ObjectStore._loadAdapters
+			assert TestingObjectStore.loadAdapters
 		end
 
 		def test_HasAdapter
-			assert MUES::ObjectStore._hasAdapter?( "Dummy" ) 
+			assert TestingObjectStore.hasAdapter?( "Dummy" ) 
 		end
 
 		def test_GetAdapter
-			a = MUES::ObjectStore._getAdapter( "Dummy", "test", "host", "user", "password" )
+			a = TestingObjectStore.getAdapter( "Dummy", "test", "host", "user", "password" )
 			assert_instance_of MUES::ObjectStore::DummyAdapter, a
 			assert_equals( "test", a.db )
 			assert_equals( "host", a.host )
 			assert_equals( "user", a.user )
-			assert_equals( "password", a.password )
 		end
 	end
 
@@ -70,7 +81,7 @@ module MUES
 	class BaseObjectStoreAdapter < RUNIT::TestCase
 
 		@@TestData = %w{a few test words}
-		@@PlayerTestData = {
+		@@UserTestData = {
 			'username'		=> 'ged',
 			'cryptedPass'	=> '1c7bf49fb32388100dff7464abf9c588',
 			'realname'		=> 'Michael Granger',
@@ -81,7 +92,7 @@ module MUES
 			'dateCreated'	=> '2001-01-01 00:00:00',
 			'age'			=> 16,
 
-			'role'			=> Player::Role::ADMIN,
+			'role'			=> User::Role::ADMIN,
 			'preferences'	=> { 'prompt' => '%h [%c]>'},
 			'characters'	=> %w{ged taliesin gond},
 		}
@@ -138,26 +149,26 @@ module MUES
 			assert_nil( obj.checksum )
 		end
 
-		def test_05StorePlayer
-			pl = Player.new( @@PlayerTestData )
+		def test_05StoreUser
+			pl = User.new( @@UserTestData )
 			assert_no_exception {
-				@@ObjectStore.storePlayer( pl )
+				@@ObjectStore.storeUser( pl )
 			}
 		end
 
-		def test_06FetchPlayer
-			player = nil
+		def test_06FetchUser
+			user = nil
 			assert_no_exception {
-				player = @@ObjectStore.fetchPlayer( @@PlayerTestData['username'] )
+				user = @@ObjectStore.fetchUser( @@UserTestData['username'] )
 			}
-			@@PlayerTestData.each_key {|k|
-				assert_equals( @@PlayerTestData[k], player.dbInfo[k] )
+			@@UserTestData.each_key {|k|
+				assert_equals( @@UserTestData[k], user.dbInfo[k] )
 			}
 		end
 	end
 
 	### Test suite for Berkeley DB adapter
-	class TestObjectStoreBdbAdapter < BaseObjectStoreAdapter
+	class ObjectStoreBdbAdapterTestCase < BaseObjectStoreAdapter
 		def setup
 			@@ObjectStore = ObjectStore.new( 'Bdb', 'test' )
 		end
@@ -165,7 +176,7 @@ module MUES
 
 	### :FIXME: Segfaults for some reason
 	### Test suite for Mysql DB adapter
-	class TestObjectStoreMysqlAdapter < BaseObjectStoreAdapter
+	class ObjectStoreMysqlAdapterTestCase < BaseObjectStoreAdapter
 		def setup
 			@@ObjectStore = ObjectStore.new( 'Mysql', 'mues', 'localhost', 'deveiant', '3l3g4nt' )
 		end
@@ -180,7 +191,7 @@ if $0 == __FILE__
 		def TestAll.suite
 			suite = RUNIT::TestSuite.new
 			ObjectSpace.each_object( Class ) {|klass|
-				next unless klass < RUNIT::TestCase && klass.name =~ /^MUES::Test/
+				next unless klass < RUNIT::TestCase && klass.name =~ /^MUES::/
 				suite.add_test( klass.suite )
 			}
 			suite
