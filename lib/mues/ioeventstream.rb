@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.18 2002/09/12 11:42:25 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.19 2002/10/04 05:16:36 deveiant Exp $
 # 
 # == Authors
 # 
@@ -247,7 +247,8 @@ module MUES
 		def removeFiltersOfType( filterClass )
 			checkType( filterClass, ::Class )
 			@filterMutex.synchronize( Sync::SH ) {
-				removeFilters( findFiltersOfType(filterClass) )
+				filters = findFiltersOfType(filterClass) - [ @diFilter, @doFilter ]
+				removeFilters( *filters )
 			}
 		end
 
