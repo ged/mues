@@ -33,7 +33,7 @@
 #
 # == Rcsid
 # 
-# $Id: logger.rb,v 1.1 2003/11/27 06:02:11 deveiant Exp $
+# $Id: logger.rb,v 1.2 2004/03/06 22:38:00 deveiant Exp $
 # 
 # == Authors
 # 
@@ -55,10 +55,10 @@ module MUES
 		require 'mues/logger/outputter'
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.1 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
 
 		# CVS id tag
-		Rcsid = %q$Id: logger.rb,v 1.1 2003/11/27 06:02:11 deveiant Exp $
+		Rcsid = %q$Id: logger.rb,v 1.2 2004/03/06 22:38:00 deveiant Exp $
 
 		# Log levels array (in order of decreasing verbosity)
 		Levels = [
@@ -91,11 +91,16 @@ module MUES
 
 		### Return the MUES::Logger for the given module +mod+, which can be a
 		### Module object, a Symbol, or a String.
-		def self::[]( mod )
-			names = mod.to_s.split( /::/ )
-			unless @loggers.key?( names.first )
-				@loggers[ names.first ] = new( names.first )
-			end
+		def self::[]( mod=nil )
+			modname = mod.to_s
+			return self::global if modname.empty?
+
+			modname = '::' + modname unless /^::/ =~ modname
+			names = modname.split( /::/ )
+
+			# Create the global logger if it isn't already created
+			@loggers[ '' ] ||= new( '' )
+
 			names.inject( @loggers ) {|logger,key| logger[key]}
 		end
 
@@ -103,7 +108,7 @@ module MUES
 		### Return the global MUES logger, setting it up if it hasn't been
 		### already.
  		def self::global
-			return self[MUES]
+			@loggers[ '' ] ||= new( '' )
 		end
 
 
@@ -165,13 +170,18 @@ module MUES
 		### at the specified +level+, with the specified +superlogger+. Any
 		### +outputters+ that are specified will be added.
 		def initialize( name, level=:info, superlogger=nil, *outputters )
-			debugMsg "Creating logger for #{name}"
+			if name.empty?
+				debugMsg "Creating global logger"
+			else
+				debugMsg "Creating logger for #{name}"
+			end
 			
 			@name = name
 			@outputters = outputters
 			@subloggers = {}
 			@superlogger = superlogger
 			@trace = false
+			@level = nil
 
 			self.level = level
 		end
@@ -196,10 +206,16 @@ module MUES
 		# Set to a true value to turn tracing on
 		attr_accessor :trace
 
+		# The integer level of the logger.
+		attr_reader :level
 
-		### Return the level of this logger as a Symbol.
-		def level
-			Levels.invert[ @level ]
+
+		### Return the name of the logger formatted to be suitable for reading.
+		def readableName
+			logname = self.name.sub( /^::/, '' )
+			logname = '(global)' if logname.empty?
+
+			return logname
 		end
 
 
@@ -220,52 +236,72 @@ module MUES
 		end
 
 
+		### Return the level of this logger as a Symbol
+		def levelSym
+			Levels.invert[ @level ]
+		end
+
+
 		### Return a uniquified Array of the loggers which are more-generally
 		### related hierarchically to the receiver, inclusive.
-		def hierloggers
-			loggers = [ self ]
-			while (( logger = loggers.last.superlogger ))
-				loggers.push( logger )
-				debugMsg "hierloggers: adding #{logger.name}"
-				yield( logger ) if block_given?
-			end
+		def hierloggers( level=0 )
+			level = Levels[ level ] if level.is_a?( Symbol )
+			loggers = []
+			logger = self
+			lastlogger = nil
+
+			debugMsg "Searching for loggers in the hierarchy whose level <= %p" % level
+
+			begin
+				lastlogger = logger
+				if logger.level <= level
+					debugMsg "hierloggers: added %s" % logger.readableName
+					loggers.push( logger )
+					yield( logger ) if block_given?
+				else
+					debugMsg "hierloggers: discarding %s (%p)" %
+						[ logger.readableName, logger.levelSym ]
+				end
+			end while (( logger = lastlogger.superlogger ))
+
 			return loggers
 		end
 
 
 		### Return a uniquified Array of all outputters for this logger and all
 		### of the loggers above it in the logging hierarchy.
-		def hieroutputters
-			outputters = @outputters.dup
-			if block_given?
-				outputters.each {|outputter| yield(outputter)}
-			end
+		def hieroutputters( level=0 )
+			outputters = []
+			level = Levels[ level ] if level.is_a?( Symbol )
 
-			self.hierloggers {|logger|
+			self.hierloggers( level ) {|logger|
 				outpary = logger.outputters
 				newoutpary = outpary - (outpary & outputters)
-				debugMsg "hieroutputters: adding outputters: %s" %
-					newoutpary.collect {|outp| outp.description}.join(", ")
-				if block_given?
-					newoutpary.each {|outputter| yield(outputter)}
+				unless newoutpary.empty?
+					debugMsg "hieroutputters: adding: %s" %
+						newoutpary.collect {|outp| outp.description}.join(", ")
+					if block_given?
+						newoutpary.each {|outputter| yield(outputter)}
+					end
+					outputters += newoutpary
 				end
-				outputters += newoutpary
 			}
 
 			return outputters
 		end
 
 
-		### Write the given +args+ to any connected outputters. If the first
-		### item in +args+ is a String and contains %<char> codes, the message
-		### will formed by using the first argument as a format string in
-		### +sprintf+ with the remaining items. Otherwise, the message will be
-		### formed by catenating the results of calling #formatObject on each of
-		### them.
+		### Write the given +args+ to any connected outputters if +level+ is
+		### less than or equal to this logger's level. If the first item in
+		### +args+ is a String and contains %<char> codes, the message will
+		### formed by using the first argument as a format string in +sprintf+
+		### with the remaining items. Otherwise, the message will be formed by
+		### catenating the results of calling #formatObject on each of them.
 		def write( level, *args )
-			msg, frame = nil
-
-			msg = args.collect {|obj| self.stringifyObject(obj)}.join
+			debugMsg "Writing message at %p: %p" % [ level, args ]
+				
+			msg, frame = nil, nil
+			time = Time::now
 
 			# If tracing is turned on, pick the first frame in the stack that
 			# isn't in this file, or the last one if that fails to yield one.
@@ -274,13 +310,10 @@ module MUES
 				frame = caller(1).find {|fr| re !~ fr} || caller(1).last
 			end
 
-			time = Time::now
-			debugMsg "In write for %s - %d hieroutputters..." %
-				[ self.name, self.hieroutputters.nitems ]
-
-			# Send the output to each outputter registered for this logger.
-			self.hieroutputters {|outp|
-				outp.write( time, level, self.name, frame, msg )
+			self.hieroutputters( level ) {|outp|
+				debugMsg "Got outputter %p" % outp
+				msg ||= args.collect {|obj| self.stringifyObject(obj)}.join
+				outp.write( time, level, self.readableName, frame, msg )
 			}
 		end
 
@@ -310,20 +343,15 @@ module MUES
 				   end
 		end
 
+
 		### Auto-install logging methods (ie., methods whose names match one of
 		### MUES::Logger::Levels.
 		def method_missing( id, *args )
 			super unless MUES::Logger::Levels.member?( id )
 
+			debugMsg "Autoloading instance log method '#{id}'"
 			self.class.class_eval {
-				define_method( id ) {|*args|
-					return false if !Levels.key?(id) || Levels[	id ] < @level 
-					if block_given?
-						self.write( id, yield(*args) )
-					else
-						self.write( id, *args )
-					end
-				}
+				define_method( id ) {|*args| self.write(id, *args)}
 			}
 
 			self.send( id, *args )
