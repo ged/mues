@@ -80,21 +80,22 @@ More comprehensive documentation to follow, but in the meantime, you can find
 the working copy at:
 ((<URL:http://docs.faeriemud.org/bin/view/Dream/TheEngine>)).
 
+== Modules
+=== MUES::Engine::State
+
+Namespace for the Engine state constants. (See ((<MUES::Engine#state>)) for more
+information.)
+
 == Classes
+
 === MUES::Engine
 ==== Class Methods
 
---- MUES::Engine.instance()
+--- MUES::Engine.instance
 
     Returns the singleton instance of the Engine object, creating it if necessary.
 
-==== Protected Instance Methods
-
---- MUES::Engine#initialize()
-
-    Sets up and initializes the engine instance.
-
-==== Instance Methods
+==== Public Methods
 
 --- MUES::Engine#hostname
 
@@ -118,7 +119,7 @@ the working copy at:
 --- MUES::Engine#users
 
     Returns the hash of hashes which tracks the status of currently connected
-    users, keyed by user object (a (({MUES::User})) instance). Each entry
+    users, keyed by user object (a ((<MUES::User>)) instance). Each entry
     is of the form:
 
       <a MUES::User> => {
@@ -186,7 +187,21 @@ the working copy at:
 
 --- MUES::Engine#stop()
 
-    Shuts the engine/server down.
+    Start the Engine^s shutdown sequence.
+
+--- MUES::Engine#scheduleEvents( time, *events )
+
+    Schedule the specified events to be dispatched at the time specified. If
+    ((|time|)) is a (({Time})) object, it will be executed at the tick which
+    occurs at or immediately after the specified time. If ((|time|)) is a
+    positive (({Integer})), it is assumed to be a tick offset, and the event
+    will be dispatched ((|time|)) ticks from now.  If ((|time|)) is a negative
+    (({Integer})), it is assumed to be a repeating event which requires dispatch
+    every (({time.abs})) ticks.
+
+--- MUES::Engine#cancelScheduledEvents( *events )
+
+    Removes and returns the specified scheduled ((|events|)), if found.
 
 --- MUES::Engine#dispatchEvents( *events )
 
@@ -196,7 +211,12 @@ the working copy at:
 
     Returns a multi-line string indicating the current status of the engine.
 
-==== Protected Instance Methods
+
+==== Protected Methods
+
+--- MUES::Engine#initialize()
+
+    Sets up and initialize the Engine instance.
 
 --- MUES::Engine#_mainThreadRoutine()
 
@@ -217,6 +237,15 @@ the working copy at:
     inside an instance of (({TCPWrapper})); otherwise, it is an instance of
     (({TCPServer})).
 
+--- MUES::Engine#_getPendingEvents( tickNumber )
+
+    Returns an (({Array})) of events which are pending execution for the
+    ((|tickNumber|)) specified.
+
+--- MUES::Engine#_handleEnvironmentEvent( event )
+
+    Event handler for ((<MUES::EnvironmentEvent>))s.
+
 --- MUES::Engine#_handleSocketConnectEvent( event )
 
     Event handler for ((<MUES::SocketConnectEvent>))s.
@@ -232,6 +261,14 @@ the working copy at:
 --- MUES::Engine#_handleUntrappedSignalEvent( event )
 
     Event handler for ((<MUES::UntrappedSignalEvent>))s.
+
+--- MUES::Engine#_handleLoginSessionAuthEvent( event )
+
+    Event handler for ((<MUES::LoginSessionAuthEvent>))s.
+
+--- MUES::Engine#_handleLoginSessionFailureEvent( event )
+
+    Event handler for ((<MUES::LoginSessionFailureEvent>))s.
 
 --- MUES::Engine#_handleReconfigEvent( event )
 
@@ -249,7 +286,7 @@ the working copy at:
 
     Event handler for events without an explicit handler.
 
-== AUTHOR
+== Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 and Jeremiah Chase <((<phaedrus@FaerieMUD.org|URL:mailto:phaedrus@FaerieMUD.org>))>
@@ -298,12 +335,14 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.11 2001/09/26 12:40:32 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.12 2001/11/01 17:02:01 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
 		DefaultAdmin	= 'MUES Admin <mues@localhost>'
+
+		ScheduledEventsHash = { 'timed' => {}, 'ticked' => {}, 'repeating' => {} }
 
 		### Class variables
 		@@Instance		= nil
@@ -313,6 +352,9 @@ module MUES
 
 		### Initialization method
 		protected
+
+		### (PROTECTED) METHOD: initialize
+		### Initialize the Engine instance.
 		def initialize
 			@config = nil
 			@log = nil
@@ -326,7 +368,7 @@ module MUES
 			@admin = DefaultAdmin
 
 			@eventQueue = nil
-			@scheduledEvents = { 'timed' => {}, 'ticked' => {}, 'repeating' => {} }
+			@scheduledEvents = ScheduledEventsHash.dup
 			@scheduledEventsMutex = Sync.new
 
 			@users				= {}
@@ -357,7 +399,7 @@ module MUES
 		### Read-only accessors for instance variables
 		attr_reader :hostname, :port, :name, :log, :users, :connections, :state, :config
 
-		### (STATIC) METHOD: instance
+		### (CLASS) METHOD: instance
 		### Returns (and potentially creates) the instance of the Engine, which
 		### is aSingleton.
 		def Engine.instance
@@ -391,17 +433,9 @@ module MUES
 			@log.notice( "Engine startup for #{@name} at #{Time.now.to_s}" )
 
 			### Connect to the MUES objectstore
-			@log.info( "Creating Engine objectstore: %s %s@%s" % [
-						  @config['objectstore']['driver'],
-						  @config['objectstore']['db'],
-						  @config['objectstore']['host']
-					  ])
-			@engineObjectStore = ObjectStore.new( @config["objectstore"]["driver"],
-												  @config["objectstore"]["db"],
-												  @config["objectstore"]["host"],
-												  @config["objectstore"]["username"],
-												  @config["objectstore"]["password"] )
+			@engineObjectStore = ObjectStore.new( @config )
 			@engineObjectStore.debugLevel = 0
+			@log.info( "Created Engine objectstore: #{@engineObjectStore.to_s}" )
 
 			### Register the server as being interested in a couple of different events
 			@log.info( "Registering engine event handlers." )
@@ -422,7 +456,8 @@ module MUES
 			@log.info( "Starting event queue." )
 			@eventQueue = EventQueue.new( @config["eventqueue"]["minworkers"], 
 										  @config["eventqueue"]["maxworkers"],
-										  @config["eventqueue"]["threshold"] )
+										  @config["eventqueue"]["threshold"],
+										  @config["eventqueue"]["safelevel"] )
 			@eventQueue.debugLevel = 0
 			@eventQueue.start
 
@@ -560,7 +595,7 @@ module MUES
 		### Queue the given events for dispatch
 		def dispatchEvents( *events )
 			checkEachType( events, MUES::Event )
-			@log.debug( "Dispatching #{events.length} events." )
+			# @log.debug( "Dispatching #{events.length} events." )
 			@eventQueue.enqueue( *events )
 		end
 
@@ -584,7 +619,7 @@ module MUES
 
 			# Time-fired events
 			when Time
-				@log.debug( "Scheduling #{events.length} events for #{time} (Time)" )
+				debugMsg( 3, "Scheduling #{events.length} events for #{time} (Time)" )
 
 				if time <= Time.now()
 					dispatchEvents( *events )
@@ -605,7 +640,7 @@ module MUES
 				if time < 0
 					tickInterval = time.abs
 					nextTick = @tick + tickInterval
-					@log.debug( "Scheduling #{events.length} events to repeat every " +
+					debugMsg( 3, "Scheduling #{events.length} events to repeat every " +
 							    "#{tickInterval} ticks (next at #{nextTick})" )
 					@scheduledEventsMutex.synchronize(Sync::EX) {
 						@scheduledEvents['repeating'][[ nextTick, tickInterval ]] ||= []
@@ -616,7 +651,7 @@ module MUES
 				elsif time > 0
 					time = time.abs
 					time += @tick
-					@log.debug( "Scheduling #{events.length} events for tick #{time}" )
+					debugMsg( 3, "Scheduling #{events.length} events for tick #{time}" )
 					@scheduledEventsMutex.synchronize(Sync::EX) {
 						@scheduledEvents['ticked'][ time ] ||= []
 						@scheduledEvents['ticked'][ time ] += events
@@ -643,20 +678,31 @@ module MUES
 
 			# If no events were given, remove all scheduled events
 			if events.length == 0
+				@log.info( "Removing all scheduled events." )
 				@scheduledEventsMutex.synchronize(Sync::EX) {
-					@scheduledEvents = { 'timed' => [], 'ticked' => [], 'repeating' => {} }
+					@scheduledEvents = ScheduledEventsHash.dup
 				}
 
 			# Remove just the events specified
 			else
+				debugMsg( 3, "Cancelling #{events.length} scheduled events." )
+				beforeCount = 0
+				afterCount = 0
+
+				### Synchronize exclusively to avoid an event that's being
+				### cancelled from being executed
 				@scheduledEventsMutex.synchronize(Sync::EX) {
-					@scheduledEvents.each {|type,eventHash|
-						eventHash.each {|time,eventArray|
-							eventArray -= events
-							### :TODO: Clear out blank schedule entries
+					@scheduledEvents.each_key {|type|
+						@scheduledEvents[type].each_key {|time|
+							beforeCount += @scheduledEvents[type][time].length
+							@scheduledEvents[type][time] -= events
+							afterCount += @scheduledEvents[type][time].length
 						}
 					}
 				}
+
+				cancelled = beforeCount - afterCount
+				debugMsg( 3, "Cancelled #{cancelled} events (#{afterCount} of #{beforeCount} events remain)." )
 			end
 		end
 
@@ -769,7 +815,7 @@ module MUES
 			while running? do
 				begin
 					@tick += 1
-					@log.debug( "In tick #{@tick}..." )
+					# @log.debug( "In tick #{@tick}..." )
 					sleep @config["engine"]["TickLength"].to_i
 					pendingEvents = _getPendingEvents( @tick )
 					dispatchEvents( TickEvent.new(@tick), *pendingEvents )
@@ -842,7 +888,9 @@ module MUES
 			### Copy the event's socket to dynamic variable, and create a socket
 			### output filter
 			sock = event.socket
-			soFilter = SocketOutputFilter.new( sock )
+			soFilter = TelnetOutputFilter.new( sock )
+			#soFilter = SocketOutputFilter.new( sock )
+			soFilter.debugLevel = 2
 
 			### Create the event stream, add the new filters to the stream
 			ios = IOEventStream.new
@@ -963,6 +1011,8 @@ module MUES
 			}
 			user ||= @engineObjectStore.fetchUser( username )
 
+			debugMsg( 2, "Fetched user #{user.inspect} for '#{username}'" )
+
 			### Fail if no user was found by the name specified...
 			if user.nil?
 				results << LogEvent.new( "notice", "Authentication failed for user '#{username}': No such user." )
@@ -970,6 +1020,10 @@ module MUES
 
 			### ...or if the passwords don't match
 			elsif user.cryptedPass != MD5.new( event.password ).hexdigest
+				debugMsg( 1, "Bad password '%s': '%s' != '%s'" % [
+							 event.password,
+							 user.cryptedPass,
+							 MD5.new( event.password ).hexdigest] )
 				results << LogEvent.new( "notice", "Authentication failed for user '#{username}': Bad password." )
 				results << event.failureCallback.call( "Bad password" )
 
@@ -1098,6 +1152,8 @@ module MUES
 					@exceptionStack.delete_at( maxSize )
 				end
 			}
+
+			@log.error( "Untrapped exception: #{event.exception.to_s}" )
 			
 			[ LogEvent.new( "error", "Untrapped exception: ",
 						   event.exception.to_s, "\n\t", 
