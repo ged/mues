@@ -39,12 +39,13 @@ module MUES
 	class CommandShell < IOEventFilter
 
 		### Class constants
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: commandshell.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.2 2001/05/14 12:22:57 deveiant Exp $
+		DefaultSortPosition = 700
 
 		### Class attributes
-		@@DefaultSortPosition = 700
 		@@DefaultCommandString = '/'
+		@@DefaultPrompt = 'mues> '
 
 		### (PROTECTED) METHOD: initialize( aPlayer )
 		### Initialize a new shell input filter for the specified player
@@ -53,6 +54,11 @@ module MUES
 			super()
 			@player = aPlayer
 			@commandString = @@DefaultCommandString
+			@prompt = @@DefaultPrompt
+
+			@vars = {}
+
+			queueOutputEvents( OutputEvent.new(@prompt) )
 		end
 
 		### Public methods
@@ -62,35 +68,122 @@ module MUES
 		### Handle input events by comparing them to the list of valid shell
 		### commands and creating the appropriate events for any that do.
 		def handleInputEvents( *events )
-			unknownCommands = []
+			unhandledInputEvents = []
 
-			_debugMsg( 1, "Got #{events.size} input events to filter." )
+			_debugMsg( 5, "Got #{events.size} input events to filter." )
 
 			### :TODO: This is probably only good for a few commands. Eventually,
 			### this will probably become a dispatch table which gets shell commands
 			### dynamically from somewhere.
 			events.flatten.each do |e|
 
-				case e.data
-				when /^#{@commandString}q(uit)?/
-					engine.dispatchEvents( PlayerLogoutEvent.new(@player) )
-					break
+				### If the input looks like a command for the shell, look for
+				### commands we know about and take appropriate action when
+				### one is found
+				if e.data =~ /^#{@commandString}(.*)/
+					command = $1
+					output = []
 
-				when /^#{@commandString}shutdown/
-					engine.dispatchEvents( EngineShutdownEvent.new(@player) )
-					break
+					case command
+					when /^q(uit)?/
+						engine.dispatchEvents( PlayerLogoutEvent.new(@player) )
+						break
 
-				when /^#{@commandString}status/
-					queueOutputEvents( OutputEvent.new(engine.statusString) )
+					when /^shutdown/
+						engine.dispatchEvents( EngineShutdownEvent.new(@player) )
+						break
 
+					when /^status/
+						output << OutputEvent.new(engine.statusString)
+
+					when /^debug\b\s*(.*)/
+						arg = $1
+
+						if arg =~ /=\s*(\d)/
+							level = $1
+							output << OutputEvent.new( "Setting shell debug level to #{level}.\n" )
+							self.debugLevel = level
+
+						else
+							output << OutputEvent.new( "Shell debug level is currently #{self.debugLevel}.\n" )
+						end
+
+					when /^threads/
+						thrList = Thread.list.collect {|t|
+							"\t[%10s] prio: %02d  stat: %5s  sl: %1d  aoe: %1s" % [
+								t.id,
+								t.priority,
+								t.status,
+								t.safe_level,
+								t.abort_on_exception ? "t" : "f"
+							]
+						}
+						thrTable = "#{thrList.length} threads: \n" + thrList.join("\n") + "\n\n"
+						output << OutputEvent.new(thrTable)
+
+					when /^set\b\s*(.*)/
+						stuffToSet = $1
+
+						if stuffToSet =~ /=/
+							# Split into key = value pair
+							key, val = stuffToSet.split( /\s*=\s*/, 2 )
+							key = key.strip.downcase
+
+							# Strip enclosing quotes from the value
+							_debugMsg 4, "Stripping quotes."
+							val.gsub!( /\s*(["'])((?:[^\1]+|\\.)*)\1/ ) {|str| $2 }
+							_debugMsg 4, "Done stripping."
+
+							# Take special action for variables we know about
+							case key
+							when /^prompt$/i
+								@prompt = val
+							else
+								_debugMsg 4, "Setting variable #{key}"
+								output << OutputEvent.new("(Created variable '#{key}') ") unless @vars.has_key?( key )
+								@vars[ key ] = val
+							end
+							output << OutputEvent.new("Setting #{key} = '#{val}'\n")
+
+						elsif stuffToSet =~ /(\w+)/
+							key = $1
+							if @vars.has_key? key
+								output << OutputEvent.new("#{key} = '@vars[key]'\n")
+							else
+								output << OutputEvent.new("#{key} = nil\n")
+							end
+							
+						else
+							varlist = ''
+							if @vars.empty?
+								varlist = "(No variables set)\n"
+							else
+								varlist = "Variables:\n"
+								@vars.each {|key,val| varlist << "\t%20s = '%s'\n" % [ key, val ] }
+							end
+
+							output << OutputEvent.new(varlist)
+						end
+
+					when /(.*)/
+						output << OutputEvent.new("No such command '#{$1}'\n")
+					end
+
+					queueOutputEvents( *output )
+
+				### If the input doesn't look like a command for the shell, add
+				### it to the list of input that we'll pass along to the next
+				### filter.
 				else
-					unknownCommands.push e
+					unhandledInputEvents << e
 				end
 
-				queueOutputEvents( OutputEvent.new(@player.prompt) )
+				### No matter what the input, we're responsible for the prompt,
+				### so send it for each input event.
+				queueOutputEvents( OutputEvent.new(@prompt) )
 			end
 
-			return unknownCommands
+			return unhandledInputEvents
 		end
 
 	end # class CommandShell
