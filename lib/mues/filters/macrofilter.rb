@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
 =MacroFilter.rb
@@ -11,11 +11,28 @@ MacroFilter - a user-defined macro filter class
 == Synopsis
 
   require "mues/filters/MacroFilter"
+  filter = MUES::MacroFilter.new( aUser )
 
 == Description
 
-This is a class for implementing user-definable macros (magic dictionary) in the
-command shell.
+This is a class that provides expansion and definition facilities for
+user-definable macros in an IOEventStream.
+
+== Methods
+=== Protected Instance Methods
+
+--- initialize( user )
+
+    Given a (({MUES::User})) object ((|user|)), initialize the macro table for
+    the filter with the user^s preferences.
+
+=== Public Instance Methods
+
+--- handleInputEvents( *events )
+
+    Handle the specified input events by searching for macro expansions and
+    performing them on the data contained in the ((|events|)). Returns the given
+    array with expansions performed.
 
 == Author
 
@@ -28,22 +45,66 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "mues/Namespace"
+require "mues/Exceptions"
+require "mues/Events"
 require "mues/filters/IOEventFilter"
 
 module MUES
-	class MacroFilter < IOEventFilter
+	class MacroFilter < IOEventFilter ; implements Debuggable
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		### Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.3 2001/07/30 12:26:44 deveiant Exp $
 		DefaultSortPosition = 200
 
-		def initialize( aPlayer )
+		### Initializer
+
+		### METHOD: initialize( user=MUES::User )
+		### Initialize the macro filter with the macro table for the specified
+		### ((|user|)), or a new one if the specified user doesn't yet have one.
+		protected
+		def initialize( user )
 			super()
-			checkType( aPlayer, MUES::Player )
-			@player = aPlayer
+			checkType( user, MUES::User )
+
+			@user		= user
+			@macroTable = @user.preferences['macros'] || {}
+		end
+
+		### Public methods
+		public
+
+		### METHOD: handleInputEvents( *events=MUES::InputEvent )
+		### Handle the specified input events by searching for macro expansions
+		### and performing them on the data contained in the
+		### ((|events|)). Returns the given array with expansions performed.
+		def handleInputEvents( *events )
+			events.flatten!
+			events.compact!
+			checkEachType( events, MUES::InputEvent )
+
+			### For each event we get, search for patterns we know about,
+			### running the substitution only once for each one we find.
+			events.each {|e|
+				alreadyMatched = {}
+
+				if e.data =~ %r{^#{@@MacroPrefix}}
+
+					@macroTable.each {|pattern,expansion|
+						next unless e.data =~ pattern
+						next if alreadyMatched[pattern]
+
+						alreadyMatched[pattern] = true
+						e.data.gsub!( pattern, expansion )
+						retry
+					}
+				end
+			}
+
+			return *events
 		end
 
 	end # class MacroFilter
