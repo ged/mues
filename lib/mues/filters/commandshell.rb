@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.27 2002/10/23 04:59:35 deveiant Exp $
+# $Id: commandshell.rb,v 1.28 2002/10/24 15:45:01 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.27 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.27 2002/10/23 04:59:35 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.28 2002/10/24 15:45:01 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -582,8 +582,11 @@ module MUES
 								@abbrevTable[ abbrev ] = comm
 
 							elsif seen == 2
-								@abbrevTable.delete( abbrev )
-
+								if abbrev == word
+									@abbrevTable[ abbrev ] = comm
+								else
+									@abbrevTable.delete( abbrev )
+								end
 							else
 								break
 							end
@@ -874,8 +877,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.27 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.27 2002/10/23 04:59:35 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.28 2002/10/24 15:45:01 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
@@ -1136,6 +1139,8 @@ module MUES
 				# files newer than our last load time, loading any we
 				# find.
 				newFiles = []
+				return newFiles if @commandPath.empty?
+
 				@commandPath.each {|cmdsdir|
 					cmdsdir.untaint
 					self.log.info( "Looking for updated commands in '#{cmdsdir}'." )
