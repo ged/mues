@@ -1,15 +1,190 @@
 #!/usr/bin/ruby -w
-#
-# See the file 'tableadapter.rd' for documentation on how to use this class
-#
-# Author: Michael Granger <ged@FaerieMUD.org>
-#
-# Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-#
-# This module is free software. You may use, modify, and/or redistribute this
-# software under the terms of the Perl Artistic License. (See
-# http://language.perl.com/misc/Artistic.html)
-#
+#####################################################################
+=begin  
+
+= Mysql
+== Name
+
+Mysql.rb - The MySQL tableadapter class
+
+== Synopsis
+
+	
+== Description
+
+This class 
+
+== Classes
+=== TableAdapter::ObjectCache
+==== Overridden Methods
+
+--- ObjectCache#[]( key )
+
+    Key lookup
+
+--- ObjectCache#[]=( key, val )
+
+	Element assignment
+
+--- initialize( *args )
+
+    Initialize the ObjectCache object
+
+=== TableAdapter::RowState < Hash
+==== Overridden Methods
+
+--- RowState#[ column ]= value
+
+    Set the value of the specified column to the specified value
+
+==== Methods
+
+--- initialize( default=nil )
+
+    Initialize the row state hash
+
+--- setState( hash )
+
+    Set the hash values and checksum of the row data to those of the
+    specified hash
+
+--- modifiedFields()
+
+    Return an array of all fields which have been modified since this
+    object was last retrieved from the database.
+
+--- checksum()
+
+    Returns a 20-character (MD5 hexdigest) checksum String for the data
+    fields of this object.
+
+--- hasChanged?()
+
+    Returns true if the data in the row state has changed
+
+--- modified?()
+
+    Returns true if the fields have been modified, even if they were set
+    to the same values as they previously had.
+
+=== TableAdapter
+==== Public Class Methods
+-- TableAdapter.dbKey
+
+   Returns a string which can be used to uniquely identify the table this class
+   abstracts. The string is of the form:
+
+     '((|host|)):((|database|)):((|username|))'
+
+-- TableAdapter.tableKey
+
+   Returns a string which can be used to uniquely identify the table this class
+   abstracts. The string is of the form:
+
+     "#{dbKey()}:table"
+
+-- TableAdapter.tableInfo
+
+   Returns a (possible cached) (({Hash})) of table information like that
+   returned by ((<TableAdapter.fetchTableInfoHash()>)).
+
+-- TableAdapter.lookup( ((|*idArray|)) )
+
+   Returns an array of objects whose rowids are in ((|idArray|)).
+
+-- TableAdapter.primaryKey
+
+   Returns the name of the primary key of the abstracted table.
+
+-- TableAdapter.columnInfoTable
+
+   Returns a (({String})) with a human-readable table of fields information for
+   this class.
+
+-- TableAdapter.dbHandle
+
+   Return a database connection to the database this class's table is in.
+
+-- fetchTableInfoHash( ((|tableName|)) )
+
+   Returns a (({Hash})) of field information about the table this class
+   abstracts. The hash is of the form:
+
+	 { ((|columnName|)) => ((|ColumnInfo|)) }
+
+
+-- TableAdapter.quoteValuesForField( ((|field|)), ((|*values|)) )
+
+   Returns the specified array of ((|values|)) properly quoted for the
+   ((|field|)) specified.
+
+-- TableAdapter.flagList( flags )
+
+   Return an (({Array})) of flag names for the ((|flags|)) given.
+
+-- TableAdapter.table
+
+   Returns the table associated with this class.
+
+-- TableAdapter.database
+
+   Returns the database associated with this class.
+
+-- TableAdapter.host
+
+   Returns the host associated with this class.
+
+-- TableAdapter.username
+
+   Returns the username associated with this class.
+
+==== Protected class methods
+-- TableAdapter.password
+
+   Returns the table associated with this class.
+
+==== Protected instance methods
+
+-- TableAdapter#initialize( aRowHash=nil )
+
+   Instantiate the adapter object. If the optional row hash is given, sets the
+   row state of the object to the values contained in the hash.
+
+==== Public instance methods
+
+-- TableAdapter#store
+
+   Store the row in the database.
+
+-- TableAdapter#delete( cascade=false )
+
+   Delete the row this object abstracts. Note that this doesn't affect the
+   object's state except to delete its rowid (primary key). The ((|cascade|))
+   parameter isn't used yet, but will eventually when the object-relational
+   stuff works.
+
+-- TableAdapter#method_missing( aSymbol, *args )
+
+   Create and call column methods.
+
+-- TableAdapter#rowid
+
+   Returns the value of the primary key column for this row.
+
+-- TableAdapter#rowid=((|value|))
+
+   Sets the value of the primary key column for this row to the ((|value|))
+   specified.
+
+==== ClassFactory Function
+
+-- TableAdapterClass( db, table, user, password, host = nil )
+
+   Create and return an adapter class with class attributes set to the specified
+   values. See the synopsis for examples.
+
+=end
+#####################################################################
 
 require "mysql"
 require "weakref"
@@ -65,6 +240,7 @@ class TableAdapter
 		end
 
 		### (OVERRIDDEN) METHOD: []=( key, val )
+		### Element assignment
 		def []=( key, val )
 			super( key, WeakRef.new(val) )
 			return val
@@ -172,8 +348,8 @@ class TableAdapter
 		"BINARY"		=> MysqlField::BINARY_FLAG
 	}
 
-	Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-	Rcsid = %q$Id: Mysql.rb,v 1.4 2001/07/18 02:25:28 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+	Rcsid = %q$Id: Mysql.rb,v 1.5 2001/09/26 13:38:46 deveiant Exp $
 
 
 	###########################################################################
@@ -193,10 +369,10 @@ class TableAdapter
 	###########################################################################
 	class << self
 
-		### (CLASS) METHOD: printMethodClashWarnings=( trueOrFalse )
+		### (CLASS) METHOD: printMethodClashWarnings?
 		### Returns the value of the flag that controls method clash warnings
 		### for redefined methods
-		def printMethodClashWarnings
+		def printMethodClashWarnings?
 			@@printMethodClashWarnings
 		end
 
@@ -510,7 +686,11 @@ class TableAdapter
 	### METHOD: store()
 	### Store the row in the database
 	def store
+
+		# Don't bother storing it unless it's changed
 		return true unless @row.hasChanged?
+
+		### Build a SQL phrase that will set/update all of the modified fields.
 		setPhrase = @row.modifiedFields.collect {|field|
 			quotedVal = self.class.quoteValuesForField(field, @row[field])
 			"#{field} = #{quotedVal}"
@@ -518,6 +698,10 @@ class TableAdapter
 
 		dbh = self.class.dbHandle()
 
+		### If the rowid is nil, it means we need to insert, so build an insert
+		### SQL query with the set phrase from above and execute it. We then
+		### grab the insert id, which should be the rowid if the table's set up
+		### correctly, and cache the newly inserted object
 		if self.rowid.nil? || self.rowid == "0"
 			query = 'INSERT INTO %s SET %s' %
 				[ self.class.table, setPhrase ]
@@ -527,6 +711,9 @@ class TableAdapter
 			self.rowid = insertId
 			@@oCache[ self.class.tableKey() ] ||= ObjectCache.new
 			@@oCache[ self.class.tableKey() ][ insertId ] = self
+
+		### If the rowid isn't nil, we only need an update, so build that and
+		### execute it
 		else
 			query = 'UPDATE %s SET %s WHERE %s = %s' %
 				[ self.class.table, setPhrase, self.class.primaryKey(), rowid ]
