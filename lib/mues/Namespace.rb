@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 
 =begin 
 
@@ -51,7 +51,7 @@ for abstract classes ((({MUES::AbstractClass}))).
      An interface that can be implemented by objects (typically, but not
      necessarily, classes) which need global notification of changes to the
      Engine^s state outside of the event system. This can be used for
-     initialization, cleanup, etc. when the event system is not running.
+     initialization and/or cleanup when the event system is not running.
 
 	 The methods which it requires/implements are:
 
@@ -108,9 +108,11 @@ http://language.perl.com/misc/Artistic.html)
 
 =end
 
-###########################################################################
+#################################################################
 
 require "md5"
+require "sync"
+
 require "mues/Exceptions"
 
 ### Borrowed from Hipster's component "conceptual script" -
@@ -121,7 +123,7 @@ class Module
 			name = id.id2name
 			class_eval %Q{
 				def #{name}(*a)	 
-					raise NotImplementError, "#{name} not implemented"
+					raise VirtualMethodError, "#{name} not implemented"
 				end
 			}
 		end
@@ -272,12 +274,10 @@ module MUES
 
 		def Notifiable.append_features( klass )
 			@@NotifiableClasses |= [ klass ]
+			
 			super( klass )
 		end
 
-		module_function
-		def atEngineStartup( engine );		end
-		def atEngineShutdown( engine );		end
 	end
 
 
@@ -285,6 +285,59 @@ module MUES
 	### A mixin that can be used to add debugging functionality to a class and its
 	### instances.
 	module Debuggable
+
+		### (MODULE) METHOD: append_features( class )
+		### Installs two class methods, (({debugLevel})) and (({debugLevel=}))
+		### into the including class
+		def Debuggable.append_features( klass )
+			super( klass )
+
+			# Install debug level methods into the calling class along with a
+			# class-wide debugging level instance var
+			klass.instance_eval( <<-'EOEVAL' )
+				@debugLevel = 0
+
+				def debugMsg( level, *messages )
+					raise TypeError, "Level must be a Fixnum, not a #{level.class.name}." unless
+						level.is_a?( Fixnum )
+					return unless debugged?( level )
+
+					logMessage = messages.collect {|m| m.to_s}.join('')
+					frame = caller(1)[0]
+					if Thread.current != Thread.main then
+						$stderr.puts "[Thread #{Thread.current.id}] #{frame}: #{logMessage}"
+					else
+						$stderr.puts "#{frame}: #{logMessage}"
+					end
+
+					$stderr.flush
+				end
+
+				def debugLevel=( value )
+					case value
+					when true
+						@debugLevel = 1
+					when false
+						@debugLevel = 0
+					when Numeric, String
+						value = value.to_i
+						value = 5 if value > 5
+						value = 0 if value < 0
+						@debugLevel = value
+					else
+						raise TypeError, "Cannot set debugging level to #{value.inspect} (#{value.class.name})"
+					end
+				end
+
+				def debugLevel
+					defined?( @debugLevel ) ? @debugLevel : 0
+				end
+
+				def debugged?( level=1 )
+					debugLevel() >= level
+				end
+			EOEVAL
+		end
 
 		### (MIXIN) METHOD: debugMsg( level, *messages )
 		### Output the specified messages to STDERR if the debugging level for the
@@ -336,18 +389,41 @@ module MUES
 		### (MIXIN) METHOD: debugged?
 		### Return true if the receiver's debug level is >= 1.
 		def debugged?( level=1 )
-			debugLevel() >= level
+			debugLevel() >= level || self.class.debugLevel() >= level
 		end
 	end
 
+
+	# ### MODULE: MUES::Extensible
+	# ### A mixin that can be used to add "pluggability" to an object class by
+	# ### adding ruby source files to a configured directory.
+	# module Extensible
+		
+	# 	@@Extensions = {}
+
+	# 	def Extensible.append_features( klass )
+	# 		super(klass)
+	# 		@@Extensions[klass] = {
+	# 			loadTime	=> Time.at(0),
+	# 			classes		=> [],
+	# 			mutex		=> Sync.new
+	# 		}
+
+			
+	# 	end
+
+
+	# end
 
 
 	### (ABSTRACT) CLASS: MUES::Object
 	class Object < ::Object; implements AbstractClass
 
+		autoload "MUES::Engine", "mues/Engine.rb"
+
 		### Class constants
-		Version	= %q$Revision: 1.9 $
-		RcsId	= %q$Id: Namespace.rb,v 1.9 2001/07/18 01:57:29 deveiant Exp $
+		Version	= %q$Revision: 1.10 $
+		RcsId	= %q$Id: Namespace.rb,v 1.10 2001/07/30 11:43:46 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( *ignored )
 		protected
@@ -356,9 +432,9 @@ module MUES
 			@objectStoreData = nil
 		end
 
-		#######################################################################
+		###################################################
 		###	P U B L I C   M E T H O D S
-		#######################################################################
+		###################################################
 		public
 		attr_reader :muesid
 		attr_accessor :objectStoreData
@@ -373,20 +449,15 @@ module MUES
 			# No-op
 		end
 
-		#######################################################################
+		###################################################
 		###	P R I V A T E   M E T H O D S
-		#######################################################################
+		###################################################
 		private
 
 		### FUNCTION: engine()
 		### Can be used to get a reference to the running server object. Restricted 
 		def engine
 			raise SecurityError, "Unauthorized request for engine instance." if self.tainted? || $SAFE >= 3
-			
-			unless ( Module.constants.detect {|const| const == "Engine"} )
-				raise EngineException, "Engine class is not yet loaded" 
-			end
-			
 			return MUES::Engine.instance
 		end
 
