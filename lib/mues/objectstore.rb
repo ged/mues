@@ -88,15 +88,23 @@ class ObjectStore
 	### args:
 	###   conf_filename - the name of the ObjectStoreConfig file
 	def create_database(conf_filename)
-		#cat  = A_Catalog.new(filename)
-		#fs   = A_FileStore.create(name, blksize, filename)
-		#bt   = A_BTree.new(name, fs, filename)
-		#cols = []
-		#cols << A_Column.new(name,type,not_nil,default,constraint,action,display)
-		###repeat
-		#pkeys= %w(the primary keys names) or "name"
-		#tabl = A_Table.new(name,cols,pkeys)
-		#return [cat,tabl]
+		basename = %r~(.*)(\..*)?~.match(conf_filename)[1]
+		cat_name = basename + ".ctl"
+		fs_name = basename
+		fs_filename = basename + "1.adb"
+		bt_name = basename
+		cat  = A_Catalog.new(cat_name)
+		fs   = A_FileStore.create(fs_name, 1024, fs_filename)
+		bt   = A_BTree.new(bt_name, fs_name)
+		cols = []
+		###################   name type not_nil default constraint action display
+		cols << A_Column.new("id" , 'i', true  ,  nil  ,"%d > 0"  ,  nil , "%d"  )
+		cols << A_Column.new("obj", nil,  nil  ,  nil  ,   nil    ,  nil ,  nil  )
+		#:TODO: the second column needs to be of type 'v' if an alternative serialization
+		#       method is used...
+		pkeys= "id"
+		tabl = A_Table.new(bt_name, cols, pkeys)
+		return [cat,tabl]
 	end
 
 	### Initializes a new ObjectStore
@@ -130,6 +138,7 @@ class ObjectStore
 	###   objects - the objects to store
 	def store ( *objects )
 		objects.flatten!
+		#:TODO: this will need to start an A_Transaction to add in the objects
 	end
 
 	### Closes the database.
@@ -138,6 +147,7 @@ class ObjectStore
 	###   in the environment which need to be stored.  Use an ObjectStoreGC to keep
 	###   track of those objects.
 	def close 
+		@table.close
 	end
 
 	### Gets the object specified by the given id out of the database
@@ -165,5 +175,10 @@ class ObjectStore
 	def entries 
 		@table.nitems()
 	end
+	alias size entries
+	alias count entries
 
+	def clear
+		@table.clear
+	end
 end
