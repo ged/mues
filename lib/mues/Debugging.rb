@@ -2,14 +2,13 @@
 ###########################################################################
 
 =begin
+=Debugging.rb
 
-= debugging.rb
-
-== NAME
+== Name
 
 Debuggable - a mixin module for debugging methods
 
-== SYNOPSIS
+== Synopsis
 
   require "mues/debugging"
 
@@ -21,16 +20,16 @@ Debuggable - a mixin module for debugging methods
 	end
   end
 
-== DESCRIPTION
+== Description
 
-This module is a module of debugging mixins that can be used for debugging. And
-stuff.
+This module is a mixin that can be used to add debugging facilities to objects
+or classes.
 
-== AUTHOR
+== Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -42,8 +41,12 @@ http://language.perl.com/misc/Artistic.html)
 
 module Debuggable
 
-	def _debugMsg( *messages )
-		level = messages[0].is_a?( Fixnum ) ? messages.shift : 5
+	### (MIXIN) METHOD: debugMsg( level, *messages )
+	### Output the specified messages to STDERR if the debugging level for the
+	### receiver is at ((|level|)) or higher.
+	def debugMsg( level, *messages )
+		raise TypeError, "Level must be a Fixnum, not a #{level.class.name}." unless
+			level.is_a?( Fixnum )
 		return unless debugged?( level )
 
 		logMessage = messages.collect {|m| m.to_s}.join('')
@@ -54,11 +57,13 @@ module Debuggable
 			$stderr.puts "#{frame}: #{logMessage}"
 		end
 	end
+	alias :_debugMsg :debugMsg
 
-	def debugLevel
-		defined?( @debugLevel ) ? @debugLevel : 0
-	end
-
+	### (MIXIN) METHOD: debugLevel=( value )
+	### Set the debugging level for the receiver to the specified
+	### ((|level|)). The ((|level|)) may be a (({Fixnum})) between 0 and 5, or
+	### (({true})) or (({false})). Setting the level to 0 or (({false})) turns
+	### debugging off.
 	def debugLevel=( value )
 		case value
 		when true
@@ -74,6 +79,14 @@ module Debuggable
 		end
 	end
 
+	### (MIXIN) METHOD: debugLevel()
+	### Return the debug level of the receiver as a (({Fixnum})).
+	def debugLevel
+		defined?( @debugLevel ) ? @debugLevel : 0
+	end
+
+	### (MIXIN) METHOD: debugged?
+	### Return true if the receiver's debug level is >= 1.
 	def debugged?( level=1 )
 		debugLevel() >= level
 	end
