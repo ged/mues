@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.13 2004/03/03 16:48:20 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -144,11 +144,18 @@ module MUES
 	### wizard IO abstractions which can be inserted into a MUES::User's
 	### MUES::IOEventStream to gather information to perform a specific task.
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
+		extend ServerFunctions
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.13 2004/03/03 16:48:20 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
 
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Filter sort order
 		DefaultSortPosition = 600
 
 
@@ -211,6 +218,9 @@ module MUES
 			@supportData = {}
 			@inProgress = false
 
+			@blocked = false
+			@restartPoint = nil
+
 			super( DefaultSortPosition )
 		end
 
@@ -218,6 +228,20 @@ module MUES
 		######
 		public
 		######
+
+
+		def inspect
+			"<Questionnaire 0x%x: '%s': (%d/%d steps), ans: %p, finalizer: %p>" % [
+				self.object_id * 2,
+				@name,
+				@currentStepIndex + 1,
+				@steps.length,
+				@answers,
+				@finalizer,
+			]
+		end
+				
+				
 
 		# The hash of answers completed so far
 		attr_accessor :answers
@@ -244,11 +268,19 @@ module MUES
 		alias :inProgress? :inProgress
 		alias :in_progress? :inProgress
 
+		# Returns true if a question is currently blocking further progress
+		attr_reader :blocked
+		alias :blocked? :blocked
+
+		# Continuation object that can be called to resume a blocked
+		# questionnaire.
+		attr_reader :restartPoint
+		alias :restart_point :restartPoint
+
 		# Ancillary support data Hash that can be used to pass objects to
 		# validators or the finalizer.
 		attr_accessor :supportData
 		alias :data :supportData
-
 
 
 		### Returns a human-readable String describing the object
@@ -325,11 +357,14 @@ module MUES
 			if self.inProgress?
 				# Interate until we run out of events to process or steps to feed
 				# answers to
-				until events.empty? || ! self.inProgress?
+				until events.empty? || self.blocked? || ! self.inProgress?
 					self.addAnswer( events.shift.data )
 				end
 
-				### If we've completed all the steps, call the finalizer.
+				# Drop events if the questionnaire is blocking
+				events.clear if self.blocked? && self.inProgress
+
+				# If all the steps have been completed, call the finalizer.
 				unless self.inProgress? || self.finished?
 					debugMsg 2, "Last step answered. Calling finalizer."
 					@result = @finalizer.call( self ) if @finalizer
@@ -342,7 +377,8 @@ module MUES
 
 			return super( *events )
 		rescue ::Exception => err
-			self.error "Internal questionnaire error: %s\n" % err.message
+			self.error "Internal questionnaire error: %s at %s from %s\n" % 
+				[ err.message, *(err.backtrace[0..1]) ]
 			self.abort
 		end
 
@@ -549,6 +585,15 @@ module MUES
 		end
 
 
+		### If the Questionnaire is blocked, restart it and use the specified
+		### +value+ as the result returned from the last answer.
+		def restart( value )
+			raise "Not blocked" unless self.blocked?
+			raise "Blocked, but no continuation set yet" unless @restartPoint
+
+			@restartPoint.call( value )
+		end
+
 
 		#########
 		protected
@@ -623,37 +668,66 @@ module MUES
 				[ data, @currentStepIndex ]
 
 			@stepsMutex.synchronize( Sync::SH ) {
+				@restartPoint = nil
 				step = self.currentStep
-				result = nil
+				result = self.validateAnswer( step, data )
 
-				# Validate the data if it has a validator.
-				if step.key?( :validator )
-					result = validateAnswer( data, step )
-					debugMsg 3, "Validator returned result: %s" % result.inspect
-					unless result
-						self.reaskCurrentQuestion if self.inProgress?
-						return nil
-					end
+				# A blocking question returns a Continuation that is called to
+				# unblock (but only from a Proc/Method validator -- see
+				# #runProcValidator for the jump point)
+				if ( result.is_a?(Continuation) )
+					@restartPoint = result
 
-				# If the data's empty, do one of two things: if it has a default,
-				# just use that, otherwise assume a blank input is an abort.
-				elsif data.empty?
-					return handleEmptyInput( step )
+				# Any non-false result means to move to the next question
+				elsif result
+					self.answers[ step[:name].intern ] = result
+					self.askNextQuestion or @inProgress = false
 
-				else
-					debugMsg 3, "No validator: Accepting answer as-is"
-					result = data
+				# If the result was nil or false but the questionnaire's still
+				# valid, reask the current question.
+				elsif self.inProgress?
+					self.reaskCurrentQuestion
 				end
-
-				# If we're still here, it means the answer validateed, so set it
-				# for this question
-				self.answers[ step[:name].intern ] = result
-
-				# Queue the next question, flagging ourselves as no longer
-				# needing input events if that fails.
-				self.askNextQuestion or @inProgress = false
 			}
 
+		end
+
+
+		### Figure out how to validate the answer for the given +step+ and send
+		### it the specified +data+. Return the result of validation. If the
+		### validation failed, the returned result will be <tt>nil</tt>.
+		def validateAnswer( step, data )
+			result = nil
+
+			# Validate the data if it has a validator.
+			if step.key?( :validator )
+				result = self.runStepValidator( data, step )
+				debugMsg 3, "Validator returned result: %s" % result.inspect
+
+			# Empty input with no validator
+			elsif data.empty?
+				result = handleEmptyInput( step )
+
+			else
+				debugMsg 3, "No validator: Accepting answer as-is"
+				result = data
+			end
+
+			return result
+		end
+
+
+		### Start blocking on the current answer
+		def startBlocking
+			self.stream.pause
+			@blocked = true
+		end
+
+
+		### Stop blocking on the current answer
+		def stopBlocking
+			@blocked = false
+			self.stream.unpause
 		end
 
 
@@ -665,15 +739,17 @@ module MUES
 			else
 				debugMsg 2, "Empty data with no validator and no default -- aborting"
 				self.abort
-				return nil
+				result = nil
 			end
+
+			return result
 		end
 
 
 		### Use the specified step's validator (a Proc, a Method, a Regexp, an
 		### Array, or a Hash) to validate the given data. Returns the validated
 		### answer data on success, and false if it fails to validate.
-		def validateAnswer( data, step )
+		def runStepValidator( data, step )
 			checkType( data, ::String )
 
 			validator = step[:validator]
@@ -684,67 +760,17 @@ module MUES
 
 			# Handle the various types of validators.
 			case validator
-
-			# Proc/Method validator - If the return value is false, validation
-			# failed. If true, use the original data. Otherwise use whatever the
-			# validator returns.
 			when Proc, Method
-				result = validator.call( self, data.dup )
-				result = data if result.equal?( true )
-				result = nil if self.finished?
-
-			# Regex validator - If the match has paren-groups, use the array of
-			# "kept" matches instead of the whole match.
+				result = self.runProcValidator( validator, data, step )
+				
 			when Regexp
-				if data.empty?
-					result = handleEmptyInput( step )
+				result = self.runRegexpValidator( validator, data, step )
 
-				elsif (( match = validator.match( data ) ))
-					if match.size > 1
-						result = match.to_a[ 1 .. -1 ]
-					else
-						result = data
-					end
-				else
-					self.error( step[:errorMsg] || "Invalid input. Must "\
-							    "match /#{validator.to_s}/" )
-					result = nil
-				end
-
-			# Array validator - Succeeds if the data is in the array.
 			when Array
-				if data.empty?
-					result = handleEmptyInput( step )
+				result = self.runArrayValidator( validator, data, step )
 
-				elsif validator.include?( data )
-					result = data
-
-				else
-					self.error( step[:errorMsg] || "Invalid input. Must "\
-							    "be one of:\n  %s." %
-							    validator.sort.join(',') )
-					result = nil
-				end
-
-			# Hash validator - If the data is a key of the hash, succeed and use
-			# the corresponding value as the answer.  Try both the string and
-			# the symbolified string when matching keys.
 			when Hash
-				if data.empty?
-					result = handleEmptyInput( step )
-
-				elsif validator.has_key?( data )
-					result = validator[data]
-
-				elsif validator.has_key?( data.intern )
-					result = validator[data.intern]
-
-				else
-					self.error( step[:errorMsg] || "Invalid input. Must "\
-							    "be one of:\n  %s." %
-							    validator.keys.sort.join(',') )
-					result = nil
-				end					
+				result = self.runHashValidator( validator, data, step )
 
 			# Unhandled validator types
 			else
@@ -754,6 +780,109 @@ module MUES
 			return result
 		end
 
+
+		### Run a Proc/Method step validator - Call the given +obj+ (which can
+		### be anything that responds to #call) with the specified +data+; if
+		### the return value is false, validation failed. If it's <tt>true</tt>,
+		### use the original data. Otherwise returns whatever the validator
+		### returns as-is.
+		def runProcValidator( obj, data, step )
+			result = obj.call( self, data.dup )
+
+			# Handle a blocking question by creating and returning a
+			# Continuation instead of the actual result.
+			if step[:blocking]
+
+				# Block further progress and discard any events that come in
+				self.startBlocking
+				result = callcc {|cc| cc}
+
+				# If the result isn't a continuation, then the continuation's
+				# been called, so stop blocking.
+				if !result.is_a?( Continuation )
+					self.stopBlocking
+				end
+			end
+
+			result = data if result.equal?( true )
+			result = nil if self.finished?
+
+			return result
+		end
+
+
+		### Run a Regexp step validator - Succeed if the +data+ matches the
+		### +regexp+; if the +regexp+ has capturing paren-groups, returns the
+		### array of captures instead of the whole match.
+		def runRegexpValidator( regexp, data, step )
+			result = nil
+
+			if data.empty?
+				result = handleEmptyInput( step )
+
+			elsif (( match = regexp.match( data ) ))
+				if match.size > 1
+					result = match.captures
+				else
+					result = data
+				end
+			else
+				self.error( step[:errorMsg] || "Invalid input. Must "\
+					"match /#{regexp.to_s}/" )
+				result = nil
+			end
+
+			return result
+		end
+
+
+		### Run an Array step validator - Succeeds (and returns the +data+
+		### unmodified) if +array+.include? the +data+.
+		def runArrayValidator( array, data, step )
+			result = nil
+
+			if data.empty?
+				result = handleEmptyInput( step )
+
+			elsif array.include?( data )
+				result = data
+
+			else
+				self.error( step[:errorMsg] || "Invalid input. Must "\
+					"be one of:\n  %s." %
+					array.sort.join(',') )
+				result = nil
+			end
+
+			return result
+		end
+
+
+		### Run a Hash step validator - If the +data+ is a key of the +hash+,
+		### succeed and use the corresponding value as the answer.  Try both the
+		### string and the symbolified string when matching keys.
+		def runHashValidator( hash, data, step )
+			result = nil
+
+			if data.empty?
+				result = handleEmptyInput( step )
+
+			elsif hash.has_key?( data )
+				result = hash[ data ]
+
+			elsif hash.has_key?( data.intern )
+				result = hash[ data.intern ]
+
+			else
+				self.error( step[:errorMsg] || "Invalid input. Must "\
+					"be one of:\n  %s." %
+					hash.keys.sort.join(',') )
+				result = nil
+			end					
+
+			return result
+		end
+		
 
 		### Check each of the specified steps for validity.
 		def checkSteps( *steps )
