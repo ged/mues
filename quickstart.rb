@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.6 2002/10/14 09:26:38 deveiant Exp $
+#	$Id: quickstart.rb,v 1.7 2002/10/23 18:27:27 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -28,13 +28,23 @@ RequiredLibraries = [
 	# libraryname, nice name, RAA URL, Download URL
 	[ 'poll', "Ruby-Poll", 
 		'http://www.ruby-lang.org/en/raa-list.rhtml?name=Ruby-Poll',
-		'http://www.devEiate.org/code/Ruby-Poll-0.02.tar.gz' ],
+		'http://www.devEiate.org/code/Ruby-Poll-0.03.tar.gz' ],
 	[ 'rexml/document', 'REXML',
 		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
 		'http://www.germane-software.com/archives/rexml_2.5.2.tgz' ],
 	[ 'forwardable', "Forwardable",
 		'http://www.ruby-lang.org/en/raa-list.rhtml?name=forwardable',
 		'ftp://ftp.ruby-lang.org/pub/ruby/contrib/forwardable-1.1.tgz' ],
+	[ 'hashslice', "HashSlice",
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=HashSlice',
+		'http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2' ],
+	[ 'pp', 'PrettyPrinter',
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=pp',
+		'http://cvs.m17n.org/~akr/pp/download.html' ],
+	[ 'log4r', 'Log4R',
+		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
+		'http://sourceforge.net/project/showfiles.php?group_id=43396' ],
+
 ]
 
 
@@ -75,19 +85,6 @@ def main
 			system( editor, "server/config.xml" ) or abort( "Editor session failed: #{$?}" )
 		end
 	end
-
-# 	if promptWithDefault( "Add a user to the configured objectstore? [Yn]", 'y' ) =~ /y/i
-# 		newUsername = ''
-# 		until newUsername.length >= 3
-# 			newUsername = prompt( "Username" )
-# 			error "Username must be at least 3 characters in length." unless newUsername.length >= 3
-# 		end
-
-# 		$: << "lib"
-# 		require "server/bin/createUser.rb"
-# 		u = UserTool.new
-# 		u.createUser( newUsername, "server/config.xml" )
-# 	end
 
 	print "\n\n"
 
