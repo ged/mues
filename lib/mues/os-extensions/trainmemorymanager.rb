@@ -65,7 +65,7 @@
 #
 # == Rcsid
 # 
-# $Id: trainmemorymanager.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+# $Id: trainmemorymanager.rb,v 1.6 2002/10/13 23:25:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -87,8 +87,8 @@ module MUES
 		class TrainMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: trainmemorymanager.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: trainmemorymanager.rb,v 1.6 2002/10/13 23:25:54 deveiant Exp $
 
 			######
 			public
@@ -330,7 +330,7 @@ module MUES
 				objs.to_a.each {|o|
 					@mutex.synchronize( Sync::EX ) {
 						@objectStore.store(o)
-						o.become(ShallowReference.new( o.objectStoreId, @objectStore ))
+						o.polymorph(ShallowReference.new( o.objectStoreId, @objectStore ))
 					}
 				}
 			end
