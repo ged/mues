@@ -4,15 +4,16 @@
 # MUES::IOEventFilter. Instances of this class are dynamically-configurable
 # question and answer session objects which are inserted into a MUES::User's
 # MUES::IOEventStream to gather useful information about a subject or task. It
-# does this by prompting the user with one or more questions, and gathering and
-# validating input sent in reply.
+# does this by iterative over one or more steps, prompting the user with a
+# question specified by each one, and gathering and validating input sent in
+# reply.
 #
 # When an Questionnaire is created, it is given a procedure for gathering the
-# needed information in the form of one or more "questions" or "steps", and an
+# needed information in the form of an Array of one or more "steps", and an
 # optional block to be called when all of the necessary questions are answered.
 #
 # A "step" can be any object which responds to the element reference (#[]) and
-# the #has? methods. Both methods will be called with Symbol arguments like
+# the #key? methods. Both methods will be called with Symbol arguments like
 # <tt>:name</tt> and <tt>:question</tt>, and are expected to behave like a Hash
 # when responding to them. This makes a Hash a particularly good choice for
 # specifying steps. Each step should describe (via responses to said methods)
@@ -115,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.1 2002/09/27 16:19:17 deveiant Exp $
+# $Id: questionnaire.rb,v 1.2 2002/10/04 05:14:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -142,11 +143,11 @@ module MUES
 	### Instances of this class are dynamically-configurable question and answer
 	### wizard IO abstractions which can be inserted into a MUES::User's
 	### MUES::IOEventStream to gather information to perform a specific task.
-	class Questionnaire < MUES::IOEventFilter
+	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.1 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.1 2002/09/27 16:19:17 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.2 2002/10/04 05:14:33 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -156,7 +157,7 @@ module MUES
 			@name = name
 			@steps = checkSteps( *steps )
 			@stepsMutex = Sync::new
-			@currentStepIndex = 0
+			@currentStepIndex = -1
 
 			# Grab the block given as a Proc if there is one.
 			@finalizer = if block_given? then Proc::new else nil end
@@ -164,8 +165,11 @@ module MUES
 			@delayedOutputEvents = []
 			@delayedOutputEventMutex = Sync::new
 			@answers = {}
+			@result = nil
 
 			@inProgress = false
+
+			super( DefaultSortPosition )
 		end
 
 
@@ -180,25 +184,41 @@ module MUES
 		# steps. Should be either a Proc or a Method object.
 		attr_accessor :finalizer
 
+		# The index of the current step
+		attr_accessor :currentStepIndex
+
+		# The steps of the questionnaire
+		attr_accessor :steps
+
+		# The return value from the finalizer after the questionnaire is finished
+		attr_reader :result
+
+		# The name of the questionnaire
+		attr_reader :name
+
 		# Returns true if the session is in progress (ie., has been started, but
 		# is not yet finished).
 		attr_reader :inProgress
 		alias :inProgress? :inProgress
 		alias :in_progress? :inProgress
 
+
 		# Returns a human-readable String describing the object
 		def to_s
 			if self.inProgress?
-				step = currentStep()
+				step = @steps[ @currentStepIndex ]
 				"%s Questionnaire: %s: %s (%d of %d steps)." % [
 					self.name,
 					step[:name],
-					step.has?(:question) ? step[:question] : step[:name].capitalize,
+					step.key?(:question) ? step[:question] : step[:name].capitalize,
 					@currentStepIndex + 1,
 					@steps.length,
 				]
 			else
-				"%s Questionnaire: Not in progress (%d steps)."
+				"%s Questionnaire: Not in progress (%d steps)." % [
+					self.name,
+					@steps.length
+				]
 			end
 		end
 
@@ -209,9 +229,14 @@ module MUES
 
 		### Start filter notifications for the specified stream.
 		def start( streamObject )
+			raise "Questionnaire cannot be started without "\
+				"at least one step" if @steps.empty?
+
+			debugMsg 1, "Starting %s questionnaire %s" %
+				[ self.name, self.muesid ]
 			results = super( streamObject )
+
 			self.askNextQuestion
-			@inProgress = true
 			return results
 		end
 
@@ -219,6 +244,9 @@ module MUES
 		### Stop the filter notifications for the specified stream, returning
 		### any final events which should be dispatched on behalf of the filter.
 		def stop( streamObject )
+
+			debugMsg 1, "Stopping %s questionnaire %s" %
+				[ self.name, self.muesid ]
 			results = super( streamObject )
 			self.finish
 			return results
@@ -227,8 +255,12 @@ module MUES
 
 		### Mark the questionnaire as finished and prep it for shutdown
 		def finish
+			debugMsg 1, "Finishing %s questionnaire %s" %
+				[ self.name, self.muesid ]
+
 			@inProgress = false
 			@finalizer = nil
+			super()
 		end
 
 
@@ -245,7 +277,9 @@ module MUES
 
 				### If we've completed all the steps, call the finalizer.
 				unless self.inProgress?
-					results = @finalizer.call( self ) if @finalizer
+					debugMsg 2, "Last step answered. Calling finalizer."
+					@result = @finalizer.call( self ) if @finalizer
+					debugMsg 3, "Finalizer returned <%s>" % @result.inspect
 					self.finish
 				end
 			end
@@ -257,18 +291,68 @@ module MUES
 		### Buffer the specified OutputEvents until the questionnaire is
 		### finished or aborted.
 		def handleOutputEvents( *events )
-			self.queueDelayedOutputEvents( *events )
+			self.queueDelayedOutputEvents( *events ) unless events.empty?
 			events.clear
 			return super( *events )
 		end
 
+		### End IOEventFilter interface
 
 
-		# End IOEventFilter interface
+		### Add one or more <tt>steps</tt> to the end of the questionnaire. Note
+		### that if the questionnaire is in progress when doing this, any
+		### answers already given will be cleared, progress reset to step 1, and
+		### the first question asked again.
+		def addSteps( *steps )
+			newSteps = checkSteps( *steps )
+			debugMsg 2, "Adding %d new step/s: [%s]" %
+				[ newSteps.length, newSteps.collect{|s| s[:name]}.join(', ') ]
 
-		### Get a reference to the current step.
+			@stepsMutex.synchronize( Sync::SH ) {
+				@stepsMutex.synchronize( Sync::EX ) {
+					@steps += newSteps
+				}
+
+				if self.inProgress?
+					self.clear
+					self.askNextQuestion
+				end
+			}
+		end
+
+
+		### Remove one or more <tt>steps</tt> from the questionnaire. If no
+		### <tt>steps</tt> are specified, all steps are removed. Note that if
+		### the questionnaire is in progress when doing this, any answers
+		### already given will be cleared, progress reset to step 1, and the
+		### first question asked again.
+		def removeSteps( *steps )
+			@stepsMutex.synchronize( Sync::SH ) {
+				if steps.empty?
+					debugMsg 2, "Clearing current steps"
+					@stepsMutex.synchronize( Sync::EX ) {
+						@steps.clear
+					}
+				else
+					debugMsg 2, "Removing %d steps" % (@steps & steps).length
+					@stepsMutex.synchronize( Sync::EX ) {
+						@steps -= steps
+					}
+				end
+
+				if self.inProgress?
+					self.clear
+					self.askNextQuestion unless @steps.empty?
+				end
+			}
+		end
+
+
+		### Get a reference to the current step. Returns <tt>nil</tt> if the
+		### questionnaire has not yet been started.
 		def currentStep
 			@stepsMutex.synchronize( Sync::SH ) {
+				return nil unless @currentStepIndex >= 0
 				@steps[ @currentStepIndex ]
 			}
 		end
@@ -279,6 +363,7 @@ module MUES
 		def queueDelayedOutputEvents( *events )
 			checkEachType( events, MUES::OutputEvent )
 
+			debugMsg 3, "Queueing %d output events for later" % events.length
 			@delayedOutputEventMutex.synchronize( Sync::EX ) {
 				@delayedOutputEvents.push( *events )
 			}
@@ -287,30 +372,154 @@ module MUES
 		end
 
 
+		### Discard the last <tt>count</tt> answers given and decrement the step
+		### index by <tt>count</tt>. If a step has an <tt>:onUndo</tt> pair (the
+		### value of which must be an object which answers '<tt>call</tt>', such
+		### as a Proc or a Method), it will be called before the step is undone
+		### with the Questionnaire as an argument. Returns the new step index.
+		def undoSteps( count=1 )
+			debugMsg 2, "Undoing %d steps" % count
+
+			@stepsMutex.synchronize( Sync::SH ) {
+				raise "Cannot undo more steps than are already complete" unless
+					@currentStepIndex >= count
+
+				@stepsMutex.synchronize( Sync::EX ) {
+					count.times do
+						@currentStepIndex -= 1
+						step = self.currentStep
+						
+						if step.key?( :onUndo )
+							step[:onUndo].call( self )
+						end
+						@answers.delete( step[:name].intern )
+					end
+				}
+			}
+
+			return @currentStepIndex
+		end
+
+
+		### Skip the next <tt>count</tt> steps, and increment the step index by
+		### <tt>count</tt>. If a step has an <tt>:onSkip</tt> pair (the value of
+		### which must be an object which answers '<tt>call</tt>', such as a
+		### Proc or a Method), it will be called as it is skipped with the
+		### Questionnaire as an argument, and its return value will be used as
+		### the value set in the step's answer. If the step doesn't have an
+		### <tt>:onSkip</tt> key, but does have a <tt>:default</tt> pair, its
+		### value will be used instead. If it has neither key, the answer will
+		### be set to '<tt>:skipped</tt>'. This method returns the new step
+		### index.
+		def skipSteps( count=1 )
+			debugMsg 2, "Skipping %d steps" % count
+
+			@stepsMutex.synchronize( Sync::SH ) {
+				raise "Cannot skip more steps than there are remaining uncompleted" if
+					@currentStepIndex + count >= @steps.length
+
+				count.times do
+					ans = nil
+					@currentStepIndex += 1
+					step = self.currentStep
+
+					if step.key?( :onSkip )
+						ans = step[:onSkip].call( self )
+					elsif step.key?( :default )
+						ans = step[:default]
+					else
+						ans = :skipped
+					end
+
+					@answers[ step[:name].intern ] = ans
+				end
+			}
+
+			return @currentStepIndex
+		end
+
+
+		### Reset the questionnaire, discarding answers given up to this point.
+		def clear
+			debugMsg 1, "Clearing current progress"
+			@stepsMutex.synchronize( Sync::EX ) {
+				@answers = {}
+				@currentStepIndex = -1
+				@inProgress = false
+				@isFinished = false
+			}
+		end
+		alias :reset :clear
+
+
+		### Abort the current session with the specified <tt>message</tt>. This
+		### is a method designed to be used by callback-type answerspecs and
+		### pre- and post-processes.
+		def abort( message="Aborted." )
+			debugMsg 2, "Aborting questionnaire %s" % self.muesid
+			self.queueOutputEvents MUES::OutputEvent::new( message )
+			@inProgress = false
+		end
+
+
+		### Report an error
+		def error( message )
+			debugMsg 2, "Sending error message '%s'" % message
+			self.queueOutputEvents MUES::OutputEvent::new( message )
+		end
+
+
+
+		#########
+		protected
+		#########
 
 		### Insert the question for the next step into the stream.
 		def askNextQuestion
 			event = nil
 
-			@stepsMutex.synchronize( Sync::EX ) {
-				step = currentStep()
+			@stepsMutex.synchronize( Sync::SH ) {
 
-				# If the step has a question value, use it, otherwise use the
-				# capitalized name.
-				if step.has?( :question )
-					if step[:question].kind_of? MUES::OutputEvent
-						event = step[:question].dup
-					elsif step[ :hidden ]
-						event = MUES::HiddenInputPromptEvent( step[:question] )
+				@stepsMutex.synchronize( Sync::EX ) {
+					@inProgress = true
+					@currentStepIndex += 1
+				}
+
+				debugMsg 2, "Asking question %d" % @currentStepIndex
+
+				# If there's a next step, ask its question
+				if (( step = self.currentStep ))
+
+					# If the step has a question value, use it, otherwise use the
+					# capitalized name.
+					if step.key?( :question )
+						if step[:question].kind_of? MUES::OutputEvent
+							event = step[:question].dup
+						elsif step[ :hidden ]
+							event = MUES::HiddenInputPromptEvent::new( step[:question] )
+						else
+							event = MUES::PromptEvent::new( step[:question].to_s )
+						end
 					else
-						event = MUES::PromptEvent( step[:question].to_s )
+						event = MUES::PromptEvent::new( step[:name].capitalize + ": " )
 					end
+
+					debugMsg 4, "Question event is <%s>" % event.inspect
+
+				# Otherwise, we're all out of questions
 				else
-					event = MUES::PromptEvent( step[:name].capitalize + ": " )
+					event = nil
+					debugMsg 2, "Last step reached for %s questionnaire %s" %
+						[ self.name, self.muesid ]
 				end
 			}
 
-			self.queueOutputEvents( event )
+			if event
+				self.queueOutputEvents( event )
+				return true
+			else
+				return false
+			end
 		end
 
 
@@ -318,41 +527,42 @@ module MUES
 		### the current step, if it validates.
 		def addAnswer( data )
 			checkType( data, ::String )
+			debugMsg 2, "Adding answer '%s' for step %d" %
+				[ data, @currentStepIndex ]
 
-			@stepsMutex.synchronize( Sync::EX ) {
-				step = currentStep()
+			@stepsMutex.synchronize( Sync::SH ) {
+				step = self.currentStep
 				result = nil
 
 				# Validate the data if it has a validator.
-				if step.has?( :validator )
-					result = validateAnswer( data, step[:validator] ) or return nil
+				if step.key?( :validator )
+					result = validateAnswer( data, step[:validator] )
+					debugMsg 3, "Validator returned result: %s" % result.inspect
+					return nil unless result
 
 				# If the data's empty, do one of two things: if it has a default,
 				# just use that, otherwise assume a blank input is an abort.
 				elsif data.empty?
-					if step.has?( :default )
+					if step.key?( :default )
 						result = step[:default]
+						debugMsg 3, "Empty data with no validator -- using default '%s'" % result
 					else
+						debugMsg 2, "Empty data with no validator and no default -- aborting"
 						self.abort
 						return nil
 					end
 				else
+					debugMsg 3, "No validator: Accepting answer as-is"
 					result = data
 				end
 
 				# If we're still here, it means the answer validateed, so set it
 				# for this question
 				self.answers[ step[:name].intern ] = result
-				@currentStepIndex += 1
 
-				# Queue the next question and increment the index if we have
-				# more steps. Otherwise, flag ourselves as no longer needing
-				# input events
-				if @currentStepIndex < @steps.length
-					self.askNextQuestion
-				else
-					@inProgress = false
-				end
+				# Queue the next question, flaging ourselves as no longer
+				# needing input events if that fails.
+				self.askNextQuestion or @inProgress = false
 			}
 
 		end
@@ -365,10 +575,13 @@ module MUES
 			checkType( data, ::String )
 			checkType( validator, ::Proc, ::Method, ::Regexp, ::Array, ::Hash )
 
+			debugMsg 3, "Validating answer '%s' with a %s validator" %
+				[ data, validator.class.name ]
+
 			result = nil
 
 			# Handle the various types of validators.
-			case validator.type
+			case validator.class
 
 			# Proc/Method validator - If the return value is false, validation
 			# failed. If true, use the original data. Otherwise use whatever the
@@ -383,13 +596,13 @@ module MUES
 			when Regexp
 				if (( match = validator.match( data ) ))
 					if match.size > 1
-						result = match.to_a[ 1 .. -1 ]
+						result = match.to_ary[ 1 .. -1 ]
 					else
 						result = match[0]
 					end
 				else
-					sendError( step[:errorMsg] || "Invalid input. Must "\
-							   "match /#{validator.to_s}/" )
+					self.error( step[:errorMsg] || "Invalid input. Must "\
+							    "match /#{validator.to_s}/" )
 					return nil
 				end
 
@@ -421,48 +634,21 @@ module MUES
 
 			# Unhandled validator types
 			else
-				raise Exception, "Invalid validator type '#{validator.type.name}'."
+				raise TypeError, "Invalid validator type '#{validator.class.name}'."
 			end
 
 			return result
 		end
 
 
-		### Reset the questionnaire, discarding answers given up to this point.
-		def clear
-			@stepsMutex.synchronize( Sync::EX ) {
-				@answers = {}
-				@currentStepIndex = 0
-			}
-		end
-
-
-		### Abort the current session with the specified <tt>message</tt>. This
-		### is a method designed to be used by callback-type answerspecs and
-		### pre- and post-processes.
-		def abort( message="Aborted." )
-			self.queueOutputEvents MUES::OutputEvent::new( message )
-			@inProgress = false
-		end
-
-
-		### Report an error
-		def error( message )
-			self.queueOutputEvents MUES::OutputEvent::new( message )
-		end
-
-
-
-		#########
-		protected
-		#########
-
 		### Check each of the specified steps for validity.
 		def checkSteps( *steps )
-			checkEachResponse( steps, :[], :has? )
+			checkEachResponse( steps, :[], :key? )
 
-			if steps.find {|step| !step.has?( :name )}
-				throw ArgumentError, "Invalid step: doesn't have a name key."
+			debugMsg 3, "Checking %d steps for sanity." % steps.length
+
+			if steps.find {|step| !step.key?( :name )}
+				raise ArgumentError, "Invalid step: doesn't have a name key."
 			end
 
 			return steps
