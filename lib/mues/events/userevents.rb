@@ -10,7 +10,7 @@
 # 
 # == Rcsid
 # 
-# $Id: userevents.rb,v 1.13 2003/10/13 04:02:15 deveiant Exp $
+# $Id: userevents.rb,v 1.14 2003/10/13 05:13:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,7 +31,7 @@ require 'mues/events/event'
 
 module MUES
 
-	autoload :IOEventStream, "mues/IOEventStream"
+	autoload :IOEventStream, "mues/ioeventstream"
 
 	###########################################################################
 	###	A B S T R A C T   E V E N T   C L A S S E S
