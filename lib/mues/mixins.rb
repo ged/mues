@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.3 2002/09/15 00:09:30 deveiant Exp $
+# $Id: mixins.rb,v 1.4 2002/09/27 16:13:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -437,6 +437,39 @@ module MUES
 		def engineStatusString
 			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
 			return MUES::Engine::instance.statusString
+		end
+
+		### Fetch a list of the names of all users known to the server, both
+		### connected and unconnected.
+		def getUserNames
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 3 )
+			return MUES::Engine::instance.getUserNames
+		end
+
+		### Fetch a list of the names of all connected users
+		def getConnectedUserNames
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 3 )
+			return MUES::Engine::instance.getConnectedUserNames
+		end
+
+		### Fetch a connected user object by +name+. Returns +nil+ if no such
+		### user is currently connected.
+		def getUserByName( name )
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.getUserByName( name )
+		end
+
+		### Add a new user (a MUES::User object) to the Engine's objectstore.
+		def registerUser( user )
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.registerUser( user )
+		end
+
+		### Remove the specified user (a MUES::User oject) from the Engine's
+		### objectstore.
+		def unregisterUser( user )
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.unregisterUser( user )
 		end
 
 	end # module ServerFunctions
