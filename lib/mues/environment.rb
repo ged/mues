@@ -13,17 +13,17 @@
 # 
 #   require "mues/Environment"
 # 
-#	# Create a new environment object
+#   # Create a new environment object
 #   environment = MUES::Environment::new( "Faerith" )
 #
-#	# Get the list of roles available to the user
+#   # Get the list of roles available to the user
 #   roles = environment.getAvailableRoles( aUser )
 #
-#	# After determining the desired role, get an IOEventFilter that can be
-#	# inserted into the user's IOEventStream to allow interaction with the
-#	# Environment and insert it.
+#   # After determining the desired role, get an IOEventFilter that can be
+#   # inserted into the user's IOEventStream to allow interaction with the
+#   # Environment and insert it.
 #   proxy = environment.getParticipantProxy( aUser, roles[0] )
-#	aUser.ioEventStream.addFilters( proxy )
+#   aUser.ioEventStream.addFilters( proxy )
 #
 #   
 # == Contract
@@ -31,33 +31,33 @@
 # Subclasses are required to provide implementations of the following methods:
 #
 # [<b><tt>start()</tt></b>]
-#	Start the environment running, returning any startup events which should be
-#	dispatched.
+#   Start the environment running, returning any startup events which should be
+#   dispatched.
 #
 # [<b><tt>stop()</tt></b>]
-#	Stop/shut the environment down, returning any cleanup events which should be
-#	dispatched.
+#   Stop/shut the environment down, returning any cleanup events which should be
+#   dispatched.
 #
 # If the default shell commands for interacting with environments
 # (server/shellCommands/environments.cmd) are used, environments should also
 # implement the following methods:
 #
 # [<b><tt>getParticipantProxy( <em>user</em>, <em>role</em> )</tt></b>]
-#	Factory method; should instantate and return a MUES::ParticipantProxy object
-#	(or an instance of one of its subclasses) for the specified <em>user</em>
-#	and <em>role</em>. Should raise an exception of type MUES::EnvironmentError
-#	(or a subclass) if the operation is not possible for some reason.
+#   Factory method; should instantate and return a MUES::ParticipantProxy object
+#   (or an instance of one of its subclasses) for the specified <em>user</em>
+#   and <em>role</em>. Should raise an exception of type MUES::EnvironmentError
+#   (or a subclass) if the operation is not possible for some reason.
 #
 # [<b><tt>getAvailableRoles( <em>user</em> )</tt></b>]
-#	Should return a list of MUES::Role objects which describe the roles for
-#	participation available to the given <em>user</em>.
+#   Should return a list of MUES::Role objects which describe the roles for
+#   participation available to the given <em>user</em>.
 #
 # Different modes of connection to an Environment can be created by modifying or
 # replacing the commands for interacting with them.
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.17 2003/05/23 16:37:27 deveiant Exp $
+# $Id: environment.rb,v 1.18 2003/06/06 22:21:39 deveiant Exp $
 # 
 # == Authors
 # 
@@ -89,8 +89,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.17 $} )[1]
-		Rcsid = %q$Id: environment.rb,v 1.17 2003/05/23 16:37:27 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
+		Rcsid = %q$Id: environment.rb,v 1.18 2003/06/06 22:21:39 deveiant Exp $
 
 
 		### Class variables and methods
