@@ -2,8 +2,8 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-    Time-stamp: <29-May-2002 08:04:17 deveiant>
-	$Id: muesconfig.dtd,v 1.2 2002/06/04 06:42:06 deveiant Exp $
+    Time-stamp: <07-Jul-2002 10:55:49 deveiant>
+	$Id: muesconfig.dtd,v 1.3 2002/07/07 18:15:18 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
 	Time-stamp: "26-May-2002 22:22:46 deveiant"
@@ -28,7 +28,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.2 $ -->
+<!-- A version string like $Revision: 1.3 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -36,6 +36,9 @@
 
 <!-- used for titles etc. -->
 <!ENTITY % Text             "CDATA">
+
+<!-- Name of a Ruby class -->
+<!ENTITY % ClassName        "CDATA">
 
 
 
@@ -93,60 +96,65 @@
   -->
 <!ELEMENT log4r_config          (pre_config,(outputter|logger)*)>
 
-<!ELEMENT pre_config            (parameters?|(parameter)*)>
-<!ELEMENT parameters            ANY>
+<!ELEMENT pre_config            (parameter)*>
 <!ELEMENT parameter             EMPTY>
 <!ATTLIST parameter
-            name                CDATA               #REQUIRED
-            value               CDATA               #REQUIRED>
+            name                %Text;              #REQUIRED
+            value               %Text;              #REQUIRED>
 
 <!ELEMENT outputter             ANY>
 <!ATTLIST outputter
-            type                CDATA               #REQUIRED
-            name                CDATA               #REQUIRED
-            level               CDATA               #IMPLIED
-            filename            CDATA               #IMPLIED
-            trunc               CDATA               #IMPLIED
-            server              CDATA               #IMPLIED
-            port                CDATA               #IMPLIED
-            from                CDATA               #IMPLIED
-            to                  CDATA               #IMPLIED>
+            type                %Text;              #REQUIRED
+            name                %Text;              #REQUIRED
+            level               %Text;              #IMPLIED
+            filename            %Text;              #IMPLIED
+            trunc               %Text;              #IMPLIED
+            server              %Text;              #IMPLIED
+            port                %Text;              #IMPLIED
+            from                %Text;              #IMPLIED
+            to                  %Text;              #IMPLIED
+            fdno                %Text;              #IMPLIED>
 
 <!ELEMENT logger                ANY>
 <!ATTLIST logger
-            name                CDATA               #REQUIRED
-            level               CDATA               #REQUIRED
-            outputter           CDATA               #REQUIRED
-            trace               CDATA               #IMPLIED>
+            name                %Text;              #REQUIRED
+            level               %Text;              #REQUIRED
+            outputters          %Text;              #REQUIRED
+            trace               %Text;              #IMPLIED>
             
 
 
 <!-- Environment/s config section -->
 <!ELEMENT environments          (environment)*>
-<!ELEMENT environment           (param*)>
-
+<!ELEMENT environment           (objectstore,(param)*)>
+<!ATTLIST environment
+            name                %Text;              #REQUIRED
+            class               %ClassName;         #REQUIRED>
 
 <!-- Service/s config section -->
 <!ELEMENT services              (service)*>
-<!ELEMENT service               (param*)>
+<!ELEMENT service               (param)*>
 <!ATTLIST service
             name                %Text;              #REQUIRED
-            class               %Text;              #REQUIRED>
+            class               %ClassName;         #REQUIRED>
 
 
 <!-- Universal elements -->
-<!ELEMENT objectstore           (backend,garbagecollector)>
+<!ELEMENT objectstore           (backend,memorymanager,visitor?)>
 <!ATTLIST objectstore
-            name                %Text;              #REQUIRED>
+            name                ID                  #REQUIRED>
 
 <!ELEMENT backend               (param)*>
 <!ATTLIST backend
-            class               %Text;              #REQUIRED>
+            class               %ClassName;         #REQUIRED>
 
-<!ELEMENT garbagecollector      (param)*>
-<!ATTLIST garbagecollector
-            class               %Text;              #REQUIRED>
+<!ELEMENT memorymanager         (param)*>
+<!ATTLIST memorymanager
+            class               %ClassName;         #REQUIRED>
 
+<!ELEMENT visitor               (param)*>
+<!ATTLIST visitor
+            class               %ClassName;         #REQUIRED>
 
 <!ELEMENT param                 ANY>
 <!ATTLIST param
