@@ -21,7 +21,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.15 2002/06/04 07:07:08 deveiant Exp $
+# $Id: user.rb,v 1.16 2002/07/09 15:01:34 deveiant Exp $
 # 
 # == Authors
 # 
@@ -52,8 +52,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.15 2002/06/04 07:07:08 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.16 2002/07/09 15:01:34 deveiant Exp $
 
 		# User AccountType constants module. Contains the following constants:
 		# 
@@ -82,24 +82,6 @@ module MUES
 		end
 		AccountType.freeze
 
-		### User attribute defaults
-		@@Defaults = {
-			'username'			=> 'guest',
-			'cryptedPass'		=> MD5.new( '' ).hexdigest,
-			'realname'			=> 'Guest User',
-			'emailAddress'		=> 'guestAccount@localhost',
-			'lastLogin'			=> '',
-			'lastHost'			=> '',
-
-			'timeCreated'		=> Time.now,
-			'firstLoginTick'	=> 0,
-
-			'accounttype'		=> AccountType::USER,
-			'flags'				=> 0,
-			'preferences'		=> {},
-
-			'userVersion'		=> Version
-		}
 
 		### Create a new user object with the hash (or hash-like object) of
 		### attributes specified
@@ -107,12 +89,28 @@ module MUES
 			checkResponse( attributes, '[]', '[]=', 'has_key?' )
 			super()
 
-			@remoteHost = nil
-			@ioEventStream = nil
-			@activated = false
+			@userVersion		= Version.dup
+			@remoteHost			= nil
+			@ioEventStream		= nil
+			@activated			= false
 
-			@dbInfo = attributes
+			@username			= attributes[:username]		|| 'guest'
+			@realname			= attributes[:realname]		|| 'Guest User'
+			@emailAddress		= attributes[:emailAddress] || 'guestAccount@localhost'
+			@lastLogin			= attributes[:lastLogin]	|| ''
+			@lastHost			= attributes[:lastHost]		|| ''
+
+			@timeCreated		= Time.now
+			@firstLoginTick		= 0
+
+			@accounttype		= AccountType::USER
+			@flags				= 0
+			@preferences		= {}
+
+			@cryptedPass		= '*'
 		end
+
+
 
 		######
 		public
@@ -123,8 +121,44 @@ module MUES
 		# The IOEventStream object belonging to this user
 		attr_accessor	:ioEventStream
 
-		# The has of persistant info (Yuck. This needs to change. [MG])
-		attr_accessor	:dbInfo
+		# The name/IP of the host the user is connected from
+		attr_reader		:remoteHost
+
+		# The username of the user
+		attr_accessor :username
+
+		# The real name of the player
+		attr_accessor :realname
+
+		# The player's email address
+		attr_accessor :emailAddress
+
+		# The Date the user last logged in
+		attr_accessor :lastLogin
+
+		# The host the user last logged in from
+		attr_accessor :lastHost
+
+		# The type of account the user has (one of MUES::User::AccountType)
+		attr_accessor :accounttype
+
+		# Bitflags for the user (currently unused)
+		attr_accessor :flags
+
+		# Hash of preferences for the user
+		attr_accessor :preferences
+
+		# Tick number of the user's first login
+		attr_reader :firstLoginTick
+
+		# Date from when the user was created
+		attr_reader :timeCreated
+
+		# User class version number
+		attr_reader :userVersion
+
+		# The user's encrypted password
+		attr_reader :cryptedPass
 
 
 		### Returns true if the engine has activated this user object
@@ -133,61 +167,67 @@ module MUES
 		end
 
 
-		### Returns the remote IP (if any) that the client is connected from
-		def remoteHost
-			@remoteHost
-		end
-
-
 		### Sets the remote IP that the client is connected from, and sets the
 		### user's 'lastHost' attribute.
 		def remoteHost=( newIp )
 			checkType( newIp, ::String )
 
-			@remoteHost = @dbInfo['lastHost'] = newIp
+			@remoteHost = @lastHost = newIp
 		end
 
 
 		### Returns true if this user has creator permissions
 		def isCreator?
-			return @dbInfo['accounttype'].to_i >= AccountType::CREATOR
+			return @accounttype >= AccountType::CREATOR
 		end
 
 
 		### Returns true if this user has implementor permissions
 		def isImplementor?
-			return @dbInfo['accounttype'].to_i >= AccountType::IMPLEMENTOR
+			return @accounttype >= AccountType::IMPLEMENTOR
 		end
 
 
 		### Returns true if this user has admin permissions
 		def isAdmin?
-			return @dbInfo['accounttype'].to_i >= AccountType::ADMIN
+			return @accounttype >= AccountType::ADMIN
 		end
 
 
 		### Returns a stringified version of the user object
 		def to_s
 			if self.isCreator?
-				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> (#{AccountType::Name[@dbInfo['accounttype'].to_i]})"
+				return "%s <%s> (%s)" % [
+					@username.capitalize,
+					@emailAddress,
+					AccountType::Name[@accounttype]
+				]
 			else
-				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}>"
+				return "%s <%s>" % [
+					@username.capitalize,
+					@emailAddress
+				]
 			end
 		end
 
 
 		### Comparison operator
 		def <=>( otherUser )
-			( @dbInfo['accounttype'] <=> otherUser.accounttype ).nonzero? ||
-			@dbInfo['username'] <=> otherUser.username
+			( @accounttype <=> otherUser.accounttype ).nonzero? ||
+			@username <=> otherUser.username
 		end
 
 		### Reset the user's password to ((|newPassword|)). The password will be
 		### encrypted before being stored.
 		def password=( newPassword )
-			checkType( newPassword, String )
+			newPassword = newPassword.to_s
+			@cryptedPass = MD5.new( newPassword ).hexdigest
+		end
 
-			self.cryptedPass = MD5.new( newPassword ).hexdigest
+
+		### Returns true if the specified password matches the user's.
+		def passwordMatches?( pass )
+			return MD5.new( pass ).hexdigest == @cryptedPass
 		end
 
 
@@ -260,39 +300,6 @@ module MUES
 		end
 
 
-		### Create and call methods that are the same as user data keys
-		def method_missing( aSymbol, *args )
-			origMethName = aSymbol.id2name
-			methName = origMethName.sub( /=$/, '' )
-			super unless @dbInfo.has_key?( methName )
-
-			### :TODO: Does this need to be synchronized? Probably.
-
-			### Turn off -w for this eval
-			oldVerbose = $VERBOSE
-			$VERBOSE = false
-
-			### Create the new methods
-			self.class.class_eval <<-"end_eval"
-			def #{methName}( arg=nil )
-				if !arg.nil?
-					@dbInfo["#{methName}"] = arg
-				end
-				@dbInfo["#{methName}"]
-			end
-			def #{methName}=( arg )
-				self.#{methName}( arg )
-			end
-			end_eval
-
-			### Restore old -w setting
-			$VERBOSE = oldVerbose
-
-			raise RuntimeError, "Method definition for '#{methName}' failed." if method( methName ).nil?
-			method( origMethName ).call( *args )
-		end
-
-
 		#########
 		protected
 		#########
@@ -301,14 +308,6 @@ module MUES
 		def _handleIOEvent( event )
 			@ioEventStream.addEvents( event )
 		end
-
-
-		### Handle any event that doesn't have an explicit handler by raising an
-		### UnhandledEventError.
-		def _handleOtherEvent( event )
-			raise UnhandledEventError, event
-		end
-
 
 	end #class User
 end #module MUES
