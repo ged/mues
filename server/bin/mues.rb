@@ -22,22 +22,35 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "getoptlong"
+# Set the include path and config file based on where this file is executing
+BEGIN {
+	srvDir = File::dirname( File::expand_path(File::dirname( $0 )) )
+	baseDir = File::dirname( srvDir )
 
-Options = [
-	[ "--fork",		"-f",		GetoptLong::NO_ARGUMENT ],
-	[ "--loglevel",	"-l",		GetoptLong::REQUIRED_ARGUMENT ],
-	[ "--init",		"-i",		GetoptLong::NO_ARGUMENT ],
-	[ "--debug",	"-d",		GetoptLong::REQUIRED_ARGUMENT ],
-	[ "--load",		"-r",		GetoptLong::REQUIRED_ARGUMENT ],
-]
+	libDir = File::join( baseDir, "lib" )
+	unless $LOAD_PATH.include?( libDir )
+		$deferr.puts "Adding #{libDir} to $LOAD_PATH..." if $DEBUG
+		$LOAD_PATH.unshift( libDir )
+	end
+
+	extDir = File::join( baseDir, "ext" )
+	unless $LOAD_PATH.include?( extDir )
+		$deferr.puts "Adding #{extDir} to $LOAD_PATH..." if $DEBUG
+		$LOAD_PATH.unshift( extDir )
+	end
+}
 
 
-### Set the include path and config file based on where we're executing from
-baseDir = File::expand_path( File::dirname($0) ).sub( %r{\Wbin$}, '' )
-libDir = File::join( baseDir, "lib" )
+require 'optparse'
 
 require "mues"
+require "mues/logger"
+
+
+def debugMsg( *args )
+	return unless $DEBUG
+	$deferr.puts args.join
+end
 
 
 ### Main function
@@ -51,33 +64,74 @@ def main
 	loadLibraries = []
 
 	# Read command-line options
-	opts = GetoptLong::new( *Options )
-	opts.each do |opt, arg|
-		case opt
+	ARGV.options do |oparser|
+		debugMsg "oparser is: %p" % oparser
+		oparser.banner = "Usage: #$0 [OPTIONS] CONFIGFILE"
 
-		when '--fork'
+		# Debugging output
+		oparser.on( "--debug", "-d", TrueClass, "Turn debugging on" ) {|*args|
+			debugMsg "Inside an #on, args are: %p" % args
+			$DEBUG = true
+			debugMsg "Turned debugging on."
+
+			debugLevel += 1
+			debugMsg "Engine debug level is now: %d" % debugLevel
+		}
+
+		# Verbose output
+		oparser.on( "--verbose", "-v", TrueClass, "Make progress verbose" ) {
+			$VERBOSE = true
+			debugMsg "Turned verbose on."
+		}
+
+		# Fork the server
+		oparser.on( '--fork', '-f', TrueClass, 'Fork and detach after starting' ) {
 			fork = true
+			debugMsg "Turned forking on"
+		}
 
-		when '--loglevel'
-			raise "Log level must be one of "+
-				MUES::Log::LogLevels.collect {|ll| ll.to_s}.join(', ') +
-				", no '#{arg}'" unless MUES::Log::LogLevels.include?( arg.intern )
-			loglevel = arg
+		# Handle the 'help' option
+		oparser.on( "--help", "-h", "Display this text." ) {
+			$stderr.puts oparser
+			exit!(0)
+		}
 
-		when '--init'
+		# Set the global logging level
+		levels = MUES::Logger::Levels.
+			sort {|a,b| a[1] <=> b[1]}.
+			collect {|pair| pair[0]}.
+			join(", ")
+		oparser.on( '--loglevel=LEVEL', '-l', String, "Logging level (one of #{levels})" ) {|arg|
+			unless MUES::Logger::Levels.include?( arg.intern )
+				$deferr.puts "ERR: Log level must be one of %s, not '%s'" % [ levels, arg ]
+				exit( 1 )
+			end
+
+			MUES::Logger.global.level = arg
+		}
+
+		# Log to console
+		oparser.on( '--console', '-c', FalseClass, "Output the global log to the console" ) {
+			if fork
+				$deferr.puts "ERR: cannot --fork is mutually exclusive with --console logging"
+				exit( 1 )
+			end
+
+			MUES::Logger.global.outputters << MUES::Logger::Outputter.create( 'file', $deferr )
+		}
+
+		# Start the server in init mode
+		oparser.on( '--init', '-i', FalseClass, "Init mode" ) {
 			initmode = true
 			puts "Will start the server in 'init' mode."
+		}
 
-		when '--debug'
-			debugLevel = arg.to_i
-
-		when '--load'
+		# Load an extra module or two
+		oparser.on( '--load=MODULE', String, "Load an auxilliary library before starting" ) {|arg|
 			require( arg )
+		}
 
-		else
-			MUES::Log.error( "No such option '#{opt}'" )
-		end
-			
+		oparser.parse!
 	end
 
 	configFile = ARGV.shift
@@ -89,6 +143,7 @@ def main
 				 else
 					 MUES::Config::new
 				 end
+		config.engine.debugLevel = debugLevel
 	rescue Errno::ENOENT
 		$stderr.puts( "Cannot find config file '#{configFile}'.\nPlease double-check the path and try again." )
 		exit 1
@@ -96,7 +151,6 @@ def main
 
 	# Instantiate the server object
 	engine = MUES::Engine::instance
-	engine.debugLevel = debugLevel
 
 	# Start up and run the server as a daemon
 	if fork
