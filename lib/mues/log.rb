@@ -4,12 +4,11 @@
 =begin
 
 = Log
-
-== NAME
+== Name
 
 Log.rb - A log handle class for the MUES server
 
-== SYNOPSIS
+== Synopsis
 
   require "mues/Log"
 
@@ -20,18 +19,18 @@ Log.rb - A log handle class for the MUES server
   log.info( "But this one will." )
   log.close
 
-== DESCRIPTION
+== Description
 
 Log is a log handle class. Creating one will open a filehandle to the
 specified file, and any message sent to it at a level at or above the specified
 logging level will be appended to the file, along with a timestamp and an
 annotation of the level.
 
-== AUTHOR
+== Author
 
 Michael Granger ((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -42,7 +41,7 @@ http://language.perl.com/misc/Artistic.html)
 ###########################################################################
 
 require "tempfile"
-require "mues/MUES"
+require "mues/Namespace"
 
 module MUES
 
