@@ -1,0 +1,109 @@
+
+			Multi-User Environment Server Installation Instructions
+			-------------------------------------------------------
+
+These instructions aren't really all that useful yet. I haven't yet had time to
+craft a useful installation program, but intend to have something done for the
+next release.
+
+In the meantime, provided you have all of the prerequisites installed, the
+server can be run from within the distribution directory. See the 'Running'
+section for details.
+
+These instructions are also decidedly Unix-biased, as is the server itself. I
+apologize to those of you trying to run this on some other platform. Suggestions
+or patches for other-platform compatibility are welcome at <ged@FaerieMUD.org>.
+
+
+Prerequisites
+-------------
+
+Versions listed are the ones I've tested with. Earlier versions may work, but
+your mileage may vary.
+
+* Ruby (>= 1.6.5)
+  Home page: http://www.ruby-lang.org/
+  Download: ftp://ftp.ruby-lang.org/pub/ruby/ruby-1.6.5.tar.gz
+
+* pp - Ruby pretty-printer (>=0.4)
+  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=pp
+  Download: http://cvs.m17n.org/~akr/pp/download.html
+
+  Optional libraries:
+
+* Walkit test framework (>=01-09-29) - For running unit tests
+  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=walkit+-+unit+tests+revisited
+  Download: http://www.k.mckinlay.btinternet.co.uk/walkit/
+
+* ruby-tcpwrap (>=0.3) - Config option
+  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=ruby-tcpwrap
+  Download: http://www.shugo.net/archive/ruby-tcpwrap/ruby-tcpwrap-0.3.tar.gz
+
+* bdb (>=0.2.5) - If you wish to use the Bdb objectstore.
+  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=bdb
+  Download: ftp://moulon.inra.fr/pub/ruby/
+
+* mysql-ruby (>=2.4) - If you wish to use the Mysql objectstore.
+  RAA: http://www.ruby-lang.org/en/raa-list.rhtml?name=MySQL%2FRuby
+  Download: http://www.tmtm.org/mysql/ruby/mysql-ruby-2.4.tar.gz
+
+
+Installation
+------------
+
+These instructions assume that you've already unpacked the distribution
+somewhere, and have changed your working directory to the resultant
+subdirectory.
+
+The server startup script is (for now) designed to allow you to run the server
+without installing anything into your ruby lib directory. If you should wish to
+install the MUES classes anyway, you can accomplish this with the following
+commands:
+
+ $ su
+ # ruby install.rb
+
+This will prompt you for a 'server directory', which should be the path to the
+directory you intend to run the server from. This directory will contain the
+shell command and environment class directories, as well as the server startup
+script and several utilities. The MUES libraries, along with several support
+libraries will be installed under the site_ruby directory of the running Ruby's
+library directory.
+
+
+Documentation
+-------------
+
+If you have Ruby rdtools installed, you can create documentation for all the
+MUES classes in the form of HTML and manual pages with the following command:
+
+ $ ruby docs/makedocs.rb
+
+This will leave HTML documentation in 'docs/html' and manual pages in
+'docs/man'.
+
+
+Running
+-------
+
+If you wish to run the server from the distribution directory:
+
+ $ cp server/MUES.cfg.example server/MUES.cfg
+ (edit server/MUES.cfg to reflect your system and desires)
+ $ server/bin/createUser.rb <username> server/MUES.cfg
+ $ server/bin/mues.rb
+
+
+If you've run the install script, assuming the 'server directory' you chose is
+in the environmental variable SERVER_ROOT:
+
+ $ cp $SERVER_ROOT/MUES.cfg.example $SERVER_ROOT/MUES.cfg
+ (edit $SERVER_ROOT/MUES.cfg to reflect your system and desires)
+ $ $SERVER_ROOT/bin/createUser.rb <username> $SERVER_ROOT/MUES.cfg
+ $ $SERVER_ROOT/bin/mues.rb
+
+After starting the server, you can telnet to the host and port you configured
+(6565 by default) to connect to the server, eg.:
+
+ $ telnet localhost 6565
+

@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20000802//EN" "http://www.w3.org/TR/2000/CR-SVG-20000802/DTD/svg-20000802.dtd">
+<svg width="76cm" height="33cm" viewBox="-16 -6 76 33">
+  <rect style="fill: #ffffff" x="19" y="8" width="4.1734" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="19" y="8" width="4.1734" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="21.0867" y="9">Engine</text>
+  <rect style="fill: #ffffff" x="19" y="9.4" width="4.1734" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="19" y="9.4" width="4.1734" height="0.4"/>
+  <rect style="fill: #ffffff" x="19" y="9.8" width="4.1734" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="19" y="9.8" width="4.1734" height="0.4"/>
+  <rect style="fill: #ffffff" x="34" y="3" width="6.7085" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="3" width="6.7085" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="37.3543" y="4">EventQueue</text>
+  <rect style="fill: #ffffff" x="34" y="4.4" width="6.7085" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="4.4" width="6.7085" height="0.4"/>
+  <rect style="fill: #ffffff" x="34" y="4.8" width="6.7085" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="4.8" width="6.7085" height="0.4"/>
+  <rect style="fill: #ffffff" x="34" y="10" width="3.5573" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="10" width="3.5573" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="35.7786" y="11">Event</text>
+  <rect style="fill: #ffffff" x="34" y="11.4" width="3.5573" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="11.4" width="3.5573" height="0.4"/>
+  <rect style="fill: #ffffff" x="34" y="11.8" width="3.5573" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="11.8" width="3.5573" height="0.4"/>
+  <rect style="fill: #ffffff" x="52" y="3" width="7.668" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="52" y="3" width="7.668" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="55.834" y="4">WorkerThread</text>
+  <rect style="fill: #ffffff" x="52" y="4.4" width="7.668" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="52" y="4.4" width="7.668" height="0.4"/>
+  <rect style="fill: #ffffff" x="52" y="4.8" width="7.668" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="52" y="4.8" width="7.668" height="0.4"/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="23.1734,8.7 28,8.7 28,3.7 34,3.7 "/>
+  <polygon style="fill: #ffffff" points="23.1734,8.7 23.8734,8.46 24.5734,8.7 23.8734,8.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="23.1734,8.7 23.8734,8.46 24.5734,8.7 23.8734,8.94 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="33.2,4.1 34,3.7 33.2,3.3 "/>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="23.1734" y="8.49469">engine</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="23.1734" y="9.29469">1</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="34" y="3.49469">eventQueue</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="34" y="4.29469">1</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="52,3.7 43,3.7 43,3.7 40.7085,3.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="51.2,4.1 52,3.7 51.2,3.3 "/>
+  <polygon style="fill: #ffffff" points="40.7085,3.7 41.4085,3.46 42.1085,3.7 41.4085,3.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="40.7085,3.7 41.4085,3.46 42.1085,3.7 41.4085,3.94 "/>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="52" y="3.49469">workerThreads</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="52" y="4.29469">0..*</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="40.7085" y="3.49469">queue</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="40.7085" y="4.29469">1</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="34,10.7 28,10.7 28,8.7 23.1734,8.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="33.2,11.1 34,10.7 33.2,10.3 "/>
+  <polygon style="fill: #ffffff" points="23.1734,8.7 23.8734,8.46 24.5734,8.7 23.8734,8.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="23.1734,8.7 23.8734,8.46 24.5734,8.7 23.8734,8.94 "/>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="34" y="10.4947">pendingEvents</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="34" y="11.2947">0..*</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="40.7085,3.7 45,3.7 45,9.7 52,9.7 "/>
+  <polygon style="fill: #ffffff" points="40.7085,3.7 41.4085,3.46 42.1085,3.7 41.4085,3.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="40.7085,3.7 41.4085,3.46 42.1085,3.7 41.4085,3.94 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="51.2,10.1 52,9.7 51.2,9.3 "/>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="40.7085" y="3.49469">1</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="52" y="9.49469">supervisorThread</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="52" y="10.2947">1</text>
+  <rect style="fill: #ffffff" x="52" y="9" width="4.1734" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="52" y="9" width="4.1734" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="54.0867" y="10">Thread</text>
+  <rect style="fill: #ffffff" x="52" y="10.4" width="4.1734" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="52" y="10.4" width="4.1734" height="0.4"/>
+  <rect style="fill: #ffffff" x="52" y="10.8" width="4.1734" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="52" y="10.8" width="4.1734" height="0.4"/>
+  <rect style="fill: #ffffff" x="7.4145" y="3" width="7.4357" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="7.4145" y="3" width="7.4357" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="11.1324" y="4">LoginSession</text>
+  <rect style="fill: #ffffff" x="7.4145" y="4.4" width="7.4357" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="7.4145" y="4.4" width="7.4357" height="0.4"/>
+  <rect style="fill: #ffffff" x="7.4145" y="4.8" width="7.4357" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="7.4145" y="4.8" width="7.4357" height="0.4"/>
+  <rect style="fill: #ffffff" x="11" y="12" width="3.8502" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="11" y="12" width="3.8502" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="12.9251" y="13">Player</text>
+  <rect style="fill: #ffffff" x="11" y="13.4" width="3.8502" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="11" y="13.4" width="3.8502" height="0.4"/>
+  <rect style="fill: #ffffff" x="11" y="13.8" width="3.8502" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="11" y="13.8" width="3.8502" height="0.4"/>
+  <rect style="fill: #ffffff" x="-5" y="7" width="8.0619" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="-5" y="7" width="8.0619" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="-0.96905" y="8">IOEventStream</text>
+  <rect style="fill: #ffffff" x="-5" y="8.4" width="8.0619" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="-5" y="8.4" width="8.0619" height="0.4"/>
+  <rect style="fill: #ffffff" x="-5" y="8.8" width="8.0619" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="-5" y="8.8" width="8.0619" height="0.4"/>
+  <rect style="fill: #ffffff" x="-15" y="7" width="7.1024" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="-15" y="7" width="7.1024" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="-11.4488" y="8">IOEventFilter</text>
+  <rect style="fill: #ffffff" x="-15" y="8.4" width="7.1024" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="-15" y="8.4" width="7.1024" height="0.4"/>
+  <rect style="fill: #ffffff" x="-15" y="8.8" width="7.1024" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="-15" y="8.8" width="7.1024" height="0.4"/>
+  <rect style="fill: #ffffff" x="48" y="17" width="6.9408" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="48" y="17" width="6.9408" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="51.4704" y="18">ClassLibrary</text>
+  <rect style="fill: #ffffff" x="48" y="18.4" width="6.9408" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="48" y="18.4" width="6.9408" height="0.4"/>
+  <rect style="fill: #ffffff" x="48" y="18.8" width="6.9408" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="48" y="18.8" width="6.9408" height="0.4"/>
+  <rect style="fill: #ffffff" x="48" y="24" width="4.638" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="48" y="24" width="4.638" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="50.319" y="25">Science</text>
+  <rect style="fill: #ffffff" x="48" y="25.4" width="4.638" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="48" y="25.4" width="4.638" height="0.4"/>
+  <rect style="fill: #ffffff" x="48" y="25.8" width="4.638" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="48" y="25.8" width="4.638" height="0.4"/>
+  <rect style="fill: #ffffff" x="34" y="17" width="3.6684" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="17" width="3.6684" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="35.8342" y="18">World</text>
+  <rect style="fill: #ffffff" x="34" y="18.4" width="3.6684" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="18.4" width="3.6684" height="0.4"/>
+  <rect style="fill: #ffffff" x="34" y="18.8" width="3.6684" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="34" y="18.8" width="3.6684" height="0.4"/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="34,17.7 28,17.7 28,8.7 23.1734,8.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="33.2,18.1 34,17.7 33.2,17.3 "/>
+  <polygon style="fill: #ffffff" points="23.1734,8.7 23.8734,8.46 24.5734,8.7 23.8734,8.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="23.1734,8.7 23.8734,8.46 24.5734,8.7 23.8734,8.94 "/>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="34" y="17.4947">worlds</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="34" y="18.2947">0..*</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="48,17.7 41,17.7 41,17.7 37.6684,17.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="47.2,18.1 48,17.7 47.2,17.3 "/>
+  <polygon style="fill: #ffffff" points="37.6684,17.7 38.3684,17.46 39.0684,17.7 38.3684,17.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="37.6684,17.7 38.3684,17.46 39.0684,17.7 38.3684,17.94 "/>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="48" y="17.4947">classLibrary</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="48" y="18.2947">0..1</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="48,24.7 41,24.7 41,17.7 37.6684,17.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="47.2,25.1 48,24.7 47.2,24.3 "/>
+  <polygon style="fill: #ffffff" points="37.6684,17.7 38.3684,17.46 39.0684,17.7 38.3684,17.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="37.6684,17.7 38.3684,17.46 39.0684,17.7 38.3684,17.94 "/>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="48" y="24.4947">sciences</text>
+  <text style="fill: #000000; text-align: right; font-size: 0.8" x="48" y="25.2947">0..*</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="37.6684" y="17.4947">world</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="37.6684" y="18.2947">1</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="14.8502,3.7 17,3.7 17,8.7 19,8.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="15.6502,3.3 14.8502,3.7 15.6502,4.1 "/>
+  <polygon style="fill: #ffffff" points="19,8.7 18.3,8.94 17.6,8.7 18.3,8.46 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="19,8.7 18.3,8.94 17.6,8.7 18.3,8.46 "/>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="14.8502" y="3.49469">loginSessions</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="14.8502" y="4.29469">0..*</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="14.8502,12.7 17,12.7 17,8.7 19,8.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="15.6502,12.3 14.8502,12.7 15.6502,13.1 "/>
+  <polygon style="fill: #ffffff" points="19,8.7 18.3,8.94 17.6,8.7 18.3,8.46 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="19,8.7 18.3,8.94 17.6,8.7 18.3,8.46 "/>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="14.8502" y="12.4947">players</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="14.8502" y="13.2947">0..*</text>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="3.0619,7.7 6,7.7 6,3.7 7.4145,3.7 "/>
+  <polygon style="fill: #ffffff" points="7.4145,3.7 6.7145,3.94 6.0145,3.7 6.7145,3.46 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="7.4145,3.7 6.7145,3.94 6.0145,3.7 6.7145,3.46 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="3.0619,7.7 6,7.7 6,12.7 11,12.7 "/>
+  <polygon style="fill: #ffffff" points="11,12.7 10.3,12.94 9.6,12.7 10.3,12.46 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="11,12.7 10.3,12.94 9.6,12.7 10.3,12.46 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="-5,7.7 -6,7.7 -6,7.7 -7.8976,7.7 "/>
+  <polygon style="fill: #ffffff" points="-7.8976,7.7 -7.1976,7.46 -6.4976,7.7 -7.1976,7.94 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="-7.8976,7.7 -7.1976,7.46 -6.4976,7.7 -7.1976,7.94 "/>
+  <rect style="fill: #ffffff" x="11" y="20" width="3.9916" height="1.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="11" y="20" width="3.9916" height="1.4"/>
+  <text style="fill: #000000; text-align: center; font-size: 1" x="12.9958" y="21">Config</text>
+  <rect style="fill: #ffffff" x="11" y="21.4" width="3.9916" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="11" y="21.4" width="3.9916" height="0.4"/>
+  <rect style="fill: #ffffff" x="11" y="21.8" width="3.9916" height="0.4"/>
+  <rect style="stroke-width: 0.1; stroke: #000000" x="11" y="21.8" width="3.9916" height="0.4"/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="14.9916,20.7 17,20.7 17,8.7 19,8.7 "/>
+  <polyline style="stroke-width: 0.1; stroke: #000000" points="15.7916,20.3 14.9916,20.7 15.7916,21.1 "/>
+  <polygon style="fill: #ffffff" points="19,8.7 18.3,8.94 17.6,8.7 18.3,8.46 "/>
+  <polygon style="stroke-width: 0.1; stroke: #000000" points="19,8.7 18.3,8.94 17.6,8.7 18.3,8.46 "/>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="14.9916" y="20.4947">config</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.8" x="14.9916" y="21.2947">1</text>
+  <text style="fill: #000000; text-align: left; font-size: 1" x="-9" y="-5">MUES</text>
+  <text style="fill: #000000; text-align: left; font-size: 1" x="-9" y="-4">Engine Class Diagram (Overview)</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.9" x="-9" y="-3">Michael Granger &lt;ged@FaerieMUD.org&gt;</text>
+  <text style="fill: #000000; text-align: left; font-size: 0.9" x="-9" y="-2.1">$Id: MUES.svg,v 1.1 2001/11/01 15:52:08 deveiant Exp $</text>
+</svg>

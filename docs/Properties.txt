@@ -1,0 +1,48 @@
+
+
+What it means to be 'Propertied'
+
+"Propertied" is an interface which allows an object to be assigned Properties. A
+Property, this definition, is an object which lends descriptive and modifying
+information to another object.
+
+These properties interact with the object through a defined interface, which may
+cause them to alter their 
+
+<H3>Propertied Operations</H3>
+
+--- is?( adjective=String )
+    (({alias which_is?}))
+
+    Returns true if the receiver contains a property which matches the specified
+    ((|adjective|)).
+
+	Example:
+		ball.is?( "red" )
+		sword.is?( "sharp" )
+
+--- has?( property=Class )
+	(({alias which_has?}))
+
+	Returns true if the receiver contains a property of the specified
+	((|property|)) class.
+
+--- 
+
+
+Property comparison
+
+	sword.sharpness <=> otherSword.sharpness
+	sword.color.brightness <=> otherSword.color.brightness
+
+
+
+Parmenedes:
+
+Is "dirtiness" or "cleanliness" a property or a containment association with a
+"dirt" object?
+
+	ball.has?( "dirt" )
+	ball.is?( "dirty" )
+
+

@@ -1,0 +1,54 @@
+/*
+
+	RD Stylesheet - The FaerieMUD Consortium
+	$Id: rd.css,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+
+	Michael Granger <ged@FaerieMUD.org>
+	Time-stamp: <31-Oct-2001 17:48:15 deveiant>
+
+ */
+
+BODY	{
+  background: #FFF;
+  margin: 2em;
+}
+
+H1 { font: 170%; color: black; background: #efefef; border: 2px solid black; padding: 3px; }
+H2, H3 { color: #669966; background: transparent; }
+H2 { font: 140%  }
+H3 { font: 120%  }
+H4 { font: bold 100%  }
+H5 { font: italic 100%  }
+H6 { font: small-caps 100% }
+
+P,TD,TH {
+	font-family:	Verdana, sanserif;
+	color:			#333;
+}
+
+A {
+    text-decoration: none;
+    color: #093;
+    background: #FFD;
+}
+
+A[name] { color: inherit; background: transparent; }
+
+A:hover {
+	text-decoration: underline;
+}
+
+PRE, CODE {
+	font: 90% Profont, Monaco, fixed;
+	color: #000;
+	line-height: 100%;
+}
+
+LI,UL,DL,DT,DD {
+	font-family:	"Verdana", "serif";
+	font-weight:	normal;
+	font-style:		normal;
+	line-height:	135%;
+	color:			#333;
+}
+

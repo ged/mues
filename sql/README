@@ -1,0 +1,24 @@
+
+                         MUES Mysql ObjectStore Schema
+                         -----------------------------
+
+The files in this directory are an experimental schema for storing MUES
+objectstore data in a MySQL database. It's been lightly tested, but there are of
+course no guarantees.
+
+To install this schema in a running MySQL database, first edit the MUES.sql
+file, particularly the line:
+
+        IDENTIFIED BY '<changme>';
+
+The '<changme>' should be the password the MUES server should use to connect to
+the database. The corresponding 'Password' value in the ObjectStore section of
+the config file should be the same as the value you put here.
+
+Next, either edit the 'createTables.sh' script to suit your particular
+situation, or run a version of the following command from the 'sql' directory:
+
+  $ cpp MUES.sql | mysql -vv --host=mysqlhost -p
+
+As usual, comments/suggestions/patches welcomed.
+

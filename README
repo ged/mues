@@ -1,0 +1,49 @@
+
+
+                    The Multi-User Environment Server (MUES)
+                    ----------------------------------------
+
+The MUES is a multi-threaded, event-driven internet game environment server
+written in Ruby. It is intended to facilitate the building of online multiplayer
+games or simulations by providing one or more dynamically-programmed object
+environments (worlds), the means to access these environments using a network
+client, various useful services or daemons for creating in-game systems, and an
+event system for facilitating the interaction of all the parts.
+
+This is an *alpha* release. It might blow up, compromise your security, write
+random data to sensitive portions of your hard drive, or otherwise fail to work
+as advertised. It is intended to be used by developers who are interested in
+helping out or curious onlookers who don't mind getting wet.
+
+That said, I would greatly appreciate feedback on any aspect of this
+software. Suggestions, feature requests, questions, design critiques, and bug
+reports are most welcome. Relevant patches are particularly helpful. I may be
+reached at <ged@FaerieMUD.org>.
+
+For installation instructions (such as they are at this point), see the INSTALL
+file.
+
+If you're really impatient, like me, and just want to test things out, see the
+QUICKSTART document. It includes instructions that should let you get the server
+up and running with a minimum of effort.
+
+For more information, see http://mues.FaerieMUD.org/, and the FaerieMUD
+Documentation Wiki at http://docs.FaerieMUD.org/.
+
+This software is Free Software. You may use, modify, and/or redistribute this
+software under the terms of the Perl Artistic License, a copy of which should
+have been included in this distribution (See the file Artistic). If it was not, a
+copy of it may be obtained from http://language.perl.com/misc/Artistic.html or
+http://www.faeriemud.org/artistic.html)
+
+THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.
+
+
+- Michael Granger <ged@FaerieMUD.org>
+$Id: README,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+
+
+
+
