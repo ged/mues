@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.8 2002/10/26 19:06:17 deveiant Exp $
+# $Id: backend.rb,v 1.9 2002/10/29 20:00:56 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,8 +51,9 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version	= %q$Revision: 1.8 $
-			RcsId	= %q$Id: backend.rb,v 1.8 2002/10/26 19:06:17 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+			Rcsid = %q$Id: backend.rb,v 1.9 2002/10/29 20:00:56 deveiant Exp $
+
 
 			# The directory in which file-based objectstores will be kept,
 			# relative to the base dir.
