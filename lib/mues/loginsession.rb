@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin 
 
 =LoginSession.rb
@@ -26,11 +26,11 @@ LoginSession - A login session class
 
 == Description
 
-This class encapsulates the task of authenticating a connecting player. It is
+This class encapsulates the task of authenticating a connecting user. It is
 given a new IOEventStream for the connection, from which it gathers username and
-password data, creating (({PlayerAuthenticationEvent}))s for each attempt. The
+password data, creating (({UserAuthenticationEvent}))s for each attempt. The
 Engine, after determining if the authentication was valid, calls one of two
-callbacks which are associated with the PlayerAuthenticationEvent -- one for a
+callbacks which are associated with the UserAuthenticationEvent -- one for a
 successful login attempt, and one for a failed attempt.
 
 == Author
@@ -44,7 +44,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "timeout"
 require "thread"
@@ -58,8 +58,8 @@ require "mues/IOEventFilters"
 module MUES
 	class LoginSession < Object; implements Debuggable
 
-		Version = %q$Revision: 1.4 $
-		Rcsid = %q$Id: loginsession.rb,v 1.4 2001/07/18 01:49:43 deveiant Exp $
+		Version = %q$Revision: 1.5 $
+		Rcsid = %q$Id: loginsession.rb,v 1.5 2001/07/30 11:25:13 deveiant Exp $
 
 		### :TODO: Testing code only
 		@@Logins = { 
@@ -110,9 +110,9 @@ module MUES
 									    OutputEvent.new(@config["login"]["userprompt"]) )
 		end
 		
-		#######################################################################
+		###################################################
 		###	P U B L I C   M E T H O D S
-		#######################################################################
+		###################################################
 		public
 
 		### METHOD: handleInputEvents( *events )
@@ -177,10 +177,10 @@ module MUES
 		end
 
 
-		### METHOD: authSuccessCallback( player )
+		### METHOD: authSuccessCallback( user )
 		### Callback for authentication success.
-		def authSuccessCallback( player )
-			_debugMsg( 1, "Player authenticated successfully." )
+		def authSuccessCallback( user )
+			_debugMsg( 1, "User authenticated successfully." )
 
 			@authMutex.synchronize {
 				@finished = true
@@ -196,7 +196,7 @@ module MUES
 				@stream.addInputEvents( *@queuedInputEvents )
 			}
 
-			PlayerLoginEvent.new( player, @stream )
+			UserLoginEvent.new( user, @stream )
 		end
 
 
@@ -209,19 +209,19 @@ module MUES
 			### After the number of tries specified in the login section of the
 			### config, generate a login failure event to kill this session and
 			### log the failure
-			if @maxTries > 0 && @loginAttemptCount > @maxTries
-				logMsg = "Max login tries exceeded for player '#{@login}'."
+			if @maxTries > 0 && @loginAttemptCount >= @maxTries
+				logMsg = "Max login tries exceeded for session #{self.id} from #{@remoteHost}."
 				_debugMsg( 1, logMsg )
 				@myProxy.queueOutputEvents( OutputEvent.new(">>> Max tries exceeded. <<<") )
-				return [ LoginSessionFailureEvent.new(self), LogEvent.new( logMsg ) ]
+				return [ LoginSessionFailureEvent.new(self,"Too many attempts"), LogEvent.new( logMsg ) ]
 
 
 			### Prompt for login and try again
 			else
-				logMsg = "Failed login attempt #{@loginAttemptCount} for player '#{@login}'."
+				logMsg = "Failed login attempt #{@loginAttemptCount} from #{@remoteHost}."
 				_debugMsg( 1, logMsg )
 				engine.dispatchEvents( LogEvent.new("notice", logMsg) )
-				@myProxy.queueOutputEvents( OutputEvent.new(@config["login"]["userprompt"]) )
+				@myProxy.queueOutputEvents( OutputEvent.new("\n" + @config["login"]["userprompt"]) )
 
 				@authMutex.synchronize {
 					@currentLogin = nil
