@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.16 2002/10/31 08:19:10 deveiant Exp $
+# $Id: mixins.rb,v 1.17 2003/04/19 06:57:07 deveiant Exp $
 # 
 # == Authors
 # 
@@ -378,7 +378,7 @@ module MUES
 		### parts it wishes returned.
 		def untaintString( string, pattern )
 			match = pattern.match( string ) or return nil
-			parts = match.to_ary[ 1 .. -1 ].collect{|part| part.untaint}
+			parts = match.to_a[ 1 .. -1 ].collect{|part| part.untaint}
 		end
 
 		### Return a String containing a description of the specified number of
