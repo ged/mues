@@ -47,12 +47,12 @@ require "md5"
 module AbstractClass
   def AbstractClass.append_features( klass )
     klass.class_eval <<-"END"
-    class << self
-      def new( *args, &block )
-	raise InstantiationError if self == #{klass.name}
-	super( *args, &block )
+      class << self
+        def new( *args, &block )
+	  raise InstantiationError if self == #{klass.name}
+	  super( *args, &block )
+        end
       end
-    end
     END
     super( klass )
   end
@@ -62,7 +62,15 @@ class InstantiationError < Exception; end
 
 class StorableObject < PolymorphicObject; include AbstractClass
 
-  attr_reader :objectStoreID
+  def StorableObject._load (aString)
+    o = self.new
+    o.objectStoreID = aString
+  end
+
+  def _dump (depth)
+    objectStoreID
+  end
+
   ### This is the method for providing an id suitable for storing into the 
   ###   ObjectStore of your choice.  Please redefine this for situations in
   ###   which you desire different behavior - but be sure to attach it to the
@@ -72,7 +80,14 @@ class StorableObject < PolymorphicObject; include AbstractClass
     raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
     @objectStoreID = MD5.new( raw ).hexdigest
   end
-  
+
+  ### sets the objectStoreID attribute, but only if it isn't already set
+  def objectStoreID= (aString)
+    unless @objectStoreID
+      @objectStoreID = aString
+    end
+  end
+
   ### Check to see if this object needs to be deleted by the ObjectStoreGC.
   ###   return true: object goes away
   ###   return false: object stays till its reference count goes to 1 (would be 

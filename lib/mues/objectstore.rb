@@ -83,6 +83,7 @@ require "a_catalog" #arunadb file
 require "a_table"   #arunadb file
 require "StorableObject/StorableObject.rb"
 require "ObjectStoreGC"
+require "sync"
 
 class ObjectStore
 
@@ -218,7 +219,7 @@ class ObjectStore
 	  }
 	  ids = objects.collect {|o| o.objectStoreID}
 	  serialized = objects.collect {|o| o.send(@serialize, -1)}
-	  classes = objects.collect {|o| o.class.send(@serialize, 0)}
+	  classes = objects.collect {|o| o.class.send(@serialize, -1)}
 	  #:?: or should classes be stored as keys that point to entries in the db?
 	  trans = A_Transaction.new
 	  col_names = ['id', 'obj', 'obj_class'] + index_names
@@ -273,7 +274,7 @@ class ObjectStore
 	end
 
 	def empty? 
-	    @table.nitems == 0
+	  @table.nitems == 0
 	end
 
 	def open? 
@@ -281,12 +282,12 @@ class ObjectStore
 	end
 
 	def entries 
-	    @table.nitems()
+	  @table.nitems
 	end
 	alias size entries
 	alias count entries
 
 	def clear
-	    @table.clear
+	  @table.clear
 	end
 end
