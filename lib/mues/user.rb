@@ -1,10 +1,8 @@
 #!/usr/bin/ruby
 # 
-# User.rb contains the MUES::User class. Instances of this class represent a
+# This file contains the MUES::User class. Instances of this class represent a
 # remote client who has connected to the MUES and provided the proper
-# authentication. It contains a MUES::IOEventStream object which distributes
-# input and output between the remote client and the objects with which the user
-# object is associated, and information about the client.
+# authentication.
 # 
 # == Synopsis
 # 
@@ -17,11 +15,9 @@
 #   between multiple runs of the environment, how to specify conversion functions
 #   for modified types when there are already users who are of old types, etc.
 #
-# * Add hooks for persistance via Martin's ObjectStoreService.
-#
 # == Rcsid
 # 
-# $Id: user.rb,v 1.18 2002/08/02 20:03:44 deveiant Exp $
+# $Id: user.rb,v 1.19 2002/09/12 12:13:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,26 +32,36 @@
 #
 
 require "date"
-require "md5"
+require "digest/md5"
 
 require "mues/Object"
 require "mues/StorableObject"
 require "mues/Events"
 require "mues/Exceptions"
-require "mues/IOEventFilters"
 
 module MUES
 
-	# A user connection class for the MUES::Engine
+	# A user connection class for the MUES::Engine. A user object is an
+	# abstraction which contains the data describing a connected user and
+	# methods for interacting with that data, but does not contain any IO
+	# functionality itself. That task is delegated to a MUES::IOEventStream
+	# object which is joined with the user object at activation time. Activation
+	# is the process of associating a user object with a particular IO
+	# connection and a "command shell" after the user has provided valid
+	# authentication. The command shell is an instance of MUES::CommandShell (or
+	# a derivative) which the user can use to perform tasks in the MUES such as
+	# creating new characters, assuming the roles of existing characters,
+	# creating macros, etc.
 	class User < MUES::StorableObject ; implements MUES::Debuggable
 
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.18 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.18 2002/08/02 20:03:44 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.19 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.19 2002/09/12 12:13:43 deveiant Exp $
 
-		# User AccountType constants module. Contains the following constants:
+		# Account type constants module for the MUES::User class. Contains the
+		# following constants:
 		# 
 		# [USER]
 		#   Normal user. No special permissions.
@@ -79,6 +85,11 @@ module MUES
 			ADMIN		= 3		# Unrestricted access
 
 			Name = %w{User Creator Implementor Admin}
+			Map = begin
+				hash = {}
+				Name.each_with_index {|name,i| hash[name.downcase] = i}
+				hash
+			end
 		end
 		AccountType.freeze
 
@@ -86,6 +97,11 @@ module MUES
 		### Create a new user object with the hash of attributes specified The
 		### valid attributes are:
 		###
+		### [<tt>:accountType</tt>]
+		###   The AccountType of the user. One of the constants listed in
+		###   MUES::User::AccountType, or a stringified version of one of the
+		###   constants (eg., 'creator' or 'CREATOR'); defaults to
+		###   MUES::User::AccountType::USER.
 		### [<tt>:username</tt>]
 		###   The login name of the user. Defaults to 'guest'.
 		### [<tt>:realname</tt>]
@@ -105,6 +121,19 @@ module MUES
 			@ioEventStream		= nil
 			@activated			= false
 
+			# Translate stringified account types
+			if attributes[:accountType].kind_of? String
+				type = attributes[:accountType].downcase
+				raise MUES::Exception, "No such account type #{type}" unless
+					AccountType::Map.key?( type )
+				attributes[:accountType] = AccountType::Map[ type ]
+			end
+
+			@accountType		= attributes[:accountType]	|| AccountType::USER
+			@accountType.freeze
+
+			self.taint unless @accountType >= AccountType::IMPLEMENTOR
+
 			@username			= attributes[:username]		|| 'guest'
 			@realname			= attributes[:realname]		|| 'Guest User'
 			@emailAddress		= attributes[:emailAddress] || 'guestAccount@localhost'
@@ -114,7 +143,6 @@ module MUES
 			@timeCreated		= Time.now
 			@firstLoginTick		= 0
 
-			@accounttype		= AccountType::USER
 			@flags				= 0
 			@preferences		= {}
 
@@ -130,46 +158,46 @@ module MUES
 		### :FIXME: Do these need to be accessors? Or can they be readers?
 
 		# The IOEventStream object belonging to this user
-		attr_accessor	:ioEventStream
+		attr_reader		:ioEventStream
 
 		# The name/IP of the host the user is connected from
 		attr_reader		:remoteHost
 
 		# The username of the user
-		attr_accessor :username
+		attr_accessor	:username
 
 		# The real name of the player
-		attr_accessor :realname
+		attr_accessor	:realname
 
 		# The player's email address
-		attr_accessor :emailAddress
+		attr_accessor	:emailAddress
 
 		# The Date the user last logged in
-		attr_accessor :lastLoginDate
+		attr_accessor	:lastLoginDate
 
 		# The host the user last logged in from
-		attr_accessor :lastHost
+		attr_accessor	:lastHost
 
 		# The type of account the user has (one of MUES::User::AccountType)
-		attr_accessor :accounttype
+		attr_reader		:accountType
 
 		# Bitflags for the user (currently unused)
-		attr_accessor :flags
+		attr_accessor	:flags
 
 		# Hash of preferences for the user
-		attr_accessor :preferences
+		attr_accessor	:preferences
 
 		# Tick number of the user's first login
-		attr_reader :firstLoginTick
+		attr_reader		:firstLoginTick
 
 		# Date from when the user was created
-		attr_reader :timeCreated
+		attr_reader		:timeCreated
 
 		# User class version number
-		attr_reader :userVersion
+		attr_reader		:userVersion
 
 		# The user's encrypted password
-		attr_reader :cryptedPass
+		attr_reader		:cryptedPass
 
 
 		### Returns true if the engine has activated this user object
@@ -189,32 +217,34 @@ module MUES
 
 		### Returns true if this user has creator permissions
 		def isCreator?
-			return @accounttype >= AccountType::CREATOR
+			return @accountType >= AccountType::CREATOR
 		end
 
 
 		### Returns true if this user has implementor permissions
 		def isImplementor?
-			return @accounttype >= AccountType::IMPLEMENTOR
+			return @accountType >= AccountType::IMPLEMENTOR
 		end
 
 
 		### Returns true if this user has admin permissions
 		def isAdmin?
-			return @accounttype >= AccountType::ADMIN
+			return @accountType >= AccountType::ADMIN
 		end
 
 
 		### Returns a stringified version of the user object
 		def to_s
 			if self.isCreator?
-				return "%s <%s> (%s)" % [
+				return "%s - %s <%s> (%s)" % [
+					@realname,
 					@username.capitalize,
 					@emailAddress,
-					AccountType::Name[@accounttype]
+					AccountType::Name[@accountType]
 				]
 			else
-				return "%s <%s>" % [
+				return "%s - %s <%s>" % [
+					@realname,
 					@username.capitalize,
 					@emailAddress
 				]
@@ -224,21 +254,22 @@ module MUES
 
 		### Comparison operator
 		def <=>( otherUser )
-			( @accounttype <=> otherUser.accounttype ).nonzero? ||
+			( @accountType <=> otherUser.accounttype ).nonzero? ||
 			@username <=> otherUser.username
 		end
+
 
 		### Reset the user's password to ((|newPassword|)). The password will be
 		### encrypted before being stored.
 		def password=( newPassword )
 			newPassword = newPassword.to_s
-			@cryptedPass = MD5.new( newPassword ).hexdigest
+			@cryptedPass = Digest::MD5::hexdigest( newPassword )
 		end
 
 
 		### Returns true if the specified password matches the user's.
 		def passwordMatches?( pass )
-			return MD5.new( pass ).hexdigest == @cryptedPass
+			return Digest::MD5::hexdigest( pass ) == @cryptedPass
 		end
 
 
@@ -252,12 +283,12 @@ module MUES
 			macros = MacroFilter.new( self )
 			stream.addFilters( cshell, macros )
 
-			cshell.debugLevel = 3
-
-			# Set the stream attribute and flag the object as activated
+			# Set the stream, send the MOTD if it was specified, and flag the
+			# object as activated
 			@ioEventStream = stream
 			@ioEventStream.unpause
-			@ioEventStream.addEvents( OutputEvent.new(motd) ) if motd
+			@ioEventStream.addEvents( OutputEvent::new("\n\n" + motd.strip + "\n\n") ) if motd
+
 			@activated = true
 
 			debugMsg( 1, "MOTD is: #{motd.inspect}" )
@@ -279,7 +310,6 @@ module MUES
 			### Shut down the IO event stream
 			@activated = false
 			results << @ioEventStream.shutdown if @ioEventStream
-			results << UserSaveEvent.new(self)
 			
 			### Return any events that need dispatching
 			return results.flatten
