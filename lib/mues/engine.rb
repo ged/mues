@@ -300,8 +300,8 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		startupEvents = []
 
 		# :TODO: Remove for production
-		self.log.outputters << MUES::Logger::Outputter::create( "" )
-		self.log.level = :debug
+		#self.log.outputters << MUES::Logger::Outputter::create( "" )
+		#self.log.level = :debug
 
 		self.consoleMessage "[Engine id is #{self.muesid}]"
 		self.log.notice( "Starting Engine..." )
@@ -443,12 +443,21 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	end
 
 
-	### Fetch a connected user object by +name+. Returns +nil+ if no such
-	### user is currently connected.
+	### Fetch a user object by +name+. Returns +nil+ if no such user is
+	### registered.
 	def getUserByName( name )
 		checkSafeLevel( 2 )
 		checkStateRunning( "look up a user by name" )
-		self.fetchUser( name.to_s )
+		self.fetchUserByName( name.to_s )
+	end
+
+
+	### Fetch a user object by +email+ address. Returns +nil+ if no registered
+	### user can be found with the given email address.
+	def getUserByEmail( email )
+		checkSafeLevel( 2 )
+		checkStateRunning( "look up a user by email" )
+		self.fetchUserByEmail( email.to_s )
 	end
 
 
@@ -1265,7 +1274,7 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	### Fetch the user object for the specified <tt>username</tt> either
 	### from the table of connected users, or from the Engine's object store
 	### (MUES::ObjectStore). Returns <tt>nil</tt> if no such user exists.
-	def fetchUser( username )
+	def fetchUserByName( username )
 		self.log.info "Fetching user '#{username}'"
 
 		@usersMutex.synchronize( Sync::SH ) {
@@ -1283,6 +1292,36 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 
 				self.log.warning "Lookup of user '%s' returned %d objects" %
 					[ username, results.length ] if results.length > 1
+
+				self.log.info "Found #{results.length} results"
+				return results[0]
+			end
+		}
+	end
+	alias_method :fetchUser, :fetchUserByName
+
+
+	### Fetch the user object corresponding to the given <tt>email</tt> either
+	### from the table of connected users, or from the Engine's object store
+	### (MUES::ObjectStore). Returns <tt>nil</tt> if no such user exists.
+	def fetchUserByEmail( email )
+		self.log.info "Fetching user '#{email}'"
+
+		@usersMutex.synchronize( Sync::SH ) {
+
+			# Look up the user if there's not one already in the users table
+			if (( user = @users.keys.find {|user| user.email == email} ))
+				self.log.info "Returning user record for connected user"
+				return user
+
+			else
+				self.log.info "Looking up user record for '#{email}'"
+				results = @objectStore.lookup( :class => MUES::User,
+											   :email => email )
+				debugMsg( 2, "Results from user lookup => #{results.inspect}" )
+
+				self.log.warning "Lookup of user '%s' returned %d objects" %
+					[ email, results.length ] if results.length > 1
 
 				self.log.info "Found #{results.length} results"
 				return results[0]
@@ -1598,6 +1637,7 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 			@streams -= [ event.stream ]
 		}
 
+		event.stream.shutdown
 		return []
 	end
 
