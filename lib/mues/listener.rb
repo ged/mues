@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.5 2002/10/26 18:58:21 deveiant Exp $
+# $Id: listener.rb,v 1.6 2002/10/28 00:03:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -71,14 +71,15 @@ module MUES
 		include MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: listener.rb,v 1.5 2002/10/26 18:58:21 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: listener.rb,v 1.6 2002/10/28 00:03:43 deveiant Exp $
 
 		### Class methods
 
-		### Return a list of directories to search for listener classes.
-		def self.derivativeDirs
-			["mues/listeners"]
+		# The directories to search for derivative classes
+		@derivativeDirs = []
+		class << self
+			attr_accessor :derivativeDirs
 		end
 
 

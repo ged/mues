@@ -47,7 +47,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.15 2002/09/12 10:33:21 deveiant Exp $
+# $Id: environment.rb,v 1.16 2002/10/28 00:01:20 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,11 +79,18 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.15 2002/09/12 10:33:21 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
+		Rcsid = %q$Id: environment.rb,v 1.16 2002/10/28 00:01:20 deveiant Exp $
 
 
-		### Class methods
+		### Class variables and methods
+
+		# The directories to search for derivative classes
+		@derivativeDirs = []
+		class << self
+			attr_accessor :derivativeDirs
+		end
+
 
 		### Return an array of environment class names which have been loaded
 		def self.listEnvClasses
@@ -102,24 +109,19 @@ module MUES
 			[]
 		end
 
-		### Derivatives search path
-		### :TODO: This should be configurable.
-		def self.derivativeDirs
-			[ "server/environments" ]
-		end
 
 
 		### Constructor
 
 		### Initialize the environment with the specified <tt>name</tt> and
 		### <tt>description</tt>.
-		def initialize( aName, aDescription="(No description)", parameters={} ) # :notnew:
-			checkType( aName, ::String )
-			checkType( aDescription, ::String )
+		def initialize( name, description="(No description)", parameters={} ) # :notnew:
+			checkType( name, ::String )
+			checkType( description, ::String )
 			checkType( parameters, ::Hash )
 
-			@name			= aName
-			@description	= aDescription
+			@name			= name
+			@description	= description
 			@parameters		= parameters
 
 			super()
