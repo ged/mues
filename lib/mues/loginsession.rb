@@ -11,7 +11,7 @@ LoginSession - A login session class
 == Synopsis
 
   require "mues/LoginSession"
-  requrie "mues/IOEventStream"
+  require "mues/IOEventStream"
   require "mues/IOEventFilters"
 
   # ... later that night, in a SocketConnectEvent handler ...
@@ -32,6 +32,45 @@ password data, creating (({UserAuthenticationEvent}))s for each attempt. The
 Engine, after determining if the authentication was valid, calls one of two
 callbacks which are associated with the UserAuthenticationEvent -- one for a
 successful login attempt, and one for a failed attempt.
+
+== Classes
+=== MUES::LoginSession
+==== Public Methods
+
+--- MUES::LoginSession#authFailureCallback( reason )
+
+    Callback for authentication failure.
+
+--- MUES::LoginSession#authSuccessCallback( user )
+
+    Callback for authentication success.
+
+--- MUES::LoginSession#handleInputEvents( *events )
+
+    Get login and password information from input events
+
+--- MUES::LoginSession#loginAttemptCount
+
+    Return the number of logins which have been attempted within the session.
+
+--- MUES::LoginSession#maxTries
+
+    Return the maximum number of tries which this session will allow.
+
+--- MUES::LoginSession#remoteHost
+
+    Return the name or address of the remote (connecting) host as a (({String})).
+
+--- MUES::LoginSession#terminate
+
+    Terminate the session and clean up.
+
+==== Protected Methods
+
+--- MUES::LoginSession#initialize( config, stream, ipAddress )
+
+    Initialize a new login session object with the ((|config|)), ((|stream|)) (a
+    ((<MUES::IOEventStream>)) object), and ((|ipAddress|)) specified.
 
 == Author
 
@@ -58,14 +97,8 @@ require "mues/IOEventFilters"
 module MUES
 	class LoginSession < Object; implements Debuggable
 
-		Version = %q$Revision: 1.6 $
-		Rcsid = %q$Id: loginsession.rb,v 1.6 2001/09/26 12:52:22 deveiant Exp $
-
-		### :TODO: Testing code only
-		@@Logins = { 
-			"ged"	=> { "password" => "testing", "isImmortal" => true },
-			"guest" => { "password" => "guest", "isImmortal" => false },
-		}
+		Version = %q$Revision: 1.7 $
+		Rcsid = %q$Id: loginsession.rb,v 1.7 2001/11/01 17:12:15 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( aConfig, anIOEventStream, anIPAddrString )
 		### Initialize a new login session object with the configuration,
@@ -107,7 +140,7 @@ module MUES
 
 			# Now queue the motd and the first username prompt output events
 			@myProxy.queueOutputEvents( OutputEvent.new(@config["login"]["banner"]),
-									    OutputEvent.new(@config["login"]["userprompt"]) )
+									    PromptEvent.new(@config["login"]["userprompt"]) )
 		end
 		
 		###################################################
@@ -152,7 +185,7 @@ module MUES
 						ev = events.shift
 						_debugMsg( 4, "Setting login name to '#{ev.data}'." )
 						@currentLogin = ev.data
-						@myProxy.queueOutputEvents( OutputEvent.new(@config["login"]["passprompt"]) )
+						@myProxy.queueOutputEvents( HiddenInputPromptEvent.new(@config["login"]["passprompt"]) )
 						next
 
 					# If we've got a login already, and we're not finished or
@@ -214,6 +247,8 @@ module MUES
 		def authFailureCallback( reason="None given" )
 			_debugMsg( 1, "Login failed: #{reason}." )
 			@loginAttemptCount += 1
+
+			@myProxy.queueOutputEvents( OutputEvent.new("\nAuthentication failure.\n") )
 
 			### After the number of tries specified in the login section of the
 			### config, generate a login failure event to kill this session and
