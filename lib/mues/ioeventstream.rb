@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.31 2004/02/29 04:45:01 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -94,9 +94,15 @@ module MUES
 		include State
 
 
-		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.31 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.31 2004/02/29 04:45:01 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
@@ -412,7 +418,7 @@ module MUES
 
 			# Now unpause the stream and signal the stream's thread so it exits
 			# (which it does when the state is set to anything but RUNNING).
-			unpause()
+			self.unpause
 			@notificationMutex.synchronize {
 				debugMsg( 5, "Signalling for shutdown." )
 				@notification.signal
