@@ -1,59 +1,71 @@
 #!/usr/bin/ruby
 
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+begin
+	require 'tests/muesunittest'
+rescue
+	require '../muesunittest'
+end
 
-require 'mues/Namespace.rb'
 require 'mues/Service.rb'
 require 'mues/Exceptions.rb'
 
 ### Adapter tests
 module MUES
 
+	### Mock service object class
+	class MockService < Service
+		def initialize
+			super( "mock", "This is a mock service for testing." )
+		end
+	end
+
+
  	### Test the service class itself
-	class ServiceClassTestCase < RUNIT::TestCase
-		def test_00_GetServices
-			service = nil
-			assert_no_exception {
-				service = MUES::Service.getService( "Test" )
+	class ServiceClassTestCase < MUES::TestCase
+
+		def set_up
+			@mockService = MockService.new
+		end
+
+		def tear_down
+			@mockService = nil
+		end
+
+		def test_New
+			assert_raises( InstantiationError ) {
+				Service.new
 			}
-			assert_kind_of( MUES::Service, service )
+		end
+
+		def test_DerivedNew
+			assert_kind_of( Service, @mockService )
+		end
+
+		def test_GetServices
+			service = nil
+			assert_nothing_raised {
+				service = MUES::Service.getService( "Mock" )
+			}
+			# assert_kind_of MUES::Service, service
 		end
 	end
 
 	### Base service test
-	class BaseServiceTestCase < RUNIT::TestCase
+	class BaseServiceTestCase < MUES::TestCase
 		def test_00_Instantiation
 			### Shouldn't be able to instantiate, as it's an abstract class
-			assert_exception( MUES::InstantiationError ) {
+			assert_raises( MUES::InstantiationError ) {
 				instance = MUES::Service.new
 			}
 		end
 	end
 
 	### XML-RPC service tests
-	class XmlRpcServiceTestCase < RUNIT::TestCase
+	class XmlRpcServiceTestCase < MUES::TestCase
 	end
 
 
 end
 
 
-if $0 == __FILE__
-
-	### Define a suite for all tests in this collection
-	class TestAll
-		def TestAll.suite
-			suite = RUNIT::TestSuite.new
-			ObjectSpace.each_object( Class ) {|klass|
-				next unless klass < RUNIT::TestCase && klass.name =~ /^MUES::/
-				suite.add_test( klass.suite )
-			}
-			suite
-		end
-	end
-
-	### Run all the tests
-	RUNIT::CUI::TestRunner.run( TestAll.suite )
-end
 

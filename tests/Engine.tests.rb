@@ -1,35 +1,29 @@
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+#!/usr/bin/ruby -w
+
+begin
+	require 'tests/muesunittest'
+rescue
+	require '../muesunittest'
+end
 
 require 'mues/Engine.rb'
 
 module MUES
-	class EngineTestCase < RUNIT::TestCase
+	class EngineTestCase < MUES::TestCase
 
-		def setup
+		def set_up
 			$Engine = MUES::Engine.instance
 		end
 
-		def teardown
+		def tear_down
 			$Engine = nil
 		end
 
 		def test_s_instance
-			assert_instance_of( MUES::Engine, $Engine )
-			assert_equals( $Engine, MUES::Engine.instance )
+			assert_instance_of MUES::Engine, $Engine
+			assert_equal $Engine, MUES::Engine.instance
 		end
 
 	end
 end
 
-if $0 == __FILE__
-	if ARGV.size == 0
-		suite = MUES::EngineTestCase.suite
-	else
-		suite = RUNIT::TestSuite.new
-		ARGV.each do |testmethod|
-			suite.add_test(MUES::EngineTestCase.new(testmethod))
-		end
-	end
-	RUNIT::CUI::TestRunner.run(suite)
-end

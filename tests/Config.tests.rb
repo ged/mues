@@ -1,12 +1,15 @@
 #!/usr/bin/ruby -w
 
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+begin
+	require 'tests/muesunittest'
+rescue
+	require '../muesunittest'
+end
 
 require 'mues/Config.rb'
 
 module MUES
-	class ConfigTestCase < RUNIT::TestCase
+	class ConfigTestCase < MUES::TestCase
 
 		$ConfigFile = "test.cfg"
 		$ConfigContent = <<-EOF
@@ -18,7 +21,7 @@ testitem "testval"
 		EOF
 		$ConfigObj = nil
 
-		def setup
+		def set_up
 			super
 			File.open($ConfigFile, "w") { |f|
 				f.print $ConfigContent
@@ -26,20 +29,20 @@ testitem "testval"
 			$ConfigObj = Config.new
 		end
 
-		def teardown
+		def tear_down
 			$ConfigObj = nil
 			File.delete( $ConfigFile )
 			super
 		end
 
 		def test_AREF # '[]'
-			assert_no_exception {
+			assert_nothing_raised {
 				$ConfigObj["testsection"]
 			}
 		end
 
 		def test_ASET # '[]='
-			assert_no_exception {
+			assert_nothing_raised {
 				$ConfigObj["testsection"] = true
 			}
 			assert( $ConfigObj["testsection"] )
@@ -47,47 +50,35 @@ testitem "testval"
 
 		def test_dump
 			$ConfigObj = Config.new( $ConfigFile )
-			assert_equal( $ConfigObj.dump, $ConfigContent )
+			assert_equal $ConfigObj.dump, $ConfigContent
 		end
 
 		def test_new
-			assert_instance_of( Config, $ConfigObj )
+			assert_instance_of MUES::Config, $ConfigObj
 		end
 
 		def test_newWithNonExistantFile
-			assert_exception( Errno::ENOENT ) {
+			assert_raises( Errno::ENOENT ) {
 				$ConfigObj = Config.new( "blorg" )
 			}
 		end
 
 		def test_GetMainConfigValue
 			$ConfigObj = Config.new( $ConfigFile )
-			assert_equal( $ConfigObj["testitem"], "testval" )
+			assert_equal $ConfigObj["testitem"], "testval"
 		end
 
 		def test_GetSection
 			$ConfigObj = Config.new( $ConfigFile )
-			assert_instance_of( Config::Section, $ConfigObj["testsection"] )
+			assert_instance_of Config::Section, $ConfigObj["testsection"]
 		end
 
 		def test_GetSectionConfigValue
 			$ConfigObj = Config.new( $ConfigFile )
-			assert_equal( $ConfigObj["testsection"]["testitem"], "testval" )
+			assert_equal $ConfigObj["testsection"]["testitem"], "testval"
 		end
 
 	end
 
 end
 
-
-if $0 == __FILE__
-	if ARGV.size == 0
-		suite = MUES::ConfigTestCase.suite
-	else
-		suite = RUNIT::TestSuite.new
-		ARGV.each do |testmethod|
-			suite.add_test(MUES::ConfigTestCase.new(testmethod))
-		end
-	end
-	RUNIT::CUI::TestRunner.run(suite)
-end

@@ -1,7 +1,10 @@
 #!/usr/bin/ruby -w
 
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+begin
+	require 'tests/muesunittest'
+rescue
+	require '../muesunittest'
+end
 
 require 'mues/Log'
 
@@ -36,7 +39,7 @@ module MUES
 	end
 
 	### Log tests
-	class LogTestCase < RUNIT::TestCase
+	class LogTestCase < MUES::TestCase
 
 		$Logfile = "testlog.#{$$}"
 		$Levels = {
@@ -49,12 +52,12 @@ module MUES
 		}
 
 		### Setup
-		def setup
+		def set_up
 			super
 		end
 
 		### Teardown
-		def teardown
+		def tear_down
 			super
 			if FileTest.exists?( $Logfile ) then
 				File.delete( $Logfile )
@@ -64,22 +67,22 @@ module MUES
 		### TEST: Instantiate with no args (Tempfile log)
 		def test_NewWithNoArgs
 			log = Log.new
-			assert_instance_of( Log, log )
-			assert_equal( log.level, $Levels["debug"] )
+			assert_instance_of  Log, log 
+			assert_equal log.level, $Levels["debug"] 
 		end
 
 		### TEST: Instantiate with filename arg
 		def test_NewWithOneArg
 			log = Log.new( $Logfile )
-			assert_instance_of( Log, log )
-			assert_equal( log.level, $Levels["debug"] )
+			assert_instance_of Log, log 
+			assert_equal log.level, $Levels["debug"] 
 		end
 
 		### TEST: Instantiate with filename and level arg
 		def test_NewWithTwoArgs
 			log = Log.new( $Logfile, "info" )
-			assert_instance_of( Log, log )
-			assert_equal( log.level, $Levels["info"] )
+			assert_instance_of Log, log 
+			assert_equal log.level, $Levels["info"] 
 		end
 
 		### TEST: Test output
@@ -87,31 +90,19 @@ module MUES
 			io = MockIO.new
 			log = Log.new( io, "debug" )
 
-			assert_no_exception {
+			assert_nothing_raised {
 				$Levels.keys.each do |level|
 					log.send( level, "Level: #{level}" )
 				end
 			}
 
-			assert_equal( io.output.size, $Levels.keys.size )
+			assert_equal io.output.size, $Levels.keys.size 
 			$Levels.keys.each do |level|
 				foundMatch = io.output.find {|outputLine| outputLine =~ /#{level}/}
-				assert( foundMatch, "No matching log line for the #{level} level." )
+				assert foundMatch, "No matching log line for the #{level} level."
 			end
 		end			
 	end
 end
 
-
-if $0 == __FILE__
-	if ARGV.size == 0
-		suite = MUES::LogTestCase.suite
-	else
-		suite = RUNIT::TestSuite.new
-		ARGV.each do |testmethod|
-			suite.add_test(MUES::LogTestCase.new(testmethod))
-		end
-	end
-	RUNIT::CUI::TestRunner.run(suite)
-end
 

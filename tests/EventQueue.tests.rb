@@ -1,7 +1,10 @@
 #!/usr/bin/ruby -w
 
-require "runit/testcase"
-require 'runit/cui/testrunner'
+begin
+	require 'tests/muesunittest'
+rescue
+	require '../muesunittest'
+end
 
 require "mues/EventQueue"
 require "mues/Events"
@@ -18,27 +21,28 @@ module MUES
 		end
 	end
 
+
 	### Event queue tests
-	class EventQueueTestCase < RUNIT::TestCase
+	class EventQueueTestCase < MUES::TestCase
 
 		$MockHandler = nil
 		$QueueObj = nil
 
-		def setup
+		def set_up
 			$QueueObj = EventQueue.new
 			# $QueueObj.debugLevel = 1
 			$MockHandler = MockEventHandler.new
 			DebugOutputEvent.RegisterHandlers( $MockHandler )
 		end
 
-		def teardown
+		def tear_down
 			DebugOutputEvent.UnregisterHandlers( $MockHandler )
 			$MockHandler = nil
 			$QueueObj.shutdown if $QueueObj.running?
 
 			if $0 == __FILE__
 				threads = Thread.list
-				#assert_equals( 1, threads.size )
+				#assert_equal( 1, threads.size )
 				if threads.size > 1
 					puts "\nThread status (Queue is #{ if $QueueObj.running? then \"running\" else \"not running\" end}):"
 					puts "Supervisor thread: #{ $QueueObj.supervisor.id } (#{ $QueueObj.supervisor.status })" if
@@ -58,57 +62,39 @@ module MUES
 		end
 		
 		def test_00_New
-			assert_not_nil( $QueueObj )
-			assert_instance_of( EventQueue, $QueueObj )
+			assert_not_nil $QueueObj
+			assert_instance_of EventQueue, $QueueObj
 		end
 
 		def test_01_StartStop
-			assert_no_exception {
-				$QueueObj.start
-			}
+			assert_nothing_raised { $QueueObj.start }
 			until $QueueObj.running? do sleep 0.1 end
-			assert_no_exception {
-				$QueueObj.shutdown
-			}
+			assert_nothing_raised { $QueueObj.shutdown }
 		end
 
 		def test_02_StopWithoutStart()
-			assert_no_exception {
-				$QueueObj.shutdown
-			}
+			assert_nothing_raised { $QueueObj.shutdown }
 		end
 
 		def test_03_StartWhileRunning()
 			$QueueObj.debugLevel = 0
 			$QueueObj.start
-			assert_no_exception { $QueueObj.start }
+			assert_nothing_raised { $QueueObj.start }
 			$QueueObj.shutdown
 		end
 
 		def test_04_QueueEvent
-			assert_no_exception {
+			assert_nothing_raised {
 				ev = DebugOutputEvent.new( 1 )
 				$QueueObj.enqueue( ev )
 			}
 		end
 
 		def test_05_QueueWithoutArgs
-			assert( ! $QueueObj.enqueue )
+			assert ! $QueueObj.enqueue
 		end
 
 	end
 
 end
 
-
-if $0 == __FILE__
-	if ARGV.size == 0
-		suite = MUES::EventQueueTestCase.suite
-	else
-		suite = RUNIT::TestSuite.new
-		ARGV.each do |testmethod|
-			suite.add_test(MUES::EventQueueTestCase.new(testmethod))
-		end
-	end
-	RUNIT::CUI::TestRunner.run(suite)
-end
