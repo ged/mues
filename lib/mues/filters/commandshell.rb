@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.28 2002/10/24 15:45:01 deveiant Exp $
+# $Id: commandshell.rb,v 1.29 2002/10/24 15:49:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.28 2002/10/24 15:45:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.29 2002/10/24 15:49:23 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -571,16 +571,27 @@ module MUES
 				# <gsar@ActiveState.com>)
 				commands.flatten.uniq.each {|comm|
 
+					# Iterate over all the names the command can be invoked
+					# with.
 					( [ comm.name ] | comm.synonyms ).each {|word|
 
+						# Try shorter and shorter abbreviations of the command,
+						# adding unambiguous ones, and deleting ones that would
+						# be ambiguous (ie., because they're already in the
+						# table).
 						( 1 .. word.length ).to_ary.reverse.each {|len|
 							abbrev = word[ 0, len ]
 							occurrenceTable[ abbrev ] ||= 0
 							seen = occurrenceTable[ abbrev ] += 1
 							
+							# If this is the first occurrance, add it to the table
 							if seen == 1
 								@abbrevTable[ abbrev ] = comm
 
+							# If it's the second occurrance, either delete it
+							# from the table if it's an abbreviated form, or
+							# just replace the abbreviation if it's the whole
+							# command.
 							elsif seen == 2
 								if abbrev == word
 									@abbrevTable[ abbrev ] = comm
@@ -877,8 +888,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.28 2002/10/24 15:45:01 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.29 2002/10/24 15:49:23 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
