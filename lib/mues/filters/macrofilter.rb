@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: macrofilter.rb,v 1.9 2003/10/13 04:02:14 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -34,19 +34,24 @@ module MUES
 
 	### This is a class that provides expansion and definition facilities for
 	### user-definable macros in an IOEventStream.
-	class MacroFilter < IOEventFilter ; implements MUES::Debuggable
+	class MacroFilter < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		include MUES::TypeCheckFunctions
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.9 2003/10/13 04:02:14 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Filter sort position
 		DefaultSortPosition = 650
 
-		### Class variables
-
 		# The string prefix to associate with macro commands
-		@@MacroPrefix = ':'
+		MacroPrefix = ':'
 
 
 		### Initializer
@@ -60,8 +65,9 @@ module MUES
 			checkType( user, MUES::User )
 
 			@user		= user
-			@macroPrefix= @user.preferences['macroPrefix'] || @@MacroPrefix
-			@macroTable = @user.preferences['macros'] || {}
+			@macroPrefix= @user.preferences['macroPrefix']	|| MacroPrefix
+			@macroTable = @user.preferences['macros']		|| {}
+			@macroDepth = @user.preferences['macroDepth']	|| 5
 		end
 
 
@@ -76,7 +82,8 @@ module MUES
 		### Prep the filter for shutdown.
 		def stop( aStream )
 			@user.preferences['macroPrefix'] = @macroPrefix
-			@user.preferences['macros'] = @macroTable
+			@user.preferences['macros'] 	 = @macroTable
+			@user.preferences['macroDepth']  = @macroDepth
 
 			super( aStream )
 		end
@@ -93,7 +100,7 @@ module MUES
 			events.each {|e|
 				alreadyMatched = {}
 
-				if e.data =~ %r{^#{@@MacroPrefix}}
+				if e.data =~ %r{^#{MacroPrefix}}
 
 					@macroTable.each {|pattern,expansion|
 						next unless e.data =~ pattern
