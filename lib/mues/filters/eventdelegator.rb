@@ -28,7 +28,7 @@
 #
 # == Rcsid
 # 
-# $Id: eventdelegator.rb,v 1.12 2002/09/28 12:55:03 deveiant Exp $
+# $Id: eventdelegator.rb,v 1.13 2002/10/28 00:08:00 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,13 +48,13 @@ require "mues/filters/IOEventFilter"
 
 module MUES
 
-	class EventDelegator < IOEventFilter ; implements MUES::Debuggable
+	class EventDelegator < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.12 2002/09/28 12:55:03 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.13 2002/10/28 00:08:00 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### Create and return a EventDelegator object for the given client. The
