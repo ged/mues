@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.13" time-stamp="$Date: 2002/09/27 16:08:05 $">
+#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/06 01:55:54 $">
 #	
 # 	  <!-- General server configuration:
 # 		  server-name:			The name of the server
@@ -218,7 +218,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.15 2002/09/27 16:08:05 deveiant Exp $
+# $Id: config.rb,v 1.16 2002/10/06 01:55:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -254,8 +254,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.15 2002/09/27 16:08:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.16 2002/10/06 01:55:54 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -996,6 +996,7 @@ module MUES
 			# The name of the class to be used for the ObjectStore's
 			# memory-manager.
 			attr_reader :memoryManager
+			alias_method :memorymanager, :memoryManager
 
 			# The arguments hash used to configure the MM and Backend
 			attr_reader :argHash
@@ -1174,7 +1175,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/09/27 16:08:05 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/06 01:55:54 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
