@@ -8,6 +8,7 @@ require 'runit/cui/testrunner'
 require 'mues/Namespace'
 require 'mues/User'
 require 'mues/ObjectStore'
+require 'mues/Config'
 
 ### Adapter tests
 module MUES
@@ -45,14 +46,22 @@ module MUES
 	class TestingObjectStore < ObjectStore
 		public
 		class << self
-			def loadAdapters; ObjectStore._loadAdapters; end
+			def loadAdapters; ObjectStore::_loadAdapters; end
 		end
 	end
 
 	### Test the objectstore class itself
 	class ObjectStoreTestCase < RUNIT::TestCase
 
+		@config = nil
+
 		def setup
+			@config = MUES::Config.new
+			@config['objectstore'] = MUES::Config::Section::new( 'objectstore' )
+			@config['objectstore']['driver'] = 'Dummy'
+			@config['objectstore']['directory'] = 'testobjectstore'
+			@config['rootdir'] = '.'
+
 			super
 		end
 
@@ -61,19 +70,16 @@ module MUES
 		end
 
 		def test_LoadAdapters
-			assert TestingObjectStore.loadAdapters
+			assert TestingObjectStore::loadAdapters
 		end
 
 		def test_HasAdapter
-			assert TestingObjectStore.hasAdapter?( "Dummy" ) 
+			assert TestingObjectStore::hasAdapter?( "Dummy" ) 
 		end
 
 		def test_GetAdapter
-			a = TestingObjectStore.getAdapter( "Dummy", "test", "host", "user", "password" )
+			a = TestingObjectStore::getAdapter( @config )
 			assert_instance_of MUES::ObjectStore::DummyAdapter, a
-			assert_equals( "test", a.db )
-			assert_equals( "host", a.host )
-			assert_equals( "user", a.user )
 		end
 	end
 
@@ -86,7 +92,13 @@ module MUES
 		@@Id = nil
 
 		def setup
-			@@ObjectStore = ObjectStore.new( 'Dummy', 'test' )
+			config = MUES::Config::new
+			config['objectstore'] = MUES::Config::Section::new( 'objectstore' )
+			config['objectstore']['driver'] = 'Dummy'
+			config['objectstore']['directory'] = 'testobjectstore'
+			config['rootdir'] = '.'
+
+			@@ObjectStore = ObjectStore::new( config )
 		end
 
 		def teardown
@@ -98,7 +110,7 @@ module MUES
 		end
 
 		def test_01StoreObject
-			obj = TestObject.new(*@@TestData)
+			obj = TestObject::new(*@@TestData)
 
 			assert_no_exception {
 				@@Id = @@ObjectStore.storeObjects( obj )[0]
@@ -116,7 +128,7 @@ module MUES
 		end
 
 		def test_03StoreIntelligentObject
-			obj = IntelligentTestObject.new(*@@TestData)
+			obj = IntelligentTestObject::new(*@@TestData)
 
 			assert_no_exception {
 				@@Id = @@ObjectStore.storeObjects( obj )[0]
@@ -135,14 +147,23 @@ module MUES
 			assert_nil( obj.checksum )
 		end
 
-		def test_05StoreUser
-			pl = User.new( @@UserTestData )
+		def test_05CreateUser
+			pl = nil
 			assert_no_exception {
-				@@ObjectStore.storeUser( pl )
+				pl = @@ObjectStore.createUser( @@UserTestData['username'] )
+			}
+			assert_instance_of( MUES::User, pl )
+		end
+
+		def test_06CreateUserWithBlock
+			assert_no_exception {
+				@@ObjectStore.createUser( @@UserTestData['username'] ) {|pl|
+					pl.password = @@UserTestData['password']
+				}
 			}
 		end
 
-		def test_06FetchUser
+		def test_07FetchUser
 			user = nil
 			assert_no_exception {
 				user = @@ObjectStore.fetchUser( @@UserTestData['username'] )
@@ -152,7 +173,7 @@ module MUES
 			}
 		end
 
-		def test_07ListUsers
+		def test_08ListUsers
 			list = nil
 			assert_no_exception {
 				list = @@ObjectStore.listUsers
@@ -160,9 +181,9 @@ module MUES
 			assert( list.find {|u| u == @@UserTestData['username']} )
 		end
 
-		def test_08DeleteUser
+		def test_09DeleteUser
 			assert_no_exception {
-				@@ObjectStore.delete(@@UserTestData['username'])
+				@@ObjectStore.deleteUser(@@UserTestData['username'])
 			}
 		end
 	end
@@ -170,7 +191,7 @@ module MUES
 	### Test suite for Berkeley DB adapter
 	class ObjectStoreBdbAdapterTestCase < BaseObjectStoreAdapter
 		def setup
-			@@ObjectStore = ObjectStore.new( 'Bdb', 'test' )
+			@@ObjectStore = ObjectStore::new( 'Bdb', 'test' )
 		end
 	end
 
@@ -178,7 +199,7 @@ module MUES
 	### Test suite for Mysql DB adapter
 	class ObjectStoreMysqlAdapterTestCase < BaseObjectStoreAdapter
 		def setup
-			@@ObjectStore = ObjectStore.new( 'Mysql', 'mues', 'localhost', 'deveiant', '3l3g4nt' )
+			@@ObjectStore = ObjectStore::new( 'Mysql', 'mues', 'localhost', 'deveiant', '3l3g4nt' )
 		end
 	end
 end
@@ -199,6 +220,6 @@ if $0 == __FILE__
 	end
 
 	### Run all the tests
-	RUNIT::CUI::TestRunner.run( TestAll.suite )
+	RUNIT::CUI::TestRunner.run( TestAll::suite )
 end
 
