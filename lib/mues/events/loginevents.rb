@@ -30,6 +30,8 @@ http://language.perl.com/misc/Artistic.html)
 =end
 #######################################################
 
+require "weakref"
+
 require "mues/Namespace"
 require "mues/Exceptions"
 
@@ -49,7 +51,7 @@ module MUES
 		### METHOD: initialize( aLoginSession )
 		def initialize( aLoginSession )
 			checkType( aLoginSession, LoginSession )
-			@session = aLoginSession
+			@session = WeakRef.new( aLoginSession )
 			super()
 		end
 	end
