@@ -1,42 +1,57 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# This file contains Metaclass::Association, an class-association metaclass. It
+# is used to encapsulate information about the association between two classes
+# in a class model.
+# 
+# == Synopsis
+# 
+#   require "metaclass/Association"
+# 
+# == Rcsid
+#
+# $Id: association.rb,v 1.3 2002/03/31 18:26:32 deveiant Exp $
+#
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=Association.rb
+require 'metaclass/Constants'
 
-== Name
+module Metaclass
 
-Association - An association metaclass
+	autoload :Class, 'metaclass/Class'
 
-== Synopsis
+	# Class-association metaclass.
+	class Association
 
-  
+		# Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: association.rb,v 1.3 2002/03/31 18:26:32 deveiant Exp $
 
-== Description
+		# This is an abstract class, so prevent it from being instantiated
+		private_class_method :new
 
-
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
+		### Initialize a new association with the specified name. This method
+		### should be called by concrete derivatives.
+		def initialize( name ) # :notnew:
+			@name = name
+		end
 
 
-module MetaClass
+		######
+		public
+		######
 
-	class Association < Object
-
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: association.rb,v 1.2 2001/05/14 12:36:59 deveiant Exp $
-
+		# The name of the association
+		attr_accessor :name
 
 	end
 
