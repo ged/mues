@@ -9,7 +9,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.9 2002/09/12 12:45:19 deveiant Exp $
+# $Id: mues.rb,v 1.10 2002/10/14 09:46:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,6 +29,7 @@ Options = [
 	[ "--loglevel",	"-l",		GetoptLong::REQUIRED_ARGUMENT ],
 	[ "--init",		"-i",		GetoptLong::NO_ARGUMENT ],
 	[ "--debug",	"-d",		GetoptLong::REQUIRED_ARGUMENT ],
+	[ "--load",		"-r",		GetoptLong::REQUIRED_ARGUMENT ],
 ]
 
 
@@ -47,6 +48,7 @@ def main
 	loglevel = "info"
 	initmode = false
 	debugLevel = 0
+	loadLibraries = []
 
 	# Read command-line options
 	opts = GetoptLong::new( *Options )
@@ -68,6 +70,9 @@ def main
 
 		when '--debug'
 			debugLevel = arg.to_i
+
+		when '--load'
+			require( arg )
 
 		else
 			MUES::Log.error( "No such option '#{opt}'" )
