@@ -188,7 +188,7 @@ Here^s a (probably incomplete) list of stuff that will need to be done:
 
 == Author
 
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
+Michael Granger <ged@FaerieMUD.org>
 
 Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
 
