@@ -52,15 +52,14 @@ require "thread"
 require "mues/Namespace"
 require "mues/Config"
 require "mues/Exceptions"
-require "mues/Debugging"
 require "mues/Events"
 require "mues/IOEventFilters"
 
 module MUES
 	class LoginSession < Object; implements Debuggable
 
-		Version = %q$Revision: 1.3 $
-		Rcsid = %q$Id: loginsession.rb,v 1.3 2001/06/25 14:05:24 deveiant Exp $
+		Version = %q$Revision: 1.4 $
+		Rcsid = %q$Id: loginsession.rb,v 1.4 2001/07/18 01:49:43 deveiant Exp $
 
 		### :TODO: Testing code only
 		@@Logins = { 
