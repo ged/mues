@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.21 2003/10/13 04:02:14 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.22 2003/11/25 21:28:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -70,13 +70,14 @@ module MUES
 
 	# An abstract base filter class for MUES::IOEventStream objects. This class
 	# implements the Comparable, Observable, and MUES::Debuggable interfaces.
-	class IOEventFilter < Object ; implements Observable, Comparable, MUES::Debuggable, MUES::AbstractClass
+	class IOEventFilter < MUES::Object
+		implements Observable, Comparable, MUES::Debuggable, MUES::AbstractClass
 
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.21 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.21 2003/10/13 04:02:14 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.22 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.22 2003/11/25 21:28:08 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -104,6 +105,7 @@ module MUES
 			@queuedOutputEventsMutex = Mutex.new
 
 			@isFinished = false
+			@stream = nil
 
 			super()
 		end
@@ -122,6 +124,9 @@ module MUES
 		# The Array of output events which are pending injection into the stream.
 		attr_reader		:queuedOutputEvents
 
+		# The IOEventStream object which started the filter, if it is started.
+		attr_reader		:stream
+
 		# A flag for indicating that the filter is finished its role in the
 		# stream, and should be removed. Aliases: #isFinished?, #finished?
 		attr_reader		:isFinished
@@ -129,27 +134,29 @@ module MUES
 		alias :finished? :isFinished
 
 
-		### Start filter notifications for the specified stream. Returns an
+		### Start filter notifications for the specified +stream+. Returns an
 		### array of events to propagated for startup. Filter subclasses can
 		### override this method if they need to do setup tasks before being
 		### added to the stream, but they should be sure to call this class's
 		### implementation via <tt>super()</tt>, or the filter will not notify
 		### the stream when events are pending.
-		def start( streamObject )
-			add_observer( streamObject )
+		def start( stream )
+			add_observer( stream )
+			@stream = stream
 			[]
 		end
 
 
-		### Stop the filter notifications for the specified stream, returning
+		### Stop the filter notifications for the specified +stream+, returning
 		### any final events which should be dispatched on behalf of the
 		### filter. Filter subclasses can override this method if they need to
 		### do cleanup tasks before being removed from the stream, but they
 		### should be sure to call this class's implementation via
 		### <tt>super()</tt>, or the filter will continue to notify the stream
 		### of pending events.
-		def stop( streamObject )
-			delete_observer( streamObject )
+		def stop( stream )
+			delete_observer( stream )
+			@stream = nil
 			@isFinished = true if count_observers.zero?
 			[]
 		end
