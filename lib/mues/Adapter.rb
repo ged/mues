@@ -69,7 +69,6 @@ http://language.perl.com/misc/Artistic.html)
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
 
 module MUES
 	class ObjectStore
@@ -82,8 +81,8 @@ module MUES
 			include AbstractClass
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: Adapter.rb,v 1.4 2001/05/14 12:13:49 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: Adapter.rb,v 1.5 2001/07/18 02:01:39 deveiant Exp $
 
 			### METHOD: initialize( db, host, user, password )
 			### Initialize the adapter with the specified values

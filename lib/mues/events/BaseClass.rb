@@ -37,7 +37,6 @@ http://language.perl.com/misc/Artistic.html)
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
 
 module MUES
 

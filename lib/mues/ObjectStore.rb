@@ -47,7 +47,6 @@ require "find"
 require "mues/Namespace"
 require "mues/Events"
 require "mues/Exceptions"
-require "mues/Debugging"
 require "mues/Player"
 
 module MUES
@@ -62,8 +61,8 @@ module MUES
 		include Event::Handler
 
 		### Class Constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: ObjectStore.rb,v 1.6 2001/06/25 14:09:26 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: ObjectStore.rb,v 1.7 2001/07/18 01:58:02 deveiant Exp $
 
 		AdapterSubdir = 'mues/adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/

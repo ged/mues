@@ -39,7 +39,6 @@ require "sync"
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
 
 require "mues/adapters/Adapter"
 
@@ -50,8 +49,8 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.4 2001/05/14 12:18:55 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.5 2001/07/18 02:01:44 deveiant Exp $
 			DirectoryName = 'objectstore-bdb'
 
 			### Class variables

@@ -31,7 +31,6 @@ http://language.perl.com/misc/Artistic.html)
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
 
 require "mues/events/BaseClass"
 
@@ -71,13 +70,11 @@ module MUES
 	###########################################################################
 
 	### CLASS: OutputEvent < IOEvent
-	class OutputEvent < IOEvent
-	end
+	class OutputEvent < IOEvent; end
 
 
 	### CLASS: InputEvent < IOEvent
-	class InputEvent < IOEvent
-	end
+	class InputEvent < IOEvent; end
 
 
 	### CLASS: DebugOutputEvent < OutputEvent
