@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.37 2002/10/29 19:51:18 deveiant Exp $
+#  $Id: objectstore.rb,v 1.38 2003/04/24 14:48:05 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.37 $} )[1]
-		Rcsid = %q$Id: objectstore.rb,v 1.37 2002/10/29 19:51:18 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.38 $} )[1]
+		Rcsid = %q$Id: objectstore.rb,v 1.38 2003/04/24 14:48:05 deveiant Exp $
 
 
 		# The default MemoryManager class
@@ -119,7 +119,7 @@ module MUES
 		###
         ### [:name]
 		###   A name (String) that acts as the store's unique
-		###   identifier. Calling #load twice with the same name will return the
+		###   identifier. Calling #create twice with the same name will return the
 		###   previous one instantiated. <strong>Required</strong>.
 		### [:backend]
 		###   The name of the MUES::ObjectStore::Backend derivative to use, the
