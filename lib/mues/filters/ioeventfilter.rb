@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.22 2003/11/25 21:28:08 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -75,9 +75,20 @@ module MUES
 
 		include MUES::TypeCheckFunctions
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.22 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.22 2003/11/25 21:28:08 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# The numeric sort order constant -- determines where in an
+		# IOEventStream the filter goes. Lower values means the filter will sort
+		# more towards the <strong>output</strong> side of the stream, higher
+		# values sort towards the <strong>input</strong> side, and middle values
+		# generally act as modifying, macro, or duplicative filters.
 		DefaultSortPosition = 500
 
 
@@ -94,8 +105,9 @@ module MUES
 								order
 							end
 
-			raise TypeError, "Sort position: expected a Fixnum, not a #{@sortPosition.class.name}" unless
-				@sortPosition.is_a?( ::Fixnum )
+			raise TypeError,
+				"Sort position: expected a Fixnum, not a %s" %
+				@sortPosition.class.name unless @sortPosition.is_a?( ::Fixnum )
 			raise ArgumentError, "Sort position must be between 0 and 1000" unless
 				0 <= @sortPosition && @sortPosition <= 1000
 			
