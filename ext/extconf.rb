@@ -1,8 +1,8 @@
 #!/usr/bin/ruby
 # :nodoc: all
 #
-#	Extension configuration script for MUES::PolymorphicObject
-#	$Id: extconf.rb,v 1.7 2002/06/04 06:45:33 deveiant Exp $
+#	Extension configuration script for MUES C Extensions.
+#	$Id: extconf.rb,v 1.8 2002/06/08 20:56:43 deveiant Exp $
 #
 #
 
