@@ -139,9 +139,9 @@ class ShallowReference < PolymorphicObject
   ###           object from the objectStore
   ###   an_obj_store - the ObjectStore to get things from
   def initialize(an_id, an_obj_store)
-    raise TypeError("Expected String but got #{an_id.type.name}") if
+    raise TypeError, "Expected String but got #{an_id.type.name}" if
       ! an_id.kind_of?(String)
-    raise TypeError("Expected ObjectStore but got #{an_id.type.name}") if
+    raise TypeError, "Expected ObjectStore but got #{an_id.type.name}" if
       ! an_obj_store.kind_of?(ObjectStore)
     @id = an_id
     @obj_store = an_obj_store
@@ -179,6 +179,7 @@ class ShallowReference < PolymorphicObject
   ### When any other method is sent, become the object returned by the database,
   ###   and send again.
   def method_missing (*args)
+    $stderr.puts "Method lookup for '#{args[0]}'"
     thingy = @obj_store._retrieve( @id )
     if( thingy.shallow? or ! thingy.respond_to?(args[0]) )
       super
