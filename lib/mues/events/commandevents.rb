@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: commandevents.rb,v 1.1 2002/10/14 09:36:46 deveiant Exp $
+# $Id: commandevents.rb,v 1.2 2002/10/23 04:58:58 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,14 +39,16 @@ module MUES
 	class EvalCommandEvent < MUES::PrivilegedEvent
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: commandevents.rb,v 1.1 2002/10/14 09:36:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: commandevents.rb,v 1.2 2002/10/23 04:58:58 deveiant Exp $
 
 		### Create a new EvalCommandEvent that will evaluate the specified
-		### <tt>code</tt> in the context of the given <tt>contextObject</tt>.
-		def initialize( code, contextObject )
+		### <tt>code</tt> in the context of the given <tt>contextObject</tt> for
+		### the given <tt>user</tt>.
+		def initialize( code, contextObject, user )
 			@code = code
 			@context = contextObject
+			@user = user
 		end
 
 
@@ -61,13 +63,10 @@ module MUES
 		# code.
 		attr_reader :context
 
+		# The user the eval should be executed for
+		attr_reader :user
 
 
-		#########
-		protected
-		#########
-
-
-	end # class CommandEvents
+	end # class EvalCommandEvent
 end # module MUES
 
