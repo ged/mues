@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: null.rb,v 1.8 2002/10/12 17:48:12 stillflame Exp $
+# $Id: null.rb,v 1.9 2002/10/28 00:11:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -65,8 +65,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.8 2002/10/12 17:48:12 stillflame Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.9 2002/10/28 00:11:54 deveiant Exp $
 
 		DefaultDescription = %Q{
 		This is a barebones environment used in testing. It doesn't really contain any
@@ -91,7 +91,7 @@ module MUES
 			@participantsMutex	= Sync.new
 
 			ostoreParams = ObjectStoreParams.dup
-			ostoreParams['name'] = instanceName
+			ostoreParams[:name] = instanceName
 			@ostore = MUES::ObjectStore::create( ostoreParams )
 		end
 
