@@ -17,65 +17,129 @@ MUES. It contains an IOEventStream object which distributes input and output
 between the remote client and the objects with which the user object is
 associated, and information about the client.
 
-== Methods
-=== Protected Instants Methods
+== Modules
+=== MUES::User::Type
 
---- MUES::User#initialize( dbInfo )
+Namespace for type constants. Contains:
 
-	Initialize the user object with the given ((|dbInfo|)) object. The dbInfo
-	object must either be a Hash or an object which behaves like one in that it
-	must respond to the (({[]})), (({[]=})), and (({has_key?})) methods.
+: Type::USER
+
+  Normal user. No special permissions.
+
+: Type::CREATOR
+
+  Creator permissions allow the user to start and stop their own Environments,
+  examine the state of any object inside an Environment which they have started,
+  and fetch limited runtime statistics from the Engine.
+
+: Type::IMPLEMENTOR
+
+  Implementor permissions allow the user to start and stop any Environment, view
+  the state of any object in any Environment, interact with the Engine to a
+  limited degree (shutdown, restart, reload config), view the banlist, etc.
+
+: Type::ADMIN
+
+  Unlimited permissions.
+
+== Classes
+=== MUES::User
+==== Public Methods
+
+--- MUES::User#new( userDataHash )
+
+    Initialize a new user object with the hash of attributes specified
+
+--- MUES::User#<=>( otherUser )
+
+    Comparison operator -- returns 1, 0, or -1 to indicate sort order for the
+    receiver and the specified ((|otherUser|)) object. Objects sorted in this
+    fashion will be ordered by type, with more permissioned users first, and
+    then by username.
 
 --- MUES::User#activate( stream )
 
-	Activate the user object with the given ((|stream|)), which must be an
-	instance of ((<MUES::IOEventStream>)) or one of its subclasses.
+    Activate the user object with the given ((|stream|)), which must be an
+    instance of ((<MUES::IOEventStream>)) or one of its subclasses.
 
 --- MUES::User#activated?
 
-	Returns (({true})) if the user has been activated (ie., has a connected IO
-	stream).
+    Returns (({true})) if the user has been activated (ie., has a connected IO
+    stream).
 
---- MUES::User#remoteHost
+--- MUES::User#dbInfo
 
-	Return the user^s remote IP address.
-
---- MUES::User#remoteHost=( newIp )
-
-	Set the user^s remote IP address to ((|newIp|)).
-
---- MUES::User#isCreator?
-
-	Returns (({true})) if the user has ((<creator>)) permissions.
-
---- MUES::User#isImplementor?
-
-	Returns (({true})) if the user has ((<implementor>)) permissions.
-
---- MUES::User#isAdmin?
-
-	Returns (({true})) if the user has ((<admin>)) permissions.
-
---- MUES::User#to_s
-
-	Returns a stringified version of the user.
-
---- MUES::User#password=( newPassword )
-
-	Set the user^s password to ((|newPassword|)).
+    Return the value of the dbInfo attribute.
 
 --- MUES::User#deactivate
 
-	Deactivate the user, shutting down her IO stream.
+    Deactivate the user, shutting down her IO stream.
 
---- MUES::User#reconnect( stream )
+--- MUES::User#ioEventStream
 
-	
+    Return the value of the ioEventStream attribute.
+
+--- MUES::User#isCreator?
+
+    Returns (({true})) if the user has ((<creator>)) permissions.
+
+--- MUES::User#isImplementor?
+
+    Returns (({true})) if the user has ((<implementor>)) permissions.
+
+--- MUES::User#isAdmin?
+
+    Returns (({true})) if the user has ((<admin>)) permissions.
 
 --- MUES::User#method_missing( aSymbol, *args )
 
+    Create and call methods that are the same as user data keys
 
+--- MUES::User#password=( newPassword )
 
+    Reset the user^s password to ((|newPassword|)).
+
+--- MUES::User#reconnect( stream )
+
+    Reconnect using the socket filter (or equivalent) from the specified
+    ((|stream|)) (a ((<MUES::IOEventStream>)) object), disconnecting the current
+    one.
+
+--- MUES::User#remoteHost
+
+    Returns the remote host (if any) that the client is connected from as a
+    (({String})).
+
+--- MUES::User#remoteHost=( newIp )
+
+    Sets the User^s (({remoteHost})) and (({lastHost})) attributes to the
+    specified ((|newIp|)).
+
+--- MUES::User#to_s
+
+    Returns a stringified version of the user object
+
+==== Protected Methods
+
+--- MUES::User#initialize( dbInfo )
+
+    Initialize the user object with the given ((|dbInfo|)) object. The dbInfo
+    object must either be a Hash or an object which behaves like one in that it
+    must respond to the (({[]})), (({[]=})), and (({has_key?})) methods.
+
+--- MUES::User#_handleIOEvent( anEvent )
+
+    IO event handler method
+
+--- MUES::User#_handleOtherEvent
+
+    Handle any event that doesn^t have an explicit handler by raising an
+    UnhandledEventError.
+
+--- MUES::User#_handleTickEvent
+
+    Handle server tick events by delegating them to any subordinate objects
+    that need them.
 
 == Author
 
@@ -104,13 +168,19 @@ module MUES
 		include Event::Handler
 
 		### Class constants
-		module Role
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.10 2001/10/07 15:08:53 deveiant Exp $
+
+		# User type constants
+		module Type
 			USER		= 0		# Regular user
 			CREATOR		= 1		# Can world-interaction access
 			IMPLEMENTOR	= 2		# Has server-interaction access
 			ADMIN		= 3		# Unrestricted access
+
+			Name = %w{User Creator Implementor Admin}
 		end
-		Role.freeze
+		Type.freeze
 
 		### :SYNC: Changes in this structure should be accompanied by changes in
 		### the corresponding table definition in '../sql/mues.user.sql'
@@ -126,9 +196,11 @@ module MUES
 			'timeCreated'		=> Time.now,
 			'firstLoginTick'	=> 0,
 
-			'role'				=> Role::USER,
+			'type'				=> Type::USER,
 			'flags'				=> 0,
 			'preferences'		=> {},
+
+			'userVersion'		=> Version
 		}
 
 		### METHOD: new( userDataHash )
@@ -178,29 +250,29 @@ module MUES
 		### METHOD: isCreator?
 		### Returns true if this user has creator permissions
 		def isCreator?
-			return @dbInfo['role'] >= Role::CREATOR
+			return @dbInfo['type'] >= Type::CREATOR
 		end
 
 
 		### METHOD: isImplementor?
 		### Returns true if this user has implementor permissions
 		def isImplementor?
-			return @dbInfo['role'] >= Role::IMPLEMENTOR
+			return @dbInfo['type'] >= Type::IMPLEMENTOR
 		end
 
 
 		### METHOD: isAdmin?
 		### Returns true if this user has admin permissions
 		def isAdmin?
-			return @dbInfo['role'] >= Role::ADMIN
+			return @dbInfo['type'] >= Type::ADMIN
 		end
 
 
 		### METHOD: to_s
 		### Returns a stringified version of the user object
 		def to_s
-			if @remoteHost
-				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> [connected from #{@remoteHost}]"
+			if @dbInfo['type'] > Type::USER
+				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> (#{Type::Name[@dbInfo['type']]})"
 			else
 				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}>"
 			end
@@ -210,12 +282,13 @@ module MUES
 		### METHOD: <=>( anotherUser )
 		### Comparison operator
 		def <=>( otherUser )
-			( @dbInfo['role'] <=> otherUser.role ).nonzero? ||
+			( @dbInfo['type'] <=> otherUser.type ).nonzero? ||
 			@dbInfo['username'] <=> otherUser.username
 		end
 
 		### METHOD: password=( newPassword )
-		### Reset the user's password to ((|newPassword|)).
+		### Reset the user's password to ((|newPassword|)). The password will be
+		### encrypted before being stored.
 		def password=( newPassword )
 			checkType( newPassword, String )
 
