@@ -302,6 +302,10 @@ class ObjectStore
 	  #:TODO: the auto-generation of 'retrieve_by_[index]' for each index.
 	end
 
+	def exists? ( an_id )
+	  @table.exists?(A_Transaction.new, an_id)
+	end
+	
 	def empty? 
 	  @table.nitems == 0
 	end
