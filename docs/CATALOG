@@ -1,5 +1,5 @@
 lib/**/*.rb
-ext/mues/*.c
+ext/*.c
 server/bin/*
 server/environments/*
 server/shellCommands/*.cmd
