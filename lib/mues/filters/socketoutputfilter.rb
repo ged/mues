@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.12 2002/08/02 20:03:43 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.13 2002/08/29 07:26:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -32,13 +32,13 @@ require 'poll'
 require 'mues/Object'
 require 'mues/Events'
 require 'mues/Exceptions'
-require 'mues/filters/IOEventFilter'
+require 'mues/filters/OutputFilter'
 
 module MUES
 
 	### A derivative of MUES::IOEventFilter that collects input from and sends
 	### output to a TCPSocket.
-	class SocketOutputFilter < IOEventFilter ; implements MUES::Debuggable
+	class SocketOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		include MUES::ServerFunctions, MUES::TypeCheckFunctions
 
@@ -48,9 +48,11 @@ module MUES
 			CONNECTED = 1
 		end
 
+		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN|Poll::OUT
+
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.12 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.13 2002/08/29 07:26:38 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
@@ -72,13 +74,14 @@ module MUES
 		### Create and return a new socket output filter with the specified
 		### <tt>socket</tt> (an IPSocket object), <tt>pollProxy</tt>
 		### (MUES::PollProxy object), and an optional <tt>sortOrder</tt>.
-		def initialize( socket, pollProxy, sortOrder=DefaultSortPosition )
+		def initialize( socket, pollProxy, originListener, sortOrder=DefaultSortPosition )
 			checkType( socket, IPSocket )
 			checkType( pollProxy, MUES::PollProxy )
+			checkType( originListener, MUES::SocketListener )
 
 			@socket = socket
 			@pollProxy = pollProxy
-			super( sortOrder )
+			super( socket.peeraddr[2], originListener, sortOrder )
 
 			@readBuffer = ''
 			@writeBuffer = ''
@@ -152,22 +155,25 @@ module MUES
 		end
 
 
-		### Start the filter
+		### Start the filter, returning a (potentially empty) Array of
+		### consequential events.
 		def start( stream )
-			super( stream )
+			results = super( stream )
+
 			@writeMutex.synchronize( Sync::EX ) {
-				@poll.register( Poll::IN, method(:handlePollEvent) )
-				@poll.addMask( Poll::OUT ) unless @writeBuffer.empty?
+				@pollProxy.register( Poll::IN, method(:handlePollEvent) )
+				@pollProxy.addMask( Poll::OUT ) unless @writeBuffer.empty?
 			}
 			@state = State::CONNECTED
+
+			return results
 		end
 
 		### Shut the filter down, disconnecting from the remote host.
 		def stop( stream )
-			self.sendShutdownMessage if @pollObj.registered?
+			self.sendShutdownMessage if @pollProxy.registered?
 			self.shutdown
-			@state = State::DISCONNECTED
-			super( stream )
+			return super( stream )
 		end
 
 
@@ -196,46 +202,65 @@ module MUES
 		### output events, sends it to the remote client, and creates new input
 		### events from user input via the socket.
 		def handlePollEvent( socket, mask )
-			case mask
+			self.log.debug {"Got poll event: #{mask.class.name}: %x" % mask}
 
 			### Handle invalid file descriptor
-			when Poll::NVAL|Poll::HUP
+			if (mask & (Poll::NVAL|Poll::HUP)).nonzero?
 				err = (mask == Poll::NVAL ? "Invalid file descriptor" : "Hangup")
 				self.log.error( "#{err} for #{socket.inspect}" )
 				self.shutdown
+			end
 
 			### Handle socket errors
-			when Poll::ERR
-				so_error = socket.getsockopt( SOL_SOCKET, SO_ERROR )
+			if (mask & Poll::ERR).nonzero?
+				so_error = socket.getsockopt( Socket::SOL_SOCKET, Socket::SO_ERROR )
 				self.log.error( "Socket error: #{so_error.inspect}" )
+			end
 
 			### Read any input from the socket if it's ready
-			when Poll::RDNORM
+			if (mask & Poll::IN).nonzero?
 				readData = socket.sysread( @@MTU )
-				debugMsg( 5, "Read data in select loop (readData = '#{readData}', length = #{readData.length})." )
+				self.log.debug { "Read %d bytes in poll event handler (readData = %s)." %
+						[ readData.length, readData.inspect ] }
 				handleRawInput( readData )
+			end
 
 			### Write any buffered output to the socket if we have output
 			### pending and the socket is writable
-			when Poll::WRNORM
-				debugMsg( 5, "Writing in select loop (@writebuffer = '#{@writeBuffer}')." )
-				@writeMutex.synchronize(Sync::EX) {
-					bytesWritten = socket.syswrite( @writeBuffer )
-					@writeBuffer[0 .. bytesWritten] = ''
-
-					@pollProxy.removeMask( Poll::WRNORM ) if @writeBuffer.empty?
+			if (mask & Poll::OUT).nonzero?
+				self.log.debug { "Writing %d bytes in poll event handler (@writebuffer = %s)." % 
+						[ @writeBuffer.length, @writeBuffer.inspect ]
 				}
 
-			else
-				self.log.notice( "Unhandled Poll event in #{self.class.name}: '#{mask.inspect}'" )
+				@writeMutex.synchronize(Sync::EX) {
+					bytesWritten = socket.syswrite( @writeBuffer )
+					self.log.debug( "Wrote %d bytes." % bytesWritten )
+					@writeBuffer[0 .. bytesWritten] = ''
+
+					if @writeBuffer.empty?
+						self.log.debug( "Removing Poll::OUT mask" )
+						@pollProxy.removeMask( Poll::OUT )
+					end
+				}
 			end
-				
+
+			# If the mask contains bits we don't handle, log them
+			if ( (mask ^ HandledBits) & mask ).nonzero?
+				self.log.notice( "Unhandled Poll event in #{self.class.name}: %o" %
+								 ((mask ^ HandledBits) & mask) )
+			end
+
+		rescue => e
+			self.log.error( "Error on #{socket.inspect}: #{e.message}. Shutting filter down." )
+			self.shutdown
 		end
 
 
 		### Shut the filter down.
 		def shutdown
-			debugMsg( 4, "Filter #{self.inspect} shutting down." )
+			self.log.info( "Filter #{self.to_s} shutting down." )
+
+			@state = State::DISCONNECTED
 
 			# Unregister the filter from the poll object, which indicates that
 			# it is to be removed from the stream, if it's not already being
