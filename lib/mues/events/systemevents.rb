@@ -66,7 +66,7 @@
 # 
 # == Rcsid
 # 
-# $Id: systemevents.rb,v 1.16 2003/10/13 04:02:15 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -166,24 +166,6 @@ module MUES
 	### listener's associated IO object. It is a derivative of
 	### MUES::ListenerEvent.
 	class ListenerConnectEvent < ListenerEvent
-
-		### Initialize a new ListenerConnectEvent with the specified
-		### <tt>listener</tt> (a MUES::Listener object) and filter (a
-		### MUES::IOEventFilter object).
-		def initialize( listener, filter )
-			checkType( filter, MUES::OutputFilter )
-
-			super( listener )
-			@filter = filter
-		end
-
-
-		######
-		public
-		######
-
-		# The new IOEventFilter created to abstract the new connection.
-		attr_reader :filter
 	end
 
 	
@@ -196,9 +178,7 @@ module MUES
 		### MUES::OutputFilter object).
 		def initialize( listener, filter )
 			checkType( filter, MUES::OutputFilter )
-
 			@filter = filter
-
 			super( listener )
 		end
 
