@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.8 2002/04/01 16:27:31 deveiant Exp $
+# $Id: loginsession.rb,v 1.9 2002/06/04 07:00:21 deveiant Exp $
 # 
 # == Authors
 # 
@@ -56,8 +56,10 @@ module MUES
 	### Login session class: encapsulates the task of authenticating a user.
 	class LoginSession < Object; implements MUES::Debuggable
 
-		Version = %q$Revision: 1.8 $
-		Rcsid = %q$Id: loginsession.rb,v 1.8 2002/04/01 16:27:31 deveiant Exp $
+		include MUES::TypeCheckFunctions
+
+		Version = %q$Revision: 1.9 $
+		Rcsid = %q$Id: loginsession.rb,v 1.9 2002/06/04 07:00:21 deveiant Exp $
 
 
 		### Create and initialize a new login session object with the

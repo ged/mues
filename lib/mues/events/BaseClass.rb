@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: BaseClass.rb,v 1.6 2002/04/01 16:27:30 deveiant Exp $
+# $Id: BaseClass.rb,v 1.7 2002/06/04 07:07:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -86,6 +86,8 @@ module MUES
 
 	### Abstract base event class.
 	class Event < Object ; implements MUES::Debuggable, MUES::AbstractClass, Comparable
+
+		include MUES::TypeCheckFunctions
 
 		### Class constants
 		MaxPriority		= 64

@@ -32,7 +32,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.9 2002/05/16 03:49:33 deveiant Exp $
+# $Id: events.rb,v 1.10 2002/06/04 06:58:52 deveiant Exp $
 # 
 # == Authors
 # 
@@ -62,6 +62,8 @@ module MUES
 		### A default event handler mixin module. Including this module adds a
 		### #handleEvent method to the including class/module.
 		module Handler
+
+			include MUES::TypeCheckFunctions
 
 			### Event dispatcher method. This method does dynamic dispatch to
 			### class-specific event handler methods in the class that mixes it

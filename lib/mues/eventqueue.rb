@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.10 2002/04/01 16:27:31 deveiant Exp $
+# $Id: eventqueue.rb,v 1.11 2002/06/04 06:58:48 deveiant Exp $
 # 
 # == Authors
 # 
@@ -45,9 +45,11 @@ module MUES
 	### A scalable thread work crew class
 	class EventQueue < Object ; implements MUES::Debuggable
 
+		include MUES::TypeCheckFunctions
+		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.10 2002/04/01 16:27:31 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.11 2002/06/04 06:58:48 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2

@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: environmentevents.rb,v 1.5 2002/04/01 16:27:30 deveiant Exp $
+# $Id: environmentevents.rb,v 1.6 2002/06/04 07:07:22 deveiant Exp $
 # 
 # == Authors
 # 
@@ -57,6 +57,8 @@ module MUES
 	### An abstract class for events used to interact with MUES::Environment
 	### objects.
 	class EnvironmentEvent < Event ; implements MUES::AbstractClass, MUES::Debuggable
+
+		include MUES::TypeCheckFunctions
 
 		# The user the event is being dispatched for
 		attr_reader :user

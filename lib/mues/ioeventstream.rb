@@ -44,7 +44,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.13 2002/04/01 16:27:31 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.14 2002/06/04 07:00:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -71,6 +71,9 @@ module MUES
 	### Responsibility design pattern.
 	class IOEventStream < Object ; implements MUES::Debuggable
 
+		# Import the default event handler dispatch method
+		include MUES::Event::Handler, MUES::TypeCheckFunctions
+
 		### Stream state constants module. It contains the following constants:
 		###
 		### [SHUTDOWN]
@@ -84,10 +87,6 @@ module MUES
 			RUNNING		= 1
 		end
 		include State
-
-
-		# Import the default event handler dispatch method
-		include MUES::Event::Handler
 
 
 		### Instantiate and return a stream object with the specified +filters+,

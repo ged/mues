@@ -45,7 +45,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.10 2002/05/16 03:50:31 deveiant Exp $
+# $Id: environment.rb,v 1.11 2002/06/04 06:58:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -82,9 +82,11 @@ module MUES
 	### Environment abstract base class
 	class Environment < Object ; implements MUES::AbstractClass, MUES::Notifiable, MUES::Debuggable, MUES::Event::Handler
 
+		include MUES::TypeCheckFunctions
+
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.10 2002/05/16 03:50:31 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.11 2002/06/04 06:58:40 deveiant Exp $
 
 		### Class variables
 		@@ChildClasses = {}
@@ -92,10 +94,9 @@ module MUES
 		@@EnvLoadTime = Time.at(0) # Set initial load time to epoch
 
 
-		### Initialize the environment with the specified name and
-		### description. This method should be called from derivatives'
-		### constructors.
-		def initialize( aName, aDescription ) # :notnew:
+		### Initialize the environment with the specified <tt>name</tt> and
+		### <tt>description</tt>.
+		def initialize( aName, aDescription="(No description)" ) # :notnew:
 			checkType( aName, ::String )
 			checkType( aDescription, ::String )
 
@@ -153,16 +154,18 @@ module MUES
 
 
 			### Load and instantiate the environment class specified by
-			### <tt>className</tt> and return it.
-			def create( className )
+			### <tt>className</tt>, assign the specified <tt>instanceName</tt>
+			### to it, and return it.
+			def create( className, instanceName )
 				checkType( className, ::String )
+				checkType( instanceName, ::String )
 
 				env = nil
 				@@EnvMutex.synchronize( Sync::SH ) {
 					if @@ChildClasses.has_key?( className )
-						env = @@ChildClasses[ className ].new
+						env = @@ChildClasses[ className ].new( instanceName )
 					elsif @@ChildClasses.has_key?( "MUES::#{className}" )
-						env = @@ChildClasses[ "MUES::#{className}" ].new
+						env = @@ChildClasses[ "MUES::#{className}" ].new( instanceName )
 					else
 						raise EnvironmentLoadError, "The '#{className}' environment class is not loaded."
 					end
