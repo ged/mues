@@ -2,8 +2,8 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-    Time-stamp: <07-Jul-2002 10:55:49 deveiant>
-	$Id: muesconfig.dtd,v 1.3 2002/07/07 18:15:18 deveiant Exp $
+    Time-stamp: <12-Jul-2002 09:26:47 deveiant>
+	$Id: muesconfig.dtd,v 1.4 2002/07/12 15:34:17 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
 	Time-stamp: "26-May-2002 22:22:46 deveiant"
@@ -28,7 +28,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.3 $ -->
+<!-- A version string like $Revision: 1.4 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -48,7 +48,7 @@
 
   -->
 
-<!ELEMENT muesconfig            (general,engine,logging,environments,services)>
+<!ELEMENT muesconfig            (general,engine,logging,environments,services,commandshell)>
 <!ATTLIST muesconfig
             version             %FormatVersion;     #REQUIRED
             time-stamp          %Number;            #REQUIRED
@@ -67,10 +67,16 @@
 
 
 <!-- Engine config section -->
-<!ELEMENT engine                ((tick-length|exception-stack-size|debug-level)*,objectstore,listeners)>
+<!ELEMENT engine                ((tick-length|exception-stack-size|debug-level)*,eventqueue,objectstore,listeners)>
 <!ELEMENT tick-length           (#PCDATA)>
 <!ELEMENT exception-stack-size  (#PCDATA)>
 <!ELEMENT debug-level           (#PCDATA)>
+
+<!ELEMENT eventqueue            (minworkers|maxworkers|threshold|safelevel)*>
+<!ELEMENT minworkers            (#PCDATA)>
+<!ELEMENT maxworkers            (#PCDATA)>
+<!ELEMENT threshold             (#PCDATA)>
+<!ELEMENT safelevel             (#PCDATA)>
 
 <!ELEMENT listeners             (listener)*>
 
@@ -126,16 +132,24 @@
 
 <!-- Environment/s config section -->
 <!ELEMENT environments          (environment)*>
-<!ELEMENT environment           (objectstore,(param)*)>
+<!ELEMENT environment           (description,objectstore,(param)*)>
 <!ATTLIST environment
             name                %Text;              #REQUIRED
             class               %ClassName;         #REQUIRED>
+<!ELEMENT description           (#PCDATA)>
+
 
 <!-- Service/s config section -->
 <!ELEMENT services              (service)*>
 <!ELEMENT service               (param)*>
 <!ATTLIST service
             name                %Text;              #REQUIRED
+            class               %ClassName;         #REQUIRED>
+
+
+<!-- CommandShell config section -->
+<!ELEMENT commandshell          (param)*>
+<!ATTLIST commandshell
             class               %ClassName;         #REQUIRED>
 
 
