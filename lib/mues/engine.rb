@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.35 2002/10/27 21:27:10 deveiant Exp $
+# $Id: engine.rb,v 1.36 2002/10/29 07:37:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.35 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.35 2002/10/27 21:27:10 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.36 2002/10/29 07:37:18 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1429,13 +1429,14 @@ module MUES
 				[trimString(event.context.inspect, 40), event.code, rval.inspect]
 			event.user.handleEvent( MUES::OutputEvent::new(output) )
 
-		rescue StandardError, TimeoutError, SystemExit => err
+			return []
+		rescue ::Exception => err
 			msg = "Error occurred while evaluating '%s' in the context of %s: %s\n\t%s\n\n" %
 				[ event.code,
 				  trimString(event.context.inspect, 40),
 				  err.message,
 				  err.backtrace.join("\n\t") ]
-			self.log.error( "%s: %s" % [event.user.login.capitalize, msg] )
+			debugMsg 4, "%s: %s" % [event.user.login.capitalize, msg]
 			event.user.handleEvent( MUES::OutputEvent::new(msg) )
 
 			return []
