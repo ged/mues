@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.7 2002/10/13 23:37:16 deveiant Exp $
+# $Id: questionnaire.rb,v 1.8 2002/10/14 09:43:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.7 2002/10/13 23:37:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.8 2002/10/14 09:43:12 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -490,7 +490,16 @@ module MUES
 		### Report an error
 		def error( message )
 			debugMsg 2, "Sending error message '%s'" % message.chomp
-			self.queueOutputEvents MUES::OutputEvent::new( message )
+			self.queueOutputEvents MUES::ErrorOutputEvent::new( message )
+		end
+
+
+		### Send an output event with one or more messages to the user. Each
+		### message will have a newline appended to it if it doesn't already
+		### have at least one.
+		def message( *messages )
+			messages.each {|msg| msg << "\n" unless msg[-1] == "\n"}
+			self.queueOutputEvents MUES::OutputEvent::new( messages.join("") )
 		end
 
 
@@ -634,14 +643,15 @@ module MUES
 			# failed. If true, use the original data. Otherwise use whatever the
 			# validator returns.
 			when Proc, Method
-				result = validator.call( self, data.dup ) or return nil
+				result = validator.call( self, data.dup )
 				result = data if result.equal?( true )
+				result = nil if self.finished?
 
 			# Regex validator - If the match has paren-groups, use the array of
 			# "kept" matches instead of the whole match.
 			when Regexp
 				if data.empty?
-					return handleEmptyInput( step )
+					result = handleEmptyInput( step )
 
 				elsif (( match = validator.match( data ) ))
 					if match.size > 1
@@ -652,13 +662,13 @@ module MUES
 				else
 					self.error( step[:errorMsg] || "Invalid input. Must "\
 							    "match /#{validator.to_s}/" )
-					return nil
+					result = nil
 				end
 
 			# Array validator - Succeeds if the data is in the array.
 			when Array
 				if data.empty?
-					return handleEmptyInput( step )
+					result = handleEmptyInput( step )
 
 				elsif validator.include?( data )
 					result = data
@@ -667,7 +677,7 @@ module MUES
 					self.error( step[:errorMsg] || "Invalid input. Must "\
 							    "be one of:\n  %s." %
 							    validator.sort.join(',') )
-					return nil
+					result = nil
 				end
 
 			# Hash validator - If the data is a key of the hash, succeed and use
@@ -675,7 +685,7 @@ module MUES
 			# the symbolified string when matching keys.
 			when Hash
 				if data.empty?
-					return handleEmptyInput( step )
+					result = handleEmptyInput( step )
 
 				elsif validator.has_key?( data )
 					result = validator[data]
@@ -687,7 +697,7 @@ module MUES
 					self.error( step[:errorMsg] || "Invalid input. Must "\
 							    "be one of:\n  %s." %
 							    validator.keys.sort.join(',') )
-					return nil
+					result = nil
 				end					
 
 			# Unhandled validator types
