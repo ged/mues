@@ -1,7 +1,7 @@
 # -*- default-generic -*-
 # User-related MUES::CommandShell commands.
-# Time-stamp: <13-Oct-2002 16:44:01 deveiant>
-# $Id: users.cmd,v 1.4 2002/10/13 23:27:38 deveiant Exp $
+# Time-stamp: <14-Oct-2002 03:50:09 deveiant>
+# $Id: users.cmd,v 1.5 2002/10/14 09:50:56 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -180,6 +180,8 @@ if the invoking user has admin privileges.
 		else
 			user = MUES::ServerFunctions::getUserByName( username ) or
 				raise CommandError, "No such user '#{username}'"
+			raise CommandError, "You cannot alter another admin's password." if
+				user.isAdmin?
 		end
 	else
 		user = context.user
