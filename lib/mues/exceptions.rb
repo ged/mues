@@ -95,7 +95,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.12 2002/07/07 18:30:25 deveiant Exp $
+# $Id: exceptions.rb,v 1.13 2002/07/21 16:40:41 deveiant Exp $
 # 
 # == Authors
 # 
@@ -157,7 +157,9 @@ module MUES
 	def_exception :ConfigError,				"Configuration error",							Exception
 
 	# Environment exceptions
-	# (Moved to Environment.rb - [Ged])
+	def_exception :EnvironmentError,		"General environment error",					Exception
+	def_exception :EnvironmentNameConflictError, "Environment name conflict error",			EnvironmentError
+	def_exception :EnvironmentRoleError,	"Environment role error",						EnvironmentError
 
 	# Signal exceptions
 	def_exception :Reload,					"Configuration out of date",					Exception
@@ -167,7 +169,9 @@ module MUES
 	def_exception :CommandError,			"Command error",								Exception
 	def_exception :MacroError,				"Macro error",									Exception
 
-
+    # Exception class for ObjectStore errors
+    def_exception :ObjectStoreException,	"Objectstore internal error",					Exception
+	
 	### Event exceptions
 	class UnhandledEventError < Exception
 		def initialize( error_message = "Unhandled event" )
