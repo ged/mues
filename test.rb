@@ -14,8 +14,17 @@ BEGIN {
 		Log4r::FileOutputter::new( 'logfile',
 								  :filename => 'test.log',
 								  :trunc => true )
+
+	# Workaround for the sprintf error that shows up in the simpleformatter in
+	# later versions of Ruby 1.7.3.
+	Log4r::Outputter['logfile'].formatter =
+		Log4r::PatternFormatter::new( :pattern => '[%d] [%l] %C: %.1024m',
+									  :date_pattern => '%Y/%m/%d %H:%M:%S %Z' )
+	
 }
 
+require './utils'
+include UtilityFunctions
 
 require 'find'
 require 'test/unit'
@@ -38,6 +47,7 @@ Find.find("tests") {|file|
  	end
 
 	next unless file =~ /\.tests.rb$/
+	debugMsg "Requiring '%s'..." % file
 	require "#{file}"
 	requires << file
 }
