@@ -466,7 +466,7 @@ module MUES
 
 
 		### METHOD: unpause
-		### Stop processing events until unpause() is called.
+		### Start processing events again
 		def unpause
 			@notificationMutex.synchronize {
 				@paused = false
