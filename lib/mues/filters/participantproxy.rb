@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: participantproxy.rb,v 1.7 2002/08/29 07:24:40 deveiant Exp $
+# $Id: participantproxy.rb,v 1.8 2002/10/28 00:08:34 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,8 +43,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.7 2002/08/29 07:24:40 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: participantproxy.rb,v 1.8 2002/10/28 00:08:34 deveiant Exp $
 		DefaultSortPosition = 850
 
 
@@ -70,6 +70,16 @@ module MUES
 		attr_reader :user
 		attr_reader :role
 		attr_reader :env
+
+		### Disconnect the proxy from its current role and flag it as finished.
+		def disconnect
+			@env.removeParticipantProxy( self )
+			msg = ">>> Disconnected from %s in %s <<<\n\n" %
+				[ @role.description, @env.name ]
+			queueOutputEvents( MUES::OutputEvent::new(msg) )
+			self.finish
+		end
+
 
 	end # class ParticipantProxy
 end # module MUES
