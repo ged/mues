@@ -1,11 +1,11 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.3 2002/06/04 06:39:10 deveiant Exp $
+#	$Id: install.rb,v 1.4 2002/09/14 13:28:06 deveiant Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
-#	Copyright (c) 2001, The FaerieMUD Consortium.
+#	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -25,8 +25,8 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.3 $
-$rcsId		= %q$Id: install.rb,v 1.3 2002/06/04 06:39:10 deveiant Exp $
+$version	= %q$Revision: 1.4 $
+$rcsId		= %q$Id: install.rb,v 1.4 2002/09/14 13:28:06 deveiant Exp $
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
@@ -125,10 +125,19 @@ end
 if $0 == __FILE__
 	header "MUES Installer #$version"
 
-	viewOnly = ARGV.include? '-v'
-	verbose = ARGV.include? '-n'
+	unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
+		abort "MUES will not run under this version of Ruby. It requires at least 1.7.2 (CVS)."
+	end
+
+	viewOnly = ARGV.include? '-n'
+	verbose = ARGV.include? '-v'
 
 	serverDir = File.expand_path( promptWithDefault("Server directory", "/usr/local/mues") )
+
+	debugMsg "Sitelibdir = '#{CONFIG['sitelibdir']}'"
+	sitelibdir = CONFIG['sitelibdir']
+	debugMsg "Sitearchdir = '#{CONFIG['sitearchdir']}'"
+	sitearchdir = CONFIG['sitearchdir']
 
 	message "Compiling C extensions\n"
 	Dir.chdir( "ext" ) {
@@ -140,12 +149,12 @@ if $0 == __FILE__
 
 	message "Installing\n"
 	i = Installer.new( viewOnly )
-	i.installFiles( "lib", CONFIG['sitelibdir'], 0444, verbose )
-	i.installFiles( "ext/PolymorphicObject.so", CONFIG['sitearchdir'], 0755, verbose )
+	i.installFiles( "lib", sitelibdir, 0444, verbose )
+	i.installFiles( "ext/mues.so", sitearchdir, 0755, verbose )
 	i.installFiles( "server/bin", "#{serverDir}/bin", 0755, verbose )
 	i.installFiles( "server/shellCommands", "#{serverDir}/shellCommands", 0644, verbose )
 	i.installFiles( "server/environments", "#{serverDir}/environments", 0644, verbose )
-	i.installFiles( "server/MUES.cfg.example", serverDir, 0644, verbose )
+	i.installFiles( "server/minimal-config.xml", serverDir, 0644, verbose )
 end
 	
 
