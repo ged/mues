@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.16 2002/10/23 13:21:07 deveiant Exp $
+# $Id: loginsession.rb,v 1.17 2002/10/25 03:09:58 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module MUES
 			MUES::FactoryMethods,
 			MUES::UtilityFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
-		Rcsid = %q$Id: loginsession.rb,v 1.16 2002/10/23 13:21:07 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.17 $} )[1]
+		Rcsid = %q$Id: loginsession.rb,v 1.17 2002/10/25 03:09:58 deveiant Exp $
 
 		# Pattern for untainting user input for username and password
 		LoginUntaintPattern		= %r{([a-z]\w+)}
@@ -70,11 +70,12 @@ module MUES
 
 
 		### Create and initialize a new login session object with the
-		### <tt>config</tt> (MUES::Config object) and <tt>stream</tt>
-		### (MUES::IOEventStream object) specified.
-		def initialize( config, stream, remoteHost )
+		### <tt>config</tt> (MUES::Config object), <tt>stream</tt>
+		### (MUES::IOEventStream object), and <tt>outputFilter</tt> specified.
+		def initialize( config, stream, outputFilter )
 			checkType( config, MUES::Config )
 			checkType( stream, MUES::IOEventStream )
+			checkType( outputFilter, MUES::OutputFilter )
 
 			super()
 
@@ -82,7 +83,7 @@ module MUES
 			# get and send IOEvents to the stream
 			@config				= config
 			@stream				= stream
-			@remoteHost			= remoteHost.to_s
+			@outputFilter		= outputFilter
 
 			@loginAttemptCount	= 0
 			@maxTries			= @config.login.maxtries
@@ -120,15 +121,20 @@ module MUES
 		public
 		######
 
-		# The hostname or ip address of the connecting user
-		attr_reader :remoteHost
-
 		# The number of login attempts that have been tried already
 		attr_reader :loginAttemptCount
 
 		# The maximum number of login attempts that will be allowed by this session
 		attr_reader :maxTries
 
+
+
+		### Returns the peerName of the connecting MUES::OutputFilter.
+		def peerName
+			@outputFilter.peerName
+		end
+		deprecate_method :remoteHost, :peerName
+		
 
 		### InputEvent handler: Get login and password information from input
 		### events.
@@ -162,9 +168,9 @@ module MUES
 					# If we've not gotten a login yet, this event's data is the
 					# login
 					elsif ! @currentLogin
-						untainted = untaintString( events.shift.data, LoginUntaintPattern ).to_s
-						debugMsg( 4, "Setting login name to '#{untainted}'." )
-						@currentLogin = untainted
+						login = untaintString( events.shift.data, LoginUntaintPattern ).to_s
+						debugMsg( 4, "Setting login name to '#{login}'." )
+						@currentLogin = login
 						@delegator.queueOutputEvents( HiddenInputPromptEvent.new(@config.login.passprompt) )
 						next
 
@@ -172,15 +178,15 @@ module MUES
 					# waiting for an auth event to return, then this input event
 					# contains the password, so do authentication
 					else
-						untainted = untaintString( events.shift.data, PasswordUntaintPattern ).to_s
+						pass = untaintString( events.shift.data, PasswordUntaintPattern ).to_s
 
-						debugMsg( 4, "Setting password to '#{untainted}', and dispatching a LoginSessionAuthEvent." )
-						authEvent = LoginSessionAuthEvent.new( self,
-															   @currentLogin,
-															   untainted,
-															   @remoteHost,
-															   method( :authSuccessCallback ),
-															   method( :authFailureCallback ))
+						debugMsg( 4, "Setting password to '#{pass}', and dispatching a LoginSessionAuthEvent." )
+						authEvent = MUES::LoginSessionAuthEvent::new self,
+							@currentLogin,
+							pass,
+							@outputFilter,
+							method( :authSuccessCallback ),
+							method( :authFailureCallback )
 						authEvent.debugLevel = 3
 						dispatchEvents( authEvent )
 						@waitingOnEngine = true
