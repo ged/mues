@@ -11,19 +11,15 @@ BEGIN {
 	include UtilityFunctions
 
 	verboseOff {
-		require "mues/log"
-		require "log4r"
-		require "log4r/outputter/fileoutputter"
-		MUES::Log::mueslogger.outputters =
-		Log4r::FileOutputter::new( 'logfile',
-			:filename => 'test.log',
-			:trunc => true )
+		require "mues/logger"
+		
+		format = %q{#{time} [#{level}]: #{name} #{frame ? '('+frame+')' : ''}: #{msg}}
+		debugLog = File::open( 'test.log', File::WRONLY|File::TRUNC|File::CREAT )
+		outputter = MUES::Logger::Outputter::create( 'file', debugLog, "Debug Log", format )
+		MUES::Logger::global.outputters << outputter
+		MUES::Logger::global.level = :info
 
-		# Workaround for the sprintf error that shows up in the simpleformatter in
-		# later versions of Ruby 1.7.3.
-		Log4r::Outputter['logfile'].formatter =
-		Log4r::PatternFormatter::new( :pattern => '[%d] [%l] %C: %.1024m',
-			:date_pattern => '%Y/%m/%d %H:%M:%S %Z' )
+		MUES::Logger::global.notice "Start of test run."
 	}
 }
 
@@ -50,6 +46,13 @@ ARGV.options {|oparser|
 
 	oparser.on( "--debug", "-d", TrueClass, "Turn debugging on" ) {
 		$DEBUG = true
+
+		format = colored( %q{#{time} [#{level}]: }, 'cyan' ) +
+			colored( %q{#{name} #{frame ? '('+frame+')' : ''}: #{msg[0,1024]}}, 'white' )
+		outputter = MUES::Logger::Outputter::create( 'file', $deferr, "Default", format )
+		MUES::Logger::global.outputters << outputter
+		MUES::Logger::global.level = :debug
+
 		debugMsg "Turned debugging on."
 	}
 
@@ -116,7 +119,6 @@ end
 
 # Run tests
 $SAFE = safelevel
-MUES::Log.mueslogger.level = 0 if $DEBUG
 Test::Unit::UI::Console::TestRunner.new( MUESTests ).start
 
 $stderr.puts "Done with tests" if $VERBOSE
