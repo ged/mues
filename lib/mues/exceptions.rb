@@ -4,24 +4,24 @@
 
 = Exceptions.rb
 
-== NAME
+== Name
 
 MUES::Exceptions - Collection of exception classes
 
-== SYNOPSIS
+== Synopsis
 
   require "mues/Exceptions"
   raise MUES::Exception "Something went wrong."
 
-== DESCRIPTION
+== Description
 
-This file contains various exception classes for use in the FaerieMUD server.
+This file contains various exception classes for use in the MUES server.
 
-== AUTHOR
+== Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
