@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.9 2002/08/02 20:03:43 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.10 2002/08/29 07:28:58 deveiant Exp $
 # 
 # == Authors
 # 
@@ -32,6 +32,7 @@ require "sync"
 
 require "mues/Object"
 require "mues/Exceptions"
+require "mues/filters/SocketOutputFilter"
 require "mues/filters/TelnetConstants"
 
 module MUES
@@ -41,7 +42,7 @@ module MUES
 
 	### A derivative of MUES::SocketOutputFilter that understands TELNET option
 	### negotiation and some basic terminal features.
-	class TelnetOutputFilter < SocketOutputFilter ; implements MUES::Debuggable
+	class TelnetOutputFilter < MUES::SocketOutputFilter ; implements MUES::Debuggable
 		include TelnetConstants, MUES::TypeCheckFunctions
 
 		### A module that contains constants used in TELNET option negotiation
@@ -58,8 +59,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.9 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.10 2002/08/29 07:28:58 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {
@@ -77,7 +78,7 @@ module MUES
 		### Create and return a new telnet output filter with the specified
 		### <tt>socket</tt> (an IPSocket object), <tt>pollProxy</tt>
 		### (MUES::PollProxy object), and an optional <tt>sortOrder</tt>.
-		def initialize( socket, pollProxy, order=DefaultSortPosition )
+		def initialize( socket, pollProxy, originListener=nil, order=DefaultSortPosition )
 			@cmdContBuffer	= ''
 			@terminalType	= "dumb"
 			@stateTrace		= []
@@ -90,7 +91,7 @@ module MUES
 			@oobWriteBuffer	= ''
 			@oobReadBuffer	= ''
 
-			super( socket, pollProxy, order )
+			super( socket, pollProxy, originListener, order )
 		end
 
 
@@ -312,7 +313,7 @@ module MUES
 
 		### Send the specified +message+ in-band.
 		def sendInBand( message )
-			$stderr.puts( "Sending in-band: " + hexdump( message ) )
+			self.log.debug( "Sending in-band: " + hexdump( message ) )
 			self.write( message )
 		end
 
@@ -333,7 +334,7 @@ module MUES
 					handleIOControlOutputEvent( e )
 				end
 				
-				e.data.gsub!( "\n", EOL )
+				e.data.gsub!( /\n/, EOL )
 			}
 
 			super( *events )
@@ -362,7 +363,7 @@ module MUES
 		def echo( data )
 			if @optState[ 'ECHO' ] == YES
 				data.gsub!( /(?:\x7f)/, "\x08 \x08")
-				data.gsub!( "\x0d", EOL )
+				data.gsub!( /\x0d/, EOL )
 
 				if @hideEchoFlag
 					debugMsg( 5, "Masking echo: '#{data}' (#{hexdump data})" )
@@ -578,7 +579,7 @@ module MUES
 
 		### Add a state message to the state trace array for debugging.
 		def addStateTrace( msg )
-			# $stderr.puts( msg )
+			self.log.debug( msg )
 			@stateTrace << msg
 		end
 
