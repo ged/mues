@@ -20,7 +20,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.22 2002/07/07 18:23:44 deveiant Exp $
+# $Id: mues.rb,v 1.23 2002/08/01 00:42:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -34,12 +34,15 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "md5"
-require "sync"
-require "log4r"
+unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
+	raise RuntimeError, "MUES requires at least Ruby 1.7.2. This is #{RUBY_VERSION}."
+end
 
-require "mues/Exceptions"
+require 'md5'
+require 'sync'
+require 'log4r/logger'
 
+require 'mues/Exceptions'
 
 ##
 # Add a couple of syntactic sugar aliases to the Module class.  (Borrowed from
@@ -67,6 +70,50 @@ end
 # The base MUES namespace. All MUES classes live in this namespace.
 module MUES
 
+	# Predeclare the log class so it can be referred to without loading --
+	# breaks mutual dependency loop.
+	class Log < Log4r::Logger
+	end
+
+
+	# A version class that understands x.y.z versions, and can do comparisons
+	# between them.
+	class Version
+		
+		include Comparable
+
+		### Create and return a new Version object from the specified
+		### <tt>version</tt> (a String).
+		def initialize( version )
+			version = version.to_s
+
+			@versionVector = version.split(/\./).collect {|point|
+				point.to_i.chr
+			}.join("")
+		end
+
+
+		######
+		public
+		######
+
+		# The internal representation of the version
+		attr_reader :versionVector
+
+		### Comparable method.
+		def <=>( otherVersion )
+			return nil unless otherVersion.kind_of?( MUES::Version )
+			return @versionVector <=> otherVersion.versionVector
+		end
+
+		### Return the version as a String
+		def to_s
+			return @versionVector.split('').collect {|c| c[0].to_s}.join(".")
+		end
+	end
+
+
+
 	# A mixin that adds abstractness to a class. Instantiating a class which includes
 	# this mixin will result in an InstantiationError.
 	module AbstractClass
@@ -74,7 +121,7 @@ module MUES
 		### Add a <tt>new</tt> class method to the class which mixes in this
 		### module. The method raises an exception if called on the class
 		### itself, but not if called via <tt>super()</tt> from a subclass.
-		def AbstractClass.append_features( klass )
+		def self.included( klass )
 			klass.class_eval <<-"END"
 			class << self
 				def new( *args, &block )
@@ -112,13 +159,13 @@ module MUES
 
 		##
 		# Returns an array of classes which implement the MUES::Notifiable interface.
-		def Notifiable.classes
+		def self.classes
 			@@NotifiableClasses
 		end
 
 		##
 		# Add the class which is including us to our array of notifiable classes.
-		def Notifiable.append_features( klass )
+		def self.included( klass )
 			@@NotifiableClasses |= [ klass ]
 			
 			super( klass )
@@ -193,8 +240,10 @@ module MUES
 				logMessage = "#{frame}: #{logMessage}"
 			end
 
-			$stderr.flush
+			self.log.debug( logMessage )
 		end
+
+		# Backward-compatibility alias
 		alias :_debugMsg :debugMsg
 		
 	end
@@ -214,17 +263,15 @@ module MUES
 		# tested and the array of valid types. If no handler block is given, a
 		# <tt>TypeError</tt> is raised.
 		def checkType( anObject, *validTypes ) # :yields: object, *validTypes
-			# Red: Throw away any nil types, and warn
-			# Debug level might be inappropriate?
-			os = validTypes.size
+			validTypes.flatten!
 			validTypes.compact!
-			debugMsg(1, "nil given in *validTypes") unless os == validTypes.size
-			if validTypes.size > 0 then
+
+			unless validTypes.empty?
 
 				### Compare the object against the array of valid types, and either
 				### yield to the error block if given or generate our own exception
 				### if not.
-				unless validTypes.find {|type| anObject.is_a?( type ) } then
+				unless validTypes.find {|type| anObject.kind_of?( type ) } then
 					typeList = validTypes.collect {|type| type.name}.join(" or ")
 
 					if block_given? then
@@ -264,7 +311,7 @@ module MUES
 						typeList = vTypes.collect {|type| type.name}.join(" or ")
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{obj.class.name}",
-							caller(1).reject {|frame| frame =~ /Namespace.rb/}
+							caller(1).reject {|frame| frame =~ /mues.rb/}
 					}
 				end
 			end
@@ -354,7 +401,7 @@ module MUES
 		def checkTaintAndSafe( permittedLevel=2 )
 			raise SecurityError, "Call to restricted code from insecure space" if
 				$SAFE > permittedLevel
-			raise SecurityError, "Call to restricted code from tainted space" if
+			raise SecurityError, "Call to restricted code with tainted receiver" if
 				self.tainted?
 			return true
 		end
@@ -387,8 +434,10 @@ module MUES
 
 		### Inclusion callback -- Adds the factory methods to the including
 		### class.
-		def self.append_features( klass )
+		def self.included( klass )
 			subtype = nil
+
+			MUES::Log.debug { "FactoryMethods: Included in %s" % klass.name }
 
 			# Figure out the parts of the class name we'll need later
 			if klass.name =~ /^.*::(.*)/
@@ -397,14 +446,12 @@ module MUES
 				subtype = klass.name
 			end
 
-			$stderr.puts "Adding FactoryMethods to #{klass.inspect} "+
-				"for #{subtype} objects" if $DEBUG
+			MUES::Log.debug { "Adding FactoryMethods to #{klass.inspect} for #{subtype} objects" }
 
-			# Add a class global to hold derivative classes by various keys and
-			# the class methods.
-			klass.instance_eval {
-
-				@@typename = subtype
+			# Eval the stuff that needs strict scoping in a string instead of a
+			# code block so each class gets its own @@registeredDerivatives and
+			# subtype value.
+			klass.instance_eval %Q{
 				@@registeredDerivatives = {}
 
 				### Returns an Array of registered derivatives
@@ -412,6 +459,16 @@ module MUES
 					@@registeredDerivatives.values.uniq
 				end
 
+				### Returns the type name used when searching for a derivative.
+				def self.factoryType
+					return "#{subtype}"
+				end
+
+			}
+
+			# Add a class global to hold derivative classes by various keys and
+			# the class methods.
+			klass.instance_eval {
 
 				### Given the <tt>className</tt> of the class to instantiate,
 				### and other arguments bound for the constructor of the new
@@ -459,16 +516,22 @@ module MUES
 				### loaded subclasses can be found in the class variable
 				### '@@registeredDerivatives'.
 				def self.inherited( subClass )
+					factoryType = self.factoryType
 					truncatedName =
-						if subClass.name.match( /(?:.*::)?(\w+)(?:#{@@typename})/ )
+						if subClass.name.match( /(?:.*::)?(\w+)(?:#{factoryType})/ )
 							Regexp.last_match[1]
 						else
 							subClass.name.sub( /.*::/ )
 						end
 					
 
-					$stderr.puts "Registering the #{subClass.name} #{@@typename} class "+
-						"as #{truncatedName}" if $DEBUG
+					MUES::Log.debug {
+						"Registering the %s %s class as %s" % [
+							subClass.name,
+							factoryType,
+							truncatedName
+						]
+					}
 
 					@@registeredDerivatives[ subClass.name ] = subClass
 					@@registeredDerivatives[ truncatedName ] = subClass
@@ -491,42 +554,70 @@ module MUES
 				### Calculates an appropriate filename for the derived class
 				### using the name of the base class and tries to load it via
 				### <tt>require</tt>. If the including class responds to a
-				### method named <tt>derivativeDir</tt>, its return value is
-				### added as a directory to the beginning of the require. Eg.,
-				### if <tt>class.derivativeDir</tt> returns 'foo', the require
-				### line has 'foo/' prepended to it.
+				### method named <tt>derivativeDirs</tt>, its return value
+				### (either a String, or an array of Strings) is added to the
+				### list of prefix directories to try when attempting to require
+				### a modules. Eg., if <tt>class.derivativeDirs</tt> returns
+				### <tt>['foo','bar']</tt> the require line is tried with both
+				### <tt>'foo/'</tt> and <tt>'bar/'</tt> prepended to it.
 				def self.loadDerivative( className )
 					className = className.to_s
+					factoryType = self.factoryType
 
-					if className =~ /\w+#{@@typename}/
-						modName = className.sub( /(?:.*::)?(\w+)(?:#{@@typename})?/,
-												"\1#{@@typename}" )
+					MUES::Log.debug {"%s: (%s Factory): loadDerivative( %s )" % [
+							self.name, factoryType, className
+						]}
+
+					if className =~ /\w+#{factoryType}/
+						modName = className.sub( /(?:.*::)?(\w+)(?:#{factoryType})?/,
+												"\1#{factoryType}" )
 					else
-						modName = "%s#{@@typename}" % className
+						modName = "%s#{factoryType}" % className
 					end
 
 					# See if we have a special subdir that derivatives live in
-					if ( self.respond_to?(:derivativeDir) && (subdir = self.derivativeDir) )
-						modName = File::join( subdir, modName )
+					if ( self.respond_to?(:derivativeDirs) && (subdirs = self.derivativeDirs) )
+						subdirs = subdirs.to_a
+					else
+						subdirs = ['']
 					end
 
-					$stderr.puts "Trying to load #{@@typename} #{className} with "+
-						%Q{'require "#{modName}"'} if $DEBUG
+					subdirs.each {|subdir|
+						modPath = File::join( subdir, modName )
 
-					# Try to require the module that defines the specified
-					# listener
-					require( modName )
+						MUES::Log.debug {
+							%Q{Trying to load '%s' %s with 'require "%s"'} % [
+								className,
+								factoryType,
+								modPath
+							]
+						}
+
+						# Try to require the module that defines the specified
+						# listener
+						begin
+							require( modPath )
+						rescue LoadError => e
+							MUES::Log.warn "No module at '#{modPath}'."
+						rescue ScriptError,StandardError => e
+							MUES::Log.error "Found '#{modPath}', but encountered an error:\n" +
+								"    #{e.message} at #{e.backtrace[0]}"
+						else
+							MUES::Log.info "Successfully loaded '#{modPath}'"
+							break
+						end
+					}
 
 					# Check to see if the specified listener is now loaded. If it
 					# is not, raise an error to that effect.
 					unless @@registeredDerivatives.has_key? className
 						raise RuntimeError,
-							"Loading '%s' didn't define a #{@@typename} named '%s'" % [
-							modName,
+							"Couldn't find a %s named '%s'" % [
+							factoryType,
 							className
-						]
+						], caller(2)
 					end
-
+					
 					return true
 				end
 			}
@@ -543,15 +634,20 @@ module MUES
 
 		##
 		# Class constants
-		Version	= %q$Revision: 1.22 $
-		RcsId	= %q$Id: mues.rb,v 1.22 2002/07/07 18:23:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.23 $ )[1]
+		Rcsid = %q$Id: mues.rb,v 1.23 2002/08/01 00:42:25 deveiant Exp $
+
+		### Class methods
+		def self.version
+			return MUES::Version::new( Version )
+		end
 
 		### Constructor/initializer
 		
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
 		# attributes to it. Any arguments passed are ignored.
 		def initialize( *ignored )
-			#__checkVirtualMethods() # <- Not working yet
+			# checkVirtualMethods() # <- Not working yet
 			@muesid = MUES::Object::generateMuesId( self )
 
 			if $DEBUG
@@ -559,6 +655,7 @@ module MUES
 				ObjectSpace.define_finalizer( self, MUES::Object::makeFinalizer(objRef) )
 			end
 		end
+
 
 		###############
 		# class methods
@@ -569,12 +666,13 @@ module MUES
 		def self.makeFinalizer( objDesc ) #  :TODO: This shouldn't be left in a production server.
 			return Proc.new {
 				if Thread.current != Thread.main
-					$stderr.puts "[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."
+					MUES::Log.debug {"[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."}
 				else
-					$stderr.puts "[Main Thread]: " + objDesc + " destroyed."
+					MUES::Log.debug {"[Main Thread]: " + objDesc + " destroyed."}
 				end
 			}
 		end
+
 
 		### Returns a unique id for an object
 		def self.generateMuesId( obj )
@@ -582,12 +680,14 @@ module MUES
 			return MD5.new( raw ).hexdigest
 		end
 
+
 		######
 		public
 		######
 
-		# The unique id assigned to the object by the server
+		# The unique id generated for the object by the constructor
 		attr_reader :muesid
+
 
 		### Comparison operator: Check for object equality using the
 		### <tt>other</tt> object's muesid.
@@ -596,18 +696,24 @@ module MUES
 			self.muesid == other.muesid
 		end
 
+
+
 		#########
 		protected
 		#########
 
 		### Return the logger for the receiving class.
 		def log
-			Log4r::Logger[ self.class.name ] || Log4r::Logger::new( self.class.name )
+			MUES::Log[ self.class.name ] || MUES::Log::new( self.class.name )
 		end
 	end
 
 
 end
 
+# Now require the stuff that's dependant on this module, but need to be loaded
+# with this one.
 require "mues.so"
+require 'mues/Log'
+require 'mues/Engine'
 
