@@ -10,22 +10,20 @@ RoleDescriptions = [
 	"an Admin"
 ]
 
+DefaultDriver = 'Mysql'
 
-unless ARGV.length.nonzero?
-	$stderr.puts "usage: #{$0} <username> [<driver>]"
-	exit 1
-end
 
-user = ARGV.shift
-driver = ARGV.shift || "Mysql"
+if ARGV.length > 1
+	user = ARGV.shift
+	driver = ARGV.shift || DefaultDriver
 
-puts "Fetching user record for '#{user}' from a #{driver} objectstore."
-os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
-user = os.fetchUser( user )
+	puts "Fetching user record for '#{user}' from a #{driver} objectstore."
+	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
+	user = os.fetchUser( user )
 
-if user.nil?
+	if user.nil?
 	puts "No such user '#{user}'."
-else
+	else
 	puts "User record for user '#{user.username}':\n" +
 		"\t#{user.username.capitalize} is #{RoleDescriptions[user.role.to_i]}.\n" +
 		"\tCreated: #{user.timeCreated.to_s}\n" +
@@ -37,6 +35,21 @@ else
 		"\tFirst login tick: #{user.firstLoginTick}\n" +
 		"\tPreferences: \n" + user.preferences.collect {|k,v| "\t\t#{k} => #{v}\n"}.to_s +
 		"\n\n"
-end
+	end
 
+else
+	driver = ARGV.shift || DefaultDriver
+	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
+
+	list = os.getUserList
+
+	if list.empty? 
+		puts "No users found"
+	else
+		puts "User list:"
+		list.each {|username|
+			puts "  #{username}"
+		}
+	end
+end
 
