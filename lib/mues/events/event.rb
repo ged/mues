@@ -13,7 +13,7 @@ BaseClass - An abstract base class for MUES events
   require "mues/events/BaseClass"
 
   module MUES
-    class MyEventType < Event
+    class MyEventType < MUES::Event
      :
     end
   end
@@ -21,6 +21,10 @@ BaseClass - An abstract base class for MUES events
 == Description
 
 This class is an abstract base class for MUES event classes.
+
+== Classes
+
+
 
 == Author
 
@@ -95,7 +99,7 @@ module MUES
 		### Instance methods
 		attr_reader		:creationTime, :priority
 
-		### METHOD: initialize
+		### METHOD: initialize( [priority] )
 		### Initialize a new event
 		def initialize( priority=DefaultPriority )
 			super()
