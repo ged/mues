@@ -64,8 +64,23 @@ module MUES
 	class Environment < Object ; implements AbstractClass, Notifiable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.5 2001/07/30 10:45:34 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.6 2001/08/05 05:44:49 deveiant Exp $
+
+		### Class methods
+		class << self
+
+			### METHOD: atEngineStartup( theEngine )
+			### Initialize subsystems after engine startup
+			def atEngineStartup( theEngine )
+			end
+
+			### METHOD: atEngineShutdown( theEngine )
+			### Clean up subsystems before engine shutdown
+			def atEngineShutdown( theEngine )
+			end
+
+		end
 
 
 		#############################################################
