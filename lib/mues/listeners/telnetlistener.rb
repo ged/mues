@@ -3,16 +3,18 @@
 # This file contains the MUES::TelnetListener class: A MUES::SocketListener
 # derivative that listens on a TCP/IP socket for telnet connections.
 # 
+# See MUES::SocketListener#initialize for valid configuration values.
+#
 # == Synopsis
 # 
 #   require 'mues/Listener'
 #   telnetListener = MUES::Listener::create( 'Telnet',
-#                                            :bindPort => 23,
-#                                            :bindAddr => '0.0.0.0' )
+#                                            'bind-port' => 23,
+#                                            'bind-addr' => '0.0.0.0' )
 # 
 # == Rcsid
 # 
-# $Id: telnetlistener.rb,v 1.3 2002/08/29 07:30:22 deveiant Exp $
+# $Id: telnetlistener.rb,v 1.4 2002/10/23 02:14:02 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,10 +38,12 @@ module MUES
 	class TelnetListener < MUES::SocketListener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: telnetlistener.rb,v 1.3 2002/08/29 07:30:22 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: telnetlistener.rb,v 1.4 2002/10/23 02:14:02 deveiant Exp $
 
-		### Create a new TelnetListener object.
+		### Create a new TelnetListener object. See
+		### MUES::SocketListener#initialize for the list of valid
+		### <tt>parameters</tt>.
 		def initialize( name, parameters={} )
 			super( name, parameters )
 
@@ -56,7 +60,10 @@ module MUES
 		def createOutputFilter( poll )
 			clientSocket = @io.accept
 			pollProxy = MUES::PollProxy::new( poll, clientSocket )
-			return MUES::TelnetOutputFilter::new( clientSocket, pollProxy, self )
+			filter = MUES::TelnetOutputFilter::new( clientSocket, pollProxy, self )
+			filter.debugLevel = self.filterDebugLevel
+
+			return filter
 		end
 
 
