@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mutatoroperation.rb,v 1.3 2002/04/09 07:02:27 deveiant Exp $
+# $Id: mutatoroperation.rb,v 1.4 2002/04/11 15:52:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -33,8 +33,8 @@ module Metaclass
 	class MutatorOperation < Metaclass::Operation
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: mutatoroperation.rb,v 1.3 2002/04/09 07:02:27 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: mutatoroperation.rb,v 1.4 2002/04/11 15:52:40 deveiant Exp $
 
 		### Create a new MutatorOperation object that sets the instance variable
 		### of the name specified by <tt>sym</tt> (a <tt>Symbol</tt> or
@@ -44,16 +44,23 @@ module Metaclass
 		### for a valid value via <tt>kind_of?</tt>. The <tt>scope</tt> and
 		### <tt>visibility</tt> arguments are passed to
 		### Metaclass::Operation#new.
-		def initialize( sym, validTypes=nil, scope=nil, visibility=nil )
+		def initialize( sym, validTypes=nil, scope=Operation::DEFAULT_SCOPE, visibility=Operation::DEFAULT_VISIBILITY )
 
 			# Stringify the symbol and strip any trailing equals
 			sym = sym.id2name if sym.is_a? Symbol
 			sym.gsub!( /=$/, '' )
 
 			# Assemble the mutator code
-			code = <<-END_CODE
-			@#{sym} = val
-			END_CODE
+			case scope
+			when Scope::CLASS
+				code = <<-END_CODE
+				@@#{sym} = val
+				END_CODE
+			else
+				code = <<-END_CODE
+				@#{sym} = val
+				END_CODE
+			end
 
 			# Call the superclass's initializer
 			super( "#{sym}=", code, scope, visibility )

@@ -17,7 +17,7 @@
 # 
 # == Rcsid
 # 
-# $Id: accessoroperation.rb,v 1.1 2002/03/30 19:04:08 deveiant Exp $
+# $Id: accessoroperation.rb,v 1.2 2002/04/11 15:50:15 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,12 +38,17 @@ module Metaclass
 	class AccessorOperation < Metaclass::Operation
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: accessoroperation.rb,v 1.1 2002/03/30 19:04:08 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: accessoroperation.rb,v 1.2 2002/04/11 15:50:15 deveiant Exp $
 
 		### Create a new AccessorOperation object.
 		def initialize( name, scope=Operation::DEFAULT_SCOPE, visibility=Operation::DEFAULT_VISIBILITY )
-			super( name, "@#{name}", scope, visibility )
+			case scope
+			when Scope::CLASS
+				super( name, "@@#{name}", scope, visibility )
+			else
+				super( name, "@#{name}", scope, visibility )
+			end
 		end
 
 	end # class AccessorOperation
