@@ -71,9 +71,12 @@ module MUES
 	### The abstract base class for MUES test cases.
 	class TestCase < Test::Unit::TestCase
 
+		@setupBlocks = []
+		@teardownBlocks = []
+
 		class << self
 			@methodCounter = 0
-			attr_accessor :methodCounter
+			attr_accessor :methodCounter, :setupBlocks, :teardownBlocks
 		end
 
 
@@ -150,6 +153,10 @@ module MUES
 			}
 		end
 		alias_method :tear_down, :teardown
+
+
+		### Turn off the stupid 'No tests were specified'
+		def default_test; end
 
 
 		### Instance alias for the like-named class method.
@@ -273,6 +280,168 @@ module MUES
 		rescue Test::Unit::AssertionFailedError => err
 			cutframe = err.backtrace.reverse.find {|frame|
 				/assert_has_ivar/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+
+
+		### Test Hashes for equivalent content
+		def assert_hash_equal( expected, actual, msg="" )
+			errmsg = "Expected hash <%p> to be equal to <%p>" % [expected, actual]
+			errmsg += ": #{msg}" unless msg.empty?
+
+			assert_block( errmsg ) {
+				diffs = compare_hashes( expected, actual )
+				unless diffs.empty?
+					errmsg += ": " + diffs.join("; ")
+					return false
+				else
+					return true
+				end
+			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_hash_equal/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+
+
+		### Compare two hashes for content, returning a list of their differences as
+		### descriptions. An empty Array return-value means they were the same.
+		def compare_hashes( hash1, hash2, subkeys=nil )
+			diffs = []
+			seenKeys = []
+
+			hash1.each {|k,v|
+				if !hash2.key?( k )
+					diffs << "missing %p pair" % k
+				elsif hash1[k].is_a?( Hash ) && hash2[k].is_a?( Hash )
+					diffs.push( compare_hashes(hash1[k], hash2[k]) )
+				elsif hash2[k] != hash1[k]
+					diffs << "value for %p expected to be %p, but was %p" %
+						[ k, hash1[k], hash2[k] ]
+				else
+					seenKeys << k
+				end
+			}
+
+			extraKeys = (hash2.keys - hash1.keys)
+			diffs << "extra key/s: #{extraKeys.join(', ')}" unless extraKeys.empty?
+
+			return diffs.flatten
+		end
+
+
+		### Test Hashes (or any other objects with a #keys method) for key set
+		### equality
+		def assert_same_keys( expected, actual, msg="" )
+			errmsg = "Expected keys of <%p> to be equal to those of <%p>" %
+				[ actual, expected ]
+			errmsg += ": #{msg}" unless msg.empty?
+
+			ekeys = expected.keys; akeys = actual.keys
+			assert_block( errmsg ) {
+				diffs = []
+
+				# XOR the arrays and make a diff for each one
+				((ekeys + akeys) - (ekeys & akeys)).each do |key|
+					if ekeys.include?( key )
+						diffs << "missing key %p" % [key]
+					else
+						diffs << "extra key %p" % [key]
+					end
+				end
+
+				unless diffs.empty?
+					errmsg += "\n" + diffs.join("; ")
+					return false
+				else
+					return true
+				end
+			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_hash_equal/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+
+
+		### Succeeds if +obj+ include? +item+.
+		def assert_include( item, obj, msg=nil )
+			msg ||= "<%p> expected to include <%p>." % [ obj, item ]
+			assert_block( msg ) { obj.respond_to?(:include?) && obj.include?(item) }
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_include/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+
+
+		### Succeeds if +obj+ is tainted
+		def assert_tainted( obj, msg=nil )
+			msg ||= "<%p> expected to be tainted" % [ obj ]
+			assert_block( msg ) {
+				obj.tainted?
+			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_tainted/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+
+
+		### Succeeds if +obj+ is not tainted
+		def assert_not_tainted( obj, msg=nil )
+			msg ||= "<%p> expected to NOT be tainted" % [ obj ]
+			assert_block( msg ) {
+				!obj.tainted?
+			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_not_tainted/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+
+
+		### Assert that the specified +str+ does *not* match the given regular
+		### expression +re+.
+		def assert_not_match( re, str )
+			msg = "<%s> expected not to match %p" %
+				[ str, re ]
+			assert_block( msg ) {
+				!re.match( str )
+			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_not_match/ =~ frame
+			}
+			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
+			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )
+		end
+
+
+		### Assert that the specified +klass+ defines the specified instance
+		### method +meth+.
+		def assert_has_instance_method( klass, meth )
+			msg = "<%s> expected to define instance method #%s" %
+				[ klass, meth ]
+			assert_block( msg ) {
+				klass.instance_methods.include?( meth.to_s )
+			}
+		rescue Test::Unit::AssertionFailedError => err
+			cutframe = err.backtrace.reverse.find {|frame|
+				/assert_has_instance_method/ =~ frame
 			}
 			firstIdx = (err.backtrace.rindex( cutframe )||0) + 1
 			Kernel::raise( err, err.message, err.backtrace[firstIdx..-1] )

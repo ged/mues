@@ -18,7 +18,8 @@ unless defined? MUES && defined? MUES::TestCase
 	require 'muestestcase'
 end
 
-require "mues"
+require 'rbconfig'
+require 'mues'
 require 'mues/storableobject'
 
 
@@ -94,7 +95,9 @@ module MUES
 
 		# Make sure loading works
 		def test_00_require
-			assert_not_nil $".detect {|lib| lib =~ /mues\.so/ }
+			assert_not_nil $".detect {|lib|
+				lib =~ /mues\.#{Config::CONFIG['DLEXT']}/
+			}
 			assert_instance_of( Class, MUES::PolymorphicObject )
 		end
 

@@ -207,7 +207,7 @@ class QuestionnaireTestCase < MUES::TestCase
 			end
 
 			if step.key?( :passAnswers )
-				step[:passAnswers].each do |*ans|
+				step[:passAnswers].each do |ans|
 					assert_nothing_raised { @qnaire.handleOutputEvents() }
 
 					assertInputPasses( @qnaire, step, *ans )
@@ -250,8 +250,8 @@ class QuestionnaireTestCase < MUES::TestCase
 
 	### Test a given input against a questionnaire object, and expect it to fail.
 	def assertInputFails( qnaire, step, ans )
-		MUES::Log.debug( "#%s: assertInputFails(%s, %s, %s)" %
-						 [Thread.current.inspect, qnaire.inspect, step.inspect, ans.inspect] )
+		MUES::Logger.debug( "#%p: assertInputFails(%p, %p, %p)" %
+						    [Thread.current, qnaire, step, ans] )
 		ev = MockInputEvent::new( ans )
 		assert_nothing_raised { qnaire.handleInputEvents(ev) }
 		
@@ -270,9 +270,8 @@ class QuestionnaireTestCase < MUES::TestCase
 	### Test a given input against a questionnaire object, and expect it to
 	### succeed.
 	def assertInputPasses( qnaire, step, ans, expected=ans )
-		MUES::Log.debug( "#%s: assertInputPasses(%s, %s, %s, %s)" %
-						 [Thread.current.inspect, qnaire.inspect, step.inspect,
-							ans.inspect, expected.inspect] )
+		MUES::Logger.debug( "#%p: assertInputPasses(%p, %p, %p, %p)" %
+						    [Thread.current, qnaire, step, ans, expected] )
 		qnaire.debugLevel = 5
 
 		ev = MockInputEvent::new( ans )
@@ -293,8 +292,8 @@ class QuestionnaireTestCase < MUES::TestCase
 	### succeed.
 	def assertInputAborts( qnaire, step, ans )
 		qnaire.debugLevel = 5
-		MUES::Log.debug( "#%s: assertInputAborts(%s, %s, %s)" %
-						 [Thread.current.inspect, qnaire.inspect, step.inspect, ans.inspect] )
+		MUES::Logger.debug( "#%p: assertInputAborts(%p, %p, %p)" %
+						    [Thread.current, qnaire, step, ans] )
 
 		ev = MockInputEvent::new( ans )
 		assert_nothing_raised { qnaire.handleInputEvents(ev) }
