@@ -54,11 +54,12 @@
 # 
 # == Rcsid
 # 
-# $Id: objectspacevisitor.rb,v 1.3 2002/07/10 23:46:53 stillflame Exp $
+# $Id: objectspacevisitor.rb,v 1.4 2002/07/12 15:02:58 deveiant Exp $
 # 
 # == Authors
 # 
 # * Michael Granger <ged@FaerieMUD.org>
+# * Martin Chase <stillflame@FaerieMUD.org>
 # 
 #:include: COPYRIGHT
 #
@@ -78,8 +79,8 @@ module MUES
 	class ObjectSpaceVisitor < MUES::Object
 
 		### Class constants
-		Version	= %q$Revision: 1.3 $
-		RcsId	= %q$Id: objectspacevisitor.rb,v 1.3 2002/07/10 23:46:53 stillflame Exp $
+		Version	= %q$Revision: 1.4 $
+		RcsId	= %q$Id: objectspacevisitor.rb,v 1.4 2002/07/12 15:02:58 deveiant Exp $
 
 
 		### Instantiate and return a new ObjectSpaceVisitor object.
