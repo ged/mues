@@ -6,7 +6,7 @@
 # 
 # == Rcsid
 # 
-# $Id: outputter.rb,v 1.1 2003/11/27 05:45:49 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -19,6 +19,9 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
+require 'pluginfactory'
+
+require 'mues/utils'
 require 'mues/logger'
 require 'mues/mixins'
 
@@ -28,13 +31,16 @@ class Logger
 	### This class is the abstract base class for logging outputters for
 	### MUES::Logger.
 	class Outputter < ::Object
-		include MUES::Factory
+		include PluginFactory
 
-		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.1 $} )[1]
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# CVS id tag
-		Rcsid = %q$Id: outputter.rb,v 1.1 2003/11/27 05:45:49 deveiant Exp $
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# The default description
 		DefaultDescription = "Logging Outputter"
