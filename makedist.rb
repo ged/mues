@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.7 2002/04/11 16:08:02 deveiant Exp $
+#	$Id: makedist.rb,v 1.8 2002/05/16 03:59:50 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -10,25 +10,7 @@
 #	http://language.perl.com/misc/Artistic.html)
 #
 
-require 'ftools'
-require "./utils.rb"
-
-include UtilityFunctions
-
-# Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.7 2002/04/11 16:08:02 deveiant Exp $
-ReleaseVersion = 0.01
-
-# Set interrupt handler to restore tty before exiting
-stty_save = `stty -g`.chomp
-trap("INT") { system "stty", stty_save; exit }
-
-@@Programs = {
-	'tar'	=> nil,
-	'rm'	=> nil,
-	'zip'	=> nil
-}
+### Configuration stuff
 
 # Define the manifest of files to include, globs okay
 MANIFEST = %w{
@@ -37,10 +19,9 @@ MANIFEST = %w{
   INSTALL
   QUICKSTART
   README
-  docs/MUES.rd
-  docs/TableAdapter.rd
+  docs/lib/**/*
   docs/makedocs.rb
-  docs/stylesheets/rd.css
+  docs/stylesheets/*
   install.rb
   lib/**/*
   quickstart.rb
@@ -51,7 +32,6 @@ MANIFEST = %w{
   server/bin/showUser.rb
   server/environments/*
   server/shellCommands/**/*
-  sql/*
   tests/**/*
   utils.rb
 }
@@ -68,6 +48,28 @@ ANTIMANIFEST = [
 	/\.cvsignore/
 ]
 
+### End of configuration
+
+require 'ftools'
+require "./utils.rb"
+
+include UtilityFunctions
+
+# Version information
+Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.8 2002/05/16 03:59:50 deveiant Exp $
+
+# Set interrupt handler to restore tty before exiting
+stty_save = `stty -g`.chomp
+trap("INT") { system "stty", stty_save; exit }
+
+$Programs = {
+	'tar'	=> nil,
+	'rm'	=> nil,
+	'zip'	=> nil,
+	'cvs'	=> nil,
+}
+
 Distros = [
 
 	# Tar+gzipped
@@ -79,7 +81,7 @@ Distros = [
 				message "Removing old archive #{gzArchiveName}..."
 				File.delete( gzArchiveName )
 			end
-			system( @@Programs['tar'], '-czf', gzArchiveName, distName ) or abort( "tar+gzip failed: #{$?}" )
+			system( $Programs['tar'], '-czf', gzArchiveName, distName ) or abort( "tar+gzip failed: #{$?}" )
 		}
 	},
 
@@ -92,7 +94,7 @@ Distros = [
 				message "Removing old archive #{bzArchiveName}..."
 				File.delete( bzArchiveName )
 			end
-			system( @@Programs['tar'], '-cjf', bzArchiveName, distName ) or abort( "tar failed: #{$?}" )
+			system( $Programs['tar'], '-cjf', bzArchiveName, distName ) or abort( "tar failed: #{$?}" )
 		}
 	},
 
@@ -104,7 +106,7 @@ Distros = [
 				message "Removing old archive #{zipArchiveName}..."
 				File.delete( zipArchiveName )
 			end
-			system( @@Programs['zip'], '-lrq9', zipArchiveName, distName ) or abort( "zip failed: #{$?}" )
+			system( $Programs['zip'], '-lrq9', zipArchiveName, distName ) or abort( "zip failed: #{$?}" )
 		}
 	},
 ]
@@ -114,13 +116,16 @@ Distros = [
 def main
 	filelist = []
 
-	header "MUES Distribution Maker"
+	project = File.open( "CVS/Repository", "r").readline.chomp
+	header "%s Distribution Maker" % project
+
+	releaseVersion = extractNextVersionFromTags( MANIFEST[0] )
 
 	message "Finding necessary programs...\n"
-	for prog in @@Programs.keys
+	for prog in $Programs.keys
 		message "  #{prog}: "
-		@@Programs[ prog ] = findProgram( prog )
-		message( (@@Programs[prog] || '(not found)') + "\n" )
+		$Programs[ prog ] = findProgram( prog )
+		message( ($Programs[prog] || '(not found)') + "\n" )
 	end
 
 	message "Building manifest..."
@@ -139,8 +144,16 @@ def main
 
 	#puts "Filelist:\n\t" + filelist.join("\n\t")
 
-	version = promptWithDefault( "Distribution version [#{ReleaseVersion}]", ReleaseVersion )
-	distName = "MUES-%s" % version
+	version = promptWithDefault( "Distribution version", releaseVersion )
+	distName = "%s-%s" % [ project, version ]
+
+	tag = "RELEASE_%s" % sprintf('%0.2f', version).gsub(/\./, '_') 
+	tagFlag = promptWithDefault( "Tag '%s' with %s" % [ project, tag ], 'y' )
+
+	if tagFlag =~ /^y/i
+		$stderr.puts "Running #{$Programs['cvs']} -q tag #{tag}"
+		system $Programs['cvs'], '-q', 'tag', tag
+	end
 
 	message "Making distribution directory #{distName}..."
 	Dir.mkdir( distName ) unless FileTest.directory?( distName )
@@ -155,9 +168,9 @@ def main
 		message "done.\n"
 	end
 
-	if @@Programs['rm']
+	if $Programs['rm']
 		message "removing dist build directory..."
-		system( @@Programs['rm'], '-rf', distName )
+		system( $Programs['rm'], '-rf', distName )
 		message "done.\n\n"
 	else
 		message "Cannot clean dist build directory: no 'rm' program was found."
