@@ -121,12 +121,13 @@ class ObjectStoreGC
 
   ### Registers object(s) with the GC
   def register ( *objects )
-    objects.flatten!.compact!
+    objects.flatten!
+    objects.compact!
     @mutex.synchronize( Sync::EX ) {
-      objects.each {|o|
-	@active_objects[o.objectStoreID] = o
-      }
-      #      @objects |= objects #:MC: changed '<<' to '|=' to prevent duplicates
+#      objects.each {|o|
+#	@active_objects[o.objectStoreID] = o
+#      }
+      @objects |= objects #:MC: changed '<<' to '|=' to prevent duplicates
     }
   end
 

@@ -161,10 +161,12 @@ class ObjectStore
 	  ###################   name type not_nil default constraint action display
 	  cols << A_Column.new("id" , 'i', true  ,  nil  ,"%d > 0"  ,  nil , "%d"  )
 	  cols << A_Column.new("obj", typ,  nil  ,  nil  ,   nil    ,  nil ,  nil  )
-	  @indexes.each { |ind|
-	    typ = get_type( ind[1] )  #should not be "*"
-	    cols << A_Column.new( ind[0].id2name, typ )
-	  } unless @indexes or @indexes.compact!.empty?
+	  if (@indexes && @indexes.length > 0) 
+	    @indexes.each { |ind|
+	      typ = get_type( ind[1] )  #should not be "*"
+	      cols << A_Column.new( ind[0].id2name, typ )
+	    }
+	  end
 	  pkeys= "id"
 	  tabl = A_Table.new(bt_name, cols, pkeys)
 	  return [cat,tabl]
