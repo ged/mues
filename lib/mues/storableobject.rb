@@ -99,9 +99,19 @@ class StorableObject < PolymorphicObject; include AbstractClass
     false
   end
 
+  ### equality by objectStoreID
+  def == (an_other)
+    objectStoreID == an_other.objectStoreID
+  end
+
   ### allows shallow references to be seen for what they are.
   def shallow?
     false
+  end
+
+  ### This is a place holder for the method that will return the number of references
+  ### to an object (will be in C).
+  def refCount
   end
 
 end
@@ -143,12 +153,22 @@ class ShallowReference < PolymorphicObject
     true
   end
   
+  ### the id is something that a lookup isn't needed for
+  def objectStoreID
+    @id
+  end
+
   ### Allows momentary access to the object from the database, by calling this method
   ###   and supplying a block.  No changes to the object made in the block will be
   ###   written to the database.
   def read_only(&block)
     obj = @obj_store._retrieve( @id )
     block.yield(obj)
+  end
+
+  ### equality by objectStoreID
+  def == (an_other)
+    objectStoreID == an_other.objectStoreID
   end
 
   ### When any other method is sent, become the object returned by the database,

@@ -121,13 +121,14 @@ class ObjectStoreGC
 
   ### Registers object(s) with the GC
   def register ( *objects )
+    raise TypeError.new( "Expected Array but received #{objects.type.name}" ) unless
+      objects.kind_of?(Array)
     objects.flatten!
     objects.compact!
     @mutex.synchronize( Sync::EX ) {
-#      objects.each {|o|
-#	@active_objects[o.objectStoreID] = o
-#      }
-      @objects |= objects #:MC: changed '<<' to '|=' to prevent duplicates
+      objects.each {|o|
+	@active_objects[o.objectStoreID] = o
+      }
     }
   end
 
@@ -156,7 +157,8 @@ class ObjectStoreGC
 	Thread.pass
       end
     end
-
+    _collect_all(aHash) # :MC: after it shuts down, it should store every active object into
+                 # the database.
     return true
   end
   
@@ -165,7 +167,7 @@ class ObjectStoreGC
   def _collect(aHash)
     @mutex.synchronize( Sync::SH ) {
       @active_objects.each {|o|
-	if(o.refCount == 1 or o.send(@mark))
+	if( !o.shallow? and (o.refCount == 1 or o.send(@mark)) )
 	  @mutex.synchronize( Sync::EX ) {
 	    @objectStore.store(o)
 	    o.become(ShallowReference.new( o.objectStoreID ))
@@ -173,6 +175,11 @@ class ObjectStoreGC
 	end
       }
     }
+  end
+
+  ### Collects all the (non-shallow) objects.
+  def _collect_all (aHash)
+
   end
   
 end

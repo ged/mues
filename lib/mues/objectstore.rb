@@ -211,6 +211,7 @@ class ObjectStore
 	  @table = @database[-1]
 	  @active_objects = Hash.new
 	  @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
+	  @mutex = Sync.new
 	end
 	
 	######
@@ -223,6 +224,10 @@ class ObjectStore
 	### Stores the objects into the database
 	### arguments:
 	###   objects - the objects to store
+	### caveats:
+	###   aruna's docs say that while concurrant transactions work fine, their
+	###   multi-threaded capabilities haven't been fully tested.  who knows what
+	###   that's going to mean.
 	def store ( *objects )
 	  objects.flatten!
 	  index_names = @indexes.collect {|ind| ind[0].id2name}
@@ -243,7 +248,6 @@ class ObjectStore
 	      @table.update(trans, ids[i], col_names[1, col_names.length-2],
 			    [serialized[i], index_returns[i]].flatten)
 	    else
-	      @gc.register( objects[i] )
 	      @table.insert( trans, col_names,
 			    [ids[i], serialized[i], classes[i], index_returns[i]].flatten )
 	    end
@@ -283,8 +287,8 @@ class ObjectStore
 	    object = aClass.send( @deserialize, table_data.obj )
 	    return object
 	  else
-#	    return nil
-	    raise ObjectNotInDatabaseError.new( "Object with id (#{id}) not found in the database" )
+	    return nil
+#	    raise ObjectNotInDatabaseError.new( "Object with id (#{id}) not found in the database" )
 	  end
 	end
 
