@@ -1,7 +1,7 @@
 # -*- default-generic -*-
 # User-related MUES::CommandShell commands.
-# Time-stamp: <22-Oct-2002 22:01:56 deveiant>
-# $Id: users.cmd,v 1.7 2002/10/23 04:02:31 deveiant Exp $
+# Time-stamp: <24-Oct-2002 16:33:39 deveiant>
+# $Id: users.cmd,v 1.8 2002/10/25 05:09:17 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -265,3 +265,43 @@ another user if the invoking user has admin priviledges.
 	# The MUES::User class has a factory method for creating Questionnaire
 	# objeccts for changing a user's attributes.
 	return [MUES::User::getAttributeQuestionnaire(user, attributes[0])]
+
+
+### Delete a user
+= deluser
+
+== Abstract
+Remove a registered user.
+
+== Synonyms
+rmuser
+
+== Description
+Allows an admin to remove a user account entirely. You can prevent the user from
+logging in without removing their user record by using the ban system.
+
+== Usage
+	deluser <username>
+
+== Code
+
+	# attribute only
+	unless argString =~ /(\S+)/
+		raise CommandError, self.usage
+	end
+
+	username = $1
+	user = MUES::ServerFunctions::getUserByName( username ) or
+		raise CommandError, "No such user '#{username}'"
+	raise CommandError, "User is currently logged in." if user.activated?
+
+	prompt = "Remove %s: Are you sure?" % user.to_s
+	confirm = MUES::Questionnaire::Confirmation( prompt ) {|qnaire|
+		if qnaire.confirmed?
+			MUES::ServerFunctions::unregisterUser( user )
+			qnaire.message "Done.\n\n"
+		end
+	}
+
+	return [confirm]
+
