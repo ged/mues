@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<!--
+
+	Multi-User Environment Server Configuration File DTD
+    Time-stamp: <26-May-2002 22:49:29 deveiant>
+	$Id: muesconfig.dtd,v 1.1 2002/05/28 03:20:10 deveiant Exp $
+
+	Michael Granger - ged@FaerieMUD.org
+	Time-stamp: "26-May-2002 22:22:46 deveiant"
+
+	Copyright (c) 2002, The FaerieMUD Consortium. All rights reserved.
+
+    You may use, modify, and/or redistribute this DTD under the terms of the
+    Perl Artistic License, a copy of which should have been included in this
+    distribution (See the file Artistic). If it was not, a copy of it may be
+    obtained from http://language.perl.com/misc/Artistic.html or
+    http://www.faeriemud.org/artistic.html).
+
+ -->
+
+
+<!-- 
+
+ Entities
+
+  -->
+
+<!-- A version string for the configuration format (eg., 1.1) -->
+<!ENTITY % FormatVersion    "CDATA">
+
+<!-- A version string like $Revision: 1.1 $ -->
+<!ENTITY % CVSVersion       "CDATA">
+
+<!-- one or more digits -->
+<!ENTITY % Number           "CDATA">
+
+<!-- used for titles etc. -->
+<!ENTITY % Text             "CDATA">
+
+
+
+<!--
+
+  Base element
+
+  -->
+
+<!ELEMENT muesconfig            (general,engine,logging,environments,services)>
+<!ATTLIST muesconfig
+            version             %FormatVersion;     #REQUIRED
+            time-stamp          %Number;            #REQUIRED
+            revision            %CVSVersion;        #IMPLIED>
+
+
+
+<!-- General config section -->
+<!ELEMENT general               (server-name,server-description?,server-admin,root-dir)>
+
+<!ELEMENT server-name           (#PCDATA)>
+<!ELEMENT server-description    (#PCDATA)>
+<!ELEMENT server-admin          (#PCDATA)>
+<!ELEMENT root-dir              (#PCDATA)>
+
+
+
+<!-- Engine config section -->
+<!ELEMENT engine                ((tick-length|exception-stack-size|debug-level)*,objectstore,listeners)>
+<!ELEMENT tick-length           (#PCDATA)>
+<!ELEMENT exception-stack-size  (#PCDATA)>
+<!ELEMENT debug-level           (#PCDATA)>
+
+<!ELEMENT objectstore           (#PCDATA)>
+<!ELEMENT listeners             (listener)*>
+
+<!ELEMENT listener              (filter-class,bind-port,bind-address,use-wrapper?)>
+<!ATTLIST listener
+            name                ID                  #REQUIRED>
+
+<!ELEMENT filter-class          (#PCDATA)>
+<!ELEMENT bind-port             (#PCDATA)>
+<!ELEMENT bind-address          (#PCDATA)>
+<!ELEMENT use-wrapper           (#PCDATA)>
+
+
+<!-- Logging config section (Log4R format) -->
+<!ELEMENT logging               (log4r_config)>
+
+<!-- 
+
+    This is an approximation of the Log4r XML format. It's actually a freeform
+    format, but I like to be able to validate, so I just narrowed it so it's
+    still flexible, but also validatable.
+
+  -->
+<!ELEMENT log4r_config          (pre_config,(outputter|logger)*)>
+
+<!ELEMENT pre_config            (parameters?|(parameter)*)>
+<!ELEMENT parameters            ANY>
+<!ELEMENT parameter             EMPTY>
+<!ATTLIST parameter
+            name                CDATA               #REQUIRED
+            value               CDATA               #REQUIRED>
+
+<!ELEMENT outputter             ANY>
+<!ATTLIST outputter
+            type                CDATA               #REQUIRED
+            name                CDATA               #REQUIRED
+            level               CDATA               #IMPLIED
+            filename            CDATA               #IMPLIED
+            trunc               CDATA               #IMPLIED
+            server              CDATA               #IMPLIED
+            port                CDATA               #IMPLIED
+            from                CDATA               #IMPLIED
+            to                  CDATA               #IMPLIED>
+
+<!ELEMENT logger                ANY>
+<!ATTLIST logger
+            name                CDATA               #REQUIRED
+            level               CDATA               #REQUIRED
+            outputter           CDATA               #REQUIRED
+            trace               CDATA               #IMPLIED>
+            
+
+
+<!-- Environment/s config section -->
+<!ELEMENT environments          (environment)*>
+<!ELEMENT environment           (param*)>
+
+
+<!-- Service/s config section -->
+<!ELEMENT services              (service)*>
+<!ELEMENT service               (param*)>
+<!ATTLIST service
+            name                %Text;              #REQUIRED
+            class               %Text;              #REQUIRED>
+
+
+<!-- Universal elements -->
+<!ELEMENT param                 ANY>
+<!ATTLIST param
+            name                %Text;              #REQUIRED>
