@@ -83,12 +83,8 @@ module MUES
 		def initialize( peerName, params={} )
 			@peerName			= peerName
 
-			params = DefaultParams.merge( params )
-			@banner				= params[:banner].gsub( /^[ \t]+/s, '' )
-			@userPrompt			= params[:userPrompt]
-			@passPrompt			= params[:passPrompt]
-			@maxTries			= params[:maxTries]
-			@timeout			= params[:timeout]
+			@params = DefaultParams.merge( params )
+			@params[:banner].gsub!( /^[ \t]+/s, '' )
 			
 			@queuedInput		= []
 			@authMutex			= Sync::new
@@ -126,14 +122,14 @@ module MUES
 			if timeout > 0 
 				@timeoutEvent = 
 					MUES::LoginFailureEvent::new( self,
-					"Timeout (#{@timeout} seconds)." )
-				scheduleEvents( Time.now + @timeout, @timeoutEvent )
+					"Timeout (#{@params[:timeout]} seconds)." )
+				scheduleEvents( Time.now + @params[:timeout], @timeoutEvent )
 			end
 
 			# Now queue the login banner and the first username prompt output
 			# events
-			self.queueOutputEvents( MUES::OutputEvent::new(@banner),
-									MUES::PromptEvent::new(@userPrompt) )
+			self.queueOutputEvents( MUES::OutputEvent::new(@params[:banner]),
+									MUES::PromptEvent::new(@params[:userPrompt]) )
 			
 			super
 		end
@@ -239,7 +235,7 @@ module MUES
 				username = untaintString( event.data, UsernameUntaintPattern ).to_s
 				debugMsg( 4, "Setting username to '#{username}'." )
 				@username = username
-				event = HiddenInputPromptEvent::new( @passPrompt )
+				event = HiddenInputPromptEvent::new( @params[:passPrompt] )
 				self.queueOutputEvents( event )
 			}
 
@@ -303,7 +299,7 @@ module MUES
 			### After the number of tries specified in the login section of the
 			### config, generate a login failure event to kill this session and
 			### log the failure
-			if @maxTries > 0 && @loginAttemptCount >= @maxTries
+			if @params[:maxTries] > 0 && @loginAttemptCount >= @params[:maxTries]
 				self.log.notice( "Max login tries exceeded for session #{self.id} from #{@remoteHost}." )
 				self.queueOutputEvents( OutputEvent::new(">>> Max tries exceeded. <<<") )
 				return [ LoginSessionFailureEvent::new(self, "Too many attempts") ]
@@ -311,7 +307,7 @@ module MUES
 			### Prompt for username and try again
 			else
 				self.log.notice( "Failed login attempt #{@loginAttemptCount} from #{@remoteHost}." )
-				self.queueOutputEvents( OutputEvent::new("\n" + @userPrompt) )
+				self.queueOutputEvents( OutputEvent::new("\n" + @params[:userPrompt]) )
 
 				@authMutex.synchronize {
 					@username = nil
