@@ -191,10 +191,7 @@ class QuestionnaireTestCase < MUES::TestCase
 			if step.key?( :failAnswers )
 				step[:failAnswers].each do |ans|
 					assert_nothing_raised { @qnaire.handleOutputEvents() }
-
-					MUES::Log.debug( "Calling assertInputFails" )
 					assertInputFails( @qnaire, step, ans )
-
 					@qnaire.reset
 				end
 			end
@@ -213,14 +210,22 @@ class QuestionnaireTestCase < MUES::TestCase
 				end
 			end
 
-# 			if step.key?( :abortAnswers )
-# 				step[:failAnswers].each do |ans|
-# 					assertInputAborts( @qnaire, step, ans )
-# 				end
-# 			end
+ 			if step.key?( :abortAnswers )
+ 				step[:abortAnswers].each do |ans|
+					assert_nothing_raised { @qnaire.handleOutputEvents() }
+ 					assertInputAborts( @qnaire, step, ans )
+					@qnaire.reset
+ 				end
+ 			end
 				
 		}
 	end
+
+
+	### :TODO: Write tests for:
+	### * Questionnaire#skipSteps + onSkip callback
+	### * Questionnaire#undoSteps + onUndo callback
+	### * 
 
 
 	### Test a questionnaire object to make sure it's well-formed
@@ -240,6 +245,8 @@ class QuestionnaireTestCase < MUES::TestCase
 
 	### Test a given input against a questionnaire object, and expect it to fail.
 	def assertInputFails( qnaire, step, ans )
+		MUES::Log.debug( "#%s: assertInputFails(%s, %s, %s)" %
+						 [Thread.current.inspect, qnaire.inspect, step.inspect, ans.inspect] )
 		ev = MockInputEvent::new( ans )
 		assert_nothing_raised { qnaire.handleInputEvents(ev) }
 		
@@ -258,6 +265,9 @@ class QuestionnaireTestCase < MUES::TestCase
 	### Test a given input against a questionnaire object, and expect it to
 	### succeed.
 	def assertInputPasses( qnaire, step, ans, expected=ans )
+		MUES::Log.debug( "#%s: assertInputPasses(%s, %s, %s, %s)" %
+						 [Thread.current.inspect, qnaire.inspect, step.inspect,
+							ans.inspect, expected.inspect] )
 		qnaire.debugLevel = 5
 
 		ev = MockInputEvent::new( ans )
@@ -267,12 +277,26 @@ class QuestionnaireTestCase < MUES::TestCase
 		assert revs.empty?,
 			"Unexpected output event <#{revs[0].inspect}> in finished questionnaire."
 
-		MUES::Log.debug( "#{Thread.current.inspect}: About to test for .finished?" )
-
 		assert qnaire.finished?, "Questionnaire is not finished"
 		assert qnaire.answers.key?( step[:name].intern ),
 			"Questionnaire doesn't have a ':%s' answer key" % step[:name]
 		assert_equal expected, qnaire.answers[ step[:name].intern ]
+	end
+
+
+	### Test a given input against a questionnaire object, and expect it to
+	### succeed.
+	def assertInputAborts( qnaire, step, ans )
+		qnaire.debugLevel = 5
+		MUES::Log.debug( "#%s: assertInputAborts(%s, %s, %s)" %
+						 [Thread.current.inspect, qnaire.inspect, step.inspect, ans.inspect] )
+
+		ev = MockInputEvent::new( ans )
+		assert_nothing_raised { qnaire.handleInputEvents(ev) }
+		
+		revs = qnaire.handleOutputEvents()
+		assert_kind_of MUES::OutputEvent, revs[0]
+		assert qnaire.finished?, "Questionnaire wasn't finished after abort input."
 	end
 
 end # class QuestionnaireTestCase
