@@ -66,7 +66,7 @@ class ObjectStoreGC
     @mutex = Sync.new
     @shutting_down = false
     @running = true
-    @thread = Thread.new { _gc_routine(@algor_args); @running = false }
+    @thread = Thread.new { Thread.current.abort_on_exception = true; _gc_routine(@algor_args); @running = false }
 
     return self
   end
@@ -107,8 +107,8 @@ class ObjectStoreGC
     ( self.algor_args = aHash ) if aHash
     @shutting_down = false
     @running = true
-    unless (@thread.alive?)
-      @thread = Thread.new { _gc_routine(@algor_args) }
+    unless (!@thread.alive?)
+      @thread = Thread.new { Thread.current.abort_on_exception = true; _gc_routine(@algor_args); @running = false }
     end
   end
     
@@ -118,15 +118,19 @@ class ObjectStoreGC
     @thread.join
   end
 
+  def alive?
+	@thread.alive?
+  end
+
   ### Registers object(s) with the GC
   def register ( *objects )
     objects.flatten!
     objects.compact!
     @mutex.synchronize( Sync::EX ) {
       objects.each {|o|
-	raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
-	  o.kind_of?(StorableObject)
-	@active_objects[o.objectStoreID] = o
+		raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
+		  o.kind_of?(StorableObject)
+		@active_objects[o.objectStoreID] = o
       }
     }
   end
@@ -143,6 +147,7 @@ class ObjectStoreGC
   def _gc_routine(aHash)
     delay = aHash['trash_rate'] || 50
 
+#	$stderr.puts "shutting down? #{@shutting_down}"
     until(@shutting_down)
       loop_time = Time.now
       _collect(aHash)
@@ -156,8 +161,7 @@ class ObjectStoreGC
 	Thread.pass
       end
     end
-    _collect(aHash)
-#    _collect_all(aHash) # :MC: after it shuts down, it should store every active object into
+    _collect_all(aHash) # :MC: after it shuts down, it should store every active object into
                  # the database.
     return true
   end
@@ -167,12 +171,14 @@ class ObjectStoreGC
   def _collect(aHash)
     @mutex.synchronize( Sync::SH ) {
       @active_objects.each_value {|o|
-	if( !o.shallow? and (o.refCount <= 1 or o.send(@mark)) )
-	  @mutex.synchronize( Sync::EX ) {
-	    @objectStore.store(o)
-	    o.become(ShallowReference.new( @objectStore, o.objectStoreID ))
-	  }
-	end
+		if( !o.shallow? )
+		  if( (o.refCount <= 1 or o.send(@mark)) )
+			@mutex.synchronize( Sync::EX ) {
+			  @objectStore.store(o)
+			  o.become(ShallowReference.new( o.objectStoreID, @objectStore ))
+			}
+		  end
+		end
       }
     }
   end
