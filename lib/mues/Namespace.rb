@@ -13,20 +13,30 @@ MUES.rb - MUES classes, functions, and global constants
 
   require "mues/MUES"
 
-  class MyClass < Object
-	...
+  module MUES
+	class MyBaseClass < Object
+	  include AbstractClass
+	end
+
+	class MyDerivedClass < MyBaseClass
+	  ...
+    end
   end
 
 == DESCRIPTION
 
-This module is a collection of constants, functions, and base classes for the
-Multi-User Environment Server.
+A collection of constants, functions, and base classes for the Multi-User
+Environment Server. Requiring it adds four type-checking functions
+((({checkType()})), (({checkEachType()})), (({checkResponse()})), and
+(({checkEachResponse()}))) to the Ruby Object class, and defines the base object
+class ((({MUES::Object}))) and a mixin for abstract classes
+((({MUES::AbstractClass}))).
 
 == AUTHOR
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -37,7 +47,6 @@ http://language.perl.com/misc/Artistic.html)
 ###########################################################################
 
 require "md5"
-
 require "mues/Exceptions"
 
 class Object
