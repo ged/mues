@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.5 2002/10/04 05:17:37 deveiant Exp $
+# $Id: mixins.rb,v 1.6 2002/10/04 17:42:00 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,14 +72,12 @@ module MUES
 		### module. The method raises an exception if called on the class
 		### itself, but not if called via <tt>super()</tt> from a subclass.
 		def self.included( klass )
-			klass.class_eval <<-"END"
-			class << self
-				def new( *args, &block )
-					raise InstantiationError if self == #{klass.name}
-					super( *args, &block )
-				end
+			klass.instance_eval do @isAbstract = true end
+
+			def klass.new( *args, &block )
+				raise InstantiationError if self.instance_eval do @isAbstract end
+				super( *args, &block )
 			end
-			END
 
 			super( klass )
 		end
