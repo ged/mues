@@ -1,11 +1,6 @@
 =begin
 
 = MUES - A multi-user environment server
-
-There is an ((<online
-version|URL:http://docs.faeriemud.org/bin/view/Dream/TheEngine>))
-of this document, which may be more recent.
-
 == Introduction 
 
 The Multi-User Environment Server is a multiplexing, multithreaded, event-driven
@@ -16,181 +11,153 @@ network client, various useful services or daemons for creating in-game systems,
 and an event model for facilitating the interaction of all the parts.
 
 == System Overview
+=== The Engine
 
-=== Requirements
+The engine is the server part of the MUES. It is reponsible for containing world
+objects and facilitating the interaction between clients which connect to the
+server and the worlds it contains.
 
-* Load, configure, and maintain one or more World objects, which are
-  database-defined dynamic metaclass environments
+=== The Metaclass Library
 
-* Handle player connection, login, and player object maintenance through a
-  client protocol or simple telnet/HTTP
-
-* Maintain a proxy interface to one or more distributed services, called
-  Sciences
-
-* Coordinate, queue, and dispatch Events between the World object/s, Player
-  object/s, and the Sciences.
-
-* Execute an event loop which serves as the fundamental unit of time for each
-  world((-Instances of the World class-))
+The metaclass library is the collection of classes which allows the code running
+inside the world objects to be written an executed dynamically. It is used to
+build libraries of world object classes which do not exist as traditional
+disk-loaded classes, but rather as in-memory or in-network constructs.
 
 === Secondary systems
 
-* Offer tools for creating and modifying classes in the metaclass environments,
-  accessable from a web browser or other generic interface. 
-
-== Design Considerations
-
-=== Assumptions and Dependencies
-
-(1) A working Ruby 1.6 interpreter
-(2) A MySQL((-MySQL Homepage: ((<URL:http://www.mysql.com/>))-)) or PostgreSQL((-PostgreSQL Homepage: ((<URL:http://www.postgresql.org/>))-)) database
-
-=== General Constraints
-
-(1) Define distributed services protocol and reference implementation
-(2) Must be able to talk to third-party clients easily
-(3) Metaclass code must be kept isolated from the core system for security
-(4) Coder's interface must be
-
-=== Goals and Guidelines
-
-(1) Simple is better
-(2) Implement first, optimize later
-(3) The better the tools are, the more people will use them
-
-=== Development Methods
-
-((|Not done yet|))
-
-== Architectural Strategies
-
-((*Describe any design decisions and/or strategies that affect the overall
-organization of the system and its higher-level structures. These strategies
-should provide insight into the key abstractions and mechanisms used in the
-system architecture. Describe the reasoning employed for each decision and/or
-strategy (possibly referring to previously stated design goals and principles)
-and how any design goals or priorities were balanced or traded-off. Such
-decisions might concern (but are not limited to) things like the following:*))
-
-* Use of a particular type of product (programming language, database, library, etc. ...)
-* Reuse of existing software components to implement various parts/features of the system
-* Future plans for extending or enhancing the software
-* User interface paradigms (or system input and output models)
-* Hardware and/or software interface paradigms
-* Error detection and recovery
-* Memory management policies
-* External databases and/or data storage management and persistence
-* Distributed data or control over a network
-* Generalized approaches to control
-* Concurrency and synchronization
-* Communication mechanisms
-* Management of other resources
-
-((*Each significant strategy employed should probably be discussed in its own
-subsection, or (if it is complex enough) in a separate design document (with an
-appropriate reference here of course). Make sure that when describing a design
-decision that you also discuss any other significant alternatives that were
-considered, and your reasons for rejecting them (as well as your reasons for
-accepting the alternative you finally chose). Sometimes it may be most effective
-to employ the "pattern format" for describing a strategy.*))
+There will eventually be tools built for creating and modifying the game class
+libraries from a web browser or other generic interface.
 
 == System Architecture
+=== The Ruby-MUES Modules
 
-((*This section should provide a high-level overview of how the functionality and
-responsibilities of the system were partitioned and then assigned to subsystems
-or components. Don't go into too much detail about the individual components
-themselves (there is a subsequent section for detailed component
-descriptions). The main purpose here is to gain a general understanding of how
-and why the system was decomposed, and how the individual parts work together to
-provide the desired functionality.*))
+These modules are the classes which make up the MUES server. At startup, the
+Config class is loaded, and is used to load the server configuration file. The
+'Engine' class is then loaded and instantiated, and the method (({start()})) is
+called with the Config object as an argument.
 
-((*At the top-most level, describe the major responsibilities that the software
-must undertake and the various roles that the system (or portions of the system)
-must play. Describe how the system was broken down into its
-components/subsystems (identifying each top-level component/subsystem and the
-roles/responsibilities assigned to it). Describe how the higher-level components
-collaborate with each other in order to achieve the required results. Don't
-forget to provide some sort of rationale for choosing this particular
-decomposition of the system (perhaps discussing other proposed decompositions
-and why they were rejected). Feel free to make use of design patterns, either in
-describing parts of the architecture (in pattern format), or for referring to
-elements of the architecture that employ them.*))
+==== MUES Class Library Overview
 
-((*If there are any diagrams, models, flowcharts, documented scenarios or use-cases
-of the system behavior and/or structure, they may be included here (unless you
-feel they are complex enough to merit being placed in the Detailed System Design
-section). Diagrams that describe a particular component or subsystem should be
-included within the particular subsection that describes that component or
-subsystem.*))
+: ((*MUES*)) - (({mues/Namespace}))
 
-: The Engine
+  A collection of modules, functions, and base classes for the Multi-User
+  Environment Server. Requiring it adds four type-checking functions
+  ((({checkType()})), (({checkEachType()})), (({checkResponse()})), and
+  (({checkEachResponse()}))) to the Ruby (({Object})) class, defines the
+  (({MUES::})) namespace, the base object class ((({MUES::Object}))), and a mixin
+  for abstract classes ((({MUES::AbstractClass}))).
 
-  The main server executable
+: ((*MUES::Engine*)) - (({mues/Engine}))
 
-: World Objects
+  This class is the main server class for the Multi-User Environment Server
+  (MUES). The server encapsulates and provides a simple front end/API for the
+  following tasks:
 
-  Game world objects, subclasses of MetaClass::Milieu, metaclass environments.
+  * Loading, configuring, and maintaining one or more World objects, which contain a
+    class library made up of metaclasses stored in a database
 
-: Event Queues
+  * Handle player connection, login, and player object maintenance through a
+    client protocol or simple telnet/HTTP connection
 
-  Two queues of events to be processed from the worlds, players, and internal systems -- one is a prioritized immediate event queue, and the other is a time-controlled delayed event queue.
+  * Maintain one or more game Sciences, which provide shared event-driven
+    services to the hosted game worlds
 
-: Thread Pools
+  * Coordinate, queue, and dispatch Events between the World objects, Player
+    objects, and the Sciences.
 
-  The pools of worker threads tasked with handling queued events, socket I/O, and other internal tasks
+  * Execute an event loop which serves as the fundamental unit of time for
+    each world
 
-: Listener Socket
+: ((*MUES::Config*)) - (({mues/Config}))
 
-  The incoming connection socket
+  Configuration file reader/writer class. Given an IO object, a filename, or a
+  String with configuration contents, this class parses the configuration and
+  returns an instantiated configuration object that provides a hash interface to
+  the config values. MUES::Config objects can also dump the configuration back
+  into a string for writing.
 
-: Player Objects
+: ((*MUES::Log*)) - (({mues/Log}))
 
-  Player connection class; each has its own thread, and is reponsible for interacting with the Engine on the user's behalf.
+  A log handle class. Creating one will open a filehandle to the specified file,
+  and any message sent to it at a level greater than or equal to the specified
+  logging level will be appended to the file, along with a timestamp and an
+  annotation of the level.
 
-: MODS Proxy
+: ((*MUES::EventQueue*)) - (({mues/EventQueue}))
 
-  Proxy interface to the distributed services (Sciences)
+  MUES::EventQueue is a queue with an embedded thread work crew for event
+  handling.
 
-: Object Store
+: ((*MUES::Player*)) - (({mues/Player}))
 
-  Database-backed game object store
+  The MUES::Player class encapsulates a remote socket connection to a client. It
+  contains the raw socket object, an IOEventStream object which is used to
+  manipulate and direct input and output between the remote user and the player
+  object, an array of characters which are currently being controlled, and some
+  miscellaneous information about the client.
 
-== Policies and Tactics
+: ((*MUES::IOEventFilters*)) - (({mues/IOEventFilters}))
 
-== Detailed System Design
+  A collection of input and output event filter classes. Instances of these classes
+  act as filters for an IOEventStream object in interactive components of the
+  FaerieMUD Engine. They can be used to filter or channel input from the user and
+  output from Engine subsystems or the user's player object. The modules
+  themselves live under the (({mues/filters})) directory, but you shouldn't have
+  to require them individually (though you can, of course).
 
-== Glossary
+: ((*MUES::IOEventStream*)) - (({mues/IOEventStream}))
 
-: Sciences
+  (({MUES::IOEventStream})) is a filtered input/output stream class for the
+  intercommunication of objects in the FaerieMUD engine. It it primarily used for
+  input and output events bound for or coming from the socket object contained in
+  a ((<MUES::Player>)) object, but it can be used to route input and output events
+  for any object which requires a complex I/O abstraction.
 
-  Services which provide the mechanics of the hosted world/s
+: ((*MUES::Debugging*)) - (({mues/Debugging}))
 
-: The Game Client
+  This module is a mixin that can be used to add debugging facilities to objects
+  or classes.
 
-  The end-user interface to the game
+: ((*MUES::Science*)) - (({mues/Science}))
 
-: Events
+  An abstract base class for world "science" object classes. World sciences are
+  world-specific subsystems that either require privileged access to information
+  or are used as general function groups throughout the world classes.
 
-  The objects which encapsulate server and game tasks
+: ((*MUES::ClassLibrary*)) - (({mues/ClassLibrary}))
 
-== Bibliography
+  A metaclass collection container object class.
 
-The structure of this specification was copied pretty much wholesale from:
+: ((*MUES::Events*)) - (({mues/Events}))
 
-((<A Software Design Specification Template|URL:http://www.enteract.com/~bradapp/docs/sdd.html>))
-by Brad Appleton <((<bradapp@enteract.com|URI:mailto:bradapp@enteract.com>))>
-Copyright (c) 1994-1997 by Bradford D. Appleton
+  This module is a collection of system-level event classes in the MUES
+  server. See the documentation for the class for a more in-depth coverage of the
+  various event classes.
 
-The original also has the following declaration in it, which is included here
-despite the fact that it's not a "verbatim copy":
+: ((*MUES::Exceptions*)) - (({mues/Exceptions}))
 
-Permission is hereby granted to make and distribute verbatim copies of this
-document provided the copyright notice and this permission notice are preserved
-on all copies.
+  This module contains exception classes for use in the MUES server.
+
+: ((*MUES::ObjectStore*)) - (({mues/ObjectStore}))
+
+  This class is a generic front end to various means of storing MUES objects. It
+  uses one or more configurable back ends which serialize and store objects to
+  some kind of storage medium (flat file, database, sub-atomic particle inference
+  engine), and then later can restore and de-serialize them.
+
+: ((*MUES::WorkerThread*)) - (({mues/WorkerThread}))
+
+  A derivative of the Thread class which is capable of storing an associated
+  timestamp. This functionality can be used to ascertain how long the thread has
+  been in an idle state.
+
+: ((*MUES::World*)) - (({mues/World}))
+
+  An abstract factory class for MUES world objects.
 
 == History
 
-  $Id: MUES.rd,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+  $Id: MUES.rd,v 1.2 2001/03/28 21:15:22 deveiant Exp $
 
 =end
