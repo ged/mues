@@ -65,6 +65,7 @@ module MUES
 	def_exception :EngineException,		"Engine error",						Exception
 	def_exception :EventQueueException,	"Event queue error",				Exception
 	def_exception :LogError,			"Error in log handle",				Exception
+	def_exception :SecurityViolation,	"Security violation",				Exception
 
 	def_exception :Reload,				"Configuration out of date",		Exception
 	def_exception :Shutdown,			"Server shutdown",					Exception
