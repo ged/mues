@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.1 2002/08/02 20:10:09 deveiant Exp $
+# $Id: object.rb,v 1.2 2002/09/12 12:06:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,9 +31,31 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'md5'
+require 'digest/md5'
 require 'sync'
 
+###
+### Add a couple of syntactic sugar aliases to the Module class.  (Borrowed from
+### Hipster's component "conceptual script" - http://www.xs4all.nl/~hipster/):
+###
+### [<tt>Module::implements</tt>]
+###     An alias for <tt>include</tt>. This allows syntax of the form:
+###       class MyClass < MUES::Object; implements MUES::Debuggable, AbstracClass
+###         ...
+###       end
+###
+### [<tt>Module::implements?</tt>]
+###     An alias for <tt>Module#<</tt>, which allows one to ask
+###     <tt>SomeClass.implements?( Debuggable )</tt>.
+###
+class Module
+
+	# Syntactic sugar for mixin/interface modules
+	alias :implements :include
+	alias :implements? :include?
+end
+
+require 'mues/Exceptions'
 require 'mues/Mixins'
 require 'mues/Log'
 
@@ -82,8 +104,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: object.rb,v 1.1 2002/08/02 20:10:09 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: object.rb,v 1.2 2002/09/12 12:06:12 deveiant Exp $
 
 
 		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -135,7 +157,7 @@ module MUES
 		### Returns a unique id for an object
 		def self.generateMuesId( obj )
 			raw = "%s:%s:%.6f" % [ $$, obj.id, Time.new.to_f ]
-			return MD5.new( raw ).hexdigest
+			return Digest::MD5::hexdigest( raw )
 		end
 
 
@@ -161,7 +183,6 @@ module MUES
 
 		### Return the MUES::Log logger object for the receiving class.
 		def log
-			# $stderr.puts "Getting log for #{self.inspect}"
 			MUES::Log[ self.class.name ] || MUES::Log::new( self.class.name )
 		end
 	end # class Object
