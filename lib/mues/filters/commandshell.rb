@@ -7,6 +7,9 @@
 # [MUES::CommandShell]
 #   The main command shell class; it is a derivative of MUES::IOEventFilter.
 #
+# [MUES::CommandShell::Command]
+#	The Flyweight class for all shell commands.
+#
 # [MUES::CommandShell::Context]
 #	A shell context class that is used by the shell to maintain command
 #	invocation context.
@@ -15,17 +18,13 @@
 #	A command table for looking up command objects by name, synonym, or
 #	abbreviation.
 #
-# [MUES::CommandShell::UserCommand]
-#	The abstract base class for all user commands.
+# [MUES::CommandShell::Factory]
+#   An Abstract Factory object class that loads and maintains a registry of
+#   MUES::CommandShell::Command objects and creates MUES::CommandShell objects
+#   for MUES::User objects according to parameters specified at creation.
 #
-# [MUES::CommandShell::CreatorCommand]
-#	The abstract base class for all creator commands.
-#
-# [MUES::CommandShell::ImplementorCommand]
-#	The abstract base class for all implementor commands.
-#
-# [MUES::CommandShell::AdminCommand]
-#	The abstract base class for all admin commands.
+# [MUES::CommandShell::CommandParser]
+#   A parser class for parsing command specifications.
 #
 # == Synopsis
 #
@@ -44,7 +43,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.15 2002/08/02 20:03:43 deveiant Exp $
+# $Id: commandshell.rb,v 1.16 2002/09/05 04:18:41 deveiant Exp $
 # 
 # == Authors
 # 
@@ -63,8 +62,10 @@ require "find"
 #require "Soundex"
 
 require "mues/Object"
+require "mues/Mixins"
 require "mues/Events"
 require "mues/Exceptions"
+require "mues/User"
 require "mues/filters/IOEventFilter"
 
 module MUES
@@ -80,8 +81,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.15 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.16 2002/09/05 04:18:41 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -169,7 +170,7 @@ module MUES
 				### one is found
 				if e.data =~ /^#{@commandPrefix}(\w+)\b(.*)/
 					command = $1
-					argString = $2
+					argString = $2.strip
 
 					results = []
 
@@ -222,6 +223,168 @@ module MUES
 		#############################################################
 		###	A S S O C I A T E D   O B J E C T   C L A S S E S
 		#############################################################
+
+		# The shell command object class. Commands objects are wrappers around
+		# event-generating functions triggered by user input. They are loaded by
+		# a MUES::CommandShell::Factory via a MUES::CommandShell::CommandParser,
+		# and references to the ones which are executable by a particular
+		# MUES::User are given to her MUES::CommandShell at creation. The
+		# registry of commands is kept up to date by occasionally checking for
+		# updated files.
+		class Command < MUES::Object ; implements MUES::Debuggable
+
+			include MUES::User::AccountType, MUES::TypeCheckFunctions
+
+			### Instantiate and return a new Command object with the specified
+			### values. The arguments are as follows:
+			###
+			### [<tt>name</tt>]
+			###   The name of the command; the text which invokes it in the
+			###   shell. Must be unique across all commands.
+			### [<tt>sourceFile</tt>]
+			###   The file from which this command was loaded.
+			### [<tt>sourceLine</tt>]
+			###   The line number of the <tt>sourceFile</tt> line which contains
+			###   the start of this command.
+			### [<tt>commandSpec</tt>]
+			###   A hash of meta-information about the command, which should
+			###   contain the following keys (Symbols):
+			###
+			###   [<tt>:abstract</tt>]
+			###     A one-line description of the command, which will be used to
+			###     describe it in lists and short help. It should be no longer
+			###     than 70 characters.
+			###   [<tt>:description</tt>]
+			###     A long description of the command which will be used in
+			###     detailed help screens. The text can be as long as is needed;
+			###     lines which are not indented will be automatically wrapped
+			###     to the width of the user's screen. Indented lines will be
+			###     displayed as-is, and should therefore not be longer than 70
+			###     characters.
+			###   [<tt>:usage</tt>]
+			###     A (potentially) multi-line usage text string, which is
+			###     displayed to the user when an invocation error is raised. It
+			###     should provide templates for use for each possible
+			###     invocation of the command. Each line should be no longer
+			###     than 70 characters.
+			###   [<tt>:restriction</tt>]
+			###     An Integer or String describing the lowest user account type
+			###     that should be able to invoke this command. The value may be
+			###     any one of the values in MUES::User::AccountType, or a
+			###     case-insensitive string version of any of the types (eg.,
+			###     AccountType::ADMIN can be specified as 'admin' or 'Admin' or
+			###     'ADMIN').
+			###   [<tt>:synonyms</tt>]
+			###     An Array of zero or more names which should be considered
+			###     exactly equivalent to the primary name for the purposes of
+			###     invocation.
+			### 
+			### [<tt>body</tt>]
+			###   The body of the 'invoke' method, passed either as a parameter
+			###   or as an inline block (ie., a Proc or Method object). The body
+			###   will be invoked like this:
+			###     body.call( context, argString)
+			###   where <tt>context</tt> is a MUES::CommandShell::Context
+			###   object, and <tt>argString</tt> is the text of the command
+			###   entered, with the command name and any leading/trailing
+			###   whitespace removed.
+			def initialize( name, sourceFile, sourceLine, commandSpec, &body )
+				checkType( name, ::String )
+				checkType( sourceFile, ::String )
+				checkType( sourceLine, ::Integer )
+				checkType( commandSpec, ::Hash )
+				checkType( body, ::Proc, ::Method )
+
+				checkType( commandSpec[:abstract], ::String )
+				checkType( commandSpec[:description], ::String, ::NilClass )
+				checkType( commandSpec[:usage], ::String, ::NilClass )
+				checkType( commandSpec[:restriction], ::String, ::Integer )
+				checkType( commandSpec[:synonyms], ::Array )
+
+				self.log.debug {"Creating a new command '#{name}' from '#{sourceFile}':#{sourceLine}"}
+
+				@name			= name
+				@sourceFile		= sourceFile
+				@sourceLine		= sourceLine
+
+				@abstract		= commandSpec[:abstract]
+				@description	= commandSpec[:description] || @abstract
+				@usage			= commandSpec[:usage] || @name
+				@synonyms		= commandSpec[:synonyms]
+
+				@body			= body
+
+				# Normalize the restriction argument, set it, and make sure it's
+				# valid.
+				case commandSpec[:restriction]
+				when String
+					val = MUES::User::AccountType::Map[ commandSpec[:restriction].downcase ] or
+						raise ArgumentError,
+						"No such account type '#{commandSpec[:restriction]}'"
+					@restriction = val
+
+				when Integer
+					val = commandSpec[:restriction].abs
+					raise ArgumentError, "Restriction value out of bounds: %d > %d" % 
+						[ val, MUES::User::AccountType::Map.values.max ] unless
+						val <= MUES::User::AccountType::Map.values.max 
+					@restriction = val
+
+				else
+					raise ArgumentError,
+						"Illegal restriction spec: '#{commandSpec[:restriction].inspect}'"
+				end
+
+				super()
+			end
+			
+
+			######
+			public
+			######
+
+			# The name by which the command is invoked
+			attr_reader	:name
+
+			# The source file which contains this command
+			attr_reader :sourceFile
+
+			# The line number of the command declaration for this command
+			attr_reader :sourceLine
+
+			# The one-line short description of the command.
+			attr_reader :abstract
+
+			# The description of the command.
+			attr_reader	:description
+
+			# The usage messages
+			attr_reader :usage
+
+			# The restriction level of the command (one of
+			# MUES::User::AccountType).
+			attr_reader :restriction
+
+			# A (potentially empty) Array of synonyms for the command.
+			attr_reader	:synonyms
+
+
+			### Invoke the command's body, returning any consequential events in
+			### an Array.
+			def invoke( context, argString )
+				@body.call( context, argString )
+			end
+
+
+			### Returns true if the command can be used by the user specified (a
+			### MUES::User object).
+			def canBeUsedBy?( user )
+				checkType( user, MUES::User )
+				return user.accountType >= @restriction
+			end
+
+		end # class Command
+
 
 		### A shell context class that is used by the MUES::CommandShell to
 		### maintain command invocation context, and to provide access to
@@ -352,21 +515,206 @@ module MUES
 		end # class CommandTable
 
 
-		### A command-shell creation factory. Instances of this class create
-		### instances of MUES::CommandShell or a derivative specified by the
-		### configuration, and then maintain a list of commands loaded from a
-		### configured list of directories, reloading any that change.
+		### A parser for command definitions
+		class CommandParser < MUES::Object
+			
+			include MUES::TypeCheckFunctions, MUES::FactoryMethods
+
+			
+			### Instantiate and return a parser object which will create command
+			### objects from the specified class (which should be either
+			### MUES::CommandShell::Command or one of its derivatives).
+			def initialize( commandClass=MUES::CommandShell::Command )
+				@commandClass = commandClass
+				super()
+			end
+
+
+			### Returns a Regexp object which matches the filename of a command
+			### parseable by the parser.
+			def fileSpec
+				%r{\.cmd$}
+			end
+
+
+			### Parse the specified <tt>sourceFile</tt>, which should be a file
+			### containing one or more command definitions, and return the
+			### MUES::CommandShell::Command objects defined therein.
+			def parse( sourceFile )
+				checkType( sourceFile, ::String )
+				data = nil
+
+				self.log.debug {"Parsing commands from #{sourceFile}"}
+				data = File::open( sourceFile, "r" ).readlines
+				self.log.debug {"...read %d lines." % data.length}
+
+				return parseData( data, sourceFile )
+			end
+
+
+			#########
+			protected
+			#########
+
+			### Parse the specified command-definition <tt>data</tt>, which is
+			### an Array of command source, and return the
+			### MUES::CommandShell::Command objects specified therein.
+			def parseData( data, sourceName="(Anonymous Array)" )
+				checkType( data, Array )
+				commands = []
+
+				lineCount = 0
+
+				begin
+					name = nil
+					sourceLine = lineCount
+					sections = Hash::new("")
+					sections[:restriction] = 'user'
+					sections[:synonyms] = []
+					#sections[:includes] = []
+					currentSection = ''
+
+					# Read a line at a time, defining the variables for
+					# building the command along the way.
+					data.each {|line|
+
+						lineCount += 1
+						case line
+
+						# Skip comment lines
+						when /^\s*#.*$/
+							self.log.debug( "Skipping blank line" )
+							next
+
+						# A command header (command name)
+						when /^=\s*(\w+)/
+							newName = $1
+							self.log.debug( "Found start of command '#{newName}'" )
+
+							if name
+								self.log.debug( "Finished parsing the '#{name}' command. Creating command object." )
+
+								commands.push createCommand( name, sourceName, sourceLine, sections )
+							end
+
+							# Initialize the command variables that we expect to
+							# parse.
+							name = newName
+							sourceLine = lineCount
+							sections.clear
+							sections[:restriction] = 'user'
+							sections[:synonyms] = []
+							#sections[:includes] = []
+							currentSection = ''
+
+						# Section declaration
+						when /^==\s*(\w+)/i
+							currentSection = $1.downcase.intern
+							self.log.debug( "Found section header. Set current section to '#{currentSection}'" )
+
+						# A regular line
+						else
+
+							# Parse the line according to which section we're in
+							case currentSection
+							when :abstract
+								next unless line =~ /\S/
+								self.log.debug( "Appending '#{line.strip}' to the abstract." )
+								sections[:abstract] = line.strip
+
+							when :restriction
+								next unless line =~ /\S/
+								sections[:restriction] = line.strip
+								self.log.debug( "Setting restriction to '#{sections[:restriction]}'." )
+
+							when :synonyms
+								next unless line =~ /\S/
+								sections[:synonyms] |= line.strip.split(/\s*[,;]\s*/)
+								self.log.debug { "Added synonyms. Now: #{sections[:synonyms].inspect}" }
+
+							when :description
+								if line =~ /^\s+/
+									next if sections[:description].empty?
+									self.log.debug( "Adding paragraph break to description." )
+									sections[:description] += "\n\n" unless 
+										sections[:description][-1] == "\n"
+								else
+									self.log.debug( "Adding '#{line.strip}' to description." )
+									sections[:description] += line.strip + " "
+								end
+
+							when :usage
+								self.log.debug( "Adding '#{line.strip}' to usage." )
+								sections[:usage] += line
+
+							#when :includes
+							#	next unless line =~ /\S/
+							#	self.log.debug( "Adding '#{line.strip}' to the list of includes" )
+							#	sections[:includes] |= line.strip.split(/\s*[,;]\s*/)
+
+							when :code
+								next unless line =~ /\S/
+								self.log.debug( "Adding '#{line.strip}' to code." )
+								sections[:code] += line
+
+							else
+								self.log.debug( "Skipping out-of-section or unsupported section line '#{line}'" )
+							end
+
+						end
+					}
+
+					commands.push createCommand( name, sourceName, sourceLine, sections )
+
+				rescue => e
+					raise( e, e.message + " at line #{lineCount}", caller )
+				end
+
+				return commands
+			end
+
+
+			### Create an instance of the configured command class with the
+			### specified <tt>name</tt>, <tt>sourceName</tt>,
+			### <tt>sourceLine</tt>, and <tt>sections</tt>.
+			def createCommand( name, sourceName, sourceLine, sections )
+				body = "Proc::new {|context,argString| " + sections[:code] + "}"
+				self.log.debug {"Evaluating #{body} as the command body."}
+				bodyProc = eval body
+
+				cmd = @commandClass.new( name, sourceName, sourceLine, sections, &bodyProc )
+
+				# Eval the required includes in the context of the command
+				#unless sections[:includes].empty?
+				#	includeEval = sections.[:includes].collect {|mod|
+				#		"include #{mod}"
+				#	}.join('; ')
+				#	cmd.instance_eval includeEval
+				#end
+			end
+
+
+		end # class CommandParser
+
+
+		### A command-shell creation factory. Instances of this class create and
+		### combine instances of MUES::CommandShell and
+		### MUES::CommandShell::CommandTable, or derivatives thereof as
+		### specified by the configuration, and then maintain a list of commands
+		### loaded from a configured list of directories, reloading any that
+		### change via a scheduled event in the Engine to which it belongs.
 		class Factory < MUES::Object
 
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.15 2002/08/02 20:03:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.16 2002/09/05 04:18:41 deveiant Exp $
 
 			### Class globals
-			@@DefaultShellClass = MUES::CommandShell
-			@@DefaultTableClass = MUES::CommandShell::CommandTable
+			@@DefaultShellClass		= MUES::CommandShell
+			@@DefaultTableClass		= MUES::CommandShell::CommandTable
+			@@DefaultParserClass	= MUES::CommandShell::CommandParser
 
 			### Create and return a new CommandFactory according to the
 			### commandshell configuration of the specified <tt>config</tt> (a
@@ -379,20 +727,24 @@ module MUES
 				# Classes used to build a shell
 				@shellClass			= config.commandshell['class'] || @@DefaultShellClass
 				@tableClass			= config.commandshell['tableclass'] || @@DefaultTableClass
+				@parserClass		= config.commandshell['parserclass'] || @@DefaultParserClass
 
+				# Command objects are kept in a Hash so we can detect collisions
+				# early.
 				@registry			= {}
 				@registryIsBuilt	= false
 				@mutex				= Sync.new
 				@commandLoadTime	= Time.at(0) # Set initial load time to epoch
+				@parser				= CommandParser::create( @parserClass,
+															 MUES::CommandShell::Command )
 
 				@reloadInterval		= -30
 
 				# Fully-qualify all the directories in the command path
-				@commandPath = @config.commandshell.commandPath.collect {|cmdsdir|
-					if cmdsdir !~ %r{^/}
-						cmdsdir = File.join( @config.general.root_dir, cmdsdir )
-					end
-					cmdsdir
+				@commandPath = @config.commandshell.commandPath.collect {|dir|
+					File.expand_path( dir )
+				}.find_all {|dir|
+					File.exists?( dir ) && File.directory?( dir )
 				}
 				
 				buildCommandRegistry()
@@ -409,27 +761,12 @@ module MUES
 			public
 			######
 
-			### Returns an Array of all loaded command objects
-			def getCommands
-				@registry.values.uniq
-			end
+			# The Array of directories to search for command source files
+			attr_reader :commandPath
 
+			# The registry of all loaded commands, keyed by command and alias
+			attr_reader :registry
 
-			### Returns the MUES::CommandShell::Command objects that are
-			### available to the given <tt>user</tt> (a MUES::User object) based
-			### on her user account type.
-			def getCommandsAvailableToUser( user )
-				getCommands().find_all {|c| c.canBeUsedBy?(user)}
-			end
-
-
-			### Returns a MUES::CommandShell::CommandTable filled with the
-			### commands that are allowed for the specified <tt>user</tt> (a
-			### MUES::User object).
-			def createCommandTableForUser( user )
-				commands = getCommandsAvailableToUser( user )
-				return CommandTable::create( @tableClass, *commands )
-			end
 
 			### Returns a instance of MUES::CommandShell or one of its
 			### derivatives (as specified by the configuration which created the
@@ -443,39 +780,69 @@ module MUES
 			end
 
 
+			### Returns a MUES::CommandShell::CommandTable filled with the
+			### commands that are allowed for the specified <tt>user</tt> (a
+			### MUES::User object).
+			def createCommandTableForUser( user )
+				commands = getCommandsAvailableToUser( user )
+				return CommandTable::create( @tableClass, *commands )
+			end
+
+
+			### Returns the MUES::CommandShell::Command objects that are
+			### available to the given <tt>user</tt> (a MUES::User object) based
+			### on her user account type.
+			def getCommandsAvailableToUser( user )
+				self.registry.values.find_all {|c| c.canBeUsedBy?(user)}
+			end
+
+
 			### Iterate over each file in the shell commands directory specified
-			### in the configuration, loading each one if it's changed since
-			### last we loaded.
+			### in the configuration, parsing the ones that have changed since
+			### last we loaded, and returning an Array of resulting
+			### MUES::CommandShell::Command objects.
 			def loadCommands
 
-				### Load all ruby source in the configured directories newer
-				### than our last load time. Each child will be registered in
-				### the Command class's child classes array as it's loaded
-				### (assuming it's implemented correctly -- if it isn't, we
-				### don't much care).
+				commands = nil
+
+				### Parse all command files in the configured directories newer
+				### than our last load time.
 				@mutex.synchronize( Sync::EX ) {
 
 					# Get the old load time for comparison and set it to the
 					# current time
 					oldLoadTime = @commandLoadTime
 					@commandLoadTime = Time.now
+
+					self.log.info( "Loading commands newer than #{@commandLoadTime.to_s}" )
+
+					# Get the target filespec from the parser
+					fileSpec = @parser.fileSpec
+					self.log.debug { "File spec is: #{fileSpec.inspect}" }
+
+					# Load the default commands defined at the end of this file.
+					commands = @parser.parse( __FILE__ )
 					
-					### Search each directory in the path, top-down, for ruby
+					### Search each directory in the path, top-down, for command
 					### files newer than our last load time, loading any we
 					### find.
 					@commandPath.each {|cmdsdir|
+						self.log.info( "Looking for updated commands in '#{cmdsdir}'." )
 						Find.find( cmdsdir ) {|f|
 							Find.prune if f =~ %r{^\.} # Ignore hidden stuff
 
-							if f =~ %r{\.rb$} && File.stat( f ).file? && File.stat( f ).mtime > oldLoadTime
-								self.log.debug( "Loading command file '#{f}'" )
-								load( f ) 
+							# Turn the filename into its fully-qualified version
+							fqf = File::expand_path( f, cmdsdir )
+
+							if fileSpec.match(fqf) && File.file?(fqf) && File.mtime(fqf) > oldLoadTime
+								self.log.debug( "Loading commands from '#{fqf}'" )
+								commands += @parser.parse( fqf )
 							end
 						}
 					}
 				}
 
-				return true
+				return commands.flatten
 			end
 
 
@@ -483,38 +850,42 @@ module MUES
 			def buildCommandRegistry
 				
 				@mutex.synchronize(Sync::EX) {
-					return true if ! @registryIsBuilt
+					return true if @registryIsBuilt
 					self.log.notice( "Building command registry" )
-					loadCommands()
 
-					MUES::CommandShell::Command.childClasses.each {|commandClass|
+					# Get the list of updated commands and derive the list of
+					# their sources
+					commands = loadCommands()
+					self.log.notice( "Got %d new/reloaded commands" % commands.length )
 
-						# Get the singleton instance of the command class
-						cmd = commandClass.instance
+					# Remove old commands loaded from the modified sources (so
+					# deleting a command from sources works)
+					sources = commands.collect {|cmd| cmd.sourceFile}.sort.uniq
+					@registry.delete_if {|k,v| sources.include? v.sourceFile}
 
-						# Build an array of command names
-						names = [ cmd.name, cmd.synonyms ].flatten.compact
+					# Insert new versions of the commands into the registry,
+					# checking for collisions.
+					commands.each {|command|
 
-						### Test each name to make sure we aren't clobbering some
-						### other command from another class. Warn to the log if
-						### we're clobbering an old version of the command from the
-						### same class.
-						names.each {|name|
-							if @registry.key?( name ) && @registry[name].class != commandClass
+						# Iterate over the command name and any associated aliases
+						[ command.name, command.synonyms ].flatten.compact.each {|name|
+
+							# Test for collision
+							if @registry.has_key?( name )
 								raise CommandNameConflictError,
-									"Command '%s' has clashing implementations in %s and %s " % [
+									"Command '%s' has clashing implementations in %s:%d and %s:%d " % [
 									name,
-									@registry[name].class.name,
-									commandClass.name
+									@registry[name].sourceName, @registry[name].sourceLine,
+									command.sourceName, command.sourceLine
 								]
-							elsif @registry.key?( name )
-								self.log.notice( "Redefining command '#{name}' from #{commandClass.name}." )
 							end
 
 							# Install the command into the command registry
-							@registry[ name ] = cmd
+							@registry[ name ] = command
 						}
 					}
+
+					@registryIsBuilt = true
 				}
 
 				return true
@@ -528,516 +899,341 @@ module MUES
 				self.log.notice( 2, "Flushing command registry for rebuild at #{Time.now}" )
 				@mutex.synchronize( Sync::EX ) {
 					@registryIsBuilt = false
-					buildCommandRegistry( config )
+					buildCommandRegistry()
 				}
 			end
 
 		end
 
 			
-		# This is an abstract base class for shell commands, which are
-		# event-generating functions triggered by user input. They are loaded by
-		# a MUES::CommandShell::CommandFactory the first time a
-		# MUES::CommandShell is created, and are kept up to date by occasionally
-		# checking for updated files. Command objects are Singletons.
-		class Command < MUES::Object ; implements MUES::AbstractClass, MUES::Debuggable
-
-			# Make the new method private
-			private_class_method :new
-
-			@@Instances			= {}
-			@@ChildClasses		= []
-
-			### Class methods
-
-			### Returns (after potentially creating) the instance of the
-			### command class.
-			def self.instance
-				@@Instances[ self ] ||= new()
-			end
-
-			### Register the specified class with the list of child classes
-			### (callback).
-			def self.inherited( aSubClass )
-				@@ChildClasses |= [ aSubClass ]
-			end
-
-			### Return an Array of child classes
-			def self.childClasses
-				@@ChildClasses
-			end
-
-
-			######
-			public
-			######
-
-			### Abstract and accessor methods 
-
-			# Invoke the command. This is a virtual method which must be
-			# overridden in derivative classes.
-			abstract	:invoke
-
-			# The name by which the command is invoked
-			attr_reader	:name
-
-			# A (potentially empty) Array of synonyms for the command. 
-			attr_reader :synonyms
-
-			# The description of the command.
-			attr_reader :description
-
-
-			### Returns true if the command can be used by the user specified (a
-			### MUES::User object). Returns false by default, so subclasses must
-			### supply an explicit override for this method if it is to be
-			### usable.
-			def canBeUsedBy?( user )
-				checkType( user, MUES::User )
-				return false
-			end
-
-
-			### Return a usage string for the command
-			def usage
-				if @usage
-					return "Usage: #{@usage}\n"
-				else
-					return "Usage: #{@name} <args>\n"
-				end
-			end
-
-		end # class Command
-
-
-
-		#############################################################
-		###	A B S T R A C T   C O M M A N D   S U B C L A S S E S
-		#############################################################
-
-		### User command abstract base class (a derivative of
-		### MUES::CommandShell::Command).
-		class UserCommand < Command
-
-			# Remove ourselves from the concrete classes list
-			@@ChildClasses -= [ self ]
-
-			### User commands can always be used, so this method just returns
-			### true unconditionally.
-			def canBeUsedBy?( user )
-				checkType( user, MUES::User )
-				return true
-			end
-		
-		end # class UserCommand
-
-
-		### Creator command base class (a derivative of
-		### MUES::CommandShell::Command).
-		class CreatorCommand < Command
-
-			# Remove ourselves from the concrete classes list
-			@@ChildClasses -= [ self ]
-
-			### Returns true if the specified user has 'creator' or higher
-			### permissions.
-			def canBeUsedBy?( user )
-				checkType( user, MUES::User )
-				return user.isCreator?
-			end
-		
-		end # class CreatorCommand
-
-
-		### Implementor command base class (a derivative of
-		### MUES::CommandShell::Command).
-		class ImplementorCommand < Command
-
-			# Remove ourselves from the concrete classes list
-			@@ChildClasses -= [ self ]
-
-			### Returns true if the specified user has 'implementor' or higher
-			### permissions.
-			def canBeUsedBy?( user )
-				checkType( user, MUES::User )
-				return user.isImplementor?
-			end
-		
-		end # class ImplementorCommand
-
-
-		### Admin command base class (a derivative of
-		### MUES::CommandShell::Command).
-		class AdminCommand < Command
-
-			# Remove ourselves from the concrete classes list
-			@@ChildClasses -= [ self ]
-
-			### Returns true if the specified user has 'admin' or higher
-			### permissions.
-			def canBeUsedBy?( user )
-				checkType( user, MUES::User )
-				return user.isAdmin?
-			end
-
-		end # class AdminCommand
-
-
-		#############################################################
-		###	D E F A U L T   B A R E B O N E S   C O M M A N D S  
-		#############################################################
-
-		### Quit command
-		class QuitCommand < UserCommand # :nodoc:
-
-			def initialize # :nodoc:
-				@name				= 'quit'
-				@synonyms			= %w{logout}
-				@description		= 'Disconnect from the server.'
-				@usage				= 'quit'
-
-				super
-			end
-
-			### Invoke the quit command, which generates a new
-			### MUES::UserLogoutEvent.
-			def invoke( context, args )
-				return [ MUES::UserSaveEvent.new( context.user ), MUES::UserLogoutEvent.new( context.user ) ]
-			end
-		end # class QuitCommand
-
-
-		### Help command
-		class HelpCommand < UserCommand # :nodoc:
-
-			### Initialize a new HelpCommand object
-			def initialize # :nodoc:
-				@name				= 'help'
-				@synonyms			= %w{}
-				@description		= 'Fetch help about a command or all commands.'
-				@usage				= 'help [<command>]'
-
-				super
-			end
-
-			### Invoke the help command, which generates help documentation for
-			### the specified command, or presents a table of all available
-			### commands if no command is specified.
-			def invoke( context, args )
-
-				helpTable = nil
-				rows = []
-
-				### Fetch the help table from the shell's command table
-				if args =~ %r{(\w+)}
-					helpTable = context.shell.commandTable.getHelpTable( $1 )
-
-					# If there was no help available, just output a message to
-					# that effect
-					return OutputEvent.new( "No help found for '#{$1}'\n" ) if helpTable.nil?
-
-					rows << "Help for '#{$1}':\n"
-				else
-					helpTable = context.shell.commandTable.getHelpTable()
-					rows << "Help topics:\n"
-				end
-
-				### Add a row or two for each table entry
-				helpTable.sort.each {|cmd,desc|
-					rows << "\t%20s : %s" % [ cmd, desc[0] ]
-					rows << " [Synonyms: %s]" % desc[1].join(', ') unless desc[1].empty?
-					rows << "\n"
-				}
-
-				rows << "\n"
-				return OutputEvent.new( rows )
-			end
-		end # class QuitCommand
-
-
-		### 'Roles' command
-		class RolesCommand < UserCommand # :nodoc:
-
-			include MUES::ServerFunctions
-
-			### Initialize a new UnloadEnvironmentCommand object
-			def initialize # :nodoc:
-				@name			= 'roles'
-				@synonyms		= %w{}
-				@description	= 'List available roles in the specified environments.'
-				@usage			= 'roles [<environment names>]'
-
-				super
-			end
-
-			### Invoke the unload command, which generates a
-			### UnloadEnvironmentEvent with the environment specified.
-			def invoke( context, args )
-				results = []
-				envNames = []
-				list = nil
-
-				### If they passed at least one environment name, parse them out
-				### of the line.
-				if args =~ %r{\w}
-					envNames = args.scan(/\w+/)
-				else
-					envNames = engine().getEnvironmentNames
-				end
-
-				list = "\n"
-				roleCount = 0
-				envNames.each {|envName|
-
-					### Look for the roles in the requested environment. Catch any
-					### problems as exceptions, and turn them into error messages
-					### for output.
-					begin
-						env = engine().getEnvironment( envName ) or
-							raise CommandError, "No such environment '#{envName}'."
-						list << "%s (%s)\n" % [ envName, env.class.name ]
-						env.getAvailableRoles( context.user ).each {|role|
-							list << "    #{role.to_s}\n"
-							roleCount += 1
-						}
-					rescue CommandError, SecurityViolation => e
-						list << e.message + "\n"
-					end
-
-					list << "\n"
-				}
-
-				list << "(#{roleCount}) role/s currently available to you.\n\n"
-
-				results << OutputEvent.new( list )
-				return results.flatten
-			end
-		end
-
-
-		### 'Connect' command
-		class ConnectCommand < UserCommand # :nodoc:
-
-			### Initialize a new ConnectCommand object
-			def initialize # :nodoc:
-				@name				= 'connect'
-				@synonyms			= %w{play}
-				@description		= 'Connect to the specified environment in the specified role.'
-				@usage				= 'connect [to] <environment> [as] <role>'
-
-				super
-			end
-
-			### Attempt to connect the user to the environment and role
-			### specified by the arguments.
-			def invoke( context, args )
-				results = []
-				if args =~ %r{(?:\s*to\s*)?(\w+)\s+(?:as\s*)?(\w+)}
-					envName, roleName = $1, $2
-
-					### Look for the requested role in the requested
-					### environment, returning the new filter object if we find
-					### it. Catch any problems as exceptions, and turn them into
-					### error messages for output.
-					begin
-						env = engine().getEnvironment( envName ) or
-							raise CommandError, "No such environment '#{envName}'."
-						role = env.getAvailableRoles( context.user ).find {|role|
-							role.name == roleName
-						}
-						raise CommandError, "Role '#{roleName}' is not currently available to you." unless
-							role.is_a?( MUES::Role )
-
-						results << OutputEvent.new( "Connecting..." )
-						results << env.getParticipantProxy( context.user, role )
-						results << OutputEvent.new( "connected.\n\n" )
-					rescue CommandError, SecurityViolation => e
-						results << OutputEvent.new( e.message )
-					end
-				else
-					results << OutputEvent.new( usage() )
-				end
-
-				return results.flatten
-			end
-		end # class ConnectCommand
-
-
-		### 'Disconnect' command
-		class DisconnectCommand < UserCommand # :nodoc:
-
-			### Initialize a new DisconnectCommand object
-			def initialize # :nodoc:
-				@name				= 'disconnect'
-				@synonyms			= %w{}
-				@description		= 'Disconnect from the specified role in the specified environment.'
-				@usage				= 'disconnect [<role> [in]] <environment>'
-
-				super
-			end
-
-			### Attempt to disconnect the user from the environment and role
-			### specified by the arguments.
-			def invoke( context, args )
-				results = []
-				roleName = nil
-				envName = nil
-
-				### Parse the arguments, returning a usage message if we can't
-				### parse
-				if args =~ %r{(\w+)\s+(?:in\s*)?(\w+)}
-					roleName, envName = $1, $2
-				elsif args =~ %r{(\w+)}
-					envName = $1
-				else
-					return [ OutputEvent.new( usage() ) ]
-				end
-
-				### Look for a proxy from the specified environment
-				begin
-					targetEnv = engine().getEnvironment( envName ) or
-						raise CommandError, "No such environment '#{envName}'."
-					targetProxy = context.stream.findFiltersOfType( MUES::ParticipantProxy ).find {|f|
-						f.env == targetEnv && ( roleName.nil? || f.role.name == roleName )
-					} or raise CommandError, "Not connected to #{envName} #{roleName ? 'as ' + roleName : ''}"
-					
-					results << OutputEvent.new( "Disconnecting from #{envName}..." )
-					targetEnv.removeParticipantProxy( targetProxy )
-					context.stream.removeFilters( targetProxy )
-					results << OutputEvent.new( " disconnected.\n\n" )
-				rescue CommandError, SecurityViolation => e
-					results << OutputEvent.new( e.message )
-				end
-				
-				return results.flatten
-			end
-		end # class DisconnectCommand
-
-
-		### 'Debug' command
-		class DebugCommand < ImplementorCommand # :nodoc:
-
-			### Initialize a new DebugCommand object
-			def initialize # :nodoc:
-				@name				= 'debug'
-				@synonyms			= %w{}
-				@description		= 'Set command shell debug level.'
-				@usage				= 'debug [<level>]'
-
-				super
-			end
-
-			### Invoke the debug command
-			def invoke( context, args )
-				if args =~ /=\s*(\d)/
-					level = $1
-					context.shell.debugLevel = level.to_i
-					return OutputEvent.new( "Setting shell debug level to #{level}.\n" )
-
-				else
-					return OutputEvent.new( "Shell debug level is currently #{context.shell.debugLevel}.\n" )
-				end
-			end
-
-		end # class DebugCommand
-
-		
-		### 'Eval' command
-		class EvalCommand < AdminCommand # :nodoc:
-
-			### Initialize a new EvalCommand object
-			def initialize # :nodoc:
-				@name				= 'eval'
-				@synonyms			= %w{}
-				@description		= 'Evaluate the specified ruby code in the current object context.'
-				@usage				= 'eval <code>'
-
-				super
-			end
-
-			### Evaluate the specified code in the shell's current object
-			### context. This obviously is a dangerous command.
-			def invoke( context, args )
-				contextObject = context.evalContext
-
-				rval = nil
-				begin
-					res = contextObject.instance_eval( args.strip, '<shell input>', 1 )
-					rval = "=> #{res.inspect}\n\n"
-				rescue StandardError, ScriptError => e
-					rval = ">>> Eval error: #{e.to_s}\n\n"
-				end
-				
-				return MUES::OutputEvent.new( rval )
-			end
-		end # class EvalCommand
-
-
-		### 'Set' command
-		class SetCommand < UserCommand # :nodoc:
-
-			### Initialize a new SetCommand object
-			def initialize # :nodoc:
-				@name				= 'set'
-				@synonyms			= %w{}
-				@description		= 'Set shell parameters.'
-				@usage				= 'set [<param> [= <value>]]'
-
-				super
-			end
-
-			### Invoke the set command with either no args, a parameter name
-			### arg, or parameter name + new value args.
-			def invoke( context, args )
-				results = []
-
-				case args
-
-				### <param> = <value> form (set)
-				when /(\w+)\s*=\s*(.*)/
-
-					param = $1
-					value = $2
-
-					# Strip enclosing quotes from the value
-					debugMsg 4, "Stripping quotes."
-					value.gsub!( /\s*(["'])((?:[^\1]+|\\.)*)\1/ ) {|str| $2 }
-					debugMsg 4, "Done stripping."
-					
-					if context.shell.vars.has_key?( param )
-						results << MUES::OutputEvent.new("Setting #{param} = '#{value}'\n")
-					else
-						results << MUES::OutputEvent.new("(Created variable '#{param}') \n")
-					end
-
-					context.shell.vars[ param ] = value
-
-				### <param> form (get)
-				when /(\w+)/
-					param = $1
-
-					if context.shell.vars.has_key?( param )
-						results << MUES::OutputEvent.new("#{param} = '#{context.shell.vars[param]}'\n")
-					else
-						results << MUES::OutputEvent.new("#{param} = nil\n")
-					end
-							
-				### No-arg form (list)
-				else
-					varlist = ''
-					if context.shell.vars.empty?
-						varlist = "(No variables set)\n"
-					else
-						varlist = "Variables:\n"
-						context.shell.vars.each {|param,val| varlist << "\t%20s = '%s'\n" % [ param, val ] }
-					end
-					
-					results << MUES::OutputEvent.new(varlist)
-				end
-
-				return *results
-			end # method invoke
-		end # class SetCommand
-
 	end # class CommandShell
 end # module MUES
+
+
+
+
+#############################################################
+###	D E F A U L T   B A R E B O N E S   C O M M A N D S  
+#############################################################
+__END__
+
+
+### Quit command
+= quit
+
+== Abstract
+Disconnect from the server.
+
+== Description
+This command diconnects the user from the server, severing any connections to
+the worlds hosted theree.
+
+== Usage
+  quit
+
+== Synonyms
+logout
+
+== Code
+
+  return [ MUES::UserSaveEvent.new( context.user ), MUES::UserLogoutEvent.new( context.user ) ]
+
+
+
+### Help command
+= help
+
+== Abstract
+Fetch help about a command or all commands.
+
+== Usage
+  help [<command>]
+
+== Code
+
+  helpTable = nil
+  rows = []
+
+  ### Fetch the help table from the shell's command table
+  if args =~ %r{(\w+)}
+	  helpTable = context.shell.commandTable.getHelpTable( $1 )
+
+	  # If there was no help available, just output a message to
+	  # that effect
+	  return OutputEvent.new( "No help found for '#{$1}'\n" ) if helpTable.nil?
+
+	  rows << "Help for '#{$1}':\n"
+  else
+	  helpTable = context.shell.commandTable.getHelpTable()
+	  rows << "Help topics:\n"
+  end
+
+  ### Add a row or two for each table entry
+  helpTable.sort.each {|cmd,desc|
+	  rows << "\t%20s : %s" % [ cmd, desc[0] ]
+	  rows << " [Synonyms: %s]" % desc[1].join(', ') unless desc[1].empty?
+	  rows << "\n"
+  }
+
+  rows << "\n"
+  return OutputEvent.new( rows )
+
+
+### 'Roles' command
+= roles
+
+== Abstract
+List available roles in the specified environments.
+
+== Usage
+  roles [<environment names>]
+
+== Code
+
+  results = []
+  envNames = []
+  list = nil
+
+  ### If they passed at least one environment name, parse them out
+  ### of the line.
+  if args =~ %r{\w}
+	  envNames = args.scan(/\w+/)
+  else
+	  envNames = engine().getEnvironmentNames
+  end
+
+  list = "\n"
+  roleCount = 0
+  envNames.each {|envName|
+
+	  ### Look for the roles in the requested environment. Catch any
+	  ### problems as exceptions, and turn them into error messages
+	  ### for output.
+	  begin
+		  env = engine().getEnvironment( envName ) or
+			  raise CommandError, "No such environment '#{envName}'."
+		  list << "%s (%s)\n" % [ envName, env.class.name ]
+		  env.getAvailableRoles( context.user ).each {|role|
+			  list << "    #{role.to_s}\n"
+			  roleCount += 1
+		  }
+	  rescue CommandError, SecurityViolation => e
+		  list << e.message + "\n"
+	  end
+
+	  list << "\n"
+  }
+
+  list << "(#{roleCount}) role/s currently available to you.\n\n"
+
+  results << OutputEvent.new( list )
+  return results.flatten
+
+
+
+### 'Connect' command
+= connect
+
+== Synonyms
+play
+
+== Abstract
+Connect to the specified environment in the specified role.
+
+== Usage
+  connect [to] <environment> [as] <role>
+
+== Code
+
+  results = []
+  if args =~ %r{(?:\s*to\s*)?(\w+)\s+(?:as\s*)?(\w+)}
+	  envName, roleName = $1, $2
+
+	  ### Look for the requested role in the requested
+	  ### environment, returning the new filter object if we find
+	  ### it. Catch any problems as exceptions, and turn them into
+	  ### error messages for output.
+	  begin
+		  env = engine().getEnvironment( envName ) or
+			  raise CommandError, "No such environment '#{envName}'."
+		  role = env.getAvailableRoles( context.user ).find {|role|
+			  role.name == roleName
+		  }
+		  raise CommandError, "Role '#{roleName}' is not currently available to you." unless
+			  role.is_a?( MUES::Role )
+
+		  results << OutputEvent.new( "Connecting..." )
+		  results << env.getParticipantProxy( context.user, role )
+		  results << OutputEvent.new( "connected.\n\n" )
+	  rescue CommandError, SecurityViolation => e
+		  results << OutputEvent.new( e.message )
+	  end
+  else
+	  results << OutputEvent.new( usage() )
+  end
+
+  return results.flatten
+
+
+
+### 'Disconnect' command
+= disconnect
+
+== Abstract
+Disconnect from the specified role in the specified environment.
+
+== Usage
+  disconnect [<role> [in]] <environment>
+
+== Code
+
+  results = []
+  roleName = nil
+  envName = nil
+
+  ### Parse the arguments, returning a usage message if we can't
+  ### parse
+  if args =~ %r{(\w+)\s+(?:in\s*)?(\w+)}
+	  roleName, envName = $1, $2
+  elsif args =~ %r{(\w+)}
+	  envName = $1
+  else
+	  return [ OutputEvent.new( usage() ) ]
+  end
+
+  ### Look for a proxy from the specified environment
+  begin
+	  targetEnv = engine().getEnvironment( envName ) or
+		  raise CommandError, "No such environment '#{envName}'."
+	  targetProxy = context.stream.findFiltersOfType( MUES::ParticipantProxy ).find {|f|
+		  f.env == targetEnv && ( roleName.nil? || f.role.name == roleName )
+	  } or raise CommandError, "Not connected to #{envName} #{roleName ? 'as ' + roleName : ''}"
+
+	  results << OutputEvent.new( "Disconnecting from #{envName}..." )
+	  targetEnv.removeParticipantProxy( targetProxy )
+	  context.stream.removeFilters( targetProxy )
+	  results << OutputEvent.new( " disconnected.\n\n" )
+  rescue CommandError, SecurityViolation => e
+	  results << OutputEvent.new( e.message )
+  end
+
+  return results.flatten
+
+
+### 'Debug' command
+= debug
+
+== Restrictions
+implementor
+
+== Abstract
+Set command shell debug level.
+
+== Usage
+  debug [<level>]
+
+== Code
+  if args =~ /=\s*(\d)/
+	  level = $1
+	  context.shell.debugLevel = level.to_i
+	  return OutputEvent.new( "Setting shell debug level to #{level}.\n" )
+
+  else
+	  return OutputEvent.new( "Shell debug level is currently #{context.shell.debugLevel}.\n" )
+  end
+
+
+
+### 'Eval' command
+= eval
+
+== Restrictions
+admin
+
+== Abstract
+Evaluate the specified ruby code in the current object context.
+
+== Usage
+  eval <code>
+
+== Code
+  contextObject = context.evalContext
+
+  rval = nil
+  begin
+	  res = contextObject.instance_eval( args.strip, '<shell input>', 1 )
+	  rval = "=> #{res.inspect}\n\n"
+  rescue StandardError, ScriptError => e
+	  rval = ">>> Eval error: #{e.to_s}\n\n"
+  end
+
+  return MUES::OutputEvent.new( rval )
+
+
+
+### 'Set' command
+= set
+
+== Abstract
+Set shell parameters.
+
+== Description
+View, get, or set shell parameters. The first form will display a list of the
+shell parameters which are currently defined, while the second displays the
+value set for only the specified parameter. The third form set the given
+parameter to the specified value, creating the parameter if necessary.
+
+== Usage
+  set
+  set <param>
+  set <param> = <value>
+
+== Code
+
+  results = []
+
+  case args
+
+  ### <param> = <value> form (set)
+  when /(\w+)\s*=\s*(.*)/
+
+	  param = $1
+	  value = $2
+
+	  # Strip enclosing quotes from the value
+	  debugMsg 4, "Stripping quotes."
+	  value.gsub!( /\s*(["'])((?:[^\1]+|\\.)*)\1/ ) {|str| $2 }
+	  debugMsg 4, "Done stripping."
+
+	  if context.shell.vars.has_key?( param )
+		  results << MUES::OutputEvent.new("Setting #{param} = '#{value}'\n")
+	  else
+		  results << MUES::OutputEvent.new("(Created variable '#{param}') \n")
+	  end
+
+	  context.shell.vars[ param ] = value
+
+  ### <param> form (get)
+  when /(\w+)/
+	  param = $1
+
+	  if context.shell.vars.has_key?( param )
+		  results << MUES::OutputEvent.new("#{param} = '#{context.shell.vars[param]}'\n")
+	  else
+		  results << MUES::OutputEvent.new("#{param} = nil\n")
+	  end
+
+  ### No-arg form (list)
+  else
+	  varlist = ''
+	  if context.shell.vars.empty?
+		  varlist = "(No variables set)\n"
+	  else
+		  varlist = "Variables:\n"
+		  context.shell.vars.each {|param,val| varlist << "\t%20s = '%s'\n" % [ param, val ] }
+	  end
+
+	  results << MUES::OutputEvent.new(varlist)
+  end
+
+  return *results
