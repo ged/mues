@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
+# $Id: memorymanager.rb,v 1.5 2002/08/29 07:31:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,7 +28,6 @@
 
 require 'hashslice'
 require 'sync'
-require 'pp'
 
 require 'mues/Object'
 require 'mues/Exceptions'

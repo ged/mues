@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.5 2002/08/29 07:31:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,7 +25,6 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'pp'
 require 'bdb'
 require 'sync'
 
@@ -45,8 +44,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.4 2002/08/02 20:03:43 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.5 2002/08/29 07:31:06 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,
