@@ -6,9 +6,11 @@ rescue
 	require '../muesunittest'
 end
 
-require 'metaclasses'
+require 'mues/Metaclasses'
 
 class ClassTestCase < MUES::TestCase
+
+	include MUES
 
 	### Test instantiation with various arguments
 	def test_00Instantiate
@@ -16,25 +18,25 @@ class ClassTestCase < MUES::TestCase
 		obj = nil
 
 		# 0-arg -- should raise an exception
-		assert_raises( ArgumentError ) { Metaclass::Class.new }
+		assert_raises( ArgumentError ) { Metaclass::Class::new }
 		
 		# 1-arg
-		assert_nothing_raised { obj = Metaclass::Class.new("Tester") }
+		assert_nothing_raised { obj = Metaclass::Class::new("Tester") }
 		assert_instance_of Metaclass::Class, obj
 
 		# 2-arg, illegal second arg
-		assert_raises( ArgumentError ) { Metaclass::Class.new("Tester", "notAClass") }
+		assert_raises( ArgumentError ) { Metaclass::Class::new("Tester", "notAClass") }
 
 		# 2-arg, legal second arg
-		parentClass = Metaclass::Class.new( "Super" )
-		assert_nothing_raised { obj = Metaclass::Class.new("Sub", parentClass) }
+		parentClass = Metaclass::Class::new( "Super" )
+		assert_nothing_raised { obj = Metaclass::Class::new("Sub", parentClass) }
 	end
 
 
 	### Test simple accessor methods
 	def test_01Accessors
-		parentClass = Metaclass::Class.new("Parent")
-		testClass = Metaclass::Class.new("Tester", parentClass)
+		parentClass = Metaclass::Class::new("Parent")
+		testClass = Metaclass::Class::new("Tester", parentClass)
 
 		assert_equal "Tester", testClass.name
 		assert_instance_of Hash, testClass.operations
@@ -55,7 +57,7 @@ class ClassTestCase < MUES::TestCase
 		assert_nothing_raised { testClass << Metaclass::Operation::new('testOp') }
 		assert_nothing_raised { testClass << Metaclass::Interface::new('TestIface') }
 
-		assert_raises( ArgumentError ) { testClass << "test string" }
+		assert_raises( TypeError ) { testClass << "test string" }
 	end
 
 
@@ -64,9 +66,9 @@ class ClassTestCase < MUES::TestCase
 		parentClass = Metaclass::Class::new("Parent")
 		testClass = Metaclass::Class::new("Tester", parentClass)
 
-		assert_raises( ArgumentError ) { testClass.addAttribute "test string" }
-		assert_raises( ArgumentError ) { testClass.addOperation 2 }
-		assert_raises( ArgumentError ) { testClass.addInterface $stderr }
+		assert_raises( TypeError ) { testClass.addAttribute "test string" }
+		assert_raises( TypeError ) { testClass.addOperation 2 }
+		assert_raises( TypeError ) { testClass.addInterface $stderr }
 
 		assert_nothing_raised { testClass.addAttribute Metaclass::Attribute::new('testAttr') }
 		assert_nothing_raised { testClass.addOperation Metaclass::Operation::new('testOp') }
@@ -82,9 +84,9 @@ class ClassTestCase < MUES::TestCase
 		testAttr, testOp, testIface = nil, nil, nil
 
 		# Test illegal arguments, no arguments
-		assert_raises( ArgumentError ) { testClass.removeAttribute 1 }
+		assert_raises( TypeError ) { testClass.removeAttribute 1 }
 		assert_raises( ArgumentError ) { testClass.removeOperation }
-		assert_raises( ArgumentError ) { testClass.removeInterface %w{test array} }
+		assert_raises( TypeError ) { testClass.removeInterface %w{test array} }
 
 		# Test removing ones that don't exist yet
 		assert_nothing_raised { rval = testClass.removeAttribute 'testAttr' }
@@ -104,7 +106,7 @@ class ClassTestCase < MUES::TestCase
 
 		# Instantiate the anonclass half of the metaclass so we can test the
 		# remove methods against it, too.
-		instance = testClass.new
+		instance = testClass::new
 		assert_respond_to( instance, :testOp )
 		assert_respond_to( instance, :testAttr )
 		assert_respond_to( instance, :testAttr= )
@@ -204,10 +206,10 @@ class ClassTestCase < MUES::TestCase
 		### Now test out the class
 
 		# Since the initializer has a parameter with no default, this should raise an error.
-		assert_raises( ArgumentError ) { instance = myClass.new }
+		assert_raises( ArgumentError ) { instance = myClass::new }
 
 		# Okay, now we call it again with a 'name' parameter, which should succeed.
-		assert_nothing_raised { instance = myClass.new("someName") }
+		assert_nothing_raised { instance = myClass::new("someName") }
 
 		# It should result in an anonymous class object...
 		assert_instance_of myClass.classObj, instance
@@ -234,7 +236,7 @@ class ClassTestCase < MUES::TestCase
 			parentClass = Metaclass::Class::new( "Parent" )
 			parentClass << Metaclass::Attribute::new( "parentInit" )
 			parentClass << Metaclass::Operation::new( "initialize", "@parentInit = true" )
-			parentClass << Metaclass::VirtualOperation::new( "foo" )
+			parentClass << Metaclass::Operation::new( "foo" )
 
 			# Define an intermediate class, don't add any operations. This one
 			# should still be abstract

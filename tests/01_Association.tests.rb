@@ -6,10 +6,10 @@ rescue
 	require '../muesunittest'
 end
 
-require 'metaclasses'
+require 'mues/Metaclasses'
 
 # Mock object
-class MockAssnSubclass < Metaclass::Association
+class MockAssnSubclass < MUES::Metaclass::Association
 	public_class_method :new
 end
 
@@ -17,7 +17,7 @@ class AssociationTestCase < MUES::TestCase
 
 	### Test instantiation with various arguments
 	def test_00Instantiate
-		assert_raises( NoMethodError ) { Metaclass::Association.new }
+		assert_raises( NoMethodError ) { MUES::Metaclass::Association::new }
 	end
 
 	### Test subclass instantiation
@@ -25,10 +25,10 @@ class AssociationTestCase < MUES::TestCase
 		obj = nil
 
 		# No-arg (should raise an ArgumentError)
-		assert_raises( ArgumentError ) { MockAssnSubclass.new }
+		assert_raises( ArgumentError ) { MockAssnSubclass::new }
 
 		# One-arg. Test inherited initializer and accessor
-		assert_nothing_raised { obj = MockAssnSubclass.new("thename") }
+		assert_nothing_raised { obj = MockAssnSubclass::new("thename") }
 		assert_equal "thename", obj.name
 	end
 

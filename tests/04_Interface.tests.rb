@@ -6,9 +6,11 @@ rescue
 	require '../muesunittest'
 end
 
-require 'metaclasses'
+require 'mues/Metaclasses'
 
 class InterfaceTestCase < MUES::TestCase
+
+	include MUES
 
 	### Test instantiation with various arguments
 	def test_00Instantiate
@@ -60,9 +62,9 @@ class InterfaceTestCase < MUES::TestCase
 	def test_03AddMethods
 		iface = Metaclass::Interface::new("Testable")
 
-		assert_raises( ArgumentError ) { iface.addAttribute "test string" }
-		assert_raises( ArgumentError ) { iface.addOperation 2 }
-		#assert_raises( ArgumentError ) { iface.addInterface $stderr }
+		assert_raises( TypeError ) { iface.addAttribute "test string" }
+		assert_raises( TypeError ) { iface.addOperation 2 }
+		#assert_raises( TypeError ) { iface.addInterface $stderr }
 
 		assert_nothing_raised { iface.addAttribute Metaclass::Attribute::new('testAttr') }
 		assert_nothing_raised { iface.addOperation Metaclass::Operation::new('testOp') }
@@ -77,7 +79,7 @@ class InterfaceTestCase < MUES::TestCase
 		testAttr, testOp = nil, nil
 
 		# Test illegal arguments, no arguments
-		assert_raises( ArgumentError ) { iface.removeAttribute 1 }
+		assert_raises( TypeError ) { iface.removeAttribute 1 }
 		assert_raises( ArgumentError ) { iface.removeOperation }
 
 		# Test removing ones that don't exist yet

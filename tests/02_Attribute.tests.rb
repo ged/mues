@@ -6,31 +6,32 @@ rescue
 	require '../muesunittest'
 end
 
-require 'metaclasses'
+require 'mues/Metaclasses'
 
 
 class AttributeTestCase < MUES::TestCase
 
-	include Metaclass::Scope
-	include Metaclass::Visibility
+	include MUES
+	include MUES::Metaclass::Scope
+	include MUES::Metaclass::Visibility
 
 	### Test no-arg instantiation
 	def test_00NoArg_Instantiate
 		attrObj = nil
 
 		# No-args, should raise an ArgumentError
-		assert_raises( ArgumentError ) { Metaclass::Attribute.new }
-		assert_raises( TypeError ) { Metaclass::Attribute.new(14) }
+		assert_raises( ArgumentError ) { Metaclass::Attribute::new }
+		assert_raises( TypeError ) { Metaclass::Attribute::new(14) }
 	end
 
 	# One-arg
 	def test_01OneArg_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("name") }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("name") }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:name) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:name) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
 		assert_equal INSTANCE, attrObj.scope
@@ -42,10 +43,10 @@ class AttributeTestCase < MUES::TestCase
 	def test_02TwoArgValidType_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("name",String) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("name",String) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:name,String) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:name,String) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
 		assert_equal INSTANCE, attrObj.scope
@@ -57,10 +58,10 @@ class AttributeTestCase < MUES::TestCase
 	def test_03TwoArgMultipleValidType_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("gameid",[String,"Numeric",Array,"IO"]) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("gameid",[String,"Numeric",Array,"IO"]) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "gameid", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:gameid,[String,"Numeric",Array,"IO"]) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:gameid,[String,"Numeric",Array,"IO"]) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "gameid", attrObj.name
 		assert_equal INSTANCE, attrObj.scope
@@ -76,10 +77,10 @@ class AttributeTestCase < MUES::TestCase
 	def test_04ThreeArgInstance_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("name",String,INSTANCE) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("name",String,INSTANCE) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:name,String,INSTANCE) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:name,String,INSTANCE) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
 		assert_equal INSTANCE, attrObj.scope
@@ -90,10 +91,10 @@ class AttributeTestCase < MUES::TestCase
 	def test_05ThreeArgClass_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("name",String,CLASS) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("name",String,CLASS) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:name,String,CLASS) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:name,String,CLASS) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
 		assert_equal CLASS, attrObj.scope
@@ -104,10 +105,10 @@ class AttributeTestCase < MUES::TestCase
 	def test_06FourArgPublic_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("name",String,INSTANCE,PUBLIC) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("name",String,INSTANCE,PUBLIC) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:name,String,INSTANCE,PUBLIC) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:name,String,INSTANCE,PUBLIC) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
 		assert_equal INSTANCE, attrObj.scope
@@ -118,10 +119,10 @@ class AttributeTestCase < MUES::TestCase
 	def test_07FourArgProtected_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("name",String,INSTANCE,PROTECTED) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("name",String,INSTANCE,PROTECTED) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:name,String,INSTANCE,PROTECTED) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:name,String,INSTANCE,PROTECTED) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
 		assert_equal INSTANCE, attrObj.scope
@@ -132,10 +133,10 @@ class AttributeTestCase < MUES::TestCase
 	def test_08FourArgPrivate_Instantiate
 		attrObj = nil
 
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new("name",String,INSTANCE,PRIVATE) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new("name",String,INSTANCE,PRIVATE) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
-		assert_nothing_raised { attrObj = Metaclass::Attribute.new(:name,String,INSTANCE,PRIVATE) }
+		assert_nothing_raised { attrObj = Metaclass::Attribute::new(:name,String,INSTANCE,PRIVATE) }
 		assert_instance_of Metaclass::Attribute, attrObj
 		assert_equal "name", attrObj.name
 		assert_equal INSTANCE, attrObj.scope
@@ -144,11 +145,11 @@ class AttributeTestCase < MUES::TestCase
 
 	### Test the Comparable interface operators/methods
 	def test_09Comparable
-		aInstance	= Metaclass::Attribute.new( "a", nil, INSTANCE )
-		bInstance	= Metaclass::Attribute.new( "b", nil, INSTANCE )
-		cInstance	= Metaclass::Attribute.new( "c", nil, INSTANCE )
-		aClass		= Metaclass::Attribute.new( "a", nil, CLASS )
-		cClass		= Metaclass::Attribute.new( "c", nil, CLASS )
+		aInstance	= Metaclass::Attribute::new( "a", nil, INSTANCE )
+		bInstance	= Metaclass::Attribute::new( "b", nil, INSTANCE )
+		cInstance	= Metaclass::Attribute::new( "c", nil, INSTANCE )
+		aClass		= Metaclass::Attribute::new( "a", nil, CLASS )
+		cClass		= Metaclass::Attribute::new( "c", nil, CLASS )
 
 		# Name sort
 		assert aInstance < bInstance
@@ -170,7 +171,7 @@ class AttributeTestCase < MUES::TestCase
 
 	### Test the addition of accessors when adding an attribute to a class
 	def test_10AccessorOp
-		attrObj = Metaclass::Attribute.new( "key", [String,Numeric] )
+		attrObj = Metaclass::Attribute::new( "key", [String,Numeric] )
 		op = nil
 
 		assert_nothing_raised { op = attrObj.makeAccessorOp }
@@ -183,7 +184,7 @@ class AttributeTestCase < MUES::TestCase
 
 	### Test the addition of mutators when adding an attribute to a class
 	def test_11MutatorOp
-		attrObj = Metaclass::Attribute.new( "key", [String,Numeric] )
+		attrObj = Metaclass::Attribute::new( "key", [String,Numeric] )
 		op = nil
 
 		assert_nothing_raised { op = attrObj.makeMutatorOp }
