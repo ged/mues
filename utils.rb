@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.7 2002/10/04 05:21:12 deveiant Exp $
+#	$Id: utils.rb,v 1.8 2002/10/13 23:30:55 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -13,6 +13,18 @@ require "readline"
 include Readline
 
 module UtilityFunctions
+
+	# The list of regexen that eliminate files from the MANIFEST
+	ANTIMANIFEST = [
+		/makedist\.rb/,
+		/\bCVS\b/,
+		/~$/,
+		/^#/,
+		%r{docs/html},
+		%r{docs/man},
+		/^TEMPLATE/,
+		/\.cvsignore/
+	]
 
 	# Set some ANSI escape code constants (Shamelessly stolen from Perl's
 	# Term::ANSIColor by Russ Allbery <rra@stanford.edu> and Zenin <zenin@best.com>
@@ -157,7 +169,8 @@ module UtilityFunctions
 		File.open( "CVS/Repository", "r").readline.chomp
 	end
 
-	def readManifest( manifestName="MANIFEST" )
+	def readManifest( manifestName="MANIFEST", verbose=false )
+		message "Building manifest..."
 		raise "Missing #{manifestName}, please remake it" unless File.exists? manifestName
 
 		manifest = IO::readlines( manifestName ).collect {|line|
@@ -168,24 +181,32 @@ module UtilityFunctions
 
 		filelist = []
 		for pat in manifest
+			$stderr.puts "Adding files that match '#{pat}' to the file list" if verbose
 			filelist |= Dir.glob( pat ).find_all {|f| FileTest.file?(f)}
 		end
 
+		message "found #{filelist.length} files.\n"
 		return filelist
 	end
 
-	def vetManifest( filelist, antimanifest=ANITMANIFEST )
+	def vetManifest( filelist, antimanifest=ANITMANIFEST, verbose=false )
 		origLength = filelist.length
+		message "Vetting manifest..."
 
 		for regex in antimanifest
+			if verbose
+				message "\n\tPattern /#{regex.source}/ removed: " +
+					filelist.find_all {|file| regex.match(file)}.join(', ')
+			end
 			filelist.delete_if {|file| regex.match(file)}
 		end
 
+		message "removed #{origLength - filelist.length} files from the list.\n"
 		return filelist
 	end
 
-	def getVettedManifest( manifestName="MANIFEST", antimanifest=ANTIMANIFEST )
-		vetManifest( readManifest(manifestName), antimanifest )
+	def getVettedManifest( verbose=false, manifestName="MANIFEST", antimanifest=ANTIMANIFEST )
+		vetManifest( readManifest(manifestName, verbose), antimanifest, verbose )
 	end
 
 	def findRdocableFiles
@@ -204,7 +225,7 @@ module UtilityFunctions
 			found = false
 			File::open( fn, "r" ) {|fh|
 				fh.each {|line|
-					if line =~ /^#\s*=/ || line =~ /#\s*:\w+:/ || line =~ %r{/*}
+					if line =~ /^(\s*#)?\s*=/ || line =~ /:\w+:/ || line =~ %r{/\*}
 						found = true
 						break
 					end
