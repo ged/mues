@@ -19,6 +19,63 @@ MysqlAdapter - A MySQL ObjectStore adapter class
 
 An adapter class for a Mysql-based MUES objectstore.
 
+== Classes
+=== MUES::ObjectStore::MysqlAdapter
+==== Constructor
+
+--- MUES::ObjectStore::MysqlAdapter.new( config )
+
+    Initialize the adapter with the configuration values in the specified
+    ((|config|)) object. This shouldn^t be called directly -- the
+    ((<MUES::ObjectStore>)) class will call it for you if the driver argument to
+    its constructor is 'Mysql'.
+
+==== Public Methods
+
+--- MUES::ObjectStore::MysqlAdapter#useTableLocks
+
+    Return the value of the useTableLocks attribute.
+
+--- MUES::ObjectStore::MysqlAdapter#storeObject( *objects )
+
+    Store the specified objects in the datastore.
+
+--- MUES::ObjectStore::MysqlAdapter#fetchObjects( *oids )
+
+    Fetches and returns the objects from the datastore
+
+--- MUES::ObjectStore::MysqlAdapter#hasObject?( id )
+
+    Check to see if an object with the muesid specified exists in
+    the object table
+
+--- MUES::ObjectStore::MysqlAdapter#storeUserData( userName, dbInfo )
+
+    Store the data for the specified user object, returning the
+    (possibly modified) database info object.
+
+--- MUES::ObjectStore::MysqlAdapter#fetchUserData( username )
+
+    Fetch the hash of user data for the specified user
+
+--- MUES::ObjectStore::MysqlAdapter#createUserData( username )
+
+    Create a new hash of user data for the specified user
+
+--- MUES::ObjectStore::MysqlAdapter#deleteUserData( username )
+
+    Delete the hash of user data from the database for the specified user
+
+--- MUES::ObjectStore::MysqlAdapter#getUsernameList
+
+    Returns an array of the names of the stored user records.
+
+==== Private Methods
+
+--- MUES::ObjectStore::MysqlAdapter#__prepFieldValue( key, val )
+
+    Return a database-safe value for the given value
+
 == Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
@@ -50,8 +107,8 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: MysqlAdapter.rb,v 1.6 2001/08/05 05:49:23 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: MysqlAdapter.rb,v 1.7 2001/11/01 17:21:26 deveiant Exp $
 
 			PlainUserFields = MUES::User::DefaultDbInfo.find_all {|field, defaultVal|
 				!defaultVal.is_a?( Array ) && !defaultVal.is_a?( Hash )
@@ -74,17 +131,22 @@ module MUES
 			#########################################################
 			protected
 
-			### (PROTECTED) METHOD: initialize( db, host, user, password )
-			### Initialize the adapter with the specified values
-			def initialize( db, host, user, password )
-				super( db, host, user, password )
+			### (PROTECTED) METHOD: initialize( config )
+			### Initialize the adapter with the values specified in the given ((|config|)) object.
+			def initialize( config )
+				super( config )
+
+				@db = @config['db']
+				@user = @config['username']
+				@password = @config['password']
+				@host = @config['host']
 
 				@useTableLocks	= false
 
-				@objectAdapterClass = TableAdapterClass( db, @@ObjectTable, user, password, host )
-				@userAdapterClass	= TableAdapterClass( db, @@UserTable, user, password, host )
-				@denyAdapterClass	= TableAdapterClass( db, @@DenyTable, user, password, host )
-				@allowAdapterClass	= TableAdapterClass( db, @@AllowTable, user, password, host )
+				@objectAdapterClass = TableAdapterClass( @db, @@ObjectTable, @user, @password, @host )
+				@userAdapterClass	= TableAdapterClass( @db, @@UserTable, @user, @password, @host )
+				@denyAdapterClass	= TableAdapterClass( @db, @@DenyTable, @user, @password, @host )
+				@allowAdapterClass	= TableAdapterClass( @db, @@AllowTable, @user, @password, @host )
 
 				@lock = { 'user' => Sync.new, 'object' => Sync.new }
 			end

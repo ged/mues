@@ -17,7 +17,49 @@ BdbAdapter - A Berkeley DB ObjectStore adapter class
 
 == Description
 
+This is an ObjectStore adapter class for Berkeley DB. It follows the
+((<MUES::Adapter>)) interface.
 
+== Classes
+=== MUES::ObjectStore::BdbAdapter
+==== Public Methods
+
+--- MUES::ObjectStore::BdbAdapter#new( db, host, user, password )
+
+    Creates a new BerkeleyDB ObjectStore adapter. Only the 'db'
+    argument is used.
+
+--- MUES::ObjectStore::BdbAdapter#createUserData( username )
+
+    Create a new hash of user data with the specified username
+
+--- MUES::ObjectStore::BdbAdapter#deleteUserData( username )
+
+    Delete the hash of user data for the specified username
+
+--- MUES::ObjectStore::BdbAdapter#fetchObjects( *oids )
+
+    Fetch objects with the specified ids from the database and return them
+
+--- MUES::ObjectStore::BdbAdapter#fetchUserData( username )
+
+    Fetch the hash of user data for the specified user
+
+--- MUES::ObjectStore::BdbAdapter#getUsernameList
+
+    Return an array of the names of the stored user records
+
+--- MUES::ObjectStore::BdbAdapter#hasObject?( id )
+
+    Returns true if an entry with the specified id exists in the database
+
+--- MUES::ObjectStore::BdbAdapter#storeObject( *objects )
+
+    Store the specified objects in the database
+
+--- MUES::ObjectStore::BdbAdapter#storeUserData( username, userDataHash )
+
+    Store the specified hash of user data for the specified user
 
 == Author
 
@@ -49,8 +91,8 @@ module MUES
 			include Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.8 2001/09/26 13:01:13 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.9 2001/11/01 17:21:26 deveiant Exp $
 			DirectoryName = 'objectstore-bdb'
 
 			### Class variables
@@ -59,16 +101,24 @@ module MUES
 			### METHOD: new( db, host, user, password )
 			### Creates a new BerkeleyDB ObjectStore adapter. Only the 'db'
 			### argument is used.
-			def initialize( db, *ignored )
+			def initialize( sysconfig )
+				super( sysconfig )
+
+				dir = @config['directory'] || 'objectstore'
+
+				# If the directory isn't absolute, tack the server root onto it
+				if dir !~ %r{^/}
+					dir = File.join( sysconfig['rootdir'], dir )
+				end
 
 				# If the BDB objectstore directory doesn't yet exist, make it
-				unless File.directory?( DirectoryName )
-					Dir.mkdir( DirectoryName )
+				unless File.directory?( dir )
+					Dir.mkdir( dir )
 				end
 
 				# Initialize attributes
-				@env	= BDB::Env.new( DirectoryName, BDB::CREATE|BDB::INIT_TRANSACTION )
-				@db		= db
+				@env	= BDB::Env.new( dir, BDB::CREATE|BDB::INIT_TRANSACTION )
+				@db		= @config['db'] || 'mues'
 				@dbh	= {}
 				@@Sections.each {|key| @dbh[key] = @env.open_db( BDB::HASH, @db, key, BDB::CREATE )}
 				@lock	= {}

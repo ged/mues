@@ -58,11 +58,39 @@ Adapter - An ObjectStore adapter abstract base class
 
 == Description
 
-This is an abstract base class which defines the required interface for
-MUES::ObjectStore adapters. You shouldn^t use this class except as a superclass
-for your own adapter classes.
+Adapter.rb contains the abstract base class for ObjectStore adapters, and an
+exception class which can be used by adapters to indicate error conditions
+within them.
 
-== Methods
+== Classes
+=== MUES::ObjectStore::AdapterError
+
+An exception class for error conditions in an ObjectStore adapter.
+
+=== MUES::ObjectStore::Adapter
+
+This is an abstract base class which defines the required interface for
+MUES::ObjectStore adapters. You shouldn^t use this class directly; it should be
+used as a superclass for your own adapter classes.
+
+==== Class Methods
+
+--- MUES::ObjectStore::Adapter.getAdapterClass( name )
+
+    Returns an adapter class if one whose name matches the specified ((|name|))
+	has been loaded. Returns (({nil})) if no such class has been loaded.
+
+--- MUES::ObjectStore::Adapter.inherit( subclass=Class )
+
+    Called when this class is inherited.
+
+==== Public Methods
+
+--- MUES::ObjectStore::Adapter#initialize( db, host, user, password )
+
+    Initialize the adapter with the specified values.
+
+=== MUES::ObjectStore::Adapter
 === Protected Methods
 
 --- initialize( db, host, user, password )
@@ -146,11 +174,11 @@ module MUES
 
 		class AdapterError < Exception; end
 
-		class Adapter < Object ; implements Debuggable, AbstractClass
+		class Adapter < MUES::Object ; implements Debuggable, AbstractClass
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: Adapter.rb,v 1.7 2001/08/05 05:49:23 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+			Rcsid = %q$Id: Adapter.rb,v 1.8 2001/11/01 17:20:54 deveiant Exp $
 
 			### Class variables
 			@@AdapterClasses = {}
@@ -182,20 +210,18 @@ module MUES
 
 			### Protected methods
 
-			### METHOD: initialize( db, host, user, password )
-			### Initialize the adapter with the specified values
+			### METHOD: initialize( config=MUES::Config )
+			### Initialize the adapter with the specified config object
 			protected
-			def initialize( db, host, user, password )
-				@db			= db
-				@host		= host
-				@user		= user
-				@password	= password
+			def initialize( config )
+				super()
+				@config = config['objectstore']
 			end
 
 			### Public methods
 			public
 
-			attr_reader :db, :host, :user
+			attr_reader :config
 			abstract :storeObjects,
 				:fetchObjects,
 				:stored? ,
