@@ -1,6 +1,6 @@
 /*
  *	object.c - C extensions for the MUES::Object class
- *	$Id: object.c,v 1.1 2002/06/04 06:44:21 deveiant Exp $
+ *	$Id: object.c,v 1.2 2002/08/01 00:25:27 deveiant Exp $
  *
  *	This file contains extensions for the MUES::Object base class.
  *
@@ -225,5 +225,5 @@ Init_Mues_Object()
   rb_define_private_method( rb_cModule, "abstract", mues_abstract, -1 );
   rb_define_private_method( rb_cModule, "abstract_arity", mues_abstract_arity, -1 );
 
-  rb_define_method( mues_cMuesObject, "__checkVirtualMethods", mues_check_virtual_methods, 0 );
+  rb_define_method( mues_cMuesObject, "checkVirtualMethods", mues_check_virtual_methods, 0 );
 }
