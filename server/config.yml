@@ -1,0 +1,61 @@
+---
+general:
+  server name: Experimental MUD
+  server description: An experimental MUES server
+  server admin: MUES ADMIN <muesadmin@localhost>
+  root dir: .
+  motd: |
+    MUES Server Command Shell:
+    /help for help
+    /quit to disconnect
+    /shutdown to halt the server (admin privileges required)
+engine:
+  tick length: 1.0
+  exception stack size: 10
+  debug level: 0
+  eventqueue:
+    minworkers: 5
+    maxworkers: 50
+    threshold: 2
+    safelevel: 2
+  privileged eventqueue:
+    minworkers: 2
+    maxworkers: 5
+    threshold: 1.5
+    safelevel: 1
+  objectstore:
+    backend: BerkeleyDB
+    memorymanager: Null
+  listeners:
+  - class: Telnet
+    name: telnet
+    params:
+      bind port: 4848
+      bind address: 0.0.0.0
+      use wrapper: false
+login:
+  banner: |
+    --- %general/server name% ---------------
+    %general/server description%
+    Contact: *poc
+  questionnaire: login
+  params:
+    username prompt: 'Username: '
+    password prompt: 'Password: '
+logging:
+  MUES:
+    level: notice
+  MUES:
+	level: info
+environments:
+  envpath: '*root/server/environments'
+  autoload:
+  - class: Null
+    name: null
+    description: A testing environment without any surroundings.
+commandshell:
+  - shell class: MUES::CommandShell
+  - params:
+    reload interval: 50
+    default prompt: 'mues> '
+    command prefix: /
