@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.25 2002/10/17 14:50:24 deveiant Exp $
+# $Id: commandshell.rb,v 1.26 2002/10/23 02:11:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.25 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.25 2002/10/17 14:50:24 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.26 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.26 2002/10/23 02:11:38 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -874,8 +874,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.25 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.25 2002/10/17 14:50:24 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.26 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.26 2002/10/23 02:11:38 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
@@ -1206,23 +1206,62 @@ logout
 implementor
 
 == Abstract
-Set command shell debug level.
+Set the debug level of an object.
 
 == Description
-Sets the debugging level of your command shell to the level specified, or
-displays the current level if none is specified.
+
+Sets the debugging level of any object in the system by Ruby id. The list of
+available objects can be viewed via the '/objects' command. If no level is
+specified, the object's current debug level is displayed.
 
 == Usage
-  debug [<level>]
+  debug <id> [<level>]
 
 == Code
-  if argString =~ /=?\s*(\d)/
-	  level = $1
-	  context.shell.debugLevel = level.to_i
-	  return [OutputEvent.new( "Setting shell debug level to #{level}.\n" )]
+  if argString =~ /^(\d+)$/
+	  targetId = $1.to_i
+
+	  output = ''
+	  targetObject = MUES::UtilityFunctions::getObjectByRubyId( targetId )
+	  if targetObject.nil?
+		output = "Couldn't find an object with id = %d" % targetId
+	  elsif !( targetObject.class < MUES::Debuggable )
+		output = "%s (%s) is not debuggable." % [
+			MUES::UtilityFunctions::trimString(targetObject.inspect),
+			targetId
+		]
+	  else
+		output = "Debugging level for %s is currently %d" % [
+			MUES::UtilityFunctions::trimString(targetObject.inspect),
+			targetObject.debugLevel.to_i
+		]
+	  end
+
+	  return [OutputEvent.new( output + "\n\n" )]
+  elsif argString =~ /^(\d+)\s*=?\s*(\d)$/
+	  targetId, level = $1.to_i, $2.to_i
+
+	  output = ''
+	  targetObject = MUES::UtilityFunctions::getObjectByRubyId( targetId )
+	  if targetObject.nil?
+		output = "Couldn't find an object with id = %d" % targetId
+	  elsif !( targetObject.class < MUES::Debuggable )
+		output = "%s (%s) is not debuggable." % [
+			MUES::UtilityFunctions::trimString(targetObject.inspect),
+			targetId
+		]
+	  else
+		output = "Setting debugging level for %s to %d" % [
+			MUES::UtilityFunctions::trimString(targetObject.inspect),
+			level
+		]
+		targetObject.debugLevel = level
+	  end
+
+	  return [OutputEvent.new( output + "\n\n" )]
 
   else
-	  return [OutputEvent.new( "Shell debug level is currently #{context.shell.debugLevel}.\n" )]
+	  raise CommandError, self.usage
   end
 
 
