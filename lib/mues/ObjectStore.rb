@@ -52,8 +52,8 @@ module MUES
 		include Debuggable
 
 		### Constants
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: ObjectStore.rb,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+		Version = %q$Revision: 1.2 $
+		Rcsid = %q$Id: ObjectStore.rb,v 1.2 2001/03/20 07:40:07 deveiant Exp $
 
 		AdapterSubdir = 'mues/objstore_adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/
@@ -132,20 +132,21 @@ module MUES
 			@dbAdapter = self.class._getAdapter( driver, db, host, user, password )
 		end
 
-		### METHOD: fetchObjects( *objectIds ) { block }
+		### METHOD: fetchObjects( *objectIds ) { |obj| block } -> objects=Array
 		def fetchObjects( *objectIds )
 			@dbAdapter.fetchObjects( *objectIds ).collect {|obj|
 				obj.awaken if obj.respond_to?( :awaken )
 				obj = yield( obj ) if block_given?
+				obj
 			}
 		end
 
-		### METHOD: storeObjects( *objects )
+		### METHOD: storeObjects( *objects ) { |oid| block }-> oids=Array
 		def storeObjects( *objects )
-			@dbAdapter.storeObjects( *objects ).collect {|obj|
-				obj.lull if obj.respond_to?( :lull )
-				oid = yield( oid, obj ) if block_given?
-				ids.push oid
+			objects.each {|o| o.lull if o.respond_to?( :lull )}
+			@dbAdapter.storeObjects( *objects ).collect {|oid|
+				oid = yield( oid ) if block_given?
+				oid
 			}
 		end
 
