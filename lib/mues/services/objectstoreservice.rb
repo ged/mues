@@ -51,49 +51,40 @@ require "ObjectStoreGC"
 
 module MUES
 
-  ### Class for the ObjectStore system's Service interface to MUES
-  class ObjectStoreService < Service
-    include Event::Handler
+	### Class for the ObjectStore system's Service interface to MUES
+	class ObjectStoreService < Service
+		include Event::Handler
 
-    #########
-    protected
-    #########
+		### Initialize a new ObjectStoreService object, passing in a hash of
+		### values with the following keys:
+		def initialize()
+			@objectStores = []
+			@name = "ObjectStoreService"
+			registerHandlerForEvents( GetServiceAdapterEvent )
+		end
 
-    ### Initialize a new ObjectStoreService object, passing in a hash of
-    ### values with the following keys:
-    def initialize()
-      @objectStores = []
-      @name = "ObjectStoreService"
-      registerHandlerForEvents( GetServiceAdapterEvent )
-    end
+		### Class methods
+		class << self
+			### Make sure no more objects are unsorted
+			def atEngineShutdown( theEngine )
+				@objectStores.each {|os| os.close}
+			end
+		end
 
-    ### Class methods
-    class << self
-      ### Make sure no more objects are unsotred
-      def atEngineShutdown( theEngine )
-	@objectStores.each {|os| os.close}
-      end
-    end
 
-    ######
-    public
-    ######
+		#########
+		protected
+		#########
 
-    ### Handle the events.
+		### Check to see if anyone wants an ObjectStore
+		def _handleGetServiceAdapterEvent (event)
+			if (event.name == @name)
+				@objectStores << ObjectStore.new(*(event.args))
+				event.callback.call( @objectStores[-1] )
+			end
+			return []
+		end
 
-    ### Check to see if anyone wants an ObjectStore
-    def _handleGetServiceAdapterEvent (event)
-      if (event.name == @name)
-	@objectStores << ObjectStore.new(*(event.args))
-	event.callback.call( @objectStores[-1] )
-      end
-      return []
-    end
-
-    ### included to prevent MUES::Event::Handler#handleEvent from screaming
-    def _debugMsg (*args)
-    end
-
-  end
+	end
 
 end
