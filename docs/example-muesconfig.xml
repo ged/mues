@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/07/07 18:11:34 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/07/12 15:26:01 $">
 
   <!-- General server configuration -->
   <general>
@@ -19,7 +19,23 @@
 	<tick-length>1.0</tick-length>
 	<exception-stack-size>10</exception-stack-size>
 	<debug-level>0</debug-level>
-	
+
+	<!-- Engine's EventQueue configuration -->
+	<eventqueue>
+	  <!-- Minimum number of worker threads to have running at all times -->
+	  <minworkers>5</minworkers>
+
+	  <!-- Maximum number of worker threads to have running at any time -->
+	  <maxworkers>50</maxworkers>
+	  
+	  <!-- What $SAFE should be set to running inside a worker thread -->
+	  <safelevel>2</safelevel>
+
+	  <!-- The number of seconds to wait before changing the number of worker
+	  threads that are currently running -->
+	  <threshold>2</threshold>
+	</eventqueue>
+
 	<!-- Engine objectstore config -->
 	<objectstore name="mues">
 	  <backend class="BerkeleyDB"></backend>
@@ -83,7 +99,8 @@
   
   <!-- Environments which are to be loaded at startup -->
   <environments>
-	<environment name="FaerieMUD" class="FaerieMUD::World">
+	<environment name="null" class="NullEnv">
+	  <description>A testing environment without any surrounding.</description>
 	  <objectstore name="FaerieMUD">
 		<backend class="BerkeleyDB" />
 		<memorymanager class="PMOS" />
@@ -91,6 +108,7 @@
 	</environment>
 	
 	<environment name="testing" class="MUES::ObjectEnv">
+	  <description>A surroundings/object proving ground.</description>
 	  <objectstore name="testing-objectenv">
 		<backend class="Flatfile" />
 		<memorymanager class="Simple">
