@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-#  $Id: muestestcase.rb,v 1.5 2002/10/06 02:06:08 deveiant Exp $
+#  $Id: muestestcase.rb,v 1.6 2002/10/12 15:43:05 deveiant Exp $
 # 
 # == Authors
 # 
@@ -92,7 +92,13 @@ module MUES
 			'white'      => 37,   'on_white'   => 47
 		}
 
+		# ANSI escape to move to the previous line and clear it
+		ErasePreviousLine = "\033[A\033[K"
 
+
+		### Returns a String containing the specified ANSI escapes suitable for
+		### inclusion in another string. The <tt>attributes</tt> should be one
+		### or more of the keys of AnsiAttributes.
 		def ansiCode( *attributes )
 			attr = attributes.collect {|a| AnsiAttributes[a] ? AnsiAttributes[a] : nil}.compact.join(';')
 			if attr.empty? 
@@ -101,13 +107,16 @@ module MUES
 				return "\e[%sm" % attr
 			end
 		end
-		ErasePreviousLine = "\033[A\033[K"
 
-		def message( msg )
-			$stdout.puts msg
+		### Output the specified <tt>msgs</tt> joined together to
+		### <tt>STDOUT</tt>.
+		def message( *msgs )
+			$stdout.puts msgs.join('')
 			$stdout.flush
 		end
 
+		### Output the specified <tt>msgs</tt> joined together to
+		### <tt>STDERR</tt> if <tt>$DEBUG</tt> is set.
 		def debugMsg( *msgs )
 			return unless $DEBUG
 			$stderr.puts "%sDEBUG>>> %s %s" %
@@ -115,14 +124,18 @@ module MUES
 			$stderr.flush
 		end
 
-		def replaceMessage( *msg )
+		### Replace the previous line with the specified <tt>msgs</tt>.
+		def replaceMessage( *msgs )
 			print ErasePreviousLine
 			message( *msg )
 		end
 
-		def writeLine( length=75 )
-			puts "\r" + ("-" * length )
+		### Output a separator line made up of <tt>length</tt> of the specified
+		### <tt>char</tt>.
+		def writeLine( length=75, char="-" )
+			puts "\r" + (char * length )
 		end
+
 
 		### Output a header for delimiting tests
 		def testHeader( desc )
