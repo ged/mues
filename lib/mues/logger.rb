@@ -33,7 +33,7 @@
 #
 # == Rcsid
 # 
-# $Id: logger.rb,v 1.2 2004/03/06 22:38:00 deveiant Exp $
+# $Id: logger.rb,v 1.3 2004/03/17 15:21:05 deveiant Exp $
 # 
 # == Authors
 # 
@@ -55,22 +55,22 @@ module MUES
 		require 'mues/logger/outputter'
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
 
 		# CVS id tag
-		Rcsid = %q$Id: logger.rb,v 1.2 2004/03/06 22:38:00 deveiant Exp $
+		Rcsid = %q$Id: logger.rb,v 1.3 2004/03/17 15:21:05 deveiant Exp $
 
 		# Log levels array (in order of decreasing verbosity)
-		Levels = [
-			:debug,
-			:info,
-			:notice,
-			:warning,
-			:error,
-			:crit,
-			:alert,
-			:emerg,
-		].inject({}) {|hsh, sym| hsh[ sym ] = hsh.length; hsh}
+		Levels = {
+			:debug		=> 0,
+			:info		=> 1,
+			:notice		=> 2,
+			:warning	=> 3,
+			:error		=> 4,
+			:crit		=> 5,
+			:alert		=> 6,
+			:emerg		=> 7,
+		}
 
 		# Constant for debugging the logger - set to true to output internals to
 		# $stderr.
