@@ -10,11 +10,13 @@ SocketOutputFilter - An IP socket output filter class
 
 == Synopsis
 
-  
+  sock = listener.accept
+  sofilter = MUES::SocketOutputFilter.new( sock )
 
 == Description
 
-
+Instances of this class are participants in an IOEventStream chain of
+responsibility, sending output and reading input from a TCPSocket.
 
 == Author
 
@@ -47,8 +49,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.5 2001/07/18 02:24:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.6 2001/07/30 12:34:13 deveiant Exp $
 		DefaultSortPosition = 300
 
 		NULL = "\000"
@@ -62,9 +64,9 @@ module MUES
 		### (PROTECTED) METHOD: initialize( socket )
 		### Initialize the filter
 		protected
-		def initialize( aSocket )
+		def initialize( aSocket, order=DefaultSortPosition )
 			checkType( aSocket, IPSocket )
-			super()
+			super( order )
 
 			@readBuffer = ''
 			@readMutex = Sync.new
@@ -79,9 +81,9 @@ module MUES
 		end
 
 
-		#######################################################################
+		#############################################################
 		###	P U B L I C   M E T H O D S
-		#######################################################################
+		#############################################################
 		public
 
 		# Accessors
@@ -126,9 +128,9 @@ module MUES
 		end
 
 
-		#######################################################################
+		#############################################################
 		###	P R O T E C T E D   M E T H O D S
-		#######################################################################
+		#############################################################
 		protected
 
 		### (PROTECTED) METHOD: _ioThreadRoutine( socket )
@@ -210,10 +212,10 @@ module MUES
 			inputBuffer.gsub!( /^([^#{CR}#{LF}]*)#{CR}#{LF}?/ ) {|s|
 				_debugMsg( 5, "Read a line: '#{s}' (#{s.length} bytes)." )
 
-				if ( s =~ /\w/ )
+				#if ( s =~ /\w/ )
 					_debugMsg( 4, "Creating an input event for input = '#{s.strip}'" )
 					newInputEvents.push( InputEvent.new("#{s.strip}") )
-				end
+				#end
 				
 				""
 			}
