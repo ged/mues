@@ -3,52 +3,210 @@
 
 = Engine
 
-== NAME
+== Name
 
 Engine.rb - The server class for the MUES system
 
-== SYNOPSIS
+== Synopsis
 
-== DESCRIPTION
+  #!/usr/bin/ruby
 
-== METHODS
+  require "mues/Config"
+  require "mues/Engine"
 
-private methods:
-initialize - set the defaults for the object.
+  $ConfigFile = "MUES.cfg"
 
-public read-only accessors:
-hostname - the hostname of the engine???
-port - the port to bind to???
-name - the name of the engine?
-log - the error log?
-players - how many players are acceptable?
-state - ???
+  ### Instantiate the configuration and the server objects
+  config = MUES::Config.new( $ConfigFile )
+  engine = MUES::Engine.instance
 
-public methods:
-instance - singleton object creation method.
-start - start the engine
-started? - true if the engine has started.
-running? - true if the engine is running.
-stop - shut the engine/server down.
-registerHandlerForEvents - register a handler object for a specific type of event.
-dispatchEvents - not sure, could be putting events into the queue?
-statusString - returns a multi-line string indicating the current status of the engine.
-authenticatePlayer - eventually will check the username/password against existing players.
+  ### Start up and run the server
+  puts "Starting up...\n"
+  engine.start( config )
+  puts "Shut down...\n"
+	
+== Description
 
-protected methods:
-_eventLoop - the main event loop.
-thread routines:
-_listenerThreadRoutine - will listen to the socket for a connection.
-_setupListenerSocket - set up and return a listener socket (TCPServer) object on the specified host and port,
-    optionally wrappered in a TCPWrapper object that uses tcp_wrappers.
-_handleSocketConnectEvent - handles connections to the listener socket.
-_handlePlayerEven - handles changes to player status.
-_handleUntrappedExceptoinEvent - handle any untrapped exceptions.
-_handleUntrappedSignalEven - handle any untrapped signals.
-_handleReconfigEvent - handle any reconfiguration events by re-reading the config file and then reconnecting the listen socket.
-_handleSystemEvent - handle any system events that we don't have explicit handlers for.
-_handleLogEven - handles logging events by writing their content to the syslog.
-_handleUnknownEvent - Handle events which we get sent for which we don't have an explicit handler.
+This class is the main server class for the Multi-User Environment Server
+(MUES). The server encapsulates and provides a simple front end/API for the
+following tasks:
+
+* Load, configure, and maintain one or more World objects, which contain a
+  class library made up of metaclasses stored in a database
+
+* Handle player connection, login, and player object maintenance through a
+  client protocol or simple telnet/HTTP connection
+
+* Maintain one or more game Sciences, which provide shared event-driven
+  services to the hosted game worlds
+
+* Coordinate, queue, and dispatch Events between the World objects, Player
+  objects, and the Sciences.
+
+* Execute an event loop which serves as the fundamental unit of time for
+  each world
+
+More comprehensive documentation to follow, but in the meantime, you can find
+the working copy at:
+((<URL:http://docs.faeriemud.org/bin/view/Dream/TheEngine>)).
+
+== Methods
+=== MUES::Engine
+==== Class Methods
+--- MUES::Engine.instance()
+
+    Returns the singleton instance of the Engine object, creating it if necessary.
+
+==== Instance Methods
+
+--- MUES::Engine#initialize()
+
+    Sets up and initializes the engine instance.
+
+--- MUES::Engine#hostname
+
+    Returns the hostname (a (({String}))) the engine is listening on as set in
+    the config file. ((*Read-only*))
+
+--- MUES::Engine#port
+
+    Returns the port (a (({String}))) the engine is bound to as set in the
+    config file. ((*Read-only*))
+
+--- MUES::Engine#name
+
+    Returns the name (a (({String}))) the server will display when connecting as
+    set in the configuration file. ((*Read-only*))
+
+--- MUES::Engine#log
+
+    Returns the log handle (a ((<MUES::Log>)) instance) the engine is using. ((*Read-only*)).
+
+--- MUES::Engine#players
+
+    Returns the hash of hashes which tracks the status of currently connected
+    players, keyed by player object (a (({MUES::Player})) instance). Each entry
+    is of the form:
+
+      (({MUES::Player})) => {
+        'status'    => <((|connecting|active|linkdead|))> (a (({String}))),
+        'loginTime' => (a (({Time})) object created at login)
+      }
+
+--- MUES::Engine#state
+
+    Returns the state of the engine, which will be one of:
+
+      : ((|MUES::Engine::State::ENGINE_STATE_STOPPED|))
+
+        Engine is stopped. It will not answer connections on any port, and it
+        has no threads running.
+
+      : ((|MUES::Engine::State::ENGINE_STATE_STARTING|))
+
+        The engine is starting up. It will begin answering connections on its
+        listen port at the end of this state.
+
+      : ((|MUES::Engine::State::ENGINE_STATE_RUNNING|))
+
+        The engine is running, and it will answer connections on its main listen
+        port. This is the normal state of operation.
+
+      : ((|MUES::Engine::State::ENGINE_STATE_SHUTDOWN|))
+
+        The engine is shutting down. It will stop answering connections,
+        disconnect all connected players, and stop all running threads.
+
+--- MUES::Engine#start( config )
+
+    Starts the engine with the configuration values specified in the given
+    config object, which should be an instance of MUES::Config or a derivative
+    class.
+
+--- MUES::Engine#started?
+
+    Returns (({true})) if the engine is in any state except
+    ((<ENGINE_STATE_STOPPED>)).
+
+--- MUES::Engine#running?
+
+    Returns true if the engine is in the ((<ENGINE_STATE_RUNNING>)) state.
+
+--- MUES::Engine#stop()
+
+    Shuts the engine/server down.
+
+--- MUES::Engine#registerHandlerForEvents( handlerObject, *eventClasses )
+
+    Register ((|handlerObject|)) to receive events of the specified
+    ((|eventClasses|)) or any of their derivatives. See the docs for MUES::Event
+    for how to handle events.
+
+--- MUES::Engine#dispatchEvents( *events )
+
+    Queue the given ((|events|)) for dispatch.
+
+--- MUES::Engine#statusString()
+
+    Returns a multi-line string indicating the current status of the engine.
+
+--- MUES::Engine#authenticatePlayer( username, password )
+
+    Returns (({true})) if the ((|username|)) and ((|password|)) match the values
+    of a current player.
+
+==== Protected Instance Methods
+
+--- MUES::Engine#_eventLoop()
+
+    The main event loop. This is the routine that the main thread runs,
+    dispatching ((<MUES::TickEvent>))s for timing. Exits and returns the total
+    number of ticks to the caller after ((<MUES::Engine#stop>)) is called.
+
+--- MUES::Engine#_listenerThreadRoutine()
+
+    The thread routine for the listener thread which accept()s on the main
+    socket and dispatches a new ((<MUES::SocketConnectEvent>))s for each
+    connection.
+
+--- MUES::Engine#_setupListenerSocket( host, port, tcpWrapperedFlag )
+
+    Returns a listener socket for the specified ((|host|)) and ((|port|)). If
+    the ((|tcpWrapperedFlag|)) is (({true})), the returned socket is wrapped
+    inside an instance of (({TCPWrapper})); otherwise, it is an instance of
+    (({TCPServer})).
+
+--- MUES::Engine#_handleSocketConnectEvent( event )
+
+    Event handler for ((<MUES::SocketConnectEvent>))s.
+
+--- MUES::Engine#_handlePlayerEvent( event )
+
+    Event handler for ((<MUES::PlayerEvent>))s.
+
+--- MUES::Engine#_handleUntrappedExceptionEvent( event )
+
+    Event handler for ((<MUES::UntrappedExceptionEvent>))s.
+
+--- MUES::Engine#_handleUntrappedSignalEvent( event )
+
+    Event handler for ((<MUES::UntrappedSignalEvent>))s.
+
+--- MUES::Engine#_handleReconfigEvent( event )
+
+    Event handler for ((<MUES::ReconfigEvent>))s.
+
+--- MUES::Engine#_handleSystemEvent( event )
+
+    Event handler for ((<MUES::SystemEvent>))s.
+
+--- MUES::Engine#_handleLogEvent( event )
+
+    Event handler for ((<MUES::LogEvent>))s.
+
+--- MUES::Engine#_handleUnknownEvent( event )
+
+    Event handler for events without an explicit handler.
 
 == AUTHOR
 
@@ -64,6 +222,7 @@ http://language.perl.com/misc/Artistic.html)
 
 require "socket"
 require "thread"
+
 require "mues/MUES"
 require "mues/Log"
 require "mues/EventQueue"
@@ -93,8 +252,8 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= %q$Revision: 1.2 $
-		RcsId			= %q$Id: engine.rb,v 1.2 2001/03/21 23:21:36 phaedrus Exp $
+		Version			= %q$Revision: 1.3 $
+		RcsId			= %q$Id: engine.rb,v 1.3 2001/03/23 23:34:37 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -304,7 +463,12 @@ module MUES
 		###############################################################################
 		protected
 
-		### The event loop
+		### Thread routines
+
+		### (PROTECTED) METHOD: _eventLoop()
+		### The main event loop. This is the routine that the main thread runs,
+		### dispatching TickEvents for timing. Exits and returns the total
+		### number of ticks to the caller after stop() is called.
 		def _eventLoop
 
 			@tick = 0
@@ -326,10 +490,9 @@ module MUES
 			end
 			dispatchEvents( LogEvent.new("notice", "Exiting event loop.") )
 
+			return @tick
 		end
 
-
-		### Thread routines
 
 		### (PROTECTED) METHOD: _listenerThreadRoutine()
 		### The routine executed by the thread associated with the listen socket
@@ -337,6 +500,9 @@ module MUES
 			sleep 1 until running?
 			dispatchEvents( LogEvent.new("notice", "Accepting connections on #{@listener.addr[2]} port #{@listener.addr[1]}.") )
 
+			### :TODO: Fix race condition: If a connection comes in after stop()
+			### has been called, but before the Shutdown exception has been
+			### dispatched.
 			while running? do
 				begin
 					playerSock = @listener.accept
@@ -372,6 +538,7 @@ module MUES
 
 			### Create either just a plain TCPServer or a wrappered one, depending on the config
 			if tcpWrappered then
+				require "tcpwrap"
 				realListener = TCPServer.new( host, port )
 				@log.info( "Creating tcp_wrappered listener socket on #{host} port #{port}" )
 				listener = TCPWrapper.new( "mues", realListener )
