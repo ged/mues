@@ -1,8 +1,8 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.3 2002/05/16 04:02:20 deveiant Exp $
+#	$Id: utils.rb,v 1.4 2002/08/01 00:17:14 deveiant Exp $
 #
-#	Copyright (c) 2001, The FaerieMUD Consortium.
+#	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -36,6 +36,11 @@ module UtilityFunctions
 		'cyan'       => 36,   'on_cyan'    => 46, 
 		'white'      => 37,   'on_white'   => 47
 	}
+
+	###############
+	module_function
+	###############
+
 	def ansiCode( *attributes )
 		attr = attributes.collect {|a| AnsiAttributes[a] ? AnsiAttributes[a] : nil}.compact.join(';')
 		if attr.empty? 
@@ -72,12 +77,19 @@ module UtilityFunctions
 
 	def header( msg )
 		msg.chomp!
-		print ansiCode( 'bold', 'white', 'on_blue' ) + msg + ansiCode( 'reset' ) + "\n"
+		$stdout.puts ansiCode( 'bold', 'white', 'on_blue' ) + msg + ansiCode( 'reset' )
+		$stdout.flush
 	end
 
 	def message( msg )
 		$stdout.print msg
 		$stdout.flush
+	end
+
+	def debugMsg( msg )
+		msg.chomp!
+		$stderr.puts ansiCode( 'bold', 'red' ) + msg + ansiCode( 'reset' )
+		$stderr.flush
 	end
 
 	def replaceMessage( *msg )
@@ -135,5 +147,68 @@ module UtilityFunctions
 		end
 
 		return "%d.%02d" % release
+	end
+
+	def extractProjectName
+		File.open( "CVS/Repository", "r").readline.chomp
+	end
+
+	def readManifest( manifestName="MANIFEST" )
+		raise "Missing #{manifestName}, please remake it" unless File.exists? manifestName
+
+		manifest = IO::readlines( manifestName ).collect {|line|
+			line.chomp
+		}.select {|line|
+			line !~ /^(\s*(#.*)?)?$/
+		}
+
+		filelist = []
+		for pat in manifest
+			filelist |= Dir.glob( pat ).find_all {|f| FileTest.file?(f)}
+		end
+
+		return filelist
+	end
+
+	def vetManifest( filelist, antimanifest=ANITMANIFEST )
+		origLength = filelist.length
+
+		for regex in antimanifest
+			filelist.delete_if {|file| regex.match(file)}
+		end
+
+		return filelist
+	end
+
+	def getVettedManifest( manifestName="MANIFEST", antimanifest=ANTIMANIFEST )
+		vetManifest( readManifest(manifestName), antimanifest )
+	end
+
+	def findRdocableFiles
+		startlist = []
+		if File.exists? "docs/CATALOG"
+			message "Using docs/CATALOG\n"
+			startlist = getVettedManifest( "docs/CATALOG" )
+		else
+			message "Using default MANIFEST\n"
+			startlist = getVettedManifest()
+		end
+
+		message "Looking for RDoc comments in:\n"
+		startlist.select {|fn|
+			message "  #{fn}: "
+			found = false
+			File::open( fn, "r" ) {|fh|
+				fh.each {|line|
+					if line =~ /^#\s*=/ || line =~ /#\s*:\w+:/ || line =~ %r{/*}
+						found = true
+						break
+					end
+				}
+			}
+
+			message( (found ? "yes" : "no") + "\n" )
+			found
+		}
 	end
 end
