@@ -1,0 +1,38 @@
+
+###  ObjectStore - ruby system for:
+	1) object persistence
+	2) memory management
+     using ArunaDB as the database.  Comes with an interface written for MUES.
+
+  #############
+  Installation:
+  #############
+
+	er...  i don't think any installation is set up right now, but you can
+	basically use it right "out of the box".
+	it requires ArunaDB be installed, right now, at least.
+	there are a few problems with Aruna that had to be fixed on our copy,
+	so we'll either have provided a patch, or the entire database.
+	the MUES interface will (natually) require MUES be somewhere easy to
+	find.
+
+  ########
+  Contact:
+  ########
+
+	Martin Chase <stillflame@FaerieMUD.org>
+	The FaerieMUD Consortium (http://www.FaerieMUD.org)
+
+  ########
+  License:
+  ########
+
+	This software governed by the Artistic Licence, which should have been
+	provided with the package, in the file "Artistic".  If not, please view
+	an online copy at:
+	http://www.faeriemud.org/artistic.html or
+	http://language.perl.com/misc/Artistic.html
+
+	THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED
+	WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+	MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
