@@ -7,9 +7,9 @@
 # 
 #   (>>>POINT<<<)
 # 
-# == Rcsid
+# == Subversion Id
 # 
-# $Id: TEMPLATE.rb.tpl,v 1.8 2002/09/08 06:55:41 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -22,17 +22,23 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues/Mixins'
-require 'mues/Object'
+require 'mues/mixins'
+require 'mues/object'
 
 module MUES
 
 	### (>>>description<<<)
 	class (>>>FILE_SANS<<<) < (>>>superclass<<<)
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.8 2002/09/08 06:55:41 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
+
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
 
 		### Create a new (>>>FILE_SANS<<<) object.
 		def initialize
