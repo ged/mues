@@ -21,7 +21,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.18 2002/05/16 03:47:31 deveiant Exp $
+# $Id: mues.rb,v 1.19 2002/05/28 17:09:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,7 +38,6 @@
 require "md5"
 require "sync"
 
-require "mues/Config"
 require "mues/Exceptions"
 
 
@@ -69,7 +68,7 @@ class Module
 			name = id.id2name
 			class_eval %Q{
 				def #{name}(*a)	 
-					raise VirtualMethodError, "#{name} not implemented"
+					raise MUES::VirtualMethodError, "#{name} not implemented"
 				end
 			}
 		end
@@ -127,6 +126,8 @@ class Object
 				end
 			end
 		end
+
+		return true
 	end
 
 
@@ -149,6 +150,8 @@ class Object
 				}
 			end
 		end
+
+		return true
 	end
 
 
@@ -176,6 +179,8 @@ class Object
 				end
 			end
 		end
+
+		return true
 	end
 
 
@@ -199,6 +204,18 @@ class Object
 				}
 			end
 		end
+
+		return true
+	end
+
+
+	##
+	# Check the current $SAFE level, and if it is greater than
+	# <tt>permittedLevel</tt>, raise a SecurityError.
+	def checkSafeLevel( permittedLevel=2 )
+		raise SecurityError, "Call to restricted method from insecure space" if
+			$SAFE > permittedLevel
+		return true
 	end
 
 end
@@ -208,15 +225,14 @@ end
 # The base MUES namespace. All MUES classes live in this namespace.
 module MUES
 
-	autoload :Engine, "mues/Engine.rb"
-
 	##
 	# A mixin that adds abstractness to a class. Instantiating a class which includes
 	# this mixin will result in an InstantiationError.
 	module AbstractClass
 
-		##
-		# Add a #new method to the class which mixes this module into itself.
+		### Add a <tt>new</tt> class method to the class which mixes in this
+		### module. The method raises an exception if called on the class
+		### itself, but not if called via <tt>super()</tt> from a subclass.
 		def AbstractClass.append_features( klass )
 			klass.class_eval <<-"END"
 			class << self
@@ -412,8 +428,8 @@ module MUES
 
 		##
 		# Class constants
-		Version	= %q$Revision: 1.18 $
-		RcsId	= %q$Id: mues.rb,v 1.18 2002/05/16 03:47:31 deveiant Exp $
+		Version	= %q$Revision: 1.19 $
+		RcsId	= %q$Id: mues.rb,v 1.19 2002/05/28 17:09:17 deveiant Exp $
 
 		##
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -421,8 +437,11 @@ module MUES
 		def initialize( *ignored )
 			@muesid = __GenerateMuesId()
 			@objectStoreData = nil
-			objRef = "%s [%d]" % [ self.class.name, self.id ]
-			#ObjectSpace.define_finalizer( self, MUES::Object.finalizer(objRef) )
+
+			if $DEBUG
+				objRef = "%s [%d]" % [ self.class.name, self.id ]
+				ObjectSpace.define_finalizer( self, MUES::Object.finalizer(objRef) )
+			end
 		end
 
 		##
