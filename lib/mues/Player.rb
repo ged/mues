@@ -1,15 +1,44 @@
-#!/usr/bin/env ruby
+#!/usr/bin/ruby
 ###########################################################################
 =begin
+= Player.rb
+== Name
+
+MUES::Player - a user connection class for the MUES Engine
+
+== Synopsis
+
+  require "mues/Player"
+
+  player = MUES::Player.new( '127.0.0.1' )
+
+== Description
+
+This class encapsulates a remote socket connection to a client. It contains the
+raw socket object, an IOEventStream object which is used to manipulate and
+direct input and output between the remote user and the player object, an array
+of characters which are currently being controlled, and some miscellaneous
+information about the client.
+
+== Author
+
+Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
+
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
+
+This module is free software. You may use, modify, and/or redistribute this
+software under the terms of the Perl Artistic License. (See
+http://language.perl.com/misc/Artistic.html)
+
 =end
 ###########################################################################
 
 require "socket"
-require "mues/MUES"
+
+require "mues/Namespace"
 require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
-
 
 module MUES
 	class Player < Object
