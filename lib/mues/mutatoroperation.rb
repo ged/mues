@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mutatoroperation.rb,v 1.1 2002/03/30 19:04:08 deveiant Exp $
+# $Id: mutatoroperation.rb,v 1.2 2002/04/06 16:53:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -33,19 +33,17 @@ module Metaclass
 	class MutatorOperation < Metaclass::Operation
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: mutatoroperation.rb,v 1.1 2002/03/30 19:04:08 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: mutatoroperation.rb,v 1.2 2002/04/06 16:53:06 deveiant Exp $
 
 		### Create a new MutatorOperation object that sets the instance variable
 		### of the name specified by <tt>sym</tt> (a <tt>Symbol</tt> or
-		### <tt>String</tt>). If the optional <tt>prelude</tt> argument (a
-		### <tt>String</tt>) is given, its contents are integrated into the
-		### mutator before the code that sets the target attribute. If the
-		### <tt>validTypes</tt> argument is specified (a Class, a String with
-		### the name of a Class, or an Array of either Class or Name objects),
-		### the mutator will also contains code to check for a valid value via
-		### <tt>kind_of?</tt> before the prelude. The <tt>scope</tt> and
-		### <tt>visibility</tt> arguments are passed to Metaclass::Operation#new.
+		### <tt>String</tt>).If the <tt>validTypes</tt> argument is specified (a
+		### Class, a String with the name of a Class, or an Array of either
+		### Class or Name objects), the mutator will also contains code to check
+		### for a valid value via <tt>kind_of?</tt> before the prelude. The
+		### <tt>scope</tt> and <tt>visibility</tt> arguments are passed to
+		### Metaclass::Operation#new.
 		def initialize( sym, validTypes=nil, scope=nil, visibility=nil )
 			sym = sym.id2name if sym.is_a? Symbol
 
