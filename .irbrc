@@ -6,11 +6,6 @@ $LOAD_PATH.unshift( "lib", "ext" )
 require './utils'
 include UtilityFunctions
 
-def colored( prompt, *args )
-	return ansiCode( *(args.flatten) ) + prompt + ansiCode( 'reset' )
-end
-
-
 # Modify prompt to do highlighting unless we're running in an inferior shell.
 unless ENV['EMACS']
 	IRB.conf[:PROMPT][:MUES] = { # name of prompt mode
