@@ -1,32 +1,55 @@
 
 = To Do - shellCommands
 
-	This is an informal list of commands we intend to implement.
+== New Commands
 
-* deleteuser - remove a user from the database.
+This is an informal list of commands we intend to implement.
 
-* kickuser - boot a user from the server, implementor and above(?).
+[deleteuser]
+  Remove a user from the database.
 
-* ban {user,ip} - ban a user, ip address, or ip range from logging in, admin and above(?).
+[kickuser]
+  Boot a user from the server, implementor and above(?).
 
-	Both bans will need to have info about who is doing the banning. This will
-	also require some work on the Engine to get it to use the bans. Grep for
-	'handle (user|IP) bans here' in lib/mues/Engine.rb to find the necessary
-	places.
+[ban {user,ip}]
+  Ban a user, ip address, or ip range from logging in, admin and above(?).
 
-* banlist - a list of users/ips that are banned, the user that created the ban,
+  Both bans will need to have info about who is doing the banning. This will
+  also require some work on the Engine to get it to use the bans. Grep for
+  'handle (user|IP) bans here' in lib/mues/Engine.rb to find the necessary
+  places.
+
+[banlist]
+  A list of users/ips that are banned, the user that created the ban,
   the date of creation, and the reason.
 
-* promote - Increase a user's privilege level
+[promote]
+  Increase a user's privilege level
 
-* demote - Decrease a user's privilege level
+[demote]
+  Decrease a user's privilege level
 
-* saveuser - commit a user object information to the database.
+[saveuser]
+  Commit a user object information to the database.
 
-* motd - allow an admin to change the message of the day.
+[motd]
+  Allow an admin to change the message of the day.
 
-* setdefault - set a default shell parameter.
+[setdefault]
+  Set a default shell parameter.
 
-* restart - restart the server.
+[restart]
+  Restart the server.
 
-* macro* - commands to deal with creating/editing/deleting macros.
+[macro]
+  Commands to deal with creating/editing/deleting macros.
+
+
+== Current Commands
+
+This is a list of stuff that's missing or only partially working in the current
+commands.
+
+[reload]
+  Need to implement the configuration reloading stuff.
+
