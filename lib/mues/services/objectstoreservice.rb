@@ -58,8 +58,8 @@ module MUES
 
     ### Class constants
 	  #:!: MUES has its own, i shouldn't tread.
-#    Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-#    Rcsid = %q$Id: objectstoreservice.rb,v 1.4 2002/03/04 19:27:01 stillflame Exp $
+#    Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+#    Rcsid = %q$Id: objectstoreservice.rb,v 1.5 2002/03/06 23:04:04 stillflame Exp $
 
     #########
     protected
@@ -99,6 +99,7 @@ module MUES
 		def atEngineShutdown( theEngine )
 			###:!: maybe a GC function?
 			###    this should also take care of the object store, no?
+			###    will i have to wait for @gc.shutdown?
 			@gc.shutdown
 			@objectStore.close
       end
@@ -119,7 +120,6 @@ module MUES
 	### handles the creation of new ObjectStore's
 	### arguments (as passed to the event)
     ###   'filename' -> the filename of the ObjectStore to associate this with.
-    ###   'objects' -> an array of objects to be stored.
     ###   'indexes' -> an array of symbols corresponding to the methods that will
     ###                be used to generate the desired indices.
     ###   'serialize' -> the symbol for the method to be used for object
@@ -128,7 +128,6 @@ module MUES
     ###                    deserialization.
     def _handleNewObjectStoreEvent (event)
 		@objectStore = ObjectStore.new( event.filename,
-									    event.objects,
 									    event.indexes,
 									    event.serialize,
 									    event.deserialize )
