@@ -5,14 +5,6 @@ This is an informal list of tasks yet to be done for the MUES.
 
 == Immediate Tasks
 
-These are tasks which should be completed before the next release:
-
-* (There are no more tasks for this release)
-
-== Planned Tasks
-
-These are things which are planned for the next release:
-
 * Make the password strictness in the User questionnaires configurable.
 
 * Add applicable telnet options to the parameters hash for MUES::TelnetListener.
@@ -56,6 +48,8 @@ These are things which are planned for the next release:
 * Work on an OutputFilter (probably a derivative of TelnetOutputFilter) that
   uses readline or has readline-like capabilities.
 
+* Better and more-useful error-handling. Errors from Environments should never
+  crash the server.
 
 
 
