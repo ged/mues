@@ -53,8 +53,8 @@ module MUES
     include Event::Handler
 
     ### Class constants
-    Version = /([\d\.]+)/.match( %q$Version$ )[1]
-    Rcsid = %q$Id: objectstoreservice.rb,v 1.1 2002/02/24 04:45:43 stillflame Exp $
+    Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+    Rcsid = %q$Id: objectstoreservice.rb,v 1.2 2002/02/24 07:00:26 stillflame Exp $
 
     #########
     protected
@@ -89,6 +89,7 @@ module MUES
     public
     ######
 
+    ### Handles the  event.
     
   end
 end
