@@ -12,7 +12,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.32 2004/03/03 16:06:50 aidan Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -25,6 +25,7 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
+require 'pluginfactory'
 
 require 'mues/mixins'
 require 'mues/exceptions'
@@ -50,7 +51,7 @@ module MUES
 
 		### Class constants/methods
 		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-		Rcsid = %q$Id: config.rb,v 1.32 2004/03/03 16:06:50 aidan Exp $
+		Rcsid = %q$Id$
 
 		def self::debugMsg( *msgs )
 			$stderr.puts msgs.join
@@ -63,7 +64,7 @@ module MUES
 				:serverDescription	=> "An experimental MUES server",
 				:serverAdmin		=> "MUES ADMIN <muesadmin@localhost>",
 				:rootDir			=> ".",
-				:includePath		=> [],
+				:includePath		=> ["lib"],
 			},
 
 			:engine => {
@@ -89,15 +90,15 @@ module MUES
 					:visitor		=> nil,
 					:argHash		=> {},
 				},
-				:listeners => [
-					{
-						:kind	=> 'Telnet',
-						:name	=> 'telnet',
+
+				:listeners => {
+					'shell' => {
+						:kind	=> 'telnet',
 						:params	=> {
 							:bindPort		=> 4848,
 							:bindAddress	=> '0.0.0.0',
 							:useWrapper		=> false,
-							:questionnaire => {
+							:questionnaire	=> {
 								:name => 'login',
 								:params => {
 									:userPrompt => 'Username: ',
@@ -108,22 +109,21 @@ module MUES
 								--- #{general.serverName} ---------------
 								#{general.serverDescription}
 								Contact: #{general.serverAdmin}
-								...END
+							...END
 						},
 					},
-				],
+				},
 			},
 
 			:environments => {
-				:envPath	=> ["environments"],
-				:autoload	=> [
-					{
+				:envPath	=> ["server/environments"],
+				:autoload	=> {
+					'null' => {
 						:kind => 'Null',
-						:name => 'null',
 						:description => "A testing environment without any surroundings.",
 						:params => {},
 					},
-				]
+				}
 			},
 
 			:commandShell => {
@@ -139,8 +139,14 @@ module MUES
 			},
 
 			:logging => {
-				'MUES'			=> { :level => :notice },
-				'MUES::Engine'	=> { :level => :info },
+				'MUES'			=> {
+					:level => :notice,
+					:outputters => ""
+				},
+				'MUES::Engine'	=> {
+					:level => :info,
+					:outputters => {"file" => "server/log/server.log"},
+				}
 			},
 		}
 		Defaults.freeze
@@ -190,11 +196,12 @@ module MUES
 				case val
 				when Hash
 					newhash[ key ] = untaintValues( hash[key] )
-				when NilClass, TrueClass, FalseClass, Numeric
+
+				when NilClass, TrueClass, FalseClass, Numeric, Symbol
 					newhash[ key ] = val
 
 				when Array
-					MUES::Logger[ self ].debug "Untainting array %p" % val
+					MUES::Logger[ self ].debug "Untainting array %p" % [val]
 					newval = val.collect {|v| v.dup.untaint}
 					newhash[ key ] = newval
 					
@@ -212,6 +219,11 @@ module MUES
 		### Return a duplicate of the given +hash+ with its keys transformed
 		### into symbols from whatever they were before.
 		def self::internifyKeys( hash )
+			unless hash.is_a?( Hash )
+				raise TypeError, "invalid confighash: Expected Hash, not %s" %
+					hash.class.name
+			end
+
 			newhash = {}
 			hash.each {|key,val|
 				if val.is_a?( Hash )
@@ -344,12 +356,18 @@ module MUES
 		def createEngineObjectstore
 			os = self.engine.objectStore
 
+			# Turn the argument hash's keys back into Symbols
+			args = {}
+			os.argHash.to_h.each {|k,v|
+				args[k.intern] = v
+			} 
+
 			# Make a Hash out of all the construction arguments
 			configHash = {
 				:name => os.name,
 				:backend => os.backend,
 				:memmgr => os.memorymanager,
-				:config => os.argHash,
+				:config => args,
 			}
 
 			# Visitor element is optional, so don't add it if it's not defined.
@@ -405,12 +423,12 @@ module MUES
 				self.environments.autoload.nitems
 			MUES::Environment::derivativeDirs.unshift( *(self.environments.envPath) )
 
-			return self.environments.autoload.collect {|env|
+			return self.environments.autoload.collect {|name, env|
 				self.log.debug "Loading a %s env as '%s'" %
- 					[ env[:kind], env[:name] ]
+ 					[ env[:kind], name ]
 				MUES::Environment::create(
 					env[:kind],
-					env[:name],
+					name,
 					env[:description],
 					env[:params] )
 			}
@@ -423,13 +441,12 @@ module MUES
 			self.log.info "Creating %d listener/s from configuration." %
 				self.engine.listeners.nitems
 
-			return self.engine.listeners.collect {|lconfig|
-				self.log.info "Calling create for a '%s' listener named '%s': parameters => %s." %
-					[ lconfig[:kind], lconfig[:name], lconfig[:params].inspect ]
-				MUES::Listener::create(
-					lconfig[:kind],
-					lconfig[:name],
-					lconfig[:params] )
+			return self.engine.listeners.collect {|name, lconfig|
+				self.log.info "Calling create for a '%s' listener named '%s': " +
+					"parameters: %s." %
+					[ lconfig[:kind], name, lconfig[:params].inspect ]
+
+				MUES::Listener::create( *(lconfig[:kind, :name, :params]) )
 			}
 		end
 
@@ -463,7 +480,19 @@ module MUES
 		### hashes.
 		class ConfigStruct < MUES::Object
 			include Enumerable
+			extend Forwardable
 			
+			# Mask most of Kernel's methods away so they don't collide with
+			# config values.
+			Kernel::methods(false).each {|meth|
+				next if /^(?:__|dup|object_id|inspect|class|raise|method_missing)/.match( meth )
+				undef_method( meth )
+			}
+
+			# Forward some methods to the internal hash
+			def_delegators :@hash, :keys, :key?, :values, :value?, :[]
+
+
 			### Create a new ConfigStruct from the given +hash+.
 			def initialize( hash )
 				@hash = hash.dup
@@ -477,6 +506,13 @@ module MUES
 			# Modification flag. Set to +true+ to indicate the contents of the
 			# Struct have changed since it was created.
 			attr_writer :modified
+
+
+			### Returns the number of items in the struct.
+			def length
+				return @hash.length
+			end
+			alias_method :nitems, :length
 
 
 			### Returns +true+ if the ConfigStruct or any of its sub-structs
@@ -497,7 +533,7 @@ module MUES
 					when ConfigStruct
 						rhash[k] = v.to_h
 					when NilClass, FalseClass, TrueClass, Numeric, Symbol
-						# No-op (can't dup)
+						rhash[k] = v
 					else
 						rhash[k] = v.dup
 					end
@@ -593,7 +629,7 @@ module MUES
 		### delegates. Create specific instances with the
 		### MUES::Config::Loader::create method.
 		class Loader < MUES::Object
-			include MUES::Factory
+			include PluginFactory
 
 			#########################################################
 			###	C L A S S   M E T H O D S
