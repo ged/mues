@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.3 2002/10/13 23:12:30 deveiant Exp $
+# $Id: object.rb,v 1.4 2002/10/23 02:09:05 deveiant Exp $
 # 
 # == Authors
 # 
@@ -34,9 +34,7 @@
 require 'digest/md5'
 require 'sync'
 
-###
-### Add a couple of syntactic sugar aliases to the Module class.  (Borrowed from
-### Hipster's component "conceptual script" - http://www.xs4all.nl/~hipster/):
+### A couple of syntactic sugar aliases for the Module class.
 ###
 ### [<tt>Module::implements</tt>]
 ###     An alias for <tt>include</tt>. This allows syntax of the form:
@@ -50,10 +48,29 @@ require 'sync'
 ###
 class Module
 
-	# Syntactic sugar for mixin/interface modules
+	# Syntactic sugar for mixin/interface modules.  (Borrowed from Hipster's
+	# component "conceptual script" - http://www.xs4all.nl/~hipster/)
 	alias :implements :include
 	alias :implements? :include?
 end
+
+
+### A couple of utility methods for the Class class.
+### [<tt>Class::alias_class_method</tt>]
+###     Create an alias for a class method. Idea borrowed from RubyTreasures by
+###     Paul Brannan <paul@nospam.atdesk.com>.
+class Class
+
+	### Alias a class method.
+	def alias_class_method( newSym, oldSym )
+		rval = nil
+		rval = class_eval {
+			alias_method( newSym, oldSym )
+		}
+		return rval
+	end
+end
+
 
 require 'mues/Exceptions'
 require 'mues/Mixins'
@@ -130,8 +147,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.3 2002/10/13 23:12:30 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.4 2002/10/23 02:09:05 deveiant Exp $
 
 
 		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -147,10 +164,6 @@ module MUES
 			end
 		end
 
-
-		###############
-		# class methods
-		###############
 
 		### Class methods
 
@@ -185,6 +198,71 @@ module MUES
 		def self.generateMuesId( obj )
 			raw = "%s:%s:%.6f" % [ $$, obj.id, Time.new.to_f ]
 			return Digest::MD5::hexdigest( raw )
+		end
+
+
+		### Create a method that warns of deprecation for an instance method. If
+		### <tt>newSym</tt> is specified, the method is being renamed, and this
+		### method acts like an <tt>alias_method</tt> that logs a warning; if
+		### not, it is being removed, and the target method will be aliased to
+		### an internal method and wrapped in a warning method with the original
+		### name.
+		def self.deprecate_method( oldSym, newSym=oldSym )
+			warningMessage = ''
+
+			# If the method is being removed, alias it away somewhere and build
+			# an appropriate warning message. Otherwise, just build a warning
+			# message.
+			if oldSym == newSym
+				newSym = ("__deprecated_" + oldSym.to_s + "__").intern
+				warningMessage = "%s#%s is deprecated" %
+					[ self.name, oldSym.to_s ]
+				alias_method newSym, oldSym
+			else
+				warningMessage = "%s#%s is deprecated; use %s#%s instead" %
+					[ self.name, oldSym.to_s, self.name, newSym.to_s ]
+			end
+			
+			# Build the method that logs a warning and then calls the true
+			# method.
+			class_eval %Q{
+				def #{oldSym.to_s}( *args )
+					self.log.warn "warning: %s: #{warningMessage}" % caller(1)
+					send( #{newSym.inspect}, *args )
+				rescue => err
+					Kernel::raise err, err.message, err.backtrace[2..-1]
+				end
+			}
+		end
+
+
+		### Like Object::deprecate_method, but for class methods.
+		def self.deprecate_class_method( oldSym, newSym=oldSym )
+			warningMessage = ''
+
+			# If the method is being removed, alias it away somewhere and build
+			# an appropriate warning message. Otherwise, just build a warning
+			# message.
+			if oldSym == newSym
+				newSym = ("__deprecated_" + oldSym.to_s + "__").intern
+				warningMessage = "%s::%s is deprecated" %
+					[ self.name, oldSym.to_s ]
+				alias_class_method newSym, oldSym
+			else
+				warningMessage = "%s::%s is deprecated; use %s::%s instead" %
+					[ self.name, oldSym.to_s, self.name, newSym.to_s ]
+			end
+			
+			# Build the method that logs a warning and then calls the true
+			# method.
+			class_eval %Q{
+				def self.#{oldSym.to_s}( *args )
+					MUES::Log.warn "warning: %s: #{warningMessage}" % caller(1)
+					send( #{newSym.inspect}, *args )
+				rescue => err
+					Kernel::raise err, err.message, err.backtrace[2..-1]
+				end
+			}
 		end
 
 
