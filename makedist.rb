@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.5 2001/12/05 18:02:08 deveiant Exp $
+#	$Id: makedist.rb,v 1.6 2002/03/30 19:09:08 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -16,8 +16,8 @@ require "./utils.rb"
 include UtilityFunctions
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.5 2001/12/05 18:02:08 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.6 2002/03/30 19:09:08 deveiant Exp $
 ReleaseVersion = 0.01
 
 # Set interrupt handler to restore tty before exiting
@@ -64,7 +64,8 @@ ANTIMANIFEST = [
 	/^#/,
 	%r{docs/html},
 	%r{docs/man},
-	/^TEMPLATE/
+	/^TEMPLATE/,
+	/\.cvsignore/
 ]
 
 Distros = [
