@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 ###########################################################################
-=begin
+=begin 
 
 = Config.rb
 
@@ -57,8 +57,8 @@ module MUES
 	class Config < Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.4 2001/05/14 11:16:46 deveiant Exp $
 
 		### METHOD: initialize( sourceIoOrFileName = nil )
 		### Initialize the configuration, optionally loading the configuration
@@ -84,6 +84,7 @@ module MUES
 		#######################################################################
 		###	P U B L I C   M E T H O D S
 		#######################################################################
+		public
 
 		### METHOD: [ key ]
 		### Look up a value in the config.
@@ -239,6 +240,7 @@ module MUES
 			###################################################################
 			###	P U B L I C   M E T H O D S
 			###################################################################
+			public
 
 			### METHOD: dump( indent = 0 ) -> aString
 			def dump( indent=0 )
