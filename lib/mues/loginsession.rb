@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
+# $Id: loginsession.rb,v 1.12 2002/09/12 11:59:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -56,15 +56,22 @@ module MUES
 	### Login session class: encapsulates the task of authenticating a user.
 	class LoginSession < Object; implements MUES::Debuggable
 
-		include MUES::TypeCheckFunctions, MUES::FactoryMethods
+		include MUES::TypeCheckFunctions,
+			MUES::ServerFunctions,
+			MUES::FactoryMethods,
+			MUES::UntaintingFunctions
 
-		Version = %q$Revision: 1.11 $
-		Rcsid = %q$Id: loginsession.rb,v 1.11 2002/08/02 20:03:44 deveiant Exp $
+		Version = %q$Revision: 1.12 $
+		Rcsid = %q$Id: loginsession.rb,v 1.12 2002/09/12 11:59:26 deveiant Exp $
+
+		# Pattern for untainting user input for username and password
+		LoginUntaintPattern		= %r{([a-z]\w+)}
+		PasswordUntaintPattern	= %r{([\x20-\x7e]+)}
 
 
 		### Create and initialize a new login session object with the
-		### <tt>config</tt> (MUES::Config object), <tt>stream</tt>
-		### (MUES::IOEventStream object), and <tt>remoteHost</tt> specified.
+		### <tt>config</tt> (MUES::Config object) and <tt>stream</tt>
+		### (MUES::IOEventStream object) specified.
 		def initialize( config, stream, remoteHost )
 			checkType( config, MUES::Config )
 			checkType( stream, MUES::IOEventStream )
@@ -75,7 +82,7 @@ module MUES
 			# get and send IOEvents to the stream
 			@config				= config
 			@stream				= stream
-			@remoteHost			= remoteHost
+			@remoteHost			= remoteHost.to_s
 
 			@loginAttemptCount	= 0
 			@maxTries			= @config.login.maxtries
@@ -88,7 +95,6 @@ module MUES
 			@currentLogin		= nil
 			@authMutex			= Mutex.new
 
-			@myProxy.debugLevel = 5
 			@stream.addFilters( @myProxy )
 
 			# Get the timeout from the config, and if there is one, create a
@@ -96,7 +102,7 @@ module MUES
 			timeout = @config.login.timeout
 			if timeout > 0 
 				@myTimeoutEvent = LoginSessionFailureEvent.new( self, "Timeout (#{timeout} seconds)." )
-				engine.scheduleEvents( Time.now + timeout, @myTimeoutEvent )
+				scheduleEvents( Time.now + timeout, @myTimeoutEvent )
 			end
 
 			# Now queue the motd and the first username prompt output events
@@ -151,9 +157,9 @@ module MUES
 					# If we've not gotten a login yet, this event's data is the
 					# login
 					elsif ! @currentLogin
-						ev = events.shift
-						debugMsg( 4, "Setting login name to '#{ev.data}'." )
-						@currentLogin = ev.data
+						untainted = untaint( events.shift.data, LoginUntaintPattern ).to_s
+						debugMsg( 4, "Setting login name to '#{untainted}'." )
+						@currentLogin = untainted
 						@myProxy.queueOutputEvents( HiddenInputPromptEvent.new(@config.login.passprompt) )
 						next
 
@@ -161,16 +167,17 @@ module MUES
 					# waiting for an auth event to return, then this input event
 					# contains the password, so do authentication
 					else
-						ev = events.shift
-						debugMsg( 4, "Setting password to #{ev.data}, and dispatching a LoginSessionAuthEvent." )
+						untainted = untaint( events.shift.data, PasswordUntaintPattern ).to_s
+
+						debugMsg( 4, "Setting password to '#{untainted}', and dispatching a LoginSessionAuthEvent." )
 						authEvent = LoginSessionAuthEvent.new( self,
 															   @currentLogin,
-															   ev.data,
+															   untainted,
 															   @remoteHost,
 															   method( :authSuccessCallback ),
 															   method( :authFailureCallback ))
 						authEvent.debugLevel = 3
-						engine.dispatchEvents( authEvent )
+						dispatchEvents( authEvent )
 						@waitingOnEngine = true
 						@currentLogin = nil
 					end
@@ -193,7 +200,7 @@ module MUES
 
 				# Cancel the pending timeout
 				if @myTimeoutEvent
-					engine.cancelScheduledEvents( @myTimeoutEvent )
+					cancelScheduledEvents( @myTimeoutEvent )
 				end
 
 				@stream.pause
@@ -224,17 +231,14 @@ module MUES
 			### config, generate a login failure event to kill this session and
 			### log the failure
 			if @maxTries > 0 && @loginAttemptCount >= @maxTries
-				logMsg = "Max login tries exceeded for session #{self.id} from #{@remoteHost}."
-				debugMsg( 1, logMsg )
+				self.log.notice( "Max login tries exceeded for session #{self.id} from #{@remoteHost}." )
 				@myProxy.queueOutputEvents( OutputEvent.new(">>> Max tries exceeded. <<<") )
-				return [ LoginSessionFailureEvent.new(self,"Too many attempts"), LogEvent.new( logMsg ) ]
+				return [ LoginSessionFailureEvent.new(self,"Too many attempts") ]
 
 
 			### Prompt for login and try again
 			else
-				logMsg = "Failed login attempt #{@loginAttemptCount} from #{@remoteHost}."
-				debugMsg( 1, logMsg )
-				engine.dispatchEvents( LogEvent.new("notice", logMsg) )
+				self.log.notice( "Failed login attempt #{@loginAttemptCount} from #{@remoteHost}." )
 				@myProxy.queueOutputEvents( OutputEvent.new("\n" + @config.login.userprompt) )
 
 				@authMutex.synchronize {
@@ -257,7 +261,7 @@ module MUES
 
 				# Cancel the timeout event if it hasn't fired yet
 				if @myTimeoutEvent
-					engine.cancelScheduledEvents( @myTimeoutEvent )
+					cancelScheduledEvents( @myTimeoutEvent )
 				end
 
 				# Clear up circular references
