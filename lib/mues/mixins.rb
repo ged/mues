@@ -24,10 +24,6 @@
 # [<tt>MUES::Debuggable</tt>]
 #    An interface/mixin that adds debugging functions and methods to a class.
 #
-# [<tt>MUES::Factory</tt>]
-#    A mixin that adds methods to a class that allow it to be used as a factory
-#    for derivative classes that follow a certain naming convention.
-#
 # [<tt>MUES::Notifiable</tt>]
 #    An interface/mixin that designates a class as being interested in receiving
 #    a notification when the Engine is starting or stopping.
@@ -40,13 +36,13 @@
 #   require 'mues/mixins'
 #
 #   class MyClass
-#   include MUES::AbstractClass, MUES::Factory, MUES::Debuggable,
+#   include MUES::AbstractClass, MUES::Debuggable,
 #           MUES::TypeCheckFunctions, MUES::SafeCheckFunctions,
 #           MUES::ServerFunctions, MUES::Notifiable
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.26 2004/03/14 01:43:49 stillflame Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -245,7 +241,7 @@ module MUES
 					else
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{anObject.class.name}",
-							caller(1).find_all {|frame| frame.include?(__FILE__)}
+							caller(1).find_all {|frame| !frame.include?(__FILE__)}
 					end
 				end
 			else
@@ -255,7 +251,7 @@ module MUES
 					else
 						raise ArgumentError, 
 							"Argument missing.",
-							caller(1).find_all {|frame| frame.include?(__FILE__)}
+							caller(1).find_all {|frame| !frame.include?(__FILE__)}
 					end
 				end
 			end
@@ -278,7 +274,7 @@ module MUES
 						typeList = vTypes.collect {|type| type.name}.join(" or ")
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{obj.class.name}",
-							caller(1).find_all {|frame| frame.include?(__FILE__)}
+							caller(1).find_all {|frame| !frame.include?(__FILE__)}
 					}
 				end
 			end
@@ -574,11 +570,6 @@ module MUES
 
 	end # module ServerFunctions
 	ServerFunctions.freeze
-
-
-	# :MC: Moved out to its own module, keep all previous references to this the
-	# same.
-	Factory = PluginFactory
 
 
 	# Recursive hash-merge function
