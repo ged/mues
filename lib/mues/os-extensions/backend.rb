@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.2 2002/07/09 15:05:21 deveiant Exp $
+# $Id: backend.rb,v 1.3 2002/07/09 15:06:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -53,8 +53,8 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version	= %q$Revision: 1.2 $
-			RcsId	= %q$Id: backend.rb,v 1.2 2002/07/09 15:05:21 deveiant Exp $
+			Version	= %q$Revision: 1.3 $
+			RcsId	= %q$Id: backend.rb,v 1.3 2002/07/09 15:06:44 deveiant Exp $
 
 			# Default de/serializing proc
 			DefaultSerializer = Proc.new {|obj|
@@ -101,7 +101,8 @@ module MUES
 				:exists?,
 				:open?,
 				:nitems,
-				:clear
+				:clear,
+				:drop
 		end
 
 	end # class ObjectStore
