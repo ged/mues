@@ -51,3 +51,11 @@ These are things which are planned for the next release:
   mostly be assembled from the comments in server/minimal-config.xml, but
   elaboration of the values and what they do will be in order.
 
+* Rewrite the login system to use MUES::Questionnaire.
+
+* Work on an OutputFilter (probably a derivative of TelnetOutputFilter) that
+  uses readline or has readline-like capabilities.
+
+
+
+
