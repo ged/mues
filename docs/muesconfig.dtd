@@ -2,10 +2,10 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-	$Id: muesconfig.dtd,v 1.8 2002/10/27 16:59:14 deveiant Exp $
+	$Id: muesconfig.dtd,v 1.9 2002/10/27 21:01:46 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
-	Time-stamp: "27-Oct-2002 09:56:46 deveiant"
+	Time-stamp: "27-Oct-2002 12:05:46 deveiant"
 
 	Copyright (c) 2002, The FaerieMUD Consortium. All rights reserved.
 
@@ -27,7 +27,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.8 $ -->
+<!-- A version string like $Revision: 1.9 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -79,7 +79,8 @@
 <!ELEMENT threshold             (#PCDATA)>
 <!ELEMENT safelevel             (#PCDATA)>
 
-<!ELEMENT listeners             (listener)*>
+<!ELEMENT listeners             (listenerpath?,(listener)*)>
+<!ELEMENT listenerpath          (directory+)>
 
 <!ELEMENT listener              (param*)>
 <!ATTLIST listener
