@@ -150,7 +150,7 @@ called with the Config object as an argument.
 
   A derivative of the Thread class which is capable of storing an associated
   timestamp. This functionality can be used to ascertain how long the thread has
-  been in an idle state.
+  been running.
 
 : ((*MUES::World*)) - (({mues/World}))
 
@@ -158,6 +158,6 @@ called with the Config object as an argument.
 
 == History
 
-  $Id: MUES.rd,v 1.2 2001/03/28 21:15:22 deveiant Exp $
+  $Id: MUES.rd,v 1.3 2001/06/25 14:00:17 deveiant Exp $
 
 =end
