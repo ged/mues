@@ -5,7 +5,7 @@
 # MUES::Engine. This file contains the following classes:
 #
 # [MUES::CommandShell]
-#   The main command shell class; it is a derivative of MUES::IOEventFilter.
+#   The main command shell class; it is a derivative of MUES::InputFilter.
 #
 # [MUES::CommandShell::Command]
 #	The Flyweight class for all shell commands.
@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.18 2002/09/15 07:41:44 deveiant Exp $
+# $Id: commandshell.rb,v 1.19 2002/09/27 16:17:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,20 +61,19 @@ require "mues/Mixins"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/User"
-require "mues/filters/IOEventFilter"
+require "mues/filters/InputFilter"
 
 module MUES
 
-	### This class is a MUES::IOEventFilter that provides connected users
-	### with the ability to execute commands in the context of their
-	### MUES::User object.
-	class CommandShell < IOEventFilter ; implements MUES::Debuggable
+	### This class is a MUES::InputFilter that provides connected users with the
+	### ability to execute commands in the context of their MUES::User object.
+	class CommandShell < InputFilter ; implements MUES::Debuggable
 
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.18 2002/09/15 07:41:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.19 2002/09/27 16:17:46 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -138,11 +137,13 @@ module MUES
 		### Start the filter on the specified stream (a MUES::IOEventStream
 		### object).
 		def start( stream )
-			super( stream )
+			results = super( stream )
 			@stream = stream
 			@context = Context::new( self, @user, stream, nil )
 			queueOutputEvents( OutputEvent.new(@vars['prompt']) )
 			debugMsg( 2, "Starting command shell for #{@user.to_s}" )
+
+			return results
 		end
 
 
@@ -152,6 +153,7 @@ module MUES
 			@stream = nil
 			@context = nil
 			debugMsg( 2, "Stopping command shell for #{@user.to_s}" )
+
 			super( stream )
 		end
 
@@ -822,8 +824,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.18 2002/09/15 07:41:44 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.19 2002/09/27 16:17:46 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
