@@ -42,8 +42,9 @@ reached at <architects@FaerieMUD.org>, which is a mailing list of parties who
 are interested in MUES and FaerieMUD development. You may access the interface
 to this and other FaerieMUD-related lists at: <http://lists.FaerieMUD.org/>.
 
-If you're interested in helping out, please read the HACKING file. We'd welcome
-patches for any of the tasks in the ./TODO file and ./server/shellCommands/TODO.
+If you're interested in helping out, please read the ./HACKING file. We'd
+welcome patches for any of the tasks in the ./TODO file and
+./server/shellCommands/TODO.
 
 == Installation
 
@@ -84,7 +85,7 @@ INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 FITNESS FOR A PARTICULAR PURPOSE.
 
 
- $Id: README,v 1.7 2002/10/31 07:24:05 deveiant Exp $
+ $Id: README,v 1.8 2003/05/12 18:43:23 deveiant Exp $
 
 
 
