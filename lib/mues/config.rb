@@ -23,7 +23,7 @@
 #   <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
 #        "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 #   
-#   <muesconfig version="1.1" time-stamp="$Date: 2002/11/10 05:38:25 $">
+#   <muesconfig version="1.1" time-stamp="$Date: 2003/04/19 08:14:30 $">
 #   
 #     <!--
 #   
@@ -32,7 +32,7 @@
 #     without any argument. For the actual defaults, see the end of
 #     lib/mues/Config.rb.
 #   
-#     $Id: config.rb,v 1.23 2002/11/10 05:38:25 deveiant Exp $
+#     $Id: config.rb,v 1.24 2003/04/19 08:14:30 deveiant Exp $
 #   
 #     -->
 #   
@@ -270,7 +270,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.23 2002/11/10 05:38:25 deveiant Exp $
+# $Id: config.rb,v 1.24 2003/04/19 08:14:30 deveiant Exp $
 # 
 # == Authors
 # 
@@ -307,8 +307,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.23 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.23 2002/11/10 05:38:25 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.24 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.24 2003/04/19 08:14:30 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -488,7 +488,7 @@ module MUES
 		### Instantiate and return one or more MUES::Environment objects from
 		### the configuration.
 		def createConfiguredEnvironments
-			MUES::Environment::derivativeDirs.replace( self.environments.envPath )
+			MUES::Environment::derivativeDirs.unshift( *(self.environments.envPath) )
 			return self.environments.collect {|name,confighash|
 				self.log.info( "Calling create for a '%s' environment named '%s': parameters => %s." % [
 								  confighash['class'], name, confighash['parameters'].inspect ])
@@ -503,7 +503,7 @@ module MUES
 		### configuration.
 		def createConfiguredListeners
 			self.log.info( "Creating listeners from configuration." )
-			MUES::Listener::derivativeDirs.replace( self.engine.listeners.listenerPath )
+			MUES::Listener::derivativeDirs.unshift( *(self.engine.listeners.listenerPath) )
 
 			listeners = self.engine.listeners.collect {|name,lconfig|
 				self.log.info( "Calling create for a '%s' listener named '%s': parameters => %s." % [
@@ -584,7 +584,7 @@ module MUES
 
 
 			### Returns an Array of item names contained by this element.
-			def items
+			def items 
 				return @items.keys
 			end
 
@@ -712,8 +712,8 @@ module MUES
 			### REXML::Instruction object), and return its value.
 			def processInstruction( pi )
 				case pi.target
-				when /config/
-					top = self.parents[-1]
+				when /(config|self)/
+					top = ($1 == 'config' ? self.parents[-1] : self)
 					return pi.content.split(/\./).inject(top) {|elem,msg|
 						return elem unless elem.kind_of?( MUES::Config::Element )
 						begin
@@ -723,6 +723,7 @@ module MUES
 								[ pi.target, pi.content, e.message ]
 						end
 					}
+
 				else
 					self.log.info "Unhandled processing instruction: "
 				end
@@ -994,6 +995,49 @@ module MUES
 		### things like the server name, admin name and email, the server
 		### description offered at connect-time, and the server root directory.
 		class GeneralSection < MUES::Config::Section # :nodoc:
+
+			### Create and return a new <tt>environments</tt> section object
+			### from the specified element and parent element.
+			def initialize( element, parent )
+				@includePath = []
+				super( element, parent )
+			end
+
+			######
+			public
+			######
+
+			# The Array of directories to add to the $LOAD_PATH
+			attr_accessor :includePath
+			alias_method :includepath, :includePath
+			alias_method :includepath=, :includePath=
+
+			### Extract the configuration information from the specified
+			### <tt>env</tt> REXML::Element, and add it to the array of
+			### environments.
+			def addSubelement( elem )
+				checkType( elem, REXML::Element )
+
+				case elem.name
+				when 'includepath'
+					# Remove the default if they've specified something
+					@includePath.clear
+
+					# Add each directory to the path array, doing PI-translation
+					# in the process.
+					elem.each_element {|dir|
+						raise MUES::ConfigError,
+							"Unknown element #{dir.name} in general/includepath" unless
+							dir.name = 'directory'
+						@includePath.push( self.processValue(dir) )
+					}
+					@includePath.uniq!
+
+				else
+					super( elem )
+				end
+			end
+
 		end # class GeneralSection 
 
 
@@ -1375,7 +1419,7 @@ __END__
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/11/10 05:38:25 $">
+<muesconfig version="1.1" time-stamp="$Date: 2003/04/19 08:14:30 $">
 
   <!-- General config -->
   <general>
@@ -1389,6 +1433,9 @@ __END__
 	  /quit to disconnect
 	  /shutdown to halt the server (admin privileges required)
 	</motd>
+	<includepath>
+	  <directory>lib</directory>
+	</includepath>
   </general>
 
 
