@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Documentation Generation Script
-#	$Id: makesitedocs.rb,v 1.7 2002/07/07 18:12:20 deveiant Exp $
+#	$Id: makesitedocs.rb,v 1.8 2002/08/02 20:12:14 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -23,7 +23,7 @@ $LOAD_PATH.unshift "docs/lib"
 # Load modules
 require 'getoptlong'
 require 'rdoc/rdoc'
-require 'rdoc/parsers/parse_faeriemud_rb'
+#require 'rdoc/parsers/parse_faeriemud_rb'
 require 'utils'
 include UtilityFunctions
 
@@ -31,11 +31,11 @@ opts = GetoptLong.new
 opts.set_options(
 	[ '--debug',	'-d',	GetoptLong::NO_ARGUMENT ],
 	[ '--verbose',	'-v',	GetoptLong::NO_ARGUMENT ],
-	[ '--upload',	'-u',	GetoptLong::REQUIRED_ARGUMENT ]
+	[ '--upload',	'-u',	GetoptLong::OPTIONAL_ARGUMENT ]
 )
 
 $docsdir = "docs/html"
-$libdirs = %w{lib ext server README INSTALL QUICKSTART CONFIGURATION}
+$libdirs = %w{lib ext/mues server README INSTALL QUICKSTART CONFIGURATION}
 opts.each {|opt,val|
 	case opt
 
@@ -46,13 +46,19 @@ opts.each {|opt,val|
 		$verbose = true
 
 	when '--upload'
-		$upload = val
+		$upload = unless val.empty?
+					  val
+				  else
+					  'ssh://oberon/www/mues.FaerieMUD.org/public/rdoc'
+				  end
+		debugMsg "Setting upload arg to #$upload"
 
 	end
 }
 
 
 header "Making documentation in #$docsdir from files in #{$libdirs.join(', ')}."
+message "Will upload to '#$upload'" if $upload
 
 flags = [
 	'--all',
@@ -98,8 +104,8 @@ if $upload
 		else
 			error "--upload ssh://host/path"
 		end
-	else
-		targetdir = $upload
+	when %r{^file://(.*)}
+		targetdir = $1
 		targetdir.gsub!( %r{^file://}, '' )
 
 		File.makedirs targetdir, true
@@ -122,6 +128,9 @@ if $upload
 				end
 			end
 		}
+
+	else
+		raise "I don't know how to upload to urls like #$upload."
 	end
 end
 
