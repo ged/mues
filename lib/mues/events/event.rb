@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: event.rb,v 1.13 2002/10/23 02:10:46 deveiant Exp $
+# $Id: event.rb,v 1.14 2002/10/26 19:02:47 deveiant Exp $
 # 
 # == Authors
 # 
@@ -91,8 +91,8 @@ module MUES
 		include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
-		Rcsid			= %q$Id: event.rb,v 1.13 2002/10/23 02:10:46 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
+		Rcsid			= %q$Id: event.rb,v 1.14 2002/10/26 19:02:47 deveiant Exp $
 		MaxPriority		= 64
 		MinPriority		= 1
 		DefaultPriority	= (MaxPriority / 2).to_i
@@ -151,12 +151,15 @@ module MUES
 		deprecate_class_method :UnregisterHandlers, :unregisterHandlers
 		deprecate_class_method :GetHandlers, :getHandlers
 
+		# Alias the inheritance callback added by MUES::FactoryMethods so it can
+		# be overridden without clobbering it.
+		alias_class_method :__inherited, :inherited
 
 		### Inheritance callback: Set up a handler array for each new
 		### <tt>subclass</tt> as it is created.
 		def self.inherited( subclass )
 			@@Handlers[ subclass ] = []
-			super( subclass )
+			return __inherited( subclass )
 		end
 
 
