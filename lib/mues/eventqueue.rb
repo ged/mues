@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.17 2002/10/14 09:31:09 deveiant Exp $
+# $Id: eventqueue.rb,v 1.18 2002/10/23 02:02:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.17 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.17 2002/10/14 09:31:09 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.18 2002/10/23 02:02:25 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -293,7 +293,7 @@ module MUES
 					### Kill the supervisor thread
 					if ( @supervisor.is_a? Thread ) then
 						@supervisor.kill
-						@supervisor.join
+						@supervisor.join( 0.5 )
 						@supervisor = nil
 					end
 
@@ -509,7 +509,7 @@ module MUES
 			### Iterate over each handler for this kind of event, calling each
 			### one's handleEvent() method, adding any events that are returned
 			### to the consequences.
-			event.class.GetHandlers.each do |handler|
+			event.class.getHandlers.each do |handler|
 				debugMsg( 2, "Invoking #{event.class.name} handler (a #{handler.class} object)." )
 
 				results = handler.handleEvent( event )
