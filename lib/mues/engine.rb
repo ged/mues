@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.32 2002/10/25 03:07:09 deveiant Exp $
+# $Id: engine.rb,v 1.33 2002/10/25 04:58:36 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.32 2002/10/25 03:07:09 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.33 2002/10/25 04:58:36 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -293,7 +293,7 @@ module MUES
 			@config = config
 			startupEvents = []
 
-			$stderr.puts "[Engine id is #{self.muesid}]"
+			self.consoleMessage "[Engine id is #{self.muesid}]"
 			self.log.notice( "Starting Engine..." )
 
 			# Set up the Engine
@@ -698,6 +698,12 @@ module MUES
 		protected
 		#########
 
+		### Output a <tt>message</tt> to STDERR if it's a tty, else do nothing.
+		def consoleMessage( message )
+			$stderr.puts message if $stderr.tty?
+		end
+
+
 		### Configure the engine with the <tt>engine</tt> section of the
 		### specified configuration (a MUES::Config object).
 		def setupEngine( config )
@@ -731,6 +737,8 @@ module MUES
 		def setupLogging( config )
 			self.log.info( "Setting up logging." )
 			MUES::Log::configure( config )
+
+			return []
 		end
 
 
@@ -741,6 +749,8 @@ module MUES
 			@objectStore = @config.createEngineObjectstore
 			@objectStore.addIndexes( :class, :username )
 			self.log.info( "Created Engine objectstore: #{@objectStore.to_s}" )
+
+			return []
 		end
 
 
@@ -762,6 +772,8 @@ module MUES
 									  RebuildCommandRegistryEvent,
 									  EvalCommandEvent
 									 )
+
+			return []
 		end
 
 
@@ -1151,6 +1163,7 @@ module MUES
 		def shutdown
 			cleanupEvents = []
 
+			self.consoleMessage "Shutting down..."
 			self.log.notice( "Stopping engine" )
 			@state = State::SHUTDOWN
 
@@ -1665,10 +1678,7 @@ module MUES
 		### Handle trapped signals.
 		def handleSignalEvent( event )
 			self.log.crit( "Caught SIG#{event.signal}" )
-
-			if $stderr.tty?
-				$stderr.puts ">>> %s <<<" % event.message
-			end
+			self.consoleMessage ">>> %s <<<" % event.message
 
 			case event.signal
 			when "HUP"
