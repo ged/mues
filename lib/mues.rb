@@ -16,7 +16,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.26 2002/09/12 09:59:49 deveiant Exp $
+# $Id: mues.rb,v 1.27 2003/04/21 03:32:42 deveiant Exp $
 # 
 # == Authors
 # 
@@ -29,6 +29,8 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
+require 'rbconfig'
+
 # The base namespace under which all MUES components exist.
 module MUES ; end
 
@@ -36,7 +38,7 @@ unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
 	fail "MUES requires at least Ruby 1.7.2. This is #{RUBY_VERSION}."
 end
 
-require 'mues.so'
+require "mues.#{Config::CONFIG['DLEXT']}"
 require 'mues/Engine'
 
 
