@@ -131,6 +131,11 @@ module MUES
 	end
 
 
+	### CLASS: GarbageCollectionEvent < SystemEvent
+	### Event which tells the Engine to invoke the garbage collector
+	class GarbageCollectionEvent < SystemEvent
+	end
+
 	### CLASS: ReconfigEvent < SystemEvent
 	### Event which is issued when the configuration has changed.
 	class ReconfigEvent < SystemEvent
