@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+#	$Id: makedist.rb,v 1.2 2001/11/01 19:50:46 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -16,8 +16,9 @@ require "./utils.rb"
 include UtilityFunctions
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.2 2001/11/01 19:50:46 deveiant Exp $
+ReleaseVersion = 0.01
 
 # Set interrupt handler to restore tty before exiting
 stty_save = `stty -g`.chomp
@@ -85,11 +86,17 @@ def main
 
 	#puts "Filelist:\n\t" + filelist.join("\n\t")
 
-	defaultVersion = "%0d.%02d" % Version.split(/\./)
-	version = promptWithDefault( "Distribution version [#{defaultVersion}]", defaultVersion )
+	version = promptWithDefault( "Distribution version [#{ReleaseVersion}]", ReleaseVersion )
 
 	distName = "MUES-%s" % version
 	archiveName = "%s.tar.gz" % distName
+	
+	if FileTest.exists?( archiveName )
+		message "Removing old archive #{archiveName}..."
+		File.delete( archiveName )
+		message "done.\n"
+	end
+
 	message "Making distribution directory #{distName}..."
 	Dir.mkdir( distName ) unless FileTest.directory?( distName )
 	for file in filelist
