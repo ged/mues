@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.8 2002/10/14 09:43:12 deveiant Exp $
+# $Id: questionnaire.rb,v 1.9 2002/10/25 05:04:34 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.8 2002/10/14 09:43:12 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.9 2002/10/25 05:04:34 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -298,6 +298,9 @@ module MUES
 			end
 
 			return super( *events )
+		rescue ::Exception => err
+			self.error "Internal questionnaire error: %s\n" % err.message
+			self.abort
 		end
 
 
@@ -721,9 +724,64 @@ module MUES
 
 			return steps
 		end
+
+
+
+		#################################################################################
+		###	R E A D Y - M A D E   Q U E S T I O N N A I R E   F A C T O R Y   M E T H O D S
+		#################################################################################
+
+		### A factory method that builds a simple one-step confirmation
+		### questionnaire, which can be used to confirm dangerous operations, or
+		### really any situation where the user only needs to answer one
+		### prompt. The answer to the prompt will be set in the
+		### <tt>:confirm</tt> key of the answers hash, or is available via the
+		### singleton method #answer. If it was a prompt for which a confirming
+		### answer begins with a 'y' (eg., 'y', 'yes', 'Yes', etc.), the
+		### singleton method #confirmed? is also provided, which will return
+		### true if the user's answer matched that criteria.
+		###
+		### == Example:
+		###
+		###	  prompt = "Remove %s: Are you sure?" % user.to_s
+		###	  confirm = MUES::Questionnaire::Confirmation( prompt ) {|qnaire|
+		###		if qnaire.confirmed?
+		###		  MUES::ServerFunctions::unregisterUser( user )
+		###		  qnaire.message "Done.\n\n"
+		###		else
+		###		  qnaire.error "Aborted.\n\n"
+		###		end
+		###	  }
+		###
+		def self.Confirmation( prompt="Are you sure? [yN] ", default="n" )
+
+			# Build the prompt step
+			step = {
+				:name		=> 'confirm',
+				:question	=> prompt,
+				:validator	=> /^[yn]/i,
+				:default	=> default,
+				:errorMsg	=> "Please answer y or n.\n\n"
+			}
+			
+			# Get the block, if given, and create the questionnaire object.
+			block = if block_given? then Proc::new else nil end
+			qnaire = MUES::Questionnaire::new( "Confirmation Dialog", step, &block )
+
+			# Add the shortcut singleton method to the questionnaire object.
+			def qnaire.answer
+				self.answers[:confirm]
+			end
+
+			# Add an even shorter shortcut singleton method.
+			def qnaire.confirmed?
+				self.answer =~ /^y/i ? true : false
+			end
+
+			return qnaire
+		end
+
 		
-
-
 	end # class Questionnaire
 end # module MUES
 
