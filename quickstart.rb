@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.8 2002/10/27 21:01:19 deveiant Exp $
+#	$Id: quickstart.rb,v 1.9 2003/08/04 02:35:02 deveiant Exp $
 #
-#	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
+#	Copyright (c) 2001-2003, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -96,7 +96,7 @@ def main
 	writeLine( 55 )
 	message "The server will start in 'init' mode; You can log in\n"\
 		    "with 'admin' as the username and an empty password (just\n"\
-            "hit enter) via telnet://localhost:4848.\n"
+            "hit enter).\n"
 	writeLine( 55 )
 
 	message ">>> Starting server...\n\n"
