@@ -3,7 +3,7 @@
 classes = {}
 
 class Class
-	alias realNew new 
+	alias :realNew :new 
 	private_class_method :realNew
 
 	def new( *args )
