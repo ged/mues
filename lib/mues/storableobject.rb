@@ -41,7 +41,7 @@ $: << ".."
 
 require "PolymorphicObject"
 require "ObjectStore"
-require "MD5"
+require "md5"
 
 class StorableObject < PolymorphicObject; implements AbstractClass
 
