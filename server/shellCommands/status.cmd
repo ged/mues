@@ -1,6 +1,6 @@
 #
 # MUES::CommandShell server-status command.
-# $Id: status.cmd,v 1.1 2002/09/05 04:07:11 deveiant Exp $
+# $Id: status.cmd,v 1.2 2002/09/12 12:55:24 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -22,7 +22,7 @@ login sessions, and connected users.
 creator
 
 == Code
-  return MUES::OutputEvent.new( MUES::ServerFunctins::engine.statusString )
+  return MUES::OutputEvent.new( MUES::ServerFunctions::engineStatusString )
 
 
 
