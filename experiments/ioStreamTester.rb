@@ -16,7 +16,7 @@ def main
 
 	puts "Fetching player record for '#{user}' from a #{driver} objectstore."
 	os = MUES::ObjectStore.new( driver, 'mues', 'localhost', 'deveiant', '3l3g4nt' )
-	player = os.fetchPlayer( user )
+	player = os.fetchPlayer( user ) or raise Exception, "Could not find player '#{user}'."
 
 	puts "Player loaded. Creating IO event stream and filters."
 
