@@ -1,24 +1,39 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
-=World.rb
+=Environment.rb
 == Name
 
-World - MUES World object class
+Environment - MUES Environment object class
 
 == Synopsis
 
-  require "mues/World"
-  require "mues/Config"
+  require "mues/Environment"
 
-  worldConf = MUES::Config.new( "world.conf" )
-  world = World.new( "testworld", worldConf )
-  world.begin( tickNumber )
+  environment = MUES::Environment.new
+  environment.name = "Faerith"
 
+  roles = environment.getAvailableRoles( aUser )
+  participantObj = environment.connect( aUser, roles[0] )
+  
 == Description
 
-This is an abstract factory class for MUES world objects.
+This is an abstract base class for MUES environment objects.
+
+Things which a environment must offer:
+
+--- getAvailableRoles( aUser )
+
+    Returns an Array of MUES::Role objects that are available to the specified
+    user.
+
+--- getParticipantProxy( aUser, aRole )
+
+	Connect the specified user to the environment in the specified role and
+	return a MUES::ParticipantProxy object if the connection is successful, or
+	raise a EnvironmentConnectFailed exception with an explanatory message
+	describing the failure if the connection could not be established.
 
 == Author
 
@@ -31,18 +46,56 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
+
+require "sync"
 
 require "mues/Namespace"
+require "mues/Exceptions"
+require "mues/Events"
+require "mues/Role"
 
 module MUES
-	class World < Object ; implements AbstractClass
+	
+	### Exception class
+	def_exception :EnvironmentNameConflictError, "Environment name conflict error", Exception
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.4 2001/06/25 14:09:56 deveiant Exp $
+	### Environment abstract base class
+	class Environment < Object ; implements AbstractClass, Notifiable
+
+		### Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.5 2001/07/30 10:45:34 deveiant Exp $
 
 
-	end
-end
+		#############################################################
+		###	P R O T E C T E D   M E T H O D S
+		#############################################################
+		protected
+
+		### (PROTECTED) METHOD: initialize( aName, aDescription )
+		### Initialize an environment object with the specified name and description
+		def initialize( aName, aDescription )
+			checkType( aName, ::String )
+			checkType( aDescription, ::String )
+
+			@name			= aName
+			@description	= aDescription
+
+			super()
+		end
+
+
+		#############################################################
+		###	P U B L I C   M E T H O D S
+		#############################################################
+		public
+
+		### Accessors
+		attr_reader :name, :description
+		abstract	:getParticipantProxy, :getAvailableRoles, :start, :stop
+
+	end # class Environment
+end # module MUES
 
 
