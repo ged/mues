@@ -57,8 +57,20 @@ http://language.perl.com/misc/Artistic.html)
 
 require "thread"
 require "mues/Namespace"
-require "mues/Debugging"
 
+### Add a description attribute to the thread class for diagnostics
+class Thread
+	attr_accessor :desc
+
+	alias_method :realInitialize, :initialize
+	def initialize( *args, &block )
+		realInitialize( *args, &block )
+		self.desc = "(unknown): started from #{caller(1)[0]}"
+	end
+end
+
+### CLASS: MUES::WorkerThread
+### A thread subclass for worker threads in EventQueues
 module MUES
 	class WorkerThread < Thread ; implements Debuggable
 
