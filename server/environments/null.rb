@@ -16,8 +16,8 @@ NullEnv - A VERY simple testing environment
 
   mues> /roles
   nullWorld (NullEnv):
-       testrole		A boring role for testing
-       superuser	A barely less-boring role for testing
+       muggle   A boring role for testing
+       admin    A barely less-boring role for testing
 
   (2) roles available to you.
 
@@ -34,6 +34,10 @@ interesting functionality other than the ability to return roles and allow
 connections.
 
 Well, maybe there^s a few other things you can do...
+
+Red
+To keep in sync with ObjectEnv, run this and check the resulting diff (nod):
+cat NullEnv.rb | sed 's/Null/Object/g' | sed 's/nullWorld/objWorld/g' | diff -ub - ObjectEnv.rb > nod
 
 == Author
 
@@ -61,8 +65,8 @@ module MUES
 	class NullEnv < MUES::Environment
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.3 2001/09/26 12:37:09 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.4 2001/12/07 17:43:40 red Exp $
 		DefaultName = "NullEnvironment"
 		DefaultDescription = <<-"EOF"
 		This is a barebones environment used in testing. It doesn^t really contain any
@@ -203,6 +207,7 @@ module MUES
 
 			DefaultSortPosition = 750
 
+			# Red: user already has an attr_reader in ParticipantProxy
 			attr_reader :user, :character
 			
 			### METHOD: initialize( aUser=MUES::User,

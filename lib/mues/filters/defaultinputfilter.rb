@@ -50,13 +50,16 @@ module MUES
 	class DefaultInputFilter < IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: defaultinputfilter.rb,v 1.3 2001/11/01 16:54:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: defaultinputfilter.rb,v 1.4 2001/12/07 17:43:39 red Exp $
 		DefaultSortPosition = 1000
 
 		### Class attributes
 		@@ErrorMessages = [ 
 			"Huh?", 
+			"Sorry, could you rephrase that?",
+			"My English is not always as good as it should be.",
+			"Could not parse '%s'.",
 			"I'm afraid I don't understand you.", 
 			"What exactly am I supposed to do with '%s'?",
 			"Hmmm... I'm not sure I know how to '%s'.",

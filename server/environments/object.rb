@@ -16,16 +16,16 @@ ObjectEnv - A metaclass test environment
 
   mues> /roles
   objWorld (ObjectEnv):
-       tester		A boring role for testing
-       superuser	A barely less-boring role for testing
+       muggle	  A boring role for testing
+       admin    A barely less-boring role for testing
 
   (2) roles available to you.
 
-  mues> /connect nullWorld superuser
+  mues> /connect objWorld superuser
   Connecting...
   Connected to ObjectEnvironment as 'superuser'
 
-  nullWorld: superuser>> ...
+  objWorld: superuser>> ...
 
 == Description
 
@@ -34,6 +34,10 @@ interesting functionality other than the ability to return roles and allow
 connections.
 
 Well, maybe there^s a few other things you can do...
+
+Red
+To keep in sync with NullEnv, run this and check the resulting diff (nod):
+cat NullEnv.rb | sed 's/Null/Object/g' | sed 's/nullWorld/objWorld/g' | diff -ub - ObjectEnv.rb > nod
 
 == Author
 
@@ -61,8 +65,8 @@ module MUES
 	class ObjectEnv < MUES::Environment
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: object.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: object.rb,v 1.2 2001/12/07 17:43:40 red Exp $
 		DefaultName = "ObjectEnvironment"
 		DefaultDescription = <<-"EOF"
 		This is a barebones environment used in testing. It doesn^t really contain any
@@ -94,14 +98,14 @@ module MUES
 		### METHOD: start
 		### Start the world instance
 		def start
-			return LogEvent.new( "notice", "Starting Null environment #{self.muesid}" )
+			return LogEvent.new( "notice", "Starting Object environment #{self.muesid}" )
 		end
 
 		### METHOD: stop
 		### Stop the world instance
 		def stop
 			# Stop participants
-			return LogEvent.new( "notice", "Stopping Null environment #{self.muesid}" )
+			return LogEvent.new( "notice", "Stopping Object environment #{self.muesid}" )
 		end
 
 		### METHOD: getParticipantProxy( aUser=MUES::User, aRole=MUES::Role )
@@ -111,7 +115,7 @@ module MUES
 			checkType( user, MUES::User )
 			checkType( role, MUES::Role )
 
-			proxy = Controller.new( user, Character.new(role), self )
+			proxy = Controller.new( user, Character.new(role), role, self )
 			@participantsMutex.synchronize( Sync::EX ) {
 				@participants << proxy
 			}
@@ -189,17 +193,18 @@ module MUES
 
 			DefaultSortPosition = 750
 
+			# Red: user already has an attr_reader in ParticipantProxy
 			attr_reader :user, :character
 			
-			### METHOD: initialize( aUser=MUES::User, character=MUES::ObjectEnv::Character, env=MUES::ObjectEnv )
+			### METHOD: initialize( aUser=MUES::User,
+			###						character=MUES::ObjectEnv::Character, 
+			###						role=MUES::Role,
+			###						env=MUES::ObjectEnv )
 			### Initialize a new ObjectEnv::Controller object with the
 			### specified user object.
-			def initialize( user, character, env )
-				super()
-
-				@user = user
+			def initialize( user, character, role, env )
+				super( user, role, env )
 				@character = character
-				@env = env
 			end
 
 			### METHOD: handleInputEvents( *events )
