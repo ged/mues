@@ -2,7 +2,7 @@
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2003/10/13 05:16:43 $">
+<muesconfig version="1.1" time-stamp="$Date: 2003/11/27 06:03:10 $">
 
   <!--
 
@@ -11,7 +11,7 @@
   without any argument. For the actual defaults, see the end of
   lib/mues/Config.rb.
 
-  $Id: minimal-config.xml,v 1.7 2003/10/13 05:16:43 deveiant Exp $
+  $Id: minimal-config.xml,v 1.8 2003/11/27 06:03:10 deveiant Exp $
 
   -->
 
@@ -114,17 +114,13 @@
 	</listeners>
   </engine>
 
-  <!-- MUES::LoginSession configuration:
-		maxtries:	Maximum number of login attempts before disconnecting.
-		timeout:	Number of seconds to allow for login before disconnecting.
-		banner:		Text to display before first login attempt. Leading tab
-					characters will be stripped; leading spaces will not.
-		userprompt:	The text used to prompt for the username
-		passprompt:	The text used to prompt for the password
+  <!-- Login sequence configuration:
+		banner:			Text to display before first login attempt. Leading tab
+						characters will be stripped; leading spaces will not.
+		questionnaire:	Specification of a MUES::Questionnaire to use for
+						logging in.
 	 -->
   <login>
-	<maxtries>3</maxtries>
-	<timeout>120</timeout>
 	<banner>
 
 	  --- <?config general.server-name?> ---------------
@@ -132,8 +128,12 @@
 	  Contact: <?config general.server-admin?>
 
 	</banner>
-	<userprompt>Username: </userprompt>
-	<passprompt>Password: </passprompt>
+	<questionnaire name="login">
+	  <param name="maxtries">3</param>
+	  <param name="timeout">120</param>
+	  <param name="user-prompt">Username: </param>
+	  <param name="pass-prompt">Password: </param>
+	</questionnaire>
   </login>
 
 
