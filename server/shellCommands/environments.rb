@@ -1,32 +1,35 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
+# 
+# This file contains a collection of MUES::CommandShell::Command classes for
+# interacting with MUES::Environment objects:
+#
+# [MUES::CommandShell::LoadEnvironmentCommand]
+#	A command to instruct the MUES::Engine to load a MUES::Environment object.
+#
+# [MUES::CommandShell::UnloadEnvironmentCommand]
+#	A command to instruct the MUES::Engine to unload a MUES::Environment object.
+#
+# [MUES::CommandShell::ListEnvironmentsCommand]
+#	A command to fetch a list of the currently-loaded MUES::Environment objects
+#	from the Engine.
+#
+# == Rcsid
+# 
+# $Id: environments.rb,v 1.3 2002/04/01 16:31:25 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=environments.rb
 
-== Name
-
-environments - Environment administrative commands
-
-== Description
-
-This module is a collection of environment manipulation and administrative commands
-for the MUES command shell.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/filters/CommandShell"
@@ -34,12 +37,11 @@ require "mues/filters/CommandShell"
 module MUES
 	class CommandShell
 
-		### 'Loadenvironment' command
+		### 'load' command
 		class LoadEnvironmentCommand < AdminCommand
 
-			### METHOD: initialize()
 			### Initialize a new LoadEnvironmentCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name			= 'loadenv'
 				@synonyms		= %w{}
 				@description	= 'Load a environment object and make it available.'
@@ -48,7 +50,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
 			### Invoke the loadenvironment command, which generates a LoadEnvironmentEvent
 			### with the environment specifications.
 			def invoke( context, args )
@@ -62,11 +63,12 @@ module MUES
 			
 		end # class LoadEnvironmentCommand
 
+
+		### 'unload' Command
 		class UnloadEnvironmentCommand < AdminCommand
 
-			### METHOD: initialize()
 			### Initialize a new UnloadEnvironmentCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name			= 'unloadenv'
 				@synonyms		= %w{}
 				@description	= 'Shut down and unload a loaded environment object.'
@@ -75,7 +77,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
 			### Invoke the unloadenvironment command, which generates a
 			### UnloadEnvironmentEvent with the environment specifications.
 			def invoke( context, args )
@@ -87,11 +88,12 @@ module MUES
 			end
 		end
 
+
+		### 'list' Command
 		class ListEnvironmentsCommand < AdminCommand
 
-			### METHOD: initialize()
 			### Initialize a new UnloadEnvironmentCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name			= 'envlist'
 				@synonyms		= %w{}
 				@description	= 'List known environment classes which may be loaded.'
@@ -100,7 +102,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
 			### Create an output event with a list of the loaded environments.
 			def invoke( context, args )
 				output = "\nAvailable MUES Environment classes:\n\t"

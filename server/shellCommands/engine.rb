@@ -1,31 +1,30 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# This file contains a collection of administrative commands for controlling the
+# MUES::Engine:
+#
+# [MUES::CommandShell::EngineShutdownCommand]
+#	Command to instruct the Engine to shut down.
+#
+# [MUES::CommandShell::GcCommand]
+#	Command to manually start the garbage-collector.
+#
+# == Rcsid
+# 
+# $Id: engine.rb,v 1.2 2002/04/01 16:31:25 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=engine.rb
-
-== Name
-
-engine - Engine admin commands
-
-== Description
-
-This is a collection of administrative commands for controlling the MUES Engine.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/filters/CommandShell"
@@ -33,12 +32,11 @@ require "mues/filters/CommandShell"
 module MUES
 	class CommandShell
 
-		### 'Loadenvironment' command
+		### 'shutdown' Command
 		class EngineShutdownCommand < AdminCommand
 
-			### METHOD: initialize()
-			### Initialize a new LoadEnvironmentCommand object
-			def initialize
+			### Initialize a new EngineShutdownCommandobject
+			def initialize # :nodoc:
 				@name			= 'shutdown'
 				@synonyms		= %w{}
 				@description	= 'Shut down the engine safely.'
@@ -57,12 +55,12 @@ module MUES
 			
 		end # class EngineShutdownCommand
 
+
 		### 'gc' Command
 		class GcCommand < AdminCommand
 
-			### METHOD: initialize()
 			### Initialize a new LoadEnvironmentCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name			= 'gc'
 				@synonyms		= %w{}
 				@description	= 'Start the garbage collector.'
@@ -71,7 +69,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
 			### Invoke the loadenvironment command, which generates a LoadEnvironmentEvent
 			### with the environment specifications.
 			def invoke( context, args )

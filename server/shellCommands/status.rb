@@ -1,34 +1,41 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
-
-=status.rb
-
-== Name
-
-status - Server status command classes
-
-== Description
-
-This module is a collection of server status command classes for the MUES
-command shell. It is loaded by the MUES::CommandShell::Command class.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
+# 
+# This file contains a collection of MUES::CommandShell::Command classes for
+# viewing the status of various parts of the MUES::Engine:
+#
+# [MUES::CommandShell::StatusCommand]
+#	Command to fetch and display the Engine status.
+#
+# [MUES::CommandShell::ThreadsCommand]
+#	Command to display the thread status table.
+#
+# [MUES::CommandShell::ObjectsCommand]
+#	Command to display a table of all active MUES objects.
+#
+# [MUES::CommandShell::PrintObjectCommand]
+#	Command to inspect a MUES object by id.
+#
+# [MUES::CommandShell::FiltersCommand]
+#	Command to 
+# 
+# == Rcsid
+# 
+# $Id: status.rb,v 1.5 2002/04/01 16:31:24 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "pp"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/filters/CommandShell"
@@ -36,12 +43,11 @@ require "mues/filters/CommandShell"
 module MUES
 	class CommandShell
 
-		### 'Status' command
+		### 'status' command
 		class StatusCommand < CreatorCommand
 
-			### METHOD: initialize()
 			### Initialize a new StatusCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'status'
 				@synonyms			= %w{}
 				@description		= 'Check internal server status.'
@@ -49,7 +55,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
 			### Invoke the status command, which generates an output event with
 			### the server's status information.
 			def invoke( context, args )
@@ -59,12 +64,11 @@ module MUES
 		end # class StatusCommand
 
 
- 		### 'Threads' command
+ 		### 'threads' command
 		class ThreadsCommand < ImplementorCommand
 
-			### METHOD: initialize()
 			### Initialize a new ThreadsCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'threads'
 				@synonyms			= %w{}
 				@description		= 'Display server threads table.'
@@ -72,7 +76,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
 			### Invoke the threads command
 			def invoke( context, args )
 				thrList = "#{Thread.list.length} running threads:\n\n" <<
@@ -98,9 +101,8 @@ module MUES
  		### 'Objects' command
 		class ObjectsCommand < ImplementorCommand
 
-			### METHOD: initialize()
 			### Initialize a new ObjectsCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'objects'
 				@synonyms			= %w{}
 				@description		= 'Display server objectspace table.'
@@ -108,7 +110,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
 			### Invoke the objects command
 			def invoke( context, args )
 				objectList = []
@@ -137,7 +138,6 @@ module MUES
  		### 'printobject' command
 		class PrintObjectCommand < ImplementorCommand
 
-			### METHOD: initialize()
 			### Initialize a new ObjectsCommand object
 			def initialize
 				@name				= 'printobject'
@@ -148,9 +148,8 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
-			### Invoke the objects command
-			def invoke( context, args )
+			### Invoke the printobject command
+			def invoke( context, args ) # :nodoc:
 				unless args =~ /^\s*(\d+)\s*$/
 					return OutputEvent.new( usage() )
 				end
@@ -175,24 +174,33 @@ module MUES
 		end # class PrintObjectCommand
 
 
- 		### 'Filters' command
+ 		### 'filters' command
 		class FiltersCommand < ImplementorCommand
 
-			### METHOD: initialize()
-			### Initialize a new ObjectsCommand object
+			### Initialize a new FiltersCommand object
 			def initialize
-				@name				= 'filters'
+				@name				= 'filters [<username>]'
 				@synonyms			= %w{}
-				@description		= "Display the user's event filters."
+				@description		= "Display a user's event filters."
 
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
-			### Invoke the objects command
-			def invoke( context, args )
+			### Invoke the filters command
+			def invoke( context, args ) # :nodoc:
+				if args.empty?
+					user = context.user
+				elsif args =~ /^\s*(\w+)\s*$/
+					user = engine.getUserByName( $1 ) 
+					if user.nil?
+						return OutputEvent.new( "No such user '#$1'" )
+					end
+				else
+					return OutputEvent.new( usage() )
+				end
+
 				filterList = [ "Filters currently in your stream:" ]
-				context.user.ioEventStream.filters.sort.each {|filter|
+				user.ioEventStream.filters.sort.each {|filter|
 					filterList << filter.to_s
 				}
 				return OutputEvent.new( filterList.join("\n\t") + "\n" )

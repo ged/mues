@@ -1,31 +1,27 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+#
+# This is a simple MUES startup script. It takes one optional argument: the path
+# to a configuration file.
+#
+# == Synopsis
+#
+#   $ mues.rb [configfile]
+#
+# == Rcsid
+# 
+# $Id: mues.rb,v 1.8 2002/04/01 16:29:13 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=Name
-
-mues.rb - Server startup script
-
-=Synopsis
-
-  $ mues.rb
-
-=Description
-
-A basic non-forking MUES server.
-
-=Author
-
- Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
- Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
-
- This module is free software. You may use, modify, and/or redistribute this
- software under the terms of the Perl Artistic License. (See
- http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
 
 ### Set the include path and config file based on where we're executing from
 if $0 =~ /server#{File::Separator}bin#{File::Separator}/
@@ -42,8 +38,8 @@ else
 end
 
 
-require "mues/Engine"
-require "mues/Config"
+require "mues"
+
 
 ### Main function
 def main
@@ -77,6 +73,7 @@ def main
 
 	engine.start( config )
 end
+
 
 ### Become a daemon process
 def daemonize( config )
