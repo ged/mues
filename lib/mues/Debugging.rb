@@ -1,7 +1,7 @@
 #!/usr/bin/ruby -w
 ###########################################################################
 
-=begin
+=begin 
 =Debugging.rb
 
 == Name
@@ -56,6 +56,8 @@ module Debuggable
 		else
 			$stderr.puts "#{frame}: #{logMessage}"
 		end
+
+		$stderr.flush
 	end
 	alias :_debugMsg :debugMsg
 
@@ -70,12 +72,13 @@ module Debuggable
 			@debugLevel = 1
 		when false
 			@debugLevel = 0
-		when Fixnum
+		when Numeric, String
+			value = value.to_i
 			value = 5 if value > 5
 			value = 0 if value < 0
 			@debugLevel = value
 		else
-			raise TypeError, "Cannot set debugging level to #{value.to_s}"
+			raise TypeError, "Cannot set debugging level to #{value.inspect} (#{value.class.name})"
 		end
 	end
 
