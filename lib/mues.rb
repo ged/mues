@@ -34,8 +34,8 @@ require 'rbconfig'
 # The base namespace under which all MUES components exist.
 module MUES ; end
 
-unless RUBY_VERSION >= "1.7.2" || ENV['NO_VERSION_CHECK']
-	fail "MUES requires at least Ruby 1.7.2. This is #{RUBY_VERSION}."
+unless RUBY_VERSION >= "1.8.0" || ENV['NO_VERSION_CHECK']
+	fail "MUES requires at least Ruby 1.8.0. This is #{RUBY_VERSION}."
 end
 
 require "mues.#{Config::CONFIG['DLEXT']}"
