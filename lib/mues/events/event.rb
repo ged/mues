@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: event.rb,v 1.12 2002/09/15 00:11:40 deveiant Exp $
+# $Id: event.rb,v 1.13 2002/10/23 02:10:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -91,6 +91,8 @@ module MUES
 		include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 		### Class constants
+		Version			= /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
+		Rcsid			= %q$Id: event.rb,v 1.13 2002/10/23 02:10:46 deveiant Exp $
 		MaxPriority		= 64
 		MinPriority		= 1
 		DefaultPriority	= (MaxPriority / 2).to_i
@@ -110,40 +112,60 @@ module MUES
 
 
 		### Class methods
-		class << self
 
-			### Register the specified objects as interested in events of the
-			### receiver class
-			def RegisterHandlers( *handlers )
-				TypeCheckFunctions::checkEachResponse( handlers, "handleEvent" )
+		### Register the specified objects as interested in events of the
+		### receiver class. Alias <tt>RegisterHandlers</tt> provided for
+		### backward-compatibility; will be removed soon.
+		def self.registerHandlers( *handlers )
+			TypeCheckFunctions::checkEachResponse( handlers, "handleEvent" )
 
-				### Add the handlers to the handlers for this class
-				@@Handlers[ self ] |= handlers
-				return @@Handlers[ self ].length
-			end
-
-			### Unregister the specified objects as interested in events of the
-			### receiver class
-			def UnregisterHandlers( *handlers )
-				@@Handlers[ self ] -= handlers
-				@@Handlers[ self ].length
-			end
-
-			### Return handlers for the specified class and its parents, most
-			### specific first
-			def GetHandlers
-				return self.ancestors.find_all { |klass| 
-					klass <= Event
-				}.collect { |klass|
-					@@Handlers[ klass ]
-				}.flatten.uniq
-			end
-
-			### Set up a handler array for each new subclass as it is created
-			def inherited( newSubclass )
-				@@Handlers[ newSubclass ] = []
-			end
+			# Add the handlers to the handlers for this class
+			@@Handlers[ self ] |= handlers
+			return @@Handlers[ self ].length
 		end
+
+
+		### Unregister the specified objects as interested in events of the
+		### receiver class.  Alias <tt>UnregisterHandlers</tt> provided for
+		### backward-compatibility; will be removed soon.
+		def self.unregisterHandlers( *handlers )
+			@@Handlers[ self ] -= handlers
+			@@Handlers[ self ].length
+		end
+
+
+		### Return handlers for the specified class and its parents, most
+		### specific first. Alias <tt>GetHandlers</tt> provided for
+		### backward-compatibility; will be removed soon.
+		def self.getHandlers
+			return self.ancestors.find_all { |klass| 
+				klass <= Event
+			}.collect { |klass|
+				@@Handlers[ klass ]
+			}.flatten.uniq
+		end
+
+		# Register backward-compatibility class methods
+		# :TODO: This block should be removed in the next release
+		deprecate_class_method :RegisterHandlers, :registerHandlers
+		deprecate_class_method :UnregisterHandlers, :unregisterHandlers
+		deprecate_class_method :GetHandlers, :getHandlers
+
+
+		### Inheritance callback: Set up a handler array for each new
+		### <tt>subclass</tt> as it is created.
+		def self.inherited( subclass )
+			@@Handlers[ subclass ] = []
+			super( subclass )
+		end
+
+
+		### Return a list of all the events for which handlers may be
+		### registered.
+		def self.getEventClasses
+			return @@Handlers.keys
+		end
+
 
 
 		######
