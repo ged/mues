@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: interface.rb,v 1.5 2002/06/04 14:44:41 deveiant Exp $
+# $Id: interface.rb,v 1.6 2002/08/01 00:15:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -52,8 +52,8 @@ module Metaclass
 	class Interface
 
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: interface.rb,v 1.5 2002/06/04 14:44:41 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: interface.rb,v 1.6 2002/08/01 00:15:16 deveiant Exp $
 
 
 		# Mix in instance vars, accessors, and methods for attributes and
@@ -123,14 +123,14 @@ module Metaclass
 		### Return the code necessary to add the receiver's class operations to
 		### the current scope. This overrides the class operations construction
 		### method defined by the Metaclass::Operation::Functions mixin, as we
-		### need to do some special trickery with Module#append_features to add
-		### methods to an including class.
+		### need to do some special trickery with Module#included to add methods
+		### to an including class.
 		def classOperationsDeclaration( includeComments = true )
 			decl = []
 
 			unless @classOperations.empty?
 				decl << "### Class operations" if includeComments
-				decl << "def self.append_features( klass )" <<
+				decl << "def self.included( klass )" <<
 					"    super( klass )" <<
 					"    klass.module_eval {"
 				decl << @classOperations.sort {|x,y|
