@@ -39,7 +39,8 @@
 # * Martin Chase <stillflame@FaerieMUD.org>
 #
 
-#require "ArunaDB"
+require "a_catalog" #arunadb file
+require "a_table"   #arunadb file
 require "StorableObject/StorableObject.rb"
 
 class ObjectStore
@@ -48,40 +49,42 @@ class ObjectStore
 	# Class #
 	#########
 
+	### Creates a new ObjectStore object, or loads it if it already exists
+	def ObjectStore.new(filename, indexes = [], serialize = nil, deserialize = nil)
+		if File.exists?(filename)
+			file = File.open(filename)
+			conf = file.readlines.join('')
+			file.close
+			
+			name = ( %r~<name>(.*?)</name>~im.match(conf) )[1]
+			catl = ( %r~<catalog>(.*?)</catalog>~im.match(conf) )[1]
+			tabl = ( %r~<table>(.*?)</table>~im.match(conf) )[1]
+			
+			the_cat = A_Catalog.use(catl)
+			the_table = A_Table.connect(tabl)
+			database = [the_cat, the_table]
+		else
+			database = ObjectStore.create_database(filename)
+		end
+		super(filename, database, indexes, serialize, deserialize)
+	end
+
 	### Loads in the specified config file, and returns the ObjectStore attached to it
 	### arguments:
 	###   filename - the filename of the ObjectStore config file (?)
-	### ObjectStoreConfig file format:
-	###   it's in XML, a base of 'ObjectStoreConfig', with attributes of
-	###      'name' - a name
-	###      'catalog' - the filename of the ArunaDB catalog file
-	###      'table' - the name of the table to use
-	def ObjectStore.load (filename)
-		file = File.open(filename)
-		conf = file.readlines.join('')
-		file.close
-		#:TODO: this should use an XML parser of some sort, instead of doing it manually
-
-		#:TODO: parse the data to reveal the location of the database, the
-		#       database interface object, and the index, serialize and
-		#       deserialize methods.
-
-		#:TODO: return a new ObjectStore object, but without calling initialize.
-		#       how?
-		#       I think i need to declare my own 'new' method, and make initialize
-		#       more general.  i should inquire about this.
-
-		#:!: symbols cannot be serialized (at least not using Marshal#dump)
+	def ObjectStore.load (*args)
+		ObjectStore.new(args[0])
 	end
+		
 
 	#########
 	protected
 	#########
 
 	### Creates and returns an ArunaDB database - specifically an array of objects:
-	### [A_Catalog, A_FileStore, A_BTree, A_Table]
+	### [A_Catalog, A_Table]
 	### typical usage will usually only require accessing the A_Table object, but
-	### all should be kept alive.
+	### the catalog should be kept alive.
 	### args:
 	###   conf_filename - the name of the ObjectStoreConfig file
 	def create_database(conf_filename)
@@ -92,47 +95,41 @@ class ObjectStore
 		#cols << A_Column.new(name,type,not_nil,default,constraint,action,display)
 		###repeat
 		#pkeys= %w(the primary keys names) or "name"
-		#tab  = A_Table.new(name,cols,pkeys)
-		#return [cat,fs,bt,tab]
+		#tabl = A_Table.new(name,cols,pkeys)
+		#return [cat,tabl]
 	end
 
 	### Initializes a new ObjectStore
 	### arguments:
 	###   filename - the filename to store the ObjectStore config file as
-	###   objects - an array of objects to store
+	###   database - the array of ArunaDB objects to be used for storing data
 	###   indexes - an array of symbols for methods to create indicies off of
 	###   serialize - the symbol for the method to serialize the objects
 	###   deserialize - the symbol for the method to deserialize the objects
-	def initialize( filename, objects = [], indexes = [],
-				    serialize = nil, deserialize = nil )
-		if File.exists?(filename)
-			return ObjectStore.load(filename)
-		end
+	def initialize( filename, database, indexes = [],
+				    serialize = nil, deserialize = nil)
 		@filename = filename
 		@indexes = indexes
 		@serialize = serialize
 		@deserialize = deserialize
 
 		add_indexes( @indexes )
-
-		#:TODO: actually create the database here
-		ObjectStore.create_database(filename)
-
-		objects.each {|o|
-			store(o)
-		}
+		
+		@database = database
+		@table = @database[-1]
 	end
 	
 	######
 	public
 	######
 	
-	attr_accessor :filename, :indexes, :serialize, :deserialize, :database
+	attr_accessor :filename, :indexes, :serialize, :deserialize, :database, :table
 
 	### Stores the objects into the database
 	### arguments:
 	###   objects - the objects to store
 	def store ( *objects )
+		objects.flatten!
 	end
 
 	### Closes the database.
@@ -149,7 +146,7 @@ class ObjectStore
 		StorableObject.new( id )
 	end
 
-	### ACTUALLY gets the object specifed by the given id out of the database
+	### *ACTUALLY* gets the object specifed by the given id out of the database
 	def _retrieve ( id )
 	end
 
@@ -158,12 +155,15 @@ class ObjectStore
 	end
 
 	def empty? 
+		@table.nitems == 0
 	end
 
 	def open? 
+		@table ? true : false
 	end
 
 	def entries 
+		@table.nitems()
 	end
 
 end
