@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+#	$Id: install.rb,v 1.2 2002/05/16 03:57:36 deveiant Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
@@ -12,6 +12,11 @@
 #	http://language.perl.com/misc/Artistic.html)
 #
 
+require './utils.rb'
+
+include UtilityFunctions
+
+
 require 'rbconfig'
 require 'find'
 require 'ftools'
@@ -20,13 +25,21 @@ require 'readline'
 include Config
 include Readline
 
+$version	= %q$Revision: 1.2 $
+$rcsId		= %q$Id: install.rb,v 1.2 2002/05/16 03:57:36 deveiant Exp $
+
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
 
 
 class Installer
 
-	protected
+	@@PrunePatterns = [
+		/CVS/,
+		/~$/,
+		/^\./,
+	]
+
 	def initialize( testing=false )
 		@ftools = (testing) ? self : File
 	end
@@ -69,9 +82,8 @@ class Installer
 		
 		if File.directory?( src )
 			Find.find( src ) {|f|
-				Find.prune if f =~ /^\./;
-
-				next if f == src || f =~ /~$/
+				Find.prune if @@PrunePatterns.find {|pat| f =~ pat}
+				next if f == src
 
 				if FileTest.directory?( f )
 					directories << f.gsub( /^#{src}#{File::Separator}/, '' )
@@ -110,34 +122,26 @@ class Installer
 
 end
 
-def prompt( promptString )
-	promptString.chomp!
-	return readline( "#{promptString}: " ).strip
-end
-
 if $0 == __FILE__
-	viewOnly = false
-	verbose = false
+	header "MUES Installer #$version"
 
-	ARGV.each {|arg|
+	viewOnly = ARGV.include? '-v'
+	verbose = ARGV.include? '-n'
 
-		case arg
-		when "-n"
-			viewOnly = true
+	serverDir = File.expand_path( promptWithDefault("Server directory", "/usr/local/mues") )
 
-		when "-v"
-			verbose = true
-
-		else
-			$stderr.puts( "Usage: #{$0} [-n]" )
-		end
+	message "Compiling C extensions\n"
+	Dir.chdir( "ext" ) {
+		system( CONFIG['ruby_install_name'], "extconf.rb" ) or
+			raise "Extension configuration failed."
+		system( 'make' ) or
+			raise "Make failed."
 	}
 
-	serverDir = File.expand_path( prompt "Server directory [/usr/local/mues]" )
-	serverDir = "/usr/local/mues" if serverDir.empty?
-
+	message "Installing\n"
 	i = Installer.new( viewOnly )
 	i.installFiles( "lib", CONFIG['sitelibdir'], 0444, verbose )
+	i.installFiles( "ext/PolymorphicObject.so", CONFIG['sitearchdir'], 0755, verbose )
 	i.installFiles( "server/bin", "#{serverDir}/bin", 0755, verbose )
 	i.installFiles( "server/shellCommands", "#{serverDir}/shellCommands", 0644, verbose )
 	i.installFiles( "server/environments", "#{serverDir}/environments", 0644, verbose )
