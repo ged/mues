@@ -12,16 +12,16 @@ module MUES
 	class EngineTestCase < MUES::TestCase
 
 		def set_up
-			$Engine = MUES::Engine.instance
+			@engine = MUES::Engine.instance
 		end
 
 		def tear_down
 			$Engine = nil
 		end
 
-		def test_s_instance
-			assert_instance_of MUES::Engine, $Engine
-			assert_equal $Engine, MUES::Engine.instance
+		def test_00_Instantiate
+			assert_instance_of MUES::Engine, @engine
+			assert_equal @engine, MUES::Engine.instance
 		end
 
 	end

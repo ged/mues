@@ -7,101 +7,72 @@ rescue
 end
 
 require 'mues/Log'
+require 'mues/Object'
 
 module MUES
 
-	### Mock IO Object Class
-	class MockIO < IO
-		attr_accessor :fileno, :mode, :output, :opened
-
-		def initialize( anInteger=0, mode="r" )
-			@fileno = anInteger
-			@mode = mode
-			@opened = true
-			@output = []
+	class TestObject < MUES::Object
+		def debugLog( msg )
+			self.log.debug( msg )
 		end
 
-		def close
-			@opened = false
+		def infoLog( msg )
+			self.log.info( msg )
 		end
 
-		def closed?
-			return ! @opened
+		def noticeLog( msg )
+			self.log.notice( msg )
 		end
 
-		def puts( stuff )
-			@output.push stuff
+		def warnLog( msg )
+			self.log.warn( msg )
 		end
 
-		def flush
-			true
+		def errorLog( msg )
+			self.log.error( msg )
 		end
+
+		def critLog( msg )
+			self.log.crit( msg )
+		end
+
+		def fatalLog( msg )
+			self.log.fatal( msg )
+		end
+
 	end
+
 
 	### Log tests
 	class LogTestCase < MUES::TestCase
 
-		$Logfile = "testlog.#{$$}"
-		$Levels = {
-			"debug"		=> 0,
-			"info"		=> 1,
-			"notice"	=> 2,
-			"error"		=> 3,
-			"crit"		=> 4,
-			"fatal"		=> 5
-		}
+		LogLevels = [ :debug, :info, :notice, :warn, :error, :crit, :fatal ]
 
-		### Setup
-		def set_up
-			super
-		end
-
-		### Teardown
-		def tear_down
-			super
-			if FileTest.exists?( $Logfile ) then
-				File.delete( $Logfile )
-			end
-		end
-
-		### TEST: Instantiate with no args (Tempfile log)
-		def test_NewWithNoArgs
-			log = Log.new
-			assert_instance_of  Log, log 
-			assert_equal log.level, $Levels["debug"] 
-		end
-
-		### TEST: Instantiate with filename arg
-		def test_NewWithOneArg
-			log = Log.new( $Logfile )
-			assert_instance_of Log, log 
-			assert_equal log.level, $Levels["debug"] 
-		end
-
-		### TEST: Instantiate with filename and level arg
-		def test_NewWithTwoArgs
-			log = Log.new( $Logfile, "info" )
-			assert_instance_of Log, log 
-			assert_equal log.level, $Levels["info"] 
-		end
-
-		### TEST: Test output
-		def test_OutputAll
-			io = MockIO.new
-			log = Log.new( io, "debug" )
-
-			assert_nothing_raised {
-				$Levels.keys.each do |level|
-					log.send( level, "Level: #{level}" )
-				end
+		def test_00_Loaded
+			assert_instance_of Class, MUES::Log
+			[ :configure, :mueslogger, :method_missing ].each {|sym|
+				assert_respond_to MUES::Log, sym
 			}
+			assert_instance_of Array, MUES::Log::LogLevels
+			assert_equal LogLevels, MUES::Log::LogLevels
+		end
 
-			assert_equal io.output.size, $Levels.keys.size 
-			$Levels.keys.each do |level|
-				foundMatch = io.output.find {|outputLine| outputLine =~ /#{level}/}
-				assert foundMatch, "No matching log line for the #{level} level."
-			end
-		end			
+		def test_10_GlobalLogMethods
+			LogLevels.each {|level|
+				assert_nothing_raised { MUES::Log.send(level, "test message") }
+			}
+		end
+
+		def test_20_MuesObjectLogMethods
+			testObj = TestObject::new
+
+			LogLevels.each {|level|
+				meth = "#{level.to_s}Log".intern
+				assert_nothing_raised { testObj.send(meth, "test message") }
+			}
+		end
+
+
 	end
 end
 

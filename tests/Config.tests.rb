@@ -6,13 +6,11 @@ rescue
 	require '../muesunittest'
 end
 
-require 'mues/Config.rb'
+require 'mues/Config'
 
 
 module MUES
 	class ConfigTestCase < MUES::TestCase
-
-		@config = nil
 
 		@@MethodTests = {
 			# Method chain								# Expected value
@@ -21,28 +19,61 @@ module MUES
 
 			[ :engine,  :debug_level ]					=> 0,
 			[ :engine,  :exception_stack_size ]			=> 10,
+			[ :engine,	:objectstore, :backend ]		=> "Flatfile",
+			[ :engine,	:objectstore, :memorymanager]	=> "Null",
 		}
 
 		@@AttributeTests = {
-			[ [:engine, :backend], "class" ]			=> "BerkeleyDB",
-			[ [:engine, :memorymanager], "class"]		=> "Simple",
+			[ [:commandshell],			"shell-class"]	=> "MUES::CommandShell",
 		}
 
+		@@SetupFunctions = []
+
 		def set_up
-			super
-			@config = MUES::Config::new TestConfig::Source
-		end
-
-		def tear_down
-			@config = nil
-			super
+			@@SetupFunctions.each {|func| func.call(self) }
 		end
 
 
-		def test_MethodChain
+		def test_00_NoArgInstantiation
+			res = nil
+
+			# Test no-arg instantiation (default config)
+			assert_nothing_raised { res = MUES::Config::new }
+			assert_instance_of MUES::Config, res
+
+			@@SetupFunctions.push Proc::new {|test|
+				test.instance_eval {
+					@config = MUES::Config::new
+				}
+			}
+		end
+
+		def test_01_FileArgInstantiation
+			rval = nil
+			configFile = writeDefaultConfigFile()
+			debugMsg "Testing with config file '#{configFile}'"
+
+			# Test illegal one-arg instantiation (should fail)
+			assert_raises( TypeError ) { MUES::Config::new(14) }
+			assert_raises( TypeError ) { MUES::Config::new(["foo"]) }
+
+			# Test one-arg filename instantiation
+			assert_nothing_raised { rval = MUES::Config::new(configFile) }
+			assert_instance_of MUES::Config, rval
+
+			# Test one-arg filehandle instantiation
+			File::open( configFile, File::RDONLY ) {|ifh|
+				assert_nothing_raised { rval = MUES::Config::new(ifh) }
+				assert_instance_of MUES::Config, rval
+			}
+		ensure
+			File::delete( configFile ) if passed?
+		end
+
+
+		def test_10_MethodChain
 			@@MethodTests.each {|chain,expectedResult|
-				$stderr.puts "Calling #{chain.join('.')}, expecting #{expectedResult.inspect}" if
-					$DEBUG
+				debugMsg "Calling #{chain.join('.')}, expecting #{expectedResult.inspect}"
 
 				lastRes = @config
 				chain.each {|sym|
@@ -52,134 +83,67 @@ module MUES
 			}
 		end
 
+		def test_20_Attributes
+			@@AttributeTests.each {|chainAttr,expectedResult|
+				debugMsg "Calling %s[%s], expecting %s" %
+					[ chainAttr[0].join('.'), chainAttr[1].inspect, 
+					  expectedResult.inspect ]
+
+				lastRes = @config
+				chain, attrName = *chainAttr
+
+				chain.each {|sym|
+					assert_nothing_raised { lastRes = lastRes.send( sym ) }
+				}
+				assert_equal expectedResult, lastRes[ attrName ]
+			}
+		end
+
+
+		#########
+		protected
+		#########
+
+		def writeDefaultConfigFile
+			lib = nil
+			$".grep( %r:mues/Config\.rb: ) {|path|
+				$LOAD_PATH.find {|prefix|
+					if File.exists?( "#{prefix}/#{path}" )
+						lib = "#{prefix}/#{path}"
+						break
+					end
+				}
+			}
+
+			debugMsg "Found mues/Config at '#{lib}'"
+			raise "Can't find mues/Config" if lib.nil?
+			testfile = "testconfig.%d.xml" % $$
+			debugMsg "Writing config file to '#{testfile}'"
+
+			File::open( testfile, File::WRONLY|File::CREAT, 0644 ) {|ofh|
+				inDataSection = false
+				File::readlines( lib ).each {|line|
+					case line
+					when /^__END_DATA__$/
+						inDataSection = false
+						next
+
+					when /^__END__$/
+						inDataSection = true
+						next
+					end
+
+					next unless inDataSection
+					debugMsg "Writing config line: #{line}"
+					ofh.print line
+				}
+			}						
+				
+			return testfile
+		end
+
 	end
 
 end
 
-
-module TestConfig
-	Source = <<'END'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
-
-<muesconfig version="1.1">
-
-  <!-- General server configuration -->
-  <general>
-	<server-name>Experimental MUD</server-name>
-	<server-description>An experimental MUES server.</server-description>
-	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
-	<root-dir>server</root-dir>
-  </general>
-
-
-  <!-- Engine (core) configuration -->
-  <engine>
-
-	<!-- Number of floating-point seconds between tick events -->
-	<tick-length>1.0</tick-length>
-	<exception-stack-size>10</exception-stack-size>
-	<debug-level>0</debug-level>
-
-	<!-- Engine objectstore config -->
-	<objectstore>
-	  <backend class="BerkeleyDB"></backend>
-	  <memorymanager class="Simple">
-		<param name="trash_rate">50</param>
-	  </memorymanager>
-	</objectstore>
-
-	<!-- Listener objects -->
-	<listeners>
-
-	  <!-- Telnet listener: MUES::TelnetOutputFilter -->
-	  <listener name="telnet">
-		<filter-class>MUES::TelnetOutputFilter</filter-class>
-		<bind-port>23</bind-port>
-		<bind-address>0.0.0.0</bind-address>
-		<use-wrapper>true</use-wrapper>
-	  </listener>
-
-	  <!-- Client listener: MUES::ClientOutputFilter (BEEP) -->
-	  <listener name="client">
-		<filter-class>MUES::ClientOutputFilter</filter-class>
-		<bind-port>2424</bind-port>
-		<bind-address>0.0.0.0</bind-address>
-		<use-wrapper>false</use-wrapper>
-	  </listener>
-	</listeners>
-  </engine>
-
-
-  <!-- Logging system configuration (Log4R format) -->
-  <logging>
-	<log4r_config>
-
-	  <!-- Log4R pre-config -->
-	  <pre_config>
-		<parameters>
-		  <logpath>server/log</logpath>
-		  <mypattern>%l [%d] %m</mypattern>
-		</parameters>
-	  </pre_config>
-
-	  <!-- Log Outputters -->
-	  <outputter type="IOOutputter" name="console" fdno="2" />
-	  <outputter type="FileOutputter" name="serverlog"
-		filename="#{logpath}/server.log" trunc="false" />
-	  <outputter type="FileOutputter" name="errorlog"
-		filename="#{logpath}/error.log" trunc="true" />
-	  <outputter type="FileOutputter" name="environmentlog"
-		filename="#{logpath}/environments.log" trunc="false" />
-	  <outputter type="EmailOutputter" name="mailadmin">
-		<server>localhost</server>
-		<port>25</port>
-		<from>mueslogs@localhost</from>
-		<to>muesadmin@localhost</to>
-	  </outputter>
-
-	  <!-- Loggers -->
-	  <logger name="MUES"   level="INFO"  outputters="serverlog" />
-	  <logger name="error"  level="WARN"  outputters="errorlog,console" />
-	  <logger name="dire"   level="ERROR" outputters="errorlog,console,mailadmin" />
-	</log4r_config>
-  </logging>
-
-
-  <!-- Environments which are to be loaded at startup -->
-  <environments>
-	<environment name="FaerieMUD" class="FaerieMUD::World">
-	  <objectstore name="FaerieMUD">
-		<backend class="BerkeleyDB"></backend>
-		<memorymanager class="PMOS"></memorymanager>
-	  </objectstore>
-	</environment>
-
-	<environment name="testing" class="MUES::ObjectEnv">
-	  <objectstore name="testing-objectenv">
-		<backend class="Flatfile" />
-		<memorymanager class="Simple">
-		  <param name="trash_rate">100</param>
-		</memorymanager>
-	  </objectstore>
-	</environment>
-  </environments>
-
-
-  <!-- Services which are to be loaded at startup -->
-  <services>
-	<service name="objectstore" class="MUES::ObjectStoreService" />
-	<service name="soap" class="MUES::SOAPService">
-	  <param name="listen-port">7680</param>
-	  <param name="listen-address">0.0.0.0</param>
-	  <param name="use-wrappers">true</param>
-	</service>
-	<service name="physics" class="MUES::ODEService" />
-	<service name="weather" class="MUES::WeatherService" />
-  </services>
-
-</muesconfig>
-
-END
-end
 
