@@ -1,7 +1,7 @@
 # -*- default-generic -*-
 # User-related MUES::CommandShell commands.
-# Time-stamp: <12-Oct-2002 08:45:42 touch>
-# $Id: users.cmd,v 1.2 2002/10/12 14:00:24 stillflame Exp $
+# Time-stamp: <12-Oct-2002 09:55:38 deveiant>
+# $Id: users.cmd,v 1.3 2002/10/12 16:04:07 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -92,6 +92,7 @@ This command allows an admin to create a new user account for the server.
   return [ MUES::User::getCreationQuestionnaire ]
 
 
+### Show a user's information
 = showuser
 
 == Synonyms
@@ -150,9 +151,10 @@ user if the invoking user has implementor privileges.
   output << "\tPreferences: \n" + user.preferences.collect {|k,v| "\t\t#{k} => #{v}\n"}.to_s +
 		"\n\n"
 
-  return [ MUES::OutputEvent::new output.join('') ]
+  return [ MUES::OutputEvent::new(output.join('')) ]
 
 
+### Change a user's password
 = password
 
 == Abstract
