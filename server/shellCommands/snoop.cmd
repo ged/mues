@@ -1,8 +1,8 @@
 # -*- default-generic -*-
 #
 # The snoop MUES::CommandShell command.
-# Time-stamp: <30-Oct-2002 19:13:40 deveiant>
-# $Id: snoop.cmd,v 1.1 2002/10/31 02:24:36 deveiant Exp $
+# Time-stamp: <12-Nov-2002 05:04:28 deveiant>
+# $Id: snoop.cmd,v 1.2 2002/11/12 12:05:08 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -56,8 +56,10 @@ implementor
 	user = MUES::ServerFunctions::getUserByName( username ) or
 		raise CommandError, "No such user '#{username}'"
  	raise CommandError, "User is not logged in." unless user.activated?
- 	raise CommandError, "You cannot snoop an admin" if
+ 	raise CommandError, "You cannot snoop an admin." if
  		( ! context.user.isAdmin? && user.isAdmin? )
+	raise CommandError, "Are you mad?!? You can't snoop yourself." if
+		( context.user == user )
 
 	snoopFilter = MUES::SnoopFilter::new( user, context.user, silent )
 	msg = OutputEvent.new "Snooping %s.\n\n" % user.to_s
