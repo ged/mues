@@ -1,11 +1,11 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.7 2003/04/21 04:30:00 deveiant Exp $
+#	$Id: install.rb,v 1.8 2003/09/12 04:37:01 deveiant Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
-#	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
+#	Copyright (c) 2001, 2002, 2003, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -23,8 +23,8 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.7 $
-$rcsId		= %q$Id: install.rb,v 1.7 2003/04/21 04:30:00 deveiant Exp $
+$version	= %q$Revision: 1.8 $
+$rcsId		= %q$Id: install.rb,v 1.8 2003/09/12 04:37:01 deveiant Exp $
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
@@ -32,24 +32,24 @@ trap("INT") { system "stty", stty_save; exit }
 # Define required libraries
 RequiredLibraries = [
 	# libraryname, nice name, RAA URL, Download URL
-	[ 'poll', "Ruby-Poll", 
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=Ruby-Poll',
-		'http://www.devEiate.org/code/Ruby-Poll-0.03.tar.gz' ],
+	[ 'io/reactor', "IO-Reactor", 
+		'http://raa.ruby-lang.org/list.rhtml?name=IO-Reactor',
+		'http://www.devEiate.org/code/IO-Reactor-0.05.tar.gz' ],
 	[ 'rexml/document', 'REXML',
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
+		'http://raa.ruby-lang.org/list.rhtml?name=REXML',
 		'http://www.germane-software.com/archives/rexml_2.5.2.tgz' ],
 	[ 'forwardable', "Forwardable",
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=forwardable',
+		'http://raa.ruby-lang.org/list.rhtml?name=forwardable',
 		'ftp://ftp.ruby-lang.org/pub/ruby/contrib/forwardable-1.1.tgz' ],
 	[ 'hashslice', "HashSlice",
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=HashSlice',
+		'http://raa.ruby-lang.org/list.rhtml?name=HashSlice',
 		'http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2' ],
 	[ 'pp', 'PrettyPrinter',
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=pp',
+		'http://raa.ruby-lang.org/list.rhtml?name=pp',
 		'http://cvs.m17n.org/~akr/pp/download.html' ],
 	[ 'log4r', 'Log4R',
-		'http://www.ruby-lang.org/en/raa-list.rhtml?name=REXML',
-		'http://sourceforge.net/project/showfiles.php?group_id=43396' ],
+		'http://raa.ruby-lang.org/list.rhtml?name=log4r',
+		'http://prdownloads.sourceforge.net/log4r/log4r-1.0.4.tgz?download' ],
 ]
 
 class Installer
