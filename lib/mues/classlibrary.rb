@@ -42,8 +42,8 @@ module MUES
 	class ClassError < Exception; end
 	class ClassLibrary < Object
 
-		Version = %q$Revision: 1.2 $
-		Rcsid = %q$Id: classlibrary.rb,v 1.2 2001/03/28 21:21:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
 
 		attr_reader :name
 
