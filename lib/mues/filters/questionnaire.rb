@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.3 2002/10/04 11:18:46 deveiant Exp $
+# $Id: questionnaire.rb,v 1.4 2002/10/06 02:04:04 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.3 2002/10/04 11:18:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.4 2002/10/06 02:04:04 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -261,6 +261,8 @@ module MUES
 			@inProgress = false
 			@finalizer = nil
 			super()
+
+			debugMsg 2, "@isFinished = %s" % @isFinished.inspect
 		end
 
 
@@ -293,7 +295,9 @@ module MUES
 		def handleOutputEvents( *events )
 			self.queueDelayedOutputEvents( *events ) unless events.empty?
 			events.clear
-			return super( *events )
+			results = super( *events )
+			debugMsg 3, "Returning #{results.length} output events"
+			return results
 		end
 
 		### End IOEventFilter interface
@@ -449,7 +453,13 @@ module MUES
 				@isFinished = false
 			}
 		end
-		alias :reset :clear
+
+
+		### Clear the questionnaire and ask the first question again.
+		def reset
+			self.clear
+			self.askNextQuestion
+		end
 
 
 		### Abort the current session with the specified <tt>message</tt>. This
@@ -523,6 +533,18 @@ module MUES
 		end
 
 
+		### Insert the question for the current step
+		def reaskCurrentQuestion
+			@stepsMutex.synchronize( Sync::SH ) {
+				@stepsMutex.synchronize( Sync::EX ) {
+					@currentStepIndex -= 1 unless @currentStepIndex < 0
+				}
+
+				self.askNextQuestion
+			}
+		end
+
+
 		### Set the specified input <tt>data</tt> (a String) as the answer for
 		### the current step, if it validates.
 		def addAnswer( data )
@@ -536,9 +558,12 @@ module MUES
 
 				# Validate the data if it has a validator.
 				if step.key?( :validator )
-					result = validateAnswer( data, step[:validator] )
+					result = validateAnswer( data, step )
 					debugMsg 3, "Validator returned result: %s" % result.inspect
-					return nil unless result
+					unless result
+						self.reaskCurrentQuestion
+						return nil
+					end
 
 				# If the data's empty, do one of two things: if it has a default,
 				# just use that, otherwise assume a blank input is an abort.
@@ -568,20 +593,20 @@ module MUES
 		end
 
 
-		### Use the specified validator (a Proc, a Method, a Regexp, an Array,
-		### or a Hash) to validate the given data. Returns the validated answer
-		### data on success, and false if it fails to validate.
-		def validateAnswer( data, validator )
+		### Use the specified step's validator (a Proc, a Method, a Regexp, an
+		### Array, or a Hash) to validate the given data. Returns the validated
+		### answer data on success, and false if it fails to validate.
+		def validateAnswer( data, step )
 			checkType( data, ::String )
-			checkType( validator, ::Proc, ::Method, ::Regexp, ::Array, ::Hash )
 
+			validator = step[:validator]
 			debugMsg 3, "Validating answer '%s' with a %s validator" %
 				[ data, validator.class.name ]
 
 			result = nil
 
 			# Handle the various types of validators.
-			case validator.class
+			case validator
 
 			# Proc/Method validator - If the return value is false, validation
 			# failed. If true, use the original data. Otherwise use whatever the
@@ -589,7 +614,6 @@ module MUES
 			when Proc, Method
 				result = validator.call( self, data.dup ) or return nil
 				result = data if result.equal?( true )
-				
 
 			# Regex validator - If the match has paren-groups, use the array of
 			# "kept" matches instead of the whole match.
@@ -598,7 +622,7 @@ module MUES
 					if match.size > 1
 						result = match.to_ary[ 1 .. -1 ]
 					else
-						result = match[0]
+						result = data
 					end
 				else
 					self.error( step[:errorMsg] || "Invalid input. Must "\
