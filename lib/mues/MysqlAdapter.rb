@@ -1,100 +1,36 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
+#
+# An adapter class for a Mysql-based MUES objectstore.
+# 
+# == Synopsis
+# 
+#   require "mues/ObjectStore"
+# 
+#   oStore = MUES::ObjectStore.new( "Mysql", "db", "localhost", "user", "pass" )
+#   oStore.storeObjects( obj )
+# 
+# == Rcsid
+# 
+# $Id: MysqlAdapter.rb,v 1.8 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=MysqlAdapter.rb
-
-== Name
-
-MysqlAdapter - A MySQL ObjectStore adapter class
-
-== Synopsis
-
-  require "mues/ObjectStore"
-
-  oStore = MUES::ObjectStore.new( "Mysql", "db", "localhost", "user", "pass" )
-  oStore.storeObjects( obj )
-
-== Description
-
-An adapter class for a Mysql-based MUES objectstore.
-
-== Classes
-=== MUES::ObjectStore::MysqlAdapter
-==== Constructor
-
---- MUES::ObjectStore::MysqlAdapter.new( config )
-
-    Initialize the adapter with the configuration values in the specified
-    ((|config|)) object. This shouldn^t be called directly -- the
-    ((<MUES::ObjectStore>)) class will call it for you if the driver argument to
-    its constructor is 'Mysql'.
-
-==== Public Methods
-
---- MUES::ObjectStore::MysqlAdapter#useTableLocks
-
-    Return the value of the useTableLocks attribute.
-
---- MUES::ObjectStore::MysqlAdapter#storeObject( *objects )
-
-    Store the specified objects in the datastore.
-
---- MUES::ObjectStore::MysqlAdapter#fetchObjects( *oids )
-
-    Fetches and returns the objects from the datastore
-
---- MUES::ObjectStore::MysqlAdapter#hasObject?( id )
-
-    Check to see if an object with the muesid specified exists in
-    the object table
-
---- MUES::ObjectStore::MysqlAdapter#storeUserData( userName, dbInfo )
-
-    Store the data for the specified user object, returning the
-    (possibly modified) database info object.
-
---- MUES::ObjectStore::MysqlAdapter#fetchUserData( username )
-
-    Fetch the hash of user data for the specified user
-
---- MUES::ObjectStore::MysqlAdapter#createUserData( username )
-
-    Create a new hash of user data for the specified user
-
---- MUES::ObjectStore::MysqlAdapter#deleteUserData( username )
-
-    Delete the hash of user data from the database for the specified user
-
---- MUES::ObjectStore::MysqlAdapter#getUsernameList
-
-    Returns an array of the names of the stored user records.
-
-==== Private Methods
-
---- MUES::ObjectStore::MysqlAdapter#__prepFieldValue( key, val )
-
-    Return a database-safe value for the given value
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
 
 require "sync"
 
 require "tableadapter/Mysql"
 require "tableadapter/Search"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 require "mues/User"
 
@@ -104,11 +40,11 @@ module MUES
 	class ObjectStore
 		class MysqlAdapter < Adapter
 
-			include Debuggable
+			include MUES::Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: MysqlAdapter.rb,v 1.7 2001/11/01 17:21:26 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+			Rcsid = %q$Id: MysqlAdapter.rb,v 1.8 2002/04/01 16:27:31 deveiant Exp $
 
 			PlainUserFields = MUES::User::DefaultDbInfo.find_all {|field, defaultVal|
 				!defaultVal.is_a?( Array ) && !defaultVal.is_a?( Hash )
@@ -126,12 +62,10 @@ module MUES
 			### Turn off warnings about method classes
 			TableAdapter.printMethodClashWarnings = false
 
-			#########################################################
-			###	P R O T E C T E D   M E T H O D S
-			#########################################################
+			#########
 			protected
+			#########
 
-			### (PROTECTED) METHOD: initialize( config )
 			### Initialize the adapter with the values specified in the given ((|config|)) object.
 			def initialize( config )
 				super( config )
@@ -152,15 +86,14 @@ module MUES
 			end
 
 
-			#########################################################
-			###	P U B L I C   M E T H O D S
-			#########################################################
+			######
 			public
+			######
 
 			### Attribute accessors
 			attr_accessor	:useTableLocks
 
-			### METHOD: storeObject( *objects )
+			### Store the specified objects in the objectstore.
 			def storeObjects( *objects )
 				checkEachType( objects, MUES::Object )
 				errors = []
@@ -212,7 +145,6 @@ module MUES
 			end
 
 
-			### METHOD: fetchObjects( *oids )
 			### Fetches and returns the objects from the datastore
 			def fetchObjects( *oids )
 				search = TableAdapter::Search.new( 'muesid' => oids )
@@ -225,7 +157,6 @@ module MUES
 			end
 
 
-			### METHOD: hasObject?( id )
 			### Check to see if an object with the muesid specified exists in
 			### the object table
 			def hasObject?( id )
@@ -242,7 +173,6 @@ module MUES
 			end
 
 
-			### METHOD: storeUserData( userName, dbInfo )
 			### Store the data for the specified user object, returning the
 			### (possibly modified) database info object.
 			def storeUserData( userName, dbInfo )
@@ -274,7 +204,6 @@ module MUES
 			end
 
 
-			### METHOD: fetchUserData( username )
 			### Fetch the hash of user data for the specified user
 			def fetchUserData( username )
 				checkType( username, String )
@@ -289,7 +218,6 @@ module MUES
 			end
 
 
-			### METHOD: createUserData( username )
 			### Create a new hash of user data for the specified user
 			def createUserData( username )
 				checkType( username, String )
@@ -303,7 +231,6 @@ module MUES
 			end
 
 
-			### METHOD: deleteUserData( username )
 			### Delete the hash of user data from the database for the specified user
 			def deleteUserData( username )
 				checkType( username, String )
@@ -320,7 +247,6 @@ module MUES
 			end
 
 
-			### METHOD: getUsernameList
 			### Returns an array of the names of the stored user records.
 			def getUsernameList
 				names = []
@@ -333,12 +259,10 @@ module MUES
 			end
 
 
-			#########################################################
-			###	P R I V A T E   M E T H O D S
-			#########################################################
+			#######
 			private
+			#######
 
-			### (PRIVATE) METHOD: __prepFieldValue( key, val )
 			### Return a database-safe value for the given value
 			def __prepFieldValue( key, val )
 				case val

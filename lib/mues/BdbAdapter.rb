@@ -1,85 +1,36 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
-
-=BdbAdapter.rb
-
-== Name
-
-BdbAdapter - A Berkeley DB ObjectStore adapter class
-
-== Synopsis
-
-  require "mues/ObjectStore"
-  oStore = ObjectStore.new( "Bdb", "faeriemud", "localhost", "fmuser", "fmpass" )
-
-  objectId = oStore.storeObjects( obj )
-
-== Description
-
-This is an ObjectStore adapter class for Berkeley DB. It follows the
-((<MUES::Adapter>)) interface.
-
-== Classes
-=== MUES::ObjectStore::BdbAdapter
-==== Public Methods
-
---- MUES::ObjectStore::BdbAdapter#new( db, host, user, password )
-
-    Creates a new BerkeleyDB ObjectStore adapter. Only the 'db'
-    argument is used.
-
---- MUES::ObjectStore::BdbAdapter#createUserData( username )
-
-    Create a new hash of user data with the specified username
-
---- MUES::ObjectStore::BdbAdapter#deleteUserData( username )
-
-    Delete the hash of user data for the specified username
-
---- MUES::ObjectStore::BdbAdapter#fetchObjects( *oids )
-
-    Fetch objects with the specified ids from the database and return them
-
---- MUES::ObjectStore::BdbAdapter#fetchUserData( username )
-
-    Fetch the hash of user data for the specified user
-
---- MUES::ObjectStore::BdbAdapter#getUsernameList
-
-    Return an array of the names of the stored user records
-
---- MUES::ObjectStore::BdbAdapter#hasObject?( id )
-
-    Returns true if an entry with the specified id exists in the database
-
---- MUES::ObjectStore::BdbAdapter#storeObject( *objects )
-
-    Store the specified objects in the database
-
---- MUES::ObjectStore::BdbAdapter#storeUserData( username, userDataHash )
-
-    Store the specified hash of user data for the specified user
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
+# 
+# This is an ObjectStore adapter class for Berkeley DB. It follows the
+# ((<MUES::Adapter>)) interface.
+# 
+# == Synopsis
+# 
+#   require "mues/ObjectStore"
+#   oStore = ObjectStore.new( "Bdb", "faeriemud", "localhost", "fmuser", "fmpass" )
+# 
+#   objectId = oStore.storeObjects( obj )
+# 
+# == Rcsid
+# 
+# $Id: BdbAdapter.rb,v 1.10 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "bdb"
 require "thread"
 require "ftools"
 require "sync"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 
 require "mues/adapters/Adapter"
@@ -88,17 +39,16 @@ module MUES
 	class ObjectStore
 		class BdbAdapter < Adapter
 
-			include Debuggable
+			include MUES::Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.9 2001/11/01 17:21:26 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.10 2002/04/01 16:27:31 deveiant Exp $
 			DirectoryName = 'objectstore-bdb'
 
 			### Class variables
 			@@Sections = %w{object user ban allow}
 
-			### METHOD: new( db, host, user, password )
 			### Creates a new BerkeleyDB ObjectStore adapter. Only the 'db'
 			### argument is used.
 			def initialize( sysconfig )
@@ -128,7 +78,6 @@ module MUES
 			end
 
 
-			### METHOD: storeObject( *objects )
 			### Store the specified objects in the database
 			def storeObjects( *objects )
 				oids = []
@@ -158,7 +107,6 @@ module MUES
 			end
 
 
-			### METHOD: fetchObjects( *oids )
 			### Fetch objects with the specified ids from the database and return them
 			def fetchObjects( *oids )
 				objects = []
@@ -179,7 +127,6 @@ module MUES
 			end
 
 
-			### METHOD: hasObject?( id )
 			### Returns true if an entry with the specified id exists in the database
 			def hasObject?( id )
 				@lock['object'].synchronize(Sync::SH) {
@@ -188,7 +135,6 @@ module MUES
 			end
 
 
-			### METHOD: storeUserData( username, userDataHash )
 			### Store the specified hash of user data for the specified user
 			def storeUserData( username, data )
 				checkType( username, String )
@@ -207,7 +153,6 @@ module MUES
 			end
 
 
-			### METHOD: fetchUserData( username )
 			### Fetch the hash of user data for the specified user
 			def fetchUserData( username )
 				checkType( username, String )
@@ -220,7 +165,6 @@ module MUES
 			end
 
 
-			### METHOD: createUserData( username )
 			### Create a new hash of user data with the specified username
 			def createUserData( username )
 				checkType( username, String )
@@ -234,7 +178,6 @@ module MUES
 			end
 
 
-			### METHOD: deleteUserData( username )
 			### Delete the hash of user data for the specified username
 			def deleteUserData( username )
 				checkType( username, String )
@@ -250,7 +193,6 @@ module MUES
 			end
 
 
-			### METHOD: getUsernameList
 			### Return an array of the names of the stored user records
 			def getUsernameList
 				@lock['user'].synchronize(Sync::SH) {

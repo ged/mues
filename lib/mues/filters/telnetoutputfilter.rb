@@ -1,50 +1,52 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
-
-=TelnetOutputFilter.rb
-
-== Name
-
-TelnetOutputFilter - A telnet IOEvent filter class
-
-== Synopsis
-
-  
-
-== Description
-
-
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
+# 
+# This file contains the MUES::TelnetOutputFilter class, a TELNET filter class
+# for the MUES::IOEventStream. It is a specialization of
+# MUES::SocketOutputFilter that understands TELNET option negotiation and some
+# basic terminal features.
+# 
+# == Synopsis
+# 
+#   require 'mues/filters/TelnetOutputFilter'
+# 
+#   tf = MUES::TelnetOutputFilter.new( aSocketObj )
+# 
+# == Rcsid
+# 
+# $Id: telnetoutputfilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "thread"
 require "hashslice"
 require "sync"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
-
 require "mues/filters/TelnetConstants"
 
 module MUES
 
+	### A TELNET protocol error exception class
 	def_exception :TelnetError, "Telnet protocol error", MUES::Exception
 
-	class TelnetOutputFilter < SocketOutputFilter ; implements Debuggable
+	### A derivative of MUES::SocketOutputFilter that understands TELNET option
+	### negotiation and some basic terminal features.
+	class TelnetOutputFilter < SocketOutputFilter ; implements MUES::Debuggable
 		include TelnetConstants
 
+		### A module that contains constants used in TELNET option negotiation
+		### (ala RFC1143 [The Q Method of Implementing Telnet Option
+		### Negotiation, http://www.faqs.org/rfcs/rfc1143.html]).
 		module StateConstants
 			YES				= 1
 			NO				= 2
@@ -56,10 +58,10 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.4 2001/11/01 17:56:28 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
 
-		# List of supported options and whether we ask for or offer them
+		### List of supported options and whether we ask for or offer them
 		Supported = {
 			TELOPT_NAWS		=> 'ask',
 			TELOPT_TTYPE	=> 'ask',
@@ -72,11 +74,8 @@ module MUES
 		# IOEventStream sort order
 		DefaultSortPosition = 300
 
-
-		### (CONSTRUCTOR) METHOD: new( socket[, sortOrder] )
 		### Instantiate and return a new telnet output filter, reading from and
-		### outputting to the specified ((|socket|)).
-		protected
+		### outputting to the specified <tt>socket</tt>.
 		def initialize( aSocket, order=DefaultSortPosition )
 			@cmdContBuffer = ''
 			@terminalType = "dumb"
@@ -90,33 +89,37 @@ module MUES
 			super( aSocket, order )
 		end
 
-		#############################################################
-		###	P U B L I C   M E T H O D S
-		#############################################################
+		######
 		public
+		######
 
-		attr_reader :terminalType, :stateTrace
+		# The terminal-type string of the user's client
+		attr_reader :terminalType
 
-		### METHOD: windowHeight
+		# An array of diagnostic messages describing the steps that have been
+		# taken in TELNET option negotiation.
+		attr_reader :stateTrace
+
 		### Get the height of the user's window (if the user's telnet client
-		### supports the NAWS command). The default will be returned if the user
-		### is using a client that can't report its window size.
+		### supports the <tt>NAWS</tt> command). The default
+		### (MUES::SocketOutputFilter::DefaultWindowSize) will be returned if
+		### the user is using a client that can't report its window size.
 		def windowHeight
 			return @windowSize['height']
 		end
 
-		### METHOD: windowWidth
 		### Get the width of the user's window (if the user's telnet client
-		### supports the NAWS command). The default will be returned if the user
-		### is using a client that can't report its window size.
+		### supports the <tt>NAWS</tt> command). The default
+		### (MUES::SocketOutputFilter::DefaultWindowSize) will be returned if
+		### the user is using a client that can't report its window size.
 		def windowWidth
 			return @windowSize['width']
 		end
 
-		### METHOD: enableTelnetOption( option )
-		### Enable the specified telnet ((|option|)), if supported. The
-		### ((|option|)) argument can be either an option name (eg., 'NAWS',
-		### 'SGA', 'TSPEED'), or a raw option code.
+		### Enable the specified telnet <tt>option</tt>, if supported. The
+		### <tt>option</tt> argument can be either an option name (eg.,
+		### <tt>'NAWS'</tt>, <tt>'SGA'</tt>, <tt>'TSPEED'</tt>, etc.), or a raw
+		### option code.
 		def enableTelnetOption( option )
 			optcode = nil
 
@@ -198,10 +201,10 @@ module MUES
 		end
 
 
-		### METHOD: disableTelnetOption( option )
-		### Disable the specified telnet ((|option|)), if supported. The
-		### ((|option|)) argument can be either an option name (eg., 'NAWS',
-		### 'SGA', 'TSPEED'), or a raw option code.
+		### Disable the specified telnet <tt>option</tt>, if supported. The
+		### <tt>option</tt> argument can be either an option name (eg.,
+		### <tt>'NAWS'</tt>, <tt>'SGA'</tt>, <tt>'TSPEED'</tt>, etc.), or a raw
+		### option code.
 		def disableTelnetOption( option )
 			optcode = nil
 
@@ -283,7 +286,6 @@ module MUES
 		end
 
 
-		### METHOD: puts( aString )
 		### Append a string directly onto the output buffer with a
 		### line-ending. Useful when doing direct output and flush.
 		def puts( aString )
@@ -292,32 +294,30 @@ module MUES
 			}
 		end
 
-		### METHOD: sendInBand( msg )
-		### Send a message in-band.
-		def sendInBand( msg )
-			$stderr.puts( "Sending in-band: " + hexdump( msg ) )
-			self.write( msg )
+		### Send the specified +message+ in-band.
+		def sendInBand( message )
+			$stderr.puts( "Sending in-band: " + hexdump( message ) )
+			self.write( message )
 		end
 
-		### METHOD: hexdump( data )
-		### Turn a string of ((|data|)) into its hex equivalents
+		### Turn a string of <tt>data</tt> into its hex equivalents
 		def hexdump( data )
 			data.to_s.split(//).collect {|b| sprintf "%02x", b[0] }.join(' ')
 		end
 
-		### METHOD: sendOutOfBand( char )
-		### Send the specified character as out-of-band urgent data
-		def sendOutOfBand( msg )
+		### Send the specified +message+ as out-of-band urgent data <em>(currently
+		### unimplemented)</em>.
+		def sendOutOfBand( message )
 			raise UnimplementedMethodError
 		end
 
 
-		### METHOD: handleOutputEvents( *events )
-		### Handle output events by appending their data to the output buffer
+		### Handle the specified output <tt>events</tt> by appending their data
+		### to the output buffer.
 		def handleOutputEvents( *events )
 			events.each {|e|
-				if e.kind_of?( MUES::ControlEvent )
-					_handleControlEvent( e )
+				if e.kind_of?( MUES::IOControlOutputEvent )
+					_handleIOControlOutputEvent( e )
 				end
 				
 				e.data.gsub!( "\n", EOL )
@@ -326,28 +326,26 @@ module MUES
 			super( *events )
 		end
 
-		### METHOD: queueOutputEvents( *events )
-		### Queue output events for later transmission.
+		### Queue the specified output <tt>events</tt> for later transmission.
 		def queueOutputEvents( *events )
 			events.flatten!
 
 			events.each {|e|
-				if e.kind_of?( MUES::ControlEvent )
-					_handleControlEvent( e )
+				if e.kind_of?( MUES::IOControlOutputEvent )
+					_handleIOControlOutputEvent( e )
 				end
 			}
 					
 			return super( events )
 		end
 
-		#############################################################
-		###	P R O T E C T E D   M E T H O D S
-		#############################################################
-		protected
 
-		### (PROTECTED) METHOD: _echo( data )
-		### Append the specified data to the output buffer if we're handling
-		### echo for the client. If we're not, don't do anything.
+		#########
+		protected
+		#########
+
+		### Append the specified <tt>data</tt> to the output buffer if we're
+		### handling echo for the client. If we're not, don't do anything.
 		def _echo( data )
 			if @optState[ 'ECHO' ] == YES
 				data.gsub!( /(?:\x7f)/, "\x08 \x08")
@@ -363,9 +361,8 @@ module MUES
 			end
 		end
 
-		### (PROTECTED) METHOD: _ioThreadRoutine( socket )
 		### Thread routine for telnet IO. Queues initial telnet options in the
-		### buffer, and then calls the parent class's synonymous method.
+		### buffer, and then calls MUES::SocketOutputFilter#_ioThreadRoutine.
 		def _ioThreadRoutine( socket )
 			self.enableTelnetOption( TELOPT_NAWS )
 			self.enableTelnetOption( TELOPT_TTYPE )
@@ -378,10 +375,9 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _handleControlEvent( event )
-		### Handle a terminal control or special output event.
-		def _handleControlEvent( event )
-			checkType( event, MUES::ControlEvent )
+		### Handle the specified terminal control or special output <tt>event</tt>.
+		def _handleIOControlOutputEvent( event )
+			checkType( event, MUES::IOControlOutputEvent )
 
 			res = []
 
@@ -401,9 +397,8 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _handleRawInput( inputBuffer )
-		### Parse input events and telnet commands from the given raw buffer and
-		### return the (possibly) modified buffer.
+		### Parse input events and telnet commands from the given raw
+		### <tt>inputBuffer</tt> and return the (possibly) modified buffer.
 		def _handleRawInput( inputBuffer )
 
 			debugMsg( 4, "Handling raw input: #{hexdump inputBuffer}" )
@@ -546,9 +541,9 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _parseInputBuffer( inputBuffer )
-		### Parse input events from the given raw buffer and return the
-		### (possibly) modified buffer after queueing any input events created.
+		### Parse input events from the given raw <tt>inputBuffer</tt> and
+		### return the (possibly) modified buffer after queueing any input
+		### events created.
 		def _parseInputBuffer( inputBuffer )
 			newInputEvents = []
 
@@ -578,27 +573,27 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _addStateTrace( message )
 		### Add a state message to the state trace array for debugging.
 		def _addStateTrace( msg )
-			$stderr.puts( msg )
-			# @stateTrace << msg
+			# $stderr.puts( msg )
+			@stateTrace << msg
 		end
 
 
-		### (PROTECTED) METHOD: _sendShutdownMessage( rawSocket )
 		### Send a shutdown message to the client using unbuffered I/O on the
-		### ((|rawSocket|)) specified, as we won't be around to fetch it from
+		### <tt>rawSocket</tt> specified, as we won't be around to fetch it from
 		### the buffer.
-		def _sendShutdownMessage( mySocket )
-			mySocket.syswrite( @writeBuffer )
-			mySocket.syswrite( EOL + ">>> Disconnecting <<<" + EOL * 2 )
+		def _sendShutdownMessage( rawSocket )
+			rawSocket.syswrite( @writeBuffer )
+			rawSocket.syswrite( EOL + ">>> Disconnecting <<<" + EOL * 2 )
 		end
 
 
 		#############################################################
 		###	T E L N E T   C O M M A N D   H A N D L E R S
 		#############################################################
+
+		### Handle suboption negotiation
 		def _handleTelnetSuboption( suboption )
 			option = OPT[ suboption[0,1] ] or
 				raise TelnetError, "Unrecognized telnet option in suboption negotiation (#{suboption[0]})"
@@ -647,8 +642,8 @@ module MUES
 
 		### Option negotiation
 
-		### METHOD: _handleTelnetDo( option )
-		### Handle a 'DO' command for the specified option coming from the client.
+		### Handle a 'DO' command for the specified option code (<tt>opt</tt>)
+		### coming from the client.
 		def _handleTelnetDo( opt )
 			option = OPT[ opt ] or
 				raise TelnetError, "Unrecognized telnet option code (#{opt[0]})"
@@ -752,8 +747,8 @@ module MUES
 		end
 
 
-		### METHOD: _handleTelnetDont( option )
-		### Handle a 'DONT' command for the specified option coming from the client.
+		### Handle a 'DONT' command for the specified option code (<tt>opt</tt>)
+		### coming from the client.
 		def _handleTelnetDont( opt )
 			option = OPT[ opt ] or
 				raise TelnetError, "Unrecognized telnet option code (#{opt[0]})"
@@ -829,8 +824,8 @@ module MUES
 		end
 
 
-		### METHOD: _handleTelnetWill( option )
-		### Handle a 'WILL' command for the specified option coming from the client.
+		### Handle a 'WILL' command for the specified option code (<tt>opt</tt>)
+		### coming from the client.
 		def _handleTelnetWill( opt )
 			option = OPT[ opt ] or
 				raise TelnetError, "Unrecognized telnet option code (#{opt[0]})"
@@ -934,8 +929,8 @@ module MUES
 		end
 
 
-		### METHOD: _handleTelnetWont( option )
-		### Handle a 'WONT' command for the specified option coming from the client.
+		### Handle a 'WONT' command for the specified option code (<tt>opt</tt>)
+		### coming from the client.
 		def _handleTelnetWont( opt )
 			option = OPT[ opt ] or
 				raise TelnetError, "Unrecognized telnet option code (#{opt[0]})"
@@ -1013,7 +1008,6 @@ module MUES
 
 		### Other telnet commands
 
-		### (PROTECTED) METHOD: _handleTelnetGoAhead()
 		### Handle a 'go ahead' command sent by the client.
 		def _handleTelnetGoAhead()
 			debugLog( 5, "Received telnet 'go ahead'." )
@@ -1021,7 +1015,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetEraseLine()
 		### Handle a 'erase current line' command sent by the client.
 		def _handleTelnetEraseLine()
 			debugLog( 5, "Received telnet 'erase line'." )
@@ -1029,7 +1022,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetEraseChar()
 		### Handle a 'erase current character' command sent by the client.
 		def _handleTelnetEraseChar()
 			debugLog( 5, "Received telnet 'erase char'." )
@@ -1037,7 +1029,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetAreYouThere()
 		### Handle a 'are you there' command sent by the client.
 		def _handleTelnetAreYouThere()
 			debugLog( 5, "Received telnet 'are you there'." )
@@ -1046,7 +1037,6 @@ module MUES
 			return true
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetAbortOutput()
 		### Handle a 'abort output' command sent by the client.
 		def _handleTelnetAbortOutput()
 			debugLog( 5, "Received telnet 'abort output'." )
@@ -1054,7 +1044,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetInterrupt()
 		### Handle an 'interrupt' command sent by the client.
 		def _handleTelnetInterrupt()
 			debugLog( 5, "Received telnet 'interrupt'." )
@@ -1062,7 +1051,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetBreak()
 		### Handle a 'break' command sent by the client.
 		def _handleTelnetBreak()
 			debugLog( 5, "Received telnet 'break'." )
@@ -1070,7 +1058,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetDatamark()
 		### Handle a telnet datamark.
 		def _handleTelnetDatamark()
 			debugLog( 5, "Received telnet datamark." )
@@ -1078,7 +1065,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetNoop()
 		### Handle a 'no-op' command sent by the client.
 		def _handleTelnetNoop()
 			debugLog( 5, "Received telnet 'NOP'." )
@@ -1086,7 +1072,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetEndOfRecord()
 		### Handle a 'end of record' command sent by the client.
 		def _handleTelnetEndOfRecord()
 			debugLog( 5, "Received telnet 'end of record'." )
@@ -1094,7 +1079,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetAbort()
 		### Handle an 'abort' command sent by the client.
 		def _handleTelnetAbort()
 			debugLog( 5, "Received telnet abort." )
@@ -1102,7 +1086,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetSuspend()
 		### Handle a 'suspend' command sent by the client.
 		def _handleTelnetSuspend()
 			debugLog( 5, "Received telnet 'suspend'." )
@@ -1110,7 +1093,6 @@ module MUES
 			return false
 		end
 
-		### (PROTECTED) METHOD: _handleTelnetEOF()
 		### Handle an 'end of file' command sent by the client.
 		def _handleTelnetEOF()
 			debugLog( 5, "Received telnet EOF." )
@@ -1121,7 +1103,6 @@ module MUES
 
 		### Suboption response handlers
 
-		### (PROTECTED) METHOD: _handleWillTtype()
 		### Handle the client telling us they'll do TTYPE: ask for their
 		### terminal type.
 		def _handleWillTtype()
@@ -1131,11 +1112,10 @@ module MUES
 			return true
 		end
 
-		### (PROTECTED) METHOD: _handleDoEcho()
 		### Handle the client telling us to take over their echo.
 		def _handleDoEcho()
 			debugMsg( 4, "We are now handling echo for the client." )
-			_addStateTrace( "### Okay, now I'm handling your echo for you." )
+			_addStateTrace( "<-- Okay, now I'm handling your echo for you." )
 		end
 
 	end # class TelnetOutputFilter

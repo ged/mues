@@ -1,89 +1,88 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
+# 
+# This file contains MUES::MacroFilter, a derivative of the MUES::IOEventFilter
+# class. It is a macro-expansion filter that can be used to set up custom
+# shortcuts for long sequences of commands.
+# 
+# == Synopsis
+# 
+#   require "mues/filters/MacroFilter"
+#   filter = MUES::MacroFilter.new( aUser )
+# 
+# == Rcsid
+# 
+# $Id: macrofilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=MacroFilter.rb
 
-== Name
-
-MacroFilter - a user-defined macro filter class
-
-== Synopsis
-
-  require "mues/filters/MacroFilter"
-  filter = MUES::MacroFilter.new( aUser )
-
-== Description
-
-This is a class that provides expansion and definition facilities for
-user-definable macros in an IOEventStream.
-
-== Methods
-=== Protected Instance Methods
-
---- initialize( user )
-
-    Given a (({MUES::User})) object ((|user|)), initialize the macro table for
-    the filter with the user^s preferences.
-
-=== Public Instance Methods
-
---- handleInputEvents( *events )
-
-    Handle the specified input events by searching for macro expansions and
-    performing them on the data contained in the ((|events|)). Returns the given
-    array with expansions performed.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/filters/IOEventFilter"
 
 module MUES
-	class MacroFilter < IOEventFilter ; implements Debuggable
+
+	### This is a class that provides expansion and definition facilities for
+	### user-definable macros in an IOEventStream.
+	class MacroFilter < IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.4 2001/09/26 13:25:42 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 650
 
 		### Class variables
+
+		# The string prefix to associate with macro commands
 		@@MacroPrefix = ':'
+
 
 		### Initializer
 
-		### METHOD: initialize( user=MUES::User )
-		### Initialize the macro filter with the macro table for the specified
-		### ((|user|)), or a new one if the specified user doesn't yet have one.
-		protected
+		### Create and return a new macro filter for the specified <tt>user</tt>
+		### (a MUES::User object). If the user's preferences has a Hash value
+		### for the <tt>'macros'</tt> key, use the contents to initialize the
+		### table. If not, start with an empty macro table.
 		def initialize( user )
 			super()
 			checkType( user, MUES::User )
 
 			@user		= user
+			@macroPrefix= @user.preferences['macroPrefix'] || @@MacroPrefix
 			@macroTable = @user.preferences['macros'] || {}
 		end
 
-		### Public methods
-		public
 
-		### METHOD: handleInputEvents( *events=MUES::InputEvent )
+		######
+		public
+		######
+
+		# The string prefix to associate with macro commands
+		attr_accessor	:macroPrefix
+
+
+		### Prep the filter for shutdown.
+		def stop( aStream )
+			@user.preferences['macroPrefix'] = @macroPrefix
+			@user.preferences['macros'] = @macroTable
+
+			super( aStream )
+		end
+
+
 		### Handle the specified input events by searching for macro expansions
 		### and performing them on the data contained in the
-		### ((|events|)). Returns the given array with expansions performed.
+		### <tt>events</tt>. Returns the given array with expansions performed.
 		def handleInputEvents( *events )
 			events.flatten!
 			events.compact!

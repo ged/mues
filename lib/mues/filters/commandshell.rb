@@ -1,387 +1,106 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
-
-=CommandShell.rb
-
-== Name
-
-CommandShell - a MUES command shell input filter class
-
-== Synopsis
-
-  require "mues/filters/CommandShell"
-
-== Description
-
-This is a command shell input filter class. It provides a simple shell for
-interacting with the MUES Engine after logging in.
-
-This module provides (({MUES::CommandShell})) -- a subclass of
-(({MUES::IOEventFilter})), base command classes
-((({MUES::ShellCommand::Command})), (({MUES::ShellCommand::UserCommand})),
-(({MUES::ShellCommand::CreatorCommand})),
-(({MUES::ShellCommand::ImplementorCommand})), and
-(({MUES::ShellCommand::AdminCommand}))), as well as several concrete shell
-command classes.
-
-== Classes
-=== MUES::CommandShell
-
-This a ((<MUES::IOEventFilter>)) that provides connected users with the ability to
-execute commands in the context of their ((<MUES::User>)) object.
-
-==== Protected Methods
-
---- MUES::CommandShell#initialize( aUser )
-
-    Initialize a new shell input filter for the specified user
-
-==== Public Methods
-
---- MUES::CommandShell#handleInputEvents( *events )
-
-    Handle input events by comparing them to the list of valid shell
-    commands and creating the appropriate events for any that do.
-
---- MUES::CommandShell#start( aStream=MUES::IOEventStream )
-
-    Start the filter .
-
---- MUES::CommandShell#stop( aStream=MUES::IOEventStream )
-
-    Stop the filter.
-
-=== MUES::CommandShell::Context
-
-Instances of this class are state objects that are used in the shell object to
-maintain command invocation context, and to provide access to external objects
-to the command objects.
-
-==== Public Methods
-
---- MUES::CommandShell::Context#shell
-
-    Return the ((<MUES::CommandShell>)) object this context belongs to.
-
---- MUES::CommandShell::Context#user
-
-    Return the ((<MUES::User>)) object of the current user.
-
---- MUES::CommandShell::Context#stream
-
-    Return the ((<MUES::IOEventStream>)) object the command shell is running in.
-
---- MUES::CommandShell::Context#evalContext
-
-    Returns the "current" context, which is an object upon which all shell
-    commands which require a context operate. This can be used to provide a
-    default target for commands, for example.
-
---- MUES::CommandShell::Context#evalContext=( anObject )
-
-    Set the "current" context to ((|anObject|)).
-
---- MUES::CommandShell::Context#initialize( shell, user, stream, evalContext )
-
-    Set up and initialize the command shell with the specified ((|shell|)),
-    ((|user|)) object, ((|stream|)), and ((|evalContext|)) object.
-
-
-=== MUES::CommandShell::CommandTable
-
-Instances of this class contain a table of all commands and their aliases which
-are available to a particular user, along with an abbrev-table which maps
-abbreviated non-ambiguous versions of each command to the corresponding command
-object. It also contains utility functions for generating command help text, and
-for performing approximate searches of command names.
-
-==== Public Methods
-
---- MUES::CommandShell::CommandTable#[ name ]
-
-    Element reference operator -- Returns the command object which corresponds
-	to the (potentially abbreviated) command name ((|name|)). Returns a
-	((<MUES::CommandShell::Command>)) object if a corresponding one is found, or
-	(({nil})) if no command corresponds to the given name.
-
---- MUES::CommandShell::CommandTable#approxSearch( name )
-
-    Find and return all commands which match the specified ((|name|)).
-
---- MUES::CommandShell::CommandTable#getHelpTable( [commandName] )
-
-    Returns a hash of commands to descriptions suitable for building
-    a command help table
-
---- MUES::CommandShell::CommandTable#new( commandObjects=Array(MUES::CommandShell::Command) )
-
-	Instantiate and return a new (({CommandTable})) object which contains an
-	abbreviation mapping for the specified (({commandObjects})).
-
-=== MUES::CommandShell::Command
-
-This is an abstract base class for shell commands, which are functions triggered
-by user input. They are loaded the first time a shell is created, and are kept
-up to date by occasionally checking for updated files. Command objects are
-((<Singletons>)).
-
-==== Class Methods
-
---- MUES::CommandShell::Command.atEngineShutdown( theEngine=MUES::Engine )
-
-    Notification method (((<MUES::Notifiable>)) interface) to un-register update
-    callback event when the engine is about to shut down.
-
---- MUES::CommandShell::Command.atEngineStartup( theEngine=MUES::Engine )
-
-    Notification method (((<MUES::Notifiable>)) interface) to register update
-    callback event after the engine is started.
-
---- MUES::CommandShell::Command.buildCommandRegistry( config=MUES::Config )
-
-    Build the command registry after all the commands have a chance to load.
-
---- MUES::CommandShell::Command.getCommands()
-
-    Returns a list of all loaded (({MUES::CommandShell::Command})) objects.
-
---- MUES::CommandShell::Command.getPermissableCommands( aUser )
-
-    Returns the (({MUES::CommandShell::Command})) objects that are permitted to
-    ((|aUser|)).
-
---- MUES::CommandShell::Command.inherited( aSubClass )
-
-    Register the specified class with the list of child classes.
-
---- MUES::CommandShell::Command.instance()
-
-    Returns the singleton instance of the command class.
-
---- MUES::CommandShell::Command.loadCommands( config=MUES::Config )
-
-    Iterate over each file in the shell commands directory, as specified by the
-    ((|config|)) object, loading each one if it has changed since last we
-    loaded.
-
---- MUES::CommandShell::Command.rebuildCommandRegistry( config=MUES::Config )
-
-    Rebuild the command registry after checking for updates.
-
-==== Public Methods
-
---- MUES::CommandShell::Command#canBeUsedBy?( aUser=MUES::User )
-
-    Returns (({true})) if the command can be used by ((|aUser|)). Returns
-    (({false})) by default, so subclasses must supply an explicit override for
-    this method if it is to be usable.
-
---- MUES::CommandShell::Command#usage()
-
-    Return a usage string for the command.
-
-=== MUES::CommandShell::UserCommand
-
-An abstract base class for commands usable by all Users.
-
-==== Public Methods
-
---- MUES::CommandShell::UserCommand#canBeUsedBy?( aUser=MUES::User )
-
-    User commands can always be used, so this method just returns
-    true unconditionally.
-
-=== MUES::CommandShell::CreatorCommand
-
-An abstract base class for commands usable by Users who have 'creator'
-privileges or higher.
-
-==== Public Methods
-
---- MUES::CommandShell::CreatorCommand#canBeUsedBy?( aUser=MUES::User )
-
-    Returns true if the specified user has 'creator' or higher
-    permissions.
-
-=== MUES::CommandShell::ImplementorCommand
-
-An abstract base class for commands usable by Users who have 'implementor'
-privileges or higher.
-
-==== Public Methods
-
---- MUES::CommandShell::ImplementorCommand#canBeUsedBy?( aUser=MUES::User )
-
-    Returns true if the specified user has 'implementor' or higher
-    permissions.
-
-=== MUES::CommandShell::AdminCommand
-
-An abstract base class for commands usable by Users who have 'admin' privileges.
-
-==== Public Methods
-
---- MUES::CommandShell::AdminCommand#canBeUsedBy?( aUser=MUES::User )
-
-    Returns true if the specified user has 'admin' or higher
-    permissions.
-
-=== MUES::CommandShell::QuitCommand
-
-The 'quit' command class.
-
-==== Public Methods
-
---- MUES::CommandShell::QuitCommand#initialize()
-
-    Initialize a new QuitCommand object
-
---- MUES::CommandShell::QuitCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Invoke the quit command, which generates a new UserLogoutEvent.
-
-=== MUES::CommandShell::HelpCommand
-
-The 'help' command class.
-
-==== Public Methods
-
---- MUES::CommandShell::HelpCommand#initialize()
-
-    Initialize a new QuitCommand object
-
---- MUES::CommandShell::HelpCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Invoke the quit command, which generates a new UserLogoutEvent.
-
-=== MUES::CommandShell::RolesCommand
-
-The 'roles' command class.
-
-==== Public Methods
-
---- MUES::CommandShell::RolesCommand#initialize()
-
-    Initialize a new UnloadEnvironmentCommand object
-
---- MUES::CommandShell::RolesCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Invoke the unloadenvironment command, which generates a
-    UnloadEnvironmentEvent with the environment specifications.
-
-=== MUES::CommandShell::ConnectCommand
-
-The 'connect' command class.
-
-==== Public Methods
-
---- MUES::CommandShell::ConnectCommand#initialize()
-
-    Initialize a new ConnectCommand object
-
---- MUES::CommandShell::ConnectCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Attempt to connect the user to the environment and role specified by the
-    arguments.
-
-=== MUES::CommandShell::DisconnectCommand
-
-The 'disconnect' command class.
-
-==== Public Methods
-
---- MUES::CommandShell::DisconnectCommand#initialize()
-
-    Initialize a new DisconnectCommand object
-
---- MUES::CommandShell::DisconnectCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Attempt to disconnect the user from the environment and role specified by
-    the arguments.
-
-=== MUES::CommandShell::DebugCommand
-
-The 'debug' command class.
-
-==== Public Methods
-
---- MUES::CommandShell::DebugCommand#initialize()
-
-    Initialize a new DebugCommand object
-
---- MUES::CommandShell::DebugCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Invoke the debug command
-
-=== MUES::CommandShell::EvalCommand
-
-The 'eval' command class.
-
-==== Public Methods
-
---- MUES::CommandShell::EvalCommand#initialize()
-
-    Initialize a new EvalCommand object
-
---- MUES::CommandShell::EvalCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Evaluate the specified code in the shell^s current object context. This
-    is a potentially dangerous command.
-
-=== MUES::CommandShell::SetCommand
-
-The 'set' command class.
-
-==== Public Methods
-
---- SetCommand#initialize()
-
-    Initialize a new SetCommand object
-
---- SetCommand#invoke( context=MUES::CommandShell::Context, args=String )
-
-    Invoke the set command with either no args, a parameter name arg, or
-    parameter name + new value args.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-== To Do
-
-* Perhaps add soundex matching if there are no abbrev matches for a command?
-
-=end
-#################################################################
+#
+# This file is a collection of classes which are used in the MUES command
+# shell. The command shell is a command interface for user interaction with the
+# MUES::Engine. This file contains the following classes:
+#
+# [MUES::CommandShell]
+#   The main command shell class; it is a derivative of MUES::IOEventFilter.
+#
+# [MUES::CommandShell::Context]
+#	A shell context class that is used by the shell to maintain command
+#	invocation context.
+#
+# [MUES::CommandShell::CommandTable]
+#	A command table for looking up command objects by name, synonym, or
+#	abbreviation.
+#
+# [MUES::CommandShell::UserCommand]
+#	The abstract base class for all user commands.
+#
+# [MUES::ShellCommand::CreatorCommand]
+#	The abstract base class for all creator commands.
+#
+# [MUES::CommandShell::ImplementorCommand]
+#	The abstract base class for all implementor commands.
+#
+# [MUES::CommandShell::AdminCommand]
+#	The abstract base class for all admin commands.
+#
+# [MUES::CommandShell::HelpCommand]
+# 	The <tt>help</tt> command.
+#
+# [MUES::CommandShell::RolesCommand]
+# 	The <tt>roles</tt> command.
+#
+# [MUES::CommandShell::ConnectCommand]
+# 	The <tt>connect</tt> command.
+#
+# [MUES::CommandShell::DisconnectCommand]
+# 	The <tt>disconnect</tt> command.
+#
+# [MUES::CommandShell::DebugCommand]
+# 	The <tt>debug</tt> command.
+#
+# [MUES::CommandShell::EvalCommand]
+# 	The <tt>eval</tt> command.
+#
+# [MUES::CommandShell::SetCommand]
+# 	The <tt>set</tt> command.
+# 
+# == Synopsis
+#
+#  require "mues/filters/CommandShell"
+#
+# == To Do
+# 
+# * Perhaps add soundex matching if there are no abbrev matches for a command?
+#
+# * Add functions for easily defining command classes, per Red's
+#   suggestion. Something like:
+#
+#	defCommand( :MyCommand, "mycommand", MUES::UserCommand ) {|context,args|
+#		return MyCommandEvent.new( context.user )
+#	}
+#
+# == Rcsid
+# 
+# $Id: commandshell.rb,v 1.11 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "sync"
 require "singleton"
 require "find"
 #require "Soundex"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
 
 module MUES
 
-	### Exception class
+	### Exception class for command name conflicts
 	def_exception :CommandNameConflictError, "Command name conflict", Exception
 
-	### Command shell class
-	class CommandShell < IOEventFilter ; implements Debuggable
+	### This class is a MUES::IOEventFilter that provides connected users
+	### with the ability to execute commands in the context of their
+	### MUES::User object.
+	class CommandShell < IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.10 2001/12/06 13:38:26 red Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.11 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -397,13 +116,8 @@ module MUES
 		}
 
 
-		#############################################################
-		###	P R O T E C T E D   M E T H O D S
-		#############################################################
-
-		### (PROTECTED) METHOD: initialize( aUser )
-		### Initialize a new shell input filter for the specified user
-		protected
+		### Return a new shell input filter for the specified user (a MUES::User
+		### object).
 		def initialize( aUser )
 			super()
 			_debugMsg( 1, "Initializing command shell for #{aUser.to_s}." )
@@ -422,18 +136,26 @@ module MUES
 		end
 
 
-		#############################################################
-		###	P U B L I C   M E T H O D S
-		#############################################################
+		######
 		public
+		######
 
-		### Accessors
-		attr_accessor	:vars, :commandString
-		attr_reader		:user, :commandTable
+		# The Hash of shell variables currently set in the shell
+		attr_accessor	:vars
+
+		# The string which will be prepended to all shell commands
+		attr_accessor	:commandString
+
+		# The user (MUES::User) object that owns this shell
+		attr_reader		:user
+
+		# The command table of commands available in this shell (a
+		# MUES::CommandShell::CommandTable object).
+		attr_reader		:commandTable
 
 
-		### METHOD: start( aStream=MUES::IOEventStream )
-		### Start the filter .
+		### Start the filter on the specified stream (a MUES::IOEventStream
+		### object).
 		def start( stream )
 			super( stream )
 			@stream = stream
@@ -443,8 +165,8 @@ module MUES
 		end
 
 
-		### METHOD: stop( aStream=MUES::IOEventStream )
-		### Stop the filter.
+		### Stop the filter for the specified stream (a MUES::IOEventStream
+		### object).
 		def stop( stream )
 			@stream = nil
 			@context = nil
@@ -453,9 +175,9 @@ module MUES
 		end
 
 
-		### METHOD: handleInputEvents( *events )
-		### Handle input events by comparing them to the list of valid shell
-		### commands and creating the appropriate events for any that do.
+		### Handle the specified input events by comparing them to the list of
+		### valid shell commands and creating the appropriate events for any
+		### that match.
 		def handleInputEvents( *events )
 			unhandledInputEvents = []
 
@@ -525,10 +247,35 @@ module MUES
 		###	A S S O C I A T E D   O B J E C T   C L A S S E S
 		#############################################################
 
-		### CommandShell Context object class
-		class Context < MUES::Object ; implements Debuggable
-			attr_reader :shell, :user, :stream
+		### A shell context class that is used by the MUES::CommandShell to
+		### maintain command invocation context, and to provide access to
+		### external objects to the command objects. The command invocation
+		### context is an object which the user can set as the target of future
+		### commands which expect a context. This can be used to look up an
+		### object and perform multiple operations on it without requiring a new
+		### lookup before every command.
+		class Context < MUES::Object ; implements MUES::Debuggable
+
+			# The invoking MUES::CommandShell.
+			attr_reader :shell
+
+			# The invoking MUES::User.
+			attr_reader :user
+
+			# The MUES::IOEventStream object associated with the invoking
+			# command shell.
+			attr_reader :stream
+
+			# The object which was last set as the command context for the
+			# shell.
 			attr_accessor :evalContext
+
+			### Create and return a new Context object with the specified shell
+			### (a MUES::CommandShell object), user (a MUES::User object),
+			### stream (a MUES::IOEventStream object), and
+			### <tt>evalContext</tt>. The <tt>evalContext</tt> is the object
+			### which is initially set as the context of commands which require
+			### one.
 			def initialize( shell, user, stream, evalContext )
 				@shell = shell
 				@user = user
@@ -539,13 +286,19 @@ module MUES
 			end
 		end # class Context
 
-		### CommandTable class
-		class CommandTable < MUES::Object ; implements Debuggable
 
-			### METHOD: new( commandObjects=Array(MUES::CommandShell::Command) )
-			### Instantiate and return a new (({CommandTable})) object which
+		# A command table class for MUES::CommandShell objects. A command table
+		# is a hash-like object which contains a mapping of all available
+		# command names, their synonyms, and their non-ambiguous abbreviations
+		# to the corresponding command object. It also contains utility
+		# functions for generating command help text, and for performing
+		# approximate searches of command names.
+		class CommandTable < MUES::Object ; implements MUES::Debuggable
+
+			### Instantiate and return a new <tt>CommandTable</tt> object which
 			### contains an abbreviation mapping for the specified
-			### (({commandObjects})).
+			### <tt>commandObjects</tt> (an Array of MUES::CommandShell::Command
+			### objects).
 			def initialize( commands )
 				checkType( commands, Array )
 
@@ -583,23 +336,24 @@ module MUES
 				super()
 			end
 
-			### METHOD: [ name ]
+
 			### Element reference operator -- Returns the command object which
 			### corresponds to the (potentially abbreviated) command name
-			### ((|name|)). Returns a ((<MUES::CommandShell::Command>)) object
-			### if a corresponding one is found, or (({nil})) if no command
-			### corresponds to the given name.
+			### <tt>name</tt>. Returns the corresponding
+			### MUES::CommandShell::Command object if a one is found, or
+			### <tt>nil</tt> if no command corresponds to the given name.
 			def []( name )
 				return @abbrevTable[ name ]
 			end
 
-			### METHOD: approxSearch( name )
-			### Find and return all commands which match the specified ((|name|)).
+
+			### Find and return all commands which match the specified
+			### <tt>name</tt> in an approximate search.
 			def approxSearch( name )
 				@abbrevTable.find_all {|word,obj| word =~ /^#{name}/ }.collect {|key,val| val}.uniq
 			end
 
-			### METHOD: getHelpTable( [commandName] )
+
 			### Returns a hash of commands to descriptions suitable for building
 			### a command help table
 			def getHelpTable( cmdName = nil )
@@ -619,12 +373,16 @@ module MUES
 		end # class CommandTable
 
 
-		### Base command class
-		class Command < MUES::Object ; implements AbstractClass, Debuggable, Notifiable
+		# This is an abstract base class for shell commands, which are
+		# event-generating functions triggered by user input. They are loaded
+		# the first time a MUES::CommandShell is created, and are kept up to
+		# date by occasionally checking for updated files. Command objects are
+		# Singletons.
+		class Command < MUES::Object ; implements MUES::AbstractClass, MUES::Debuggable, Notifiable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.10 2001/12/06 13:38:26 red Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.11 2002/04/01 16:27:29 deveiant Exp $
 
 			### Class values
 			@@CommandRegistry	= {}
@@ -643,14 +401,14 @@ module MUES
 			### Class methods
 			class << self
 
-				### (CLASS) METHOD: instance()
-				### Returns the instance of the command class, as it's a singleton
+				### Returns (after potentially creating) the instance of the
+				### command class.
 				def instance
 					@@Instances[ self ] ||= new()
 				end
 
-				### (CLASS) METHOD: atEngineStartup( theEngine=MUES::Engine )
-				### Notification method (Notifiable interface) to register
+
+				### Notification method (MUES::Notifiable interface) to register
 				### update callback event after the engine is started.
 				def atEngineStartup( theEngine )
 					buildCommandRegistry( theEngine.config )
@@ -660,8 +418,7 @@ module MUES
 				end
 
 
-				### (CLASS) METHOD: atEngineShutdown( theEngine=MUES::Engine )
-				### Notification method (Notifiable interface) to un-register
+				### Notification method (MUES::Notifiable interface) to un-register
 				### update callback event when the engine is about to shut down.
 				def atEngineShutdown( theEngine )
 					theEngine.cancelScheduledEvents( @@ReloadEvent )
@@ -669,9 +426,9 @@ module MUES
 				end
 
 
-				### (CLASS) METHOD: loadCommands( config=MUES::Config )
-				### Iterate over each file in the shell commands directory, loading
-				### each one if it's changed since last we loaded
+				### Iterate over each file in the shell commands directory
+				### specified by the given MUES::Config object, loading each one
+				### if it's changed since last we loaded.
 				def loadCommands( config )
 					checkType( config, MUES::Config )
 					cmdsdir = config["CommandShell"]["CommandsDir"] or
@@ -707,9 +464,8 @@ module MUES
 				end
 
 
-				### (CLASS) METHOD: buildCommandRegistry( config=MUES::Config )
-				### Build the command registry after all the commands have a
-				### chance to load
+				### Build the command registry based on the specified
+				### <tt>config</tt> (a MUES::Config object).
 				def buildCommandRegistry( config )
 					checkType( config, MUES::Config )
 					
@@ -751,8 +507,9 @@ module MUES
 				end
 
 
-				### (CLASS) METHOD: rebuildCommandRegistry( config=MUES::Config )
-				### Rebuild the command registry after checking for updates
+				### Rebuild the command registry after checking for
+				### updates. Uses the specified <tt>config</tt> object to
+				### determine what directories to load commands from.
 				def rebuildCommandRegistry( config )
 					_debugMsg( 2, "Rebuilding command registry at #{Time.now}" )
 					@@CommandMutex.synchronize( Sync::EX ) {
@@ -762,22 +519,21 @@ module MUES
 				end
 
 
-				### (CLASS) METHOD: getCommands()
-				### Returns a list of all loaded command objects
+				### Returns an Array of all loaded command objects
 				def getCommands
 					@@CommandRegistry.values.uniq
 				end
 
 
-				### (CLASS) METHOD: getPermissableCommands( aUser )
-				### Returns the command objects that are permitted to the given
-				### user.
+				### Returns the command objects that are available to the given
+				### user based on her user account type.
 				def getPermissableCommands( aUser )
 					getCommands().find_all {|c| c.canBeUsedBy?(aUser)}
 				end
 
-				### (CLASS) METHOD: inherited( aSubClass )
+
 				### Register the specified class with the list of child classes
+				### (callback).
 				def inherited( aSubClass )
 					@@ChildClasses |= [ aSubClass ]
 				end
@@ -785,23 +541,36 @@ module MUES
 			end # class << self
 
 			
-			### Public methods
+			######
 			public
+			######
 
 			### Abstract and accessor methods 
-			abstract	:invoke
-			attr_reader	:name, :synonyms, :description
 
-			### METHOD: canBeUsedBy?( aUser=MUES::User )
-			### Returns true if the command can be used by the user
-			### specified. Returns false by default, so subclasses must supply
-			### an explicit override for this method if it is to be usable.
+			# Invoke the command. This is a virtual method which must be
+			# overridden in derivative classes.
+			abstract	:invoke
+
+			# The name by which the command is invoked
+			attr_reader	:name
+
+			# A (potentially empty) Array of synonyms for the command. 
+			attr_reader :synonyms
+
+			# The description of the command.
+			attr_reader :description
+
+
+			### Returns true if the command can be used by the user specified (a
+			### MUES::User object). Returns false by default, so subclasses must
+			### supply an explicit override for this method if it is to be
+			### usable.
 			def canBeUsedBy?( aUser )
 				checkType( aUser, MUES::User )
 				return false
 			end
 
-			### METHOD: usage()
+
 			### Return a usage string for the command
 			def usage
 				if @usage
@@ -819,13 +588,13 @@ module MUES
 		###	A B S T R A C T   C O M M A N D   S U B C L A S S E S
 		#############################################################
 
-		### User command base class
+		### User command abstract base class (a derivative of
+		### MUES::CommandShell::Command).
 		class UserCommand < Command
 
 			# Remove ourselves from the concrete classes list
 			@@ChildClasses -= [ self ]
 
-			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### User commands can always be used, so this method just returns
 			### true unconditionally.
 			def canBeUsedBy?( aUser )
@@ -836,13 +605,13 @@ module MUES
 		end # class UserCommand
 
 
-		### Creator command base class
+		### Creator command base class (a derivative of
+		### MUES::CommandShell::Command).
 		class CreatorCommand < Command
 
 			# Remove ourselves from the concrete classes list
 			@@ChildClasses -= [ self ]
 
-			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### Returns true if the specified user has 'creator' or higher
 			### permissions.
 			def canBeUsedBy?( aUser )
@@ -853,13 +622,13 @@ module MUES
 		end # class CreatorCommand
 
 
-		### Implementor command base class
+		### Implementor command base class (a derivative of
+		### MUES::CommandShell::Command).
 		class ImplementorCommand < Command
 
 			# Remove ourselves from the concrete classes list
 			@@ChildClasses -= [ self ]
 
-			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### Returns true if the specified user has 'implementor' or higher
 			### permissions.
 			def canBeUsedBy?( aUser )
@@ -870,13 +639,13 @@ module MUES
 		end # class ImplementorCommand
 
 
-		### Admin command base class 
+		### Admin command base class (a derivative of
+		### MUES::CommandShell::Command).
 		class AdminCommand < Command
 
 			# Remove ourselves from the concrete classes list
 			@@ChildClasses -= [ self ]
 
-			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### Returns true if the specified user has 'admin' or higher
 			### permissions.
 			def canBeUsedBy?( aUser )
@@ -894,9 +663,7 @@ module MUES
 		### Quit command
 		class QuitCommand < UserCommand
 
-			### METHOD: initialize()
-			### Initialize a new QuitCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'quit'
 				@synonyms			= %w{logout}
 				@description		= 'Disconnect from the server.'
@@ -905,20 +672,19 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
-			### Invoke the quit command, which generates a new UserLogoutEvent.
+			### Invoke the quit command, which generates a new
+			### MUES::UserLogoutEvent.
 			def invoke( context, args )
 				return [ MUES::UserSaveEvent.new( context.user ), MUES::UserLogoutEvent.new( context.user ) ]
 			end
 		end # class QuitCommand
 
 
-		### Quit command
+		### Help command
 		class HelpCommand < UserCommand
 
-			### METHOD: initialize()
-			### Initialize a new QuitCommand object
-			def initialize
+			### Initialize a new HelpCommand object
+			def initialize # :nodoc:
 				@name				= 'help'
 				@synonyms			= %w{}
 				@description		= 'Fetch help about a command or all commands.'
@@ -927,8 +693,9 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
-			### Invoke the quit command, which generates a new UserLogoutEvent.
+			### Invoke the help command, which generates help documentation for
+			### the specified command, or presents a table of all available
+			### commands if no command is specified.
 			def invoke( context, args )
 
 				helpTable = nil
@@ -964,9 +731,8 @@ module MUES
 		### 'Roles' command
 		class RolesCommand < UserCommand
 
-			### METHOD: initialize()
 			### Initialize a new UnloadEnvironmentCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name			= 'roles'
 				@synonyms		= %w{}
 				@description	= 'List available roles in the specified environments.'
@@ -975,9 +741,8 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
-			### Invoke the unloadenvironment command, which generates a
-			### UnloadEnvironmentEvent with the environment specifications.
+			### Invoke the unload command, which generates a
+			### UnloadEnvironmentEvent with the environment specified.
 			def invoke( context, args )
 				results = []
 				envNames = []
@@ -1024,9 +789,8 @@ module MUES
 		### 'Connect' command
 		class ConnectCommand < UserCommand
 
-			### METHOD: initialize()
 			### Initialize a new ConnectCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'connect'
 				@synonyms			= %w{play}
 				@description		= 'Connect to the specified environment in the specified role.'
@@ -1035,7 +799,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Attempt to connect the user to the environment and role
 			### specified by the arguments.
 			def invoke( context, args )
@@ -1074,9 +837,8 @@ module MUES
 		### 'Disconnect' command
 		class DisconnectCommand < UserCommand
 
-			### METHOD: initialize()
 			### Initialize a new DisconnectCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'disconnect'
 				@synonyms			= %w{}
 				@description		= 'Disconnect from the specified role in the specified environment.'
@@ -1085,7 +847,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Attempt to disconnect the user from the environment and role
 			### specified by the arguments.
 			def invoke( context, args )
@@ -1127,9 +888,8 @@ module MUES
 		### 'Debug' command
 		class DebugCommand < ImplementorCommand
 
-			### METHOD: initialize()
 			### Initialize a new DebugCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'debug'
 				@synonyms			= %w{}
 				@description		= 'Set command shell debug level.'
@@ -1138,7 +898,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Invoke the debug command
 			def invoke( context, args )
 				if args =~ /=\s*(\d)/
@@ -1157,9 +916,8 @@ module MUES
 		### 'Eval' command
 		class EvalCommand < AdminCommand
 
-			### METHOD: initialize()
 			### Initialize a new EvalCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'eval'
 				@synonyms			= %w{}
 				@description		= 'Evaluate the specified ruby code in the current object context.'
@@ -1168,7 +926,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Evaluate the specified code in the shell's current object
 			### context. This obviously is a dangerous command.
 			def invoke( context, args )
@@ -1190,9 +947,8 @@ module MUES
 		### 'Set' command
 		class SetCommand < UserCommand
 
-			### METHOD: initialize()
 			### Initialize a new SetCommand object
-			def initialize
+			def initialize # :nodoc:
 				@name				= 'set'
 				@synonyms			= %w{}
 				@description		= 'Set shell parameters.'
@@ -1201,7 +957,6 @@ module MUES
 				super
 			end
 
-			### METHOD: invoke( context=MUES::CommandShell::Context, args=String )
 			### Invoke the set command with either no args, a parameter name
 			### arg, or parameter name + new value args.
 			def invoke( context, args )

@@ -1,102 +1,123 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+#
+# This file contains event classes that are used for sending input or output to
+# and from objects within the MUES::Engine. 
+#
+# The event classes defined in this file are:
+#
+# [MUES::IOEvent]
+#	An abstract base class for Input/Output events.
+#
+# [MUES::OutputEvent]
+#	An output event class.
+#
+# [MUES::InputEvent]
+#	An input event class.
+#
+# [MUES::IOControlOutputEvent]
+#	Abstract OutputEvent class for special output.
+#
+# [MUES::PromptEvent]
+#	Output event class for prompting a user.
+#
+# [MUES::HiddenInputPromptEvent]
+#	Prompt event class for prompting a user and hiding the resultant input.
+#
+# [MUES::DebugOutputEvent]
+#	Output event class for events that carry debugging information.
+#
+# == Synopsis
+#
+#   require "mues/Events"
+#
+#   # Send a broadcast to all OutputEvent receivers
+#   engine.dispatchEvents( OuputEvent.new "The server is shutting down." )
+#
+# == Rcsid
+# 
+# $Id: ioevents.rb,v 1.6 2002/04/01 16:27:30 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=IOEvents.rb
 
-== Name
-
-IOEvents - A collection of I/O event classes
-
-== Synopsis
-
-  
-
-== Description
-
-
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 
 require "mues/events/BaseClass"
 
 module MUES
 
-	###########################################################################
-	###	A B S T R A C T   E V E N T   C L A S S E S
-	###########################################################################
+	### Abstract base class for Input/Output events.
+	class IOEvent < Event ; implements MUES::AbstractClass
 
-	### (ABSTRACT) CLASS: IOEvent < Event
-	class IOEvent < Event ; implements AbstractClass
-		attr_accessor	:data
-
-		def initialize( *args )
+		### Initialize a new Input or OutputEvent. Should be called from a
+		### derivative's initializer.
+		def initialize( *args ) # :notnew:
 			super()
 			@data = args.collect {|m| m.to_s}.join('')
 		end
 
+		# The input or output data
+		attr_accessor	:data
+
+		### Return the event as a string.
 		def to_s
 			return "%s: %s" % [ super(), @data ]
 		end
 	end
 
-	### (ABSTRACT) CLASS: ControlIOModeEvent < IOEvent
-	class ControlIOModeEvent < IOEvent ; implements AbstractClass
 
-		### :WORK: Control modes/commands (eg., NO_ECHO_MODE, LINE_MODE,
-		### CHAR_MODE, etc.)
-		NO_ECHO_MODE	= :NO_ECHO_MODE
-		LINE_MODE		= :LINE_MODE
-		CHAR_MODE		= :CHAR_MODE
-	end
-
-
-	###########################################################################
-	###	C O N C R E T E   E V E N T   C L A S S E S
-	###########################################################################
-
-	### CLASS: OutputEvent < IOEvent
+	### Output event class. See MUES::IOEvent.
 	class OutputEvent < IOEvent; end
 
-	### CLASS: ControlEvent < OutputEvent
-	class ControlEvent < OutputEvent; end
 
-	### CLASS: PromptEvent < OutputEvent
-	class PromptEvent < ControlEvent
-		def initialize( *args )
-			args << "mues> " if args.empty?
-			super( *args )
-		end
-	end
-
-	### CLASS: HiddenInputPromptEvent < PromptEvent
-	class HiddenInputPromptEvent < PromptEvent; end
-
-	### CLASS: InputEvent < IOEvent
+	### Input event class. See MUES::IOEvent.
 	class InputEvent < IOEvent; end
 
 
-	### CLASS: DebugOutputEvent < OutputEvent
-	class DebugOutputEvent < OutputEvent
-		attr_accessor :count
-		def initialize( count )
-			@count = count
+	### Abstract OutputEvent class for special output. This class adds an IO
+	### control mode command to the regular OutputEvent which is used to control
+	### the mode of display devices which have terminal controls suitable for
+	### doing so. This is to support things like pagers, no-echo mode,
+	### line-mode, etc.
+	class IOControlOutputEvent < OutputEvent ; implements MUES::AbstractClass
+	end
+
+
+	### Output event class for prompting a user. A terminal client may just
+	### print this prompt directly, while a graphical client may display a
+	### dialog box and use the event's contents as the prompt message.
+	class PromptEvent < IOControlOutputEvent
+
+		### Create and return a new PromptEvent with the specified prompt
+		### string.
+		def initialize( arg="mues> " )
+			super( arg )
 		end
 	end
+
+
+	### Prompt event class for prompting a user and hiding the resultant
+	### input. This is useful for prompting for secret or hidden input values
+	### such as passwords or other data which should not be visible to a third
+	### party. A telnet terminal may simply hide the input with the 'ECHO'
+	### option, while a graphical client may wish to present a dialog which
+	### displays asterisks for each character (or something).
+	class HiddenInputPromptEvent < PromptEvent; end
+
+
+	### Derivative of the OutputEvent class for events that carry debugging
+	### information. <em>Currently unused.</em>
+	class DebugOutputEvent < OutputEvent ; end
 
 
 end # module MUES

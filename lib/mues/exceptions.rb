@@ -1,134 +1,116 @@
 #!/usr/bin/env ruby
-#######################################################
-=begin 
+#
+# This module contains a collection of exception classes that are used throughout
+# the MUES server.
+# 
+# == Synopsis
+# 
+#   require "mues/Exceptions"
+#   raise MUES::Exception "Something went wrong."
+# 
+# == Exception Classes
+# 
+# [<b><tt>MUES::Exception</tt></b>]
+# 
+#   The base MUES exception class. Inherits from StandardError.
+# 
+# [<b><tt>MUES::EngineException</tt></b>]
+# 
+#   An error class used to indicate an error in a ((<MUES::Engine>)) object.
+# 
+# [<b><tt>MUES::EventQueueException</tt></b>]
+# 
+#   An error class used to indicate an error in a ((<MUES::EventQueue>)).
+# 
+# [<b><tt>MUES::LogError</tt></b>]
+# 
+#   An error class used to indicate an error in a log handle object.
+# 
+# [<b><tt>MUES::SecurityViolation</tt></b>]
+# 
+#   An error class used to indicate a failure of an operation due to security restrictions.
+# 
+# [<b><tt>MUES::EnvironmentError</tt></b>]
+# 
+#   An error class used to indicate an error in a ((<MUES::Environment>)).
+# 
+# [<b><tt>MUES::EnvironmentLoadError</tt></b>]
+# 
+#   An error class used to indicate an error which occurs while loading a
+#   ((<MUES::Environmment>)).
+# 
+# [<b><tt>MUES::EnvironmentUnloadError</tt></b>]
+# 
+#   An error class used to indicate an error which occurs while unloading a
+#   ((<MUES::Environmment>)).
+# 
+# [<b><tt>MUES::Reload</tt></b>]
+# 
+#   A pseudo-error class used to indicate to the listener thread that the Engine^s
+#   configuration is being reloaded.
+# 
+# [<b><tt>MUES::Shutdown</tt></b>]
+# 
+#   A server shutdown pseudo-error class used to signal server shutdown to the
+#   listener thread.
+# 
+# [<b><tt>MUES::CommandError</tt></b>]
+# 
+#   An error class used to indicate an error in a user^s command shell.
+# 
+# [<b><tt>MUES::MacroError</tt></b>]
+# 
+#   An error class used to indicate an error in a user^s MacroFilter.
+# 
+# [<b><tt>MUES::UnhandledEventError</tt></b>]
+# 
+#   An error class used to indicate that an event was dispatched to an object which
+#   did not provide a handler for it.
+# 
+# [<b><tt>MUES::EventRecursionError</tt></b>]
+# 
+#   An error class which is used to indicate that an event included itself in its
+#   own consequences. Inherits from (({ScriptError})) to avoid being caught by the
+#   worker thread^s exception handling.
+# 
+# [<b><tt>MUES::VirtualMethodError</tt></b>]
+# 
+#   An error class used to indicate a call to an unimplemented virtual
+#   method. Inherits from (({TypeError})).
+# 
+# [<b><tt>MUES::InstantiationError</tt></b>]
+# 
+#   An error class used to indicate an attempted instantiation of an abstract
+#   class. Inherits from (({TypeError})).
+# 
+# [<b><tt>MUES::SocketIOError</tt></b>]
+# 
+#   An error class used to indicate an error condition on a socket. Inherits from
+#   (({IOError})).
+# 
+# [<b><tt>MUES::ParseError</tt></b>]
+# 
+#   An error class used to indicate an error while parsing. Inherits from
+#   (({SyntaxError})).
+# 
+# == Rcsid
+# 
+# $Id: exceptions.rb,v 1.9 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
+ 
 
-= Exceptions.rb
+#require "e2mmap"
 
-== Name
-
-MUES::Exceptions - Collection of exception classes
-
-== Synopsis
-
-  require "mues/Exceptions"
-  raise MUES::Exception "Something went wrong."
-
-== Description
-
-This file contains various exception classes for use in the MUES server.
-
-== Functions
-
-Requiring this file will add the following method to the MUES namespace:
-
---- def_exception( name, message, superclass )
-
-    Define an exception class with the specified ((|name|)) (a (({Symbol})))
-    with the specified ((|message|)). The new exception class will inherit from
-    the specified ((|superclass|)), if specified, or (({StandardError})) if not
-    specified.
-
-== Classes
-
-=== MUES::Exception
-
-The base MUES exception class. Inherits from StandardError.
-
-=== MUES::EngineException
-
-An error class used to indicate an error in a ((<MUES::Engine>)) object.
-
-=== MUES::EventQueueException
-
-An error class used to indicate an error in a ((<MUES::EventQueue>)).
-
-=== MUES::LogError
-
-An error class used to indicate an error in a log handle object.
-
-=== MUES::SecurityViolation
-
-An error class used to indicate a failure of an operation due to security restrictions.
-
-=== MUES::EnvironmentError
-
-An error class used to indicate an error in a ((<MUES::Environment>)).
-
-=== MUES::EnvironmentLoadError
-
-An error class used to indicate an error which occurs while loading a
-((<MUES::Environmment>)).
-
-=== MUES::EnvironmentUnloadError
-
-An error class used to indicate an error which occurs while unloading a
-((<MUES::Environmment>)).
-
-=== MUES::Reload
-
-A pseudo-error class used to indicate to the listener thread that the Engine^s
-configuration is being reloaded.
-
-=== MUES::Shutdown
-
-A server shutdown pseudo-error class used to signal server shutdown to the
-listener thread.
-
-=== MUES::CommandError
-
-An error class used to indicate an error in a user^s command shell.
-
-=== MUES::MacroError
-
-An error class used to indicate an error in a user^s MacroFilter.
-
-=== MUES::UnhandledEventError
-
-An error class used to indicate that an event was dispatched to an object which
-did not provide a handler for it.
-
-=== MUES::EventRecursionError
-
-An error class which is used to indicate that an event included itself in its
-own consequences. Inherits from (({ScriptError})) to avoid being caught by the
-worker thread^s exception handling.
-
-=== MUES::VirtualMethodError
-
-An error class used to indicate a call to an unimplemented virtual
-method. Inherits from (({TypeError})).
-
-=== MUES::InstantiationError
-
-An error class used to indicate an attempted instantiation of an abstract
-class. Inherits from (({TypeError})).
-
-=== MUES::SocketIOError
-
-An error class used to indicate an error condition on a socket. Inherits from
-(({IOError})).
-
-=== MUES::ParseError
-
-An error class used to indicate an error while parsing. Inherits from
-(({SyntaxError})).
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#######################################################
-
-require "e2mmap"
-
-### MUD-specific errors
 module MUES
 
 	### Base exception class
@@ -141,7 +123,10 @@ module MUES
 		end
 	end
 
-	#extend Exception2MessageMapper
+	### Define an exception class with the specified <tt>name</tt> (a Symbol)
+	### with the specified <tt>message</tt>. The new exception class will
+	### inherit from the specified <tt>superclass</tt>, if specified, or
+	### <tt>StandardError</tt> if not specified.
 	def MUES.def_exception( name, message, superclass=StandardError )
 		name = name.id2name if name.kind_of?( Fixnum )
 		eClass = Class.new( superclass )
@@ -198,15 +183,13 @@ module MUES
 			super( error_message )
 		end
 	end
-
-	# General exceptions
-	def_exception :VirtualMethodError,	"Unimplemented virtual method",					TypeError
-	def_exception :InstantiationError,	"Instantiation attempted of abstract class",	TypeError
-	def_exception :SocketIOError,		"Error condition on socket.",					IOError
-	def_exception :ParseError,			"Error while parsing.",							SyntaxError
-
-
 end
+
+# General exceptions
+MUES::def_exception :VirtualMethodError,	"Unimplemented virtual method",					NoMethodError
+MUES::def_exception :InstantiationError,	"Instantiation attempted of abstract class",	TypeError
+MUES::def_exception :SocketIOError,			"Error condition on socket.",					IOError
+MUES::def_exception :ParseError,			"Error while parsing.",							SyntaxError
 
 
 

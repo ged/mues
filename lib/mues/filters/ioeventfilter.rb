@@ -1,141 +1,61 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
-
-=IOEventFilter.rb
-
-== Name
-
-IOEventFilter - An abstract base I/O event filter class
-
-== Synopsis
-
-  require "mues/filters/IOEventFilter"
-
-  class MyFilter < MUES::IOEventFilter
-    @@SortDisposition = 750
-    ...
-  end
-
-== Description
-
-IOEventFilter is an abstract base class for filter objects in an
-((<IOEventStream>)). The filters act on the contents of IOEvents, modifying
-them, creating events based on them, changing their own internal state or the
-state of an associated object based on them, or ignoring them, depending on the
-task which the filter is supposed to accomplish.
-
-The IOEventFilter class implements the Subject role of the Observer pattern, and
-objects which observe it are notified when it has pending IOEvents.
-
-== Classes
-=== MUES::IOEventFilter
-
-==== Constructor
-
---- MUES::IOEventFilter#new( sort=nil )
-
-    Create a new filter, optionally setting the sort position to
-    the value specified.
-
-==== Public Methods
-
---- MUES::IOEventFilter#<=>( anIOEventFilterObject )
-
-    Comparison -- Returns -1, 0, or 1 if the receiver sorts higher, equal
-    to, or lower than the specified object, respectively.
-
---- MUES::IOEventFilter#sortPosition
-
-    Return the value of the sortPosition attribute.
-
---- MUES::IOEventFilter#queuedInputEvents
-
-    Return the value of the queuedInputEvents attribute.
-
---- MUES::IOEventFilter#queuedOutputEvents
-
-    Return the value of the queuedOutputEvents attribute.
-
---- MUES::IOEventFilter#isFinished
-
-    Return the value of the isFinished attribute.
-
---- MUES::IOEventFilter#isFinished?
-
-    Synonym for isFinished.
-
---- MUES::IOEventFilter#shutdown
-
-    Shut the filter down, returning any events which should be dispatched on
-    behalf of the filter.
-
---- MUES::IOEventFilter#start( streamObject )
-
-    Start up the filter for the specified stream. Returns true on success.
-
---- MUES::IOEventFilter#stop( streamObject )
-
-    Stop the filter for the specified stream. Returns true on success.
-
---- MUES::IOEventFilter#queueInputEvents( *events )
-
-    Add saved input events for this filter that will be injected into the event
-    stream on the next IO loop.
-
---- MUES::IOEventFilter#queueOutputEvents( *events )
-
-    Add saved output events for this filter that will be injected into the event
-    stream on the next IO loop.
-
---- MUES::IOEventFilter#to_s
-
-    Return a stringified description of the filter
-
-==== Abstract Methods
-
---- MUES::IOEventFilter#handleInputEvents( *events )
-
-    Default filter method for input events
-
---- MUES::IOEventFilter#handleOutputEvents( *events )
-
-    Default filter method for output events
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
+#
+# This file contains the MUES::IOEventFilter class, which is an abstract base
+# class for filter objects in a MUES::IOEventStream. The filters act as links in
+# a Chain of Responsibility([Design Patterns]), acting on the contents of
+# MUES::IOEvent objects which are passed up and down the stream, modifying them,
+# creating events based on them, changing their own internal state or the state
+# of an associated object based on them, or ignoring them, depending on the task
+# which the filter is supposed to accomplish.
+# 
+# The IOEventFilter class and the IOEventStream also use the Observer pattern to
+# avoid the need to poll each filter for pending events.
+#
+# == Synopsis
+# 
+#   require "mues/filters/IOEventFilter"
+# 
+#   class MyFilter < MUES::IOEventFilter
+#     @@SortDisposition = 750
+#     ...
+#   end
+# 
+# == Rcsid
+# 
+# $Id: ioeventfilter.rb,v 1.10 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "observer"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 
 
 module MUES
-	class IOEventFilter < Object ; implements Observable, Comparable, Debuggable, AbstractClass
+
+	# An abstract base filter class for MUES::IOEventStream objects. This class
+	# implements the Comparable, Observable, and MUES::Debuggable interfaces.
+	class IOEventFilter < Object ; implements Observable, Comparable, MUES::Debuggable, MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.9 2001/11/01 16:54:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.10 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 500
 
-		### Initializer
 
-		### METHOD: new( sort=nil )
 		### Create a new filter, optionally setting the sort position to
 		### the value specified.
-		protected
 		def initialize( order=nil )
 			@sortPosition = if order.nil?
 								if self.class.const_defined? "DefaultSortPosition"
@@ -163,43 +83,53 @@ module MUES
 		end
 
 
-		###################################################
-		###	P U B L I C   M E T H O D S
-		###################################################
+		######
 		public
+		######
 
-		### Accessors
+		# The sort position of the filter, which must be a Fixnum between 0 and 1000.
 		attr_accessor	:sortPosition
-		attr_reader		:queuedInputEvents, :queuedOutputEvents, :isFinished
+
+		# The Array of input events which are pending injection into the stream.
+		attr_reader		:queuedInputEvents
+
+		# The Array of output events which are pending injection into the stream.
+		attr_reader		:queuedOutputEvents
+
+		# A flag for indicating that the filter is finished its role in the
+		# stream, and should be removed.
+		attr_reader		:isFinished
 		alias :isFinished? :isFinished
 
-		### METHOD: shutdown
-		### Shut the filter down, returning any events which should be
-		### dispatched on behalf of the filter.
-		def shutdown
-			_debugMsg( 1, "In shutdown." )
-			@isFinished = true
-			delete_observers()
-			return []
-		end
 
-		### METHOD: start( streamObject )
-		### Start up the filter for the specified stream. Returns true on success.
+		### Start filter notifications for the specified stream. Returns true on
+		### success. Filter subclasses can override this method if they need to
+		### do setup tasks before being added to the stream, but they should be
+		### sure to call this class's implementation via <tt>super()</tt>, or
+		### the filter will not notify the stream when events are pending.
 		def start( streamObject )
 			add_observer( streamObject )
 			true
 		end
 
-		### METHOD: stop( streamObject )
-		### Stop the filter for the specified stream. Returns true on success.
+
+		### Stop the filter notifications for the specified stream, returning
+		### any final events which should be dispatched on behalf of the
+		### filter. Filter subclasses can override this method if they need to
+		### do cleanup tasks before being removed from the stream, but they
+		### should be sure to call this class's implementation via
+		### <tt>super()</tt>, or the filter will continue to notify the stream
+		### of pending events.
 		def stop( streamObject )
 			delete_observer( streamObject )
+			@isFinished = true if count_observers.zero?
 			true
 		end
 
-		### METHOD: queueInputEvents( *events )
-		### Add saved input events for this filter that will be injected into the
-		### event stream on the next IO loop.
+
+		### Add input <tt>events</tt> for this filter to the queue of pending
+		### events and notify the containing MUES::IOEventStream/s that there are
+		### input events pending.
 		def queueInputEvents( *events )
 			events.flatten!
 			checkEachType( events, MUES::InputEvent )
@@ -215,9 +145,10 @@ module MUES
 			return @queuedInputEvents.size
 		end
 
-		### METHOD: queueOutputEvents( *events )
-		### Add saved output events for this filter that will be injected into the
-		### event stream on the next IO loop.
+
+		### Add output <tt>events</tt> for this filter to the queue of pending
+		### events and notify the containing MUES::IOEventStream/s that there are
+		### output events pending.
 		def queueOutputEvents( *events )
 			events.flatten!
 			checkEachType( events, MUES::OutputEvent )
@@ -233,17 +164,21 @@ module MUES
 			return @queuedOutputEvents.size
 		end
 
-		### (OPERATOR) METHOD: <=>( anIOEventFilterObject )
-		### Comparison -- Returns -1, 0, or 1 if the receiver sorts higher, equal
-		### to, or lower than the specified object, respectively.
-		def <=>( anObject )
-			checkType( anObject, MUES::IOEventFilter )
-			return ( @sortPosition <=> anObject.sortPosition ).nonzero? ||
-				@muesid <=> anObject.muesid
+
+		### Comparison -- Returns -1, 0, or 1 if the receiver sorts higher,
+		### equal to, or lower than the other filter object, respectively,
+		### according to its sort position.
+		def <=>( otherFilter )
+			checkType( otherFilter, MUES::IOEventFilter )
+			return ( @sortPosition <=> otherFilter.sortPosition ).nonzero? ||
+				@muesid <=> otherFilter.muesid
 		end
 
-		### (VIRTUAL) METHOD: handleInputEvents( *events )
-		### Default filter method for input events
+
+		### Process the specified input events and return any which are
+		### unhandled or new. Events which are returned will be injected into
+		### the stream. Filter subclasses should override this method if they
+		### wish to process input events.
 		def handleInputEvents( *events )
 			@queuedInputEventsMutex.synchronize {
 				events += @queuedInputEvents
@@ -252,8 +187,11 @@ module MUES
 			return events.flatten
 		end
 
-		### (VIRTUAL) METHOD: handleOutputEvents( *events )
-		### Default filter method for output events
+
+		### Process the specified output events and return any which are
+		### unhandled or new. Events which are returned will be injected into
+		### the stream. Filter subclasses should override this method if they
+		### wish to process output events.
 		def handleOutputEvents( *events )
 			events.flatten!
 
@@ -264,8 +202,8 @@ module MUES
 			return events.flatten
 		end
 
-		### METHOD: to_s
-		### Return a stringified description of the filter
+
+		### Return a stringified description of the filter.
 		def to_s
 			"%s filter [%d]" % [ self.class.name, @sortPosition ]
 		end

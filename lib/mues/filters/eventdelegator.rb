@@ -1,82 +1,62 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+#
+# This file contains the MUES::LoginProxy class which is a class that connects a
+# MUES::LoginSession with a MUES::IOEventStream for the purposes of authentication
+# and login for a connecting user. 
+#
+# == Synopsis
+#
+#	require "mues/filters/LoginProxy"
+#
+#	proxy = MUES::LoginProxy.new( self )
+#   proxy.queueOutputEvents( PromptEvent.new("Login: ") )
+#
+# == Rcsid
+# 
+# $Id: eventdelegator.rb,v 1.7 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=LoginProxy.rb
-
-== Name
-
-LoginProxy - A login proxy class for IOEventStreams
-
-== Synopsis
-
-  require "mues/filters/LoginProxy"
-
-== Description
-
-Instances of this class are used in IOEventStreams to do authentication and
-login for a user.
-
-== Classes
-=== MUES::LoginProxy
-==== Constructor
-
---- MUES::LoginProxy.new( session )
-
-    Initialize the LoginProxy object for the given ((|session|)) ( a
-    ((<MUES::LoginSession>)) object).
-
-==== Public Methods
-
---- MUES::LoginProxy#handleInputEvents( *events )
-
-    Handle all input until the user has satisfied login requirements, then
-    pass all input to upstream handlers.
-
---- MUES::LoginProxy#handleOutputEvents( *events )
-
-    Handle all output events by ignoring their content and returning
-    only those events that we have cached
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
 
 module MUES
-	class LoginProxy < IOEventFilter ; implements Debuggable
+
+	### A MUES::IOEventFilter class that acts as an IO proxy for a
+	### MUES::LoginSession. The proxy acts as a blockade for input and output --
+	### it only passes on events to and from the LoginSession until the user is
+	### authenticated.
+	class LoginProxy < IOEventFilter ; implements MUES::Debuggable
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.6 2001/11/01 17:42:39 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.7 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 600
 
-		### (PROTECTED) METHOD: initialize( session )
-		### Initialize the LoginProxy object for the given LoginSession.
+		### Create and return a LoginProxy object for the given +session+ (a
+		### MUES::LoginSession object).
 		def initialize( session )
 			super()
 			@session = session
 		end
 
-		### Public methods
-		public
 
-		### METHOD: handleInputEvents( *events )
-		### Handle all input until the user has satisfied login requirements, then
-		### pass all input to upstream handlers.
+		######
+		public
+		######
+
+		### InputEvent handler.
 		def handleInputEvents( *events )
 			events.flatten!
 			checkEachType( events, MUES::InputEvent )
@@ -85,9 +65,7 @@ module MUES
 		end
 
 
-		### METHOD: handleOutputEvents( *events )
-		### Handle all output events by ignoring their content and returning
-		### only those events that we have cached
+		### OutputEvent handler.
 		def handleOutputEvents( *events )
 			_debugMsg( 1, "I have #{@queuedOutputEvents.length} pending output events." )
 			ev = super()

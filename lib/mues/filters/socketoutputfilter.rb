@@ -1,139 +1,73 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
-
-=SocketOutputFilter.rb
-
-== Name
-
-SocketOutputFilter - An IP socket output filter class
-
-== Synopsis
-
-  sock = listener.accept
-  sofilter = MUES::SocketOutputFilter.new( sock )
-
-== Description
-
-Instances of this class are participants in an IOEventStream chain of
-responsibility, sending output and reading input from a TCPSocket.
-
-== Modules
-=== MUES::SocketOutputFilter::State
-
-A namespace for type constants. Contains:
-
-: State::CONNECTED
-
-  The filter contains a connected socket.
-
-: State::DISCONNECTED
-
-  The filter does not contain a connected socket.
-
-== Classes
-=== MUES::SocketOutputFilter
-
-==== Constructor
-
---- MUES::SocketOutputFilter.new( socket )
-
-    Initialize the filter with the specified ((|socket|)).
-
-==== Public Methods
-
---- MUES::SocketOutputFilter#queueOutputEvents( *events )
-
-    Add the data from the specified ((|events|)) to the output buffer for
-    transmission.
-
---- MUES::SocketOutputFilter#readBuffer
-
-    Return the filter^s read buffer.
-
---- MUES::SocketOutputFilter#writeBuffer
-
-    Return the filter^s write buffer.
-
---- MUES::SocketOutputFilter#remoteHost
-
-    Return the value of the remoteHost attribute.
-
---- MUES::SocketOutputFilter#puts( aString )
-
-    Append a string directly onto the output buffer. Useful when doing direct
-    output and flush.
-
---- MUES::SocketOutputFilter#shutdown
-
-    Shut the filter down.
-
-==== Protected Methods
-
---- MUES::SocketOutputFilter#_ioThreadRoutine( socket )
-
-    Thread routine for socket IO multiplexing. Reads data from queued output
-    events and sends it to the remote client, and creates new input events
-    from user input.
-
---- MUES::SocketOutputFilter#_parseInputBuffer( inputBuffer )
-
-    Parse input events from the given raw buffer and return the
-    (possibly) modified buffer after queueing any input events created.
-
---- MUES::SocketOutputFilter#_sendShutdownMessage( rawSocket )
-
-    Send a shutdown message to the client using unbuffered I/O on the
-    ((|rawSocket|)) specified, as we won^t be around to fetch it from
-    the buffer.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
+# 
+# This file contains the MUES::SocketOutputFilter class, which is a filter for
+# MUES::IOEventStream objects. Instances of this class are participants in an
+# IOEventStream chain of responsibility, sending output and reading input from a
+# TCPSocket.
+# 
+# == Synopsis
+# 
+#   sock = listener.accept
+#   sofilter = MUES::SocketOutputFilter.new( sock )
+# 
+# == Rcsid
+# 
+# $Id: socketoutputfilter.rb,v 1.9 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "thread"
 require "sync"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
 
 module MUES
-	class SocketOutputFilter < IOEventFilter ; implements Debuggable
 
-		# State constants
+	### A derivative of MUES::IOEventFilter that collects input from and sends
+	### output to a TCPSocket.
+	class SocketOutputFilter < IOEventFilter ; implements MUES::Debuggable
+
+		### A container module for MUES::SocketOutputFilter state contants.
 		module State
 			DISCONNECTED = 0
 			CONNECTED = 1
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.8 2001/11/01 17:52:07 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.9 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 300
+		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
+		# Legibility constants
 		NULL = "\000"
 		CR   = "\015"
 		LF   = "\012"
 		EOL  = CR + LF
 
 		### Class attributes
-		@@MTU = 4096				# Maximum Transmissable Unit
-		@@SelectTimeout = 0.1	# The number of seconds to wait in select()
 
-		### (PROTECTED) METHOD: initialize( socket [, order] )
-		### Initialize the filter
-		protected
+		# Maximum transmissable unit (chunk size)
+		@@MTU = 4096
+
+		# Number of seconds to use as a timeout in the select loop
+		@@SelectTimeout = 0.1
+
+
+		### Create and return a new socket output filter with the specified
+		### TCPSocket and an optional sort order.
 		def initialize( aSocket, order=DefaultSortPosition )
 			checkType( aSocket, IPSocket )
 			super( order )
@@ -144,23 +78,33 @@ module MUES
 			@state = State::DISCONNECTED
 			@remoteHost = aSocket.peeraddr[2]
 
-			@windowSize = { 'height' => 23, 'width' => 80 }
+			@windowSize = DefaultWindowSize.dup
 
 			@socketThread = Thread.new { _ioThreadRoutine(aSocket) }
 			@socketThread.desc = "SocketOutputFilter IO thread [fd: #{aSocket.fileno}, peer: #{@remoteHost}]"
 		end
 
 
-		#############################################################
-		###	P U B L I C   M E T H O D S
-		#############################################################
+		######
 		public
+		######
 
-		# Accessors
-		attr_reader :readBuffer, :writeBuffer, :remoteHost, :windowSize
+		# The read buffer for the filtered socket
+		attr_reader :readBuffer
 
-		### METHOD: handleOutputEvents( *events )
-		### Handle output events by appending their data to the output buffer
+		# The write buffer for the filtered socket
+		attr_reader :writeBuffer
+
+		# The name or IP of the remote host
+		attr_reader :remoteHost
+
+		# A hash describing the client's window size (<tt>'height'</tt> and
+		# <tt>'width'</tt> keys, Fixnum values).
+		attr_reader :windowSize
+
+
+		### Handle the specified output <tt>events</tt> by appending their data
+		### to the output buffer.
 		def handleOutputEvents( *events )
 			events = super( *events )
 			events.flatten!
@@ -181,7 +125,6 @@ module MUES
 		end
 
 
-		### METHOD: puts( aString )
 		### Append a string directly onto the output buffer with a
 		### line-ending. Useful when doing direct output and flush.
 		def puts( aString )
@@ -190,7 +133,6 @@ module MUES
 			}
 		end
 
-		### METHOD: write( aString )
 		### Append a string directly onto the output buffer without a line
 		### ending. Useful when doing direct output and flush.
 		def write( aString )
@@ -199,23 +141,21 @@ module MUES
 			}
 		end
 
-		### METHOD: shutdown
-		def shutdown
+		### Shut the filter down, disconnecting from the remote host.
+		def stop( streamObject )
 			@state = State::DISCONNECTED
 			@socketThread.raise Shutdown
-			super
+			super( streamObject )
 		end
 
 
-		#############################################################
-		###	P R O T E C T E D   M E T H O D S
-		#############################################################
+		#########
 		protected
+		#########
 
-		### (PROTECTED) METHOD: _ioThreadRoutine( socket )
 		### Thread routine for socket IO multiplexing. Reads data from queued
-		### output events and sends it to the remote client, and creates new
-		### input events from user input.
+		### output events, sends it to the remote client, and creates new input
+		### events from user input via the specified <tt>socket</tt>.
 		def _ioThreadRoutine( socket )
 			_debugMsg( 1, "In IO thread routine." )
 			mySocket = socket
@@ -250,9 +190,8 @@ module MUES
 		end
 
 		
-		### (PROTECTED) METHOD: _sendShutdownMessage( rawSocket )
 		### Send a shutdown message to the client using unbuffered I/O on the
-		### ((|rawSocket|)) specified, as we won't be around to fetch it from
+		### <tt>rawSocket</tt> specified, as we won't be around to fetch it from
 		### the buffer.
 		def _sendShutdownMessage( mySocket )
 			mySocket.syswrite( @writeBuffer )
@@ -260,8 +199,7 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _ioLoop( socket )
-		### Multiplex reading and writing from the given ((|socket|)) object, 
+		### Multiplex reading and writing from the given <tt>socket</tt> object, 
 		def _ioLoop( mySocket )
 			readable = [mySocket]
 			writable = []
@@ -323,9 +261,8 @@ module MUES
 		### ioLoop, too?
 
 
-		### (PROTECTED) METHOD: _handleRawInput( data )
-		### Handle the given raw input data which has just been read from the
-		### client socket.
+		### Handle the given raw input <tt>data</tt> which has just been read
+		### from the client socket.
 		def _handleRawInput( data )
 			@readBuffer += data
 			_debugMsg( 5, "Handling raw input (@readBuffer = '#{@readBuffer}', " +
@@ -338,9 +275,9 @@ module MUES
 		end
 
 		
-		### (PROTECTED) METHOD: _parseInputBuffer( inputBuffer )
-		### Parse input events from the given raw buffer and return the
-		### (possibly) modified buffer after queueing any input events created.
+		### Parse input events from the given raw <tt>inputBuffer</tt> and
+		### return the (possibly) modified buffer after queueing any input
+		### events created.
 		def _parseInputBuffer( inputBuffer )
 			newInputEvents = []
 

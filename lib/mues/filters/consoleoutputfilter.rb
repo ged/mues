@@ -1,88 +1,50 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+#
+# This file contains the MUES::ConsoleOutputFilter class, which is a derivative
+# of the MUES::IOEventFilter class. It outputs to and takes input from the
+# console on which the Engine is running. It is a singleton.
+# 
+# == Synopsis
+# 
+#   require "mues/filters/ConsoleOutputFilter"
+#   
+#   cof = MUES::ConsoleOutputFilter.instance
+# 
+# == Rcsid
+# 
+# $Id: consoleoutputfilter.rb,v 1.6 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=ConsoleOutputFilter.rb
-
-== Name
-
-ConsoleOutputFilter - A console output filter class
-
-== Synopsis
-
-  require "mues/filters/ConsoleOutputFilter"
-  
-  cof = MUES::ConsoleOutputFilter.new()
-
-== Description
-
-This class is an IOEventFilter which outputs to and takes input from the console
-on which the Engine is running. It is a singleton.
-
-== Classes
-=== MUES::ConsoleOutputFilter
-==== Public Methods
-
---- MUES::ConsoleOutputFilter#instance
-
-    Return the console output filter instance, creating it if necessary.
-
---- MUES::ConsoleOutputFilter#ioThread
-
-    Return the filter^s input thread object.
-
---- MUES::ConsoleOutputFilter#handleOutputEvents( *events )
-
-    Handle an output event by appending its data to the output buffer
-
---- MUES::ConsoleOutputFilter#handleInputEvents( *events )
-
-    Handle input events.
-
---- MUES::ConsoleOutputFilter#puts( aString )
-
-    Append a string directly onto the output buffer. Useful when doing
-    direct output and flush.
-
---- MUES::ConsoleOutputFilter#shutdown
-
-    Signal the input thread to shut down and stop the filter.
-
-==== Protected Methods
-
---- MUES::ConsoleOutputFilter#_inputThreadRoutine
-
-    Thread routine for input.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
 
 require "thread"
 require "sync"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
 
 module MUES
-	class ConsoleOutputFilter < IOEventFilter ; implements Debuggable
+
+	# A console input/output filter class. Implements MUES::Debuggable.
+	class ConsoleOutputFilter < IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.5 2001/11/01 16:54:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.6 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 300
 
+		# Legibility constants
 		NULL = "\000"
 		CR   = "\015"
 		LF   = "\012"
@@ -96,14 +58,13 @@ module MUES
 		### Make the new method private, as this class is a singleton
 		private_class_method :new
 
-		### METHOD: instance
 		### Return the console output filter instance, creating it if necessary.
 		def ConsoleOutputFilter.instance
 			@@Instance ||= new()
 		end
 
-		protected
-		def initialize
+		### Initialize the console output filter.
+		def initialize # :nodoc:
 			super()
 
 			@shutdown = false
@@ -114,16 +75,16 @@ module MUES
 		end
 
 
-		#######################################################################
-		###	P U B L I C   M E T H O D S
-		#######################################################################
+		######
 		public
+		######
 
-		# Accessors
+		# The IO thread object running in this filter
 		attr_reader :ioThread
 
-		### METHOD: handleOutputEvents( *events )
-		### Handle an output event by appending its data to the output buffer
+
+		### Handle output <tt>events</tt> by appending its data to the output
+		### buffer.
 		def handleOutputEvents( *events )
 			return nil if @shutdown
 
@@ -138,36 +99,32 @@ module MUES
 		end
 
 
-		### METHOD: handleInputEvents( *events )
-		### Handle input events
+		### Handle input <tt>events</tt>.
 		def handleInputEvents( *events )
 			return nil if @shutdown
 			super( *events )
 		end
 
 
-		### METHOD: puts( aString )
 		### Append a string directly onto the output buffer. Useful when doing
 		### direct output and flush.
 		def puts( aString )
 			$stdout.puts aString
 		end
 
-		### METHOD: shutdown
+
 		### Shut the filter down, signalling the IO thread to shut down.
-		def shutdown
+		def stop( filterObject )
 			@ioThread.raise Shutdown
-			super
+			super( filterObject )
 		end
 
 
-		#######################################################################
-		###	P R O T E C T E D   M E T H O D S
-		#######################################################################
+		#########
 		protected
+		#########
 
-		### (PROTECTED) METHOD: _inputThreadRoutine
-		### Thread routine for input.
+		### The thread routine for the filter's IO thread.
 		def _inputThreadRoutine
 			begin
 				$stdin.each {|line|

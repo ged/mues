@@ -1,165 +1,77 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin 
-
-= Config.rb
-
-== Name
-
-MUES::Config - Configuration file class for the MUES engine
-
-== Synopsis
-
-  require "mues/Config"
-
-  config = MUES::Config.new( "mues.cfg" )
-
-  config["serverPort"]						# -> 6565
-  config["serverAddress"]					# -> "0.0.0.0"
-
-== Description
-
-Configuration file reader/writer class. Given an IO object, a filename, or a
-String with configuration contents, this class parses the configuration and
-returns an instantiated configuration object that provides a hash interface to
-the config values. MUES::Config objects can also dump the configuration back
-into a string for writing.
-
-The format of the config file loosely follows the philosophy of the Apache
-config file. Sections are delimited by (({<Section>}))/(({</Section>})) blocks,
-and attributes are set in key/value pairs separated by whitespace. For example:
-
-  RootDir		/mud
-  LogFile		logs/FaerieMUD.log
-
-  <ListenSocket>
-	  BindPort		6565
-	  BindAddress	0.0.0.0
-  </ListenSocket>
-
-This would yield an object that you could use thusly:
-
-  Dir.chdir configObj["RootDir"]
-  log = File.open( configObj["LogFile"],  )
-  sock = TCPServer.new( configObj["ListenSocket"]["BindAddress"],
-						configObj["ListenSocket"]["BindPort"] )
-
-
-== Classes
-=== MUES::Config
-
-This class is the main configuration class.
-
-==== Protected Methods
-
---- MUES::Config#_initFromFile( sourceFile=String )
-
-    Load the configuration objects from the file specified by ((|sourceFile|)).
-
---- MUES::Config#_initFromIo( sourceIo=IO )
-
-    Load the configuration values from the specified ((|sourceIo|)) IO object.
-
---- MUES::Config#_parseConfig( content=Array )
-
-    Parse the configuration from the array of (({Strings})) given, and return a
-    ((<MUES::Config::Section>)) object.
-
-==== Public Methods
-
---- MUES::Config#[ key ]
-
-    Element reference operator -- Return the value associated with the specified
-    ((|key|)) in the configuration. Returns either a (({String})) in the case of
-    a simple value, or a ((<MUES::Config::Section>)) if the ((|key|)) refers to
-    a section of the configuration file.
-
---- MUES::Config#[ key ] = value
-
-    Element assignment operator -- Store the ((|value|)) in the configuration
-    associated with the specified ((|key|)). The ((|value|)) argument can be
-    either a (({String})) or a ((<MUES::Config::Section>)) object.
-
---- MUES::Config#dump()
-
-    Return a (({String})) with a dump of the current configuration.
-
---- MUES::Config#new( [source] )
-
-    Instantiate a new (({MUES::Config})) object, optionally reading
-    configuration values from optional ((|source|)) argument. The ((|source|))
-    argument may be either a (({String})), in which case it is assumed to be the
-    name of a file which contains configuration data, or an (({IO})) object
-    which is opened to a configuration data source.
-
-=== MUES::Config::Section
-
-Instances of this class are sections of the configuration file. It follows the
-same basic interface for data access as the ((<MUES::Config>)) class.
-
-==== Public Methods
-
---- MUES::Config::Section#[ key ]
-
-    Element reference operator -- Return the value associated with the specified
-    ((|key|)) in the object^s configuration section. Returns either a
-    (({String})) in the case of a simple value, or a (({MUES::Config::Section}))
-    if the ((|key|)) refers to a subsection section of the object^s section.
-
---- MUES::Config::Section#[ key ] = value
-
-    Element assignment operator -- Store the ((|value|)) in the configuration
-    associated with the specified ((|key|)). The ((|value|)) argument can be
-    either a (({String})) or a (({MUES::Config::Section})) object.
-
---- MUES::Config::Section#dump( [indent] )
-
-    Return a (({String})) with a dump of the current configuration section,
-    indented to ((|indent|)) spaces, if specified, or not indented if
-    ((|indent|)) is not specified.
-
---- MUES::Config::Section#has_key?( key )
-
-	Aliases: (({key?})), (({include?})).
-
-	Returns (({true})) if the section has a configuration value associated with
-	the given ((|key|)).
-
---- MUES::Config::Section#initialize( sectionName )
-
-    Initialize this config section with the name specified
+#
+# This module contains the MUES::Config class, which is a configuration file
+# reader/writer class. Given an IO object, a filename, or a String with
+# configuration contents, this class parses the configuration and returns an
+# instantiated configuration object that provides a hash interface to the config
+# values. MUES::Config objects can also dump the configuration back into a
+# string for writing.
+# 
+# The format of the config file loosely follows the philosophy of the Apache
+# config file. Sections are delimited by <tt><Section></tt>/<tt></Section></tt>
+# blocks, and attributes are set in key/value pairs separated by whitespace. For
+# example:
+# 
+#   RootDir     /mud
+#   LogFile     logs/FaerieMUD.log
+# 
+#   <ListenSocket>
+#     BindPort      6565
+#     BindAddress   0.0.0.0
+#   </ListenSocket>
+# 
+# This would yield an object that you could use like this:
+# 
+#   Dir.chdir configObj["RootDir"]
+#   log = File.open( configObj["LogFile"],  )
+#   sock = TCPServer.new( configObj["ListenSocket"]["BindAddress"],
+#                         configObj["ListenSocket"]["BindPort"] )
+# 
+# == Synopsis
+# 
+#   require "mues/Config"
+# 
+#   config = MUES::Config.new( "mues.cfg" )
+# 
+#   config["serverPort"]        # -> 6565
+#   config["serverAddress"]     # -> "0.0.0.0"
+# 
+# == Rcsid
+# 
+# $Id: config.rb,v 1.7 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-((<URL:http://language.perl.com/misc/Artistic.html>)))
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 
 module MUES
 
-	def_exception :ConfigFormatError, "Syntax error in config file",		SyntaxError
+	### Exception class to indicate a problem with parsing the configuration file.
+	def_exception :ConfigFormatError, "Syntax error in config file", SyntaxError
 
+	### A configuration file reader/writer class - this reads configuration
+	### values from a String (after potentially having first read it in from an
+	### IO object), and creates one or more MUES::Config::Section objects to
+	### represent the configured values.
 	class Config < Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.6 2001/11/01 16:54:06 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.7 2002/04/01 16:27:31 deveiant Exp $
 
-		### METHOD: initialize( sourceIoOrFileName = nil )
-		### Initialize the configuration, optionally loading the configuration
-		### parameters from an IO object or the file named.
-		protected
+		### Return a new configuration object, optionally loading the
+		### configuration parameters from an IO object or the file named.
 		def initialize( source = nil )
 			unless source.nil? then
 				if source.is_a?( IO )
@@ -177,35 +89,30 @@ module MUES
 		end
 
 
-		#######################################################################
-		###	P U B L I C   M E T H O D S
-		#######################################################################
+		######
 		public
+		######
 
-		### METHOD: [ key ]
 		### Look up a value in the config.
 		def []( key )
 			@mainSection[ key ]
 		end
 
-		### METHOD: [ key ] = value
 		### Set the value in the configuration
 		def []=( key, value )
 			@mainSection[ key ] = value
 		end
 
-		### METHOD: dump()
 		### Dump the configuration file into a String and return it
 		def dump
 			@mainSection.dump
 		end
 
-		#######################################################################
-		###	P R O T E C T E D   M E T H O D S
-		#######################################################################
+		
+		#########
 		protected
+		#########
 
-		### (PROTECTED) METHOD: _initFromIo( source )
 		### Load the configuration values from an IO object
 		def _initFromIo( source )
 			checkType( source, ::IO )
@@ -213,7 +120,6 @@ module MUES
 			_parseConfig( source.readlines )
 		end
 
-		### (PROTECTED) METHOD: _initFromFile( source )
 		### Load the configuration objects from the file specified
 		def _initFromFile( source )
 			checkType( source, ::String )
@@ -222,9 +128,8 @@ module MUES
 			_initFromIo( io )
 		end
 
-		### (PROTECTED) METHOD: _parseConfig( contentArray )
-		### Parse the configuration from the array of Strings given, and return
-		### a section object.
+		### Parse the configuration from the array of Strings given, and return a
+		### section object.
 		def _parseConfig( contentArray )
 			checkType( contentArray, ::Array )
 
@@ -317,14 +222,15 @@ module MUES
 			return mainSection
 		end
 
-		### Configuration section class
+		### Configuration section class -- This class stores the actual
+		### configuration values as keys in a pseudo-hash. 
 		class Section < Object
 
-			attr_reader :name
-
-			### METHOD: initialize( sectionName )
-			### Initialize this config section with the name specified
+			#########
 			protected
+			#########
+
+			### Return a new config section object with the <tt>sectionName</tt> specified.
 			def initialize( sectionName )
 				checkType( sectionName, ::String )
 				@name = sectionName
@@ -332,13 +238,15 @@ module MUES
 				super()
 			end
 
-
-			###################################################################
-			###	P U B L I C   M E T H O D S
-			###################################################################
+			######
 			public
+			######
 
-			### METHOD: dump( indent = 0 ) -> aString
+			### Section name
+			attr_reader :name
+
+			### Dump the configuration section as a string, indented by
+			### <tt>indent</tt> character.
 			def dump( indent=0 )
 				dumped = ""
 				indentStr = "\t" * indent
@@ -369,15 +277,13 @@ module MUES
 				return dumped
 			end
 
-			### METHOD: [ key ]
-			### Get the configuration value with the name specified.
+			### Get the configuration value with the name specified by +key+.
 			def []( key )
 				checkType( key, ::String )
 				return @values[ key.downcase ]
 			end
 
-			### METHOD: [ key ] = value
-			### Set the configuration value specified by name to the value
+			### Set the configuration value specified by +key+ to the +value+
 			### specified.
 			def []=( key, value )
 				checkType( key, ::String )
@@ -386,10 +292,8 @@ module MUES
 				@values[ key.downcase ] = value
 			end
 
-			### METHOD: has_key?( key )
-			### METHOD: key?( key )
-			### METHOD: include?( key )
-			### Returns true if the configuration section has the key specified
+			### Returns true if the configuration section has the key
+			### specified. <EM>Aliases:</EM> <tt>key?</tt>, <tt>include?</tt>.
 			def has_key?( key )
 				@values.has_key?( key.downcase )
 			end

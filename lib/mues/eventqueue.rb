@@ -1,131 +1,53 @@
 #!/usr/bin/env ruby
-#################################################################
-=begin 
-
-= EventQueue.rb
-== Name
-
-MUES::EventQueue - a scalable thread work crew class for the FaerieMUD server.
-
-== Synopsis
-
-  require "mues/EventQueue"
-
-  queue = MUES::EventQueue.new( 2, 10, 1.5, events )
-  queue.enqueue( moreEvents )
-
-== Description
-
-MUES::EventQueue is a thread work crew for the MUES Engine. It^s still experimental at
-this point.
-
-== Classes
-
-=== MUES::EventQueue
-==== Public Methods
-
---- MUES::EventQueue#<<( *events )
-
-    Alias for ((<MUES::EventQueue#enqueue>)).
-
---- MUES::EventQueue#dequeue( [nonBlocking] )
-
-    Remove and return a pending event from the queue. If ((|nonBlocking|)) is
-    set to (({false})) (the default), the call will block until there is an
-    event to return. If ((|nonBlocking|)) is (({true})), the method will return
-    nil if there aren^t any currently queued events.
-
---- MUES::EventQueue#enqueue( *events )
-
-    Add the specified ((|events|)) to the end of the queue of pending events.
-
---- MUES::EventQueue#halt()
-
-    Forcefully halt the queue, killing any current worker threads.
-
---- MUES::EventQueue#priorityEnqueue( *events )
-
-    Add the specified ((|events|)) to the beginning of the queue of pending events.
-
---- MUES::EventQueue#running?
-
-    Returns (({true})) if the queue is currently started and running.
-
---- MUES::EventQueue#shutdown( [secondsToWait] )
-
-    Inform the supervisor thread that the queue needs to be shut down. If the
-    optional ((|secondsToWait|)) argument is specified, the supervisor will wait
-    the specified number of seconds before killing any worker threads that are
-    still running. If ((|secondsToWait|)) is (({0})) (the default), the
-    supervisor waits on all worker threads. Returns an array of any unprocessed
-    events that remained in the queue.
-
---- MUES::EventQueue#start()
-
-    Start the supervisor thread and begin processing events.
-
-==== Protected Methods
-
---- MUES::EventQueue#_killWorkerThread( workerThread )
-
-    Kill the specified ((|workerThread|)) and join it immediately.
-
---- MUES::EventQueue#_dispatchEvent( event )
-
-    Dispatch the given ((|event|)) to the handlers which have registered themselves
-    with the event^s class. See ((<MUES::Event.RegisterHandlers>)).
-
---- MUES::EventQueue#_startWorker()
-
-    Start a new worker thread.
-
---- MUES::EventQueue#_supervisorThreadRoutine()
-
-    The supervisor thread routine.
-
---- MUES::EventQueue#_workerThreadRoutine()
-
-    The worker thread routine.
-
---- MUES::EventQueue#initialize( [minWorkers[, maxWorkers[, threadThreshold[, safeLevel]]]] )
-
-    Initialize the queue object. The ((|minWorkers|)) argument specifies the
-    minimum number of threads which should be running at all times, and the
-    ((|maxWorkers|)) specifies the maximum number. The ((|threadThreshold|))
-    value specifies the number of seconds the supervisor thread should wait
-    before either starting or killing a worker thread in reaction to the queue^s
-    event load. The ((|safeLevel|)) argument specifies what (({$SAFE})) should
-    be set to inside of the worker threads for security. 
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
+# 
+# MUES::EventQueue is a thread work crew/thread pool for dispatching MUES Engine
+# events. It provides a way of managing the execution of many sequential tasks
+# in a task-per-thread model without the expense of creating and destroying a
+# thread for each event which requires execution. It contains a supervisor
+# thread, which is responsible for maintaining a pool of worker threads which it
+# starts and kills as they become more or less tasked. As events are enqueued
+# (via #enqueue), they are retrieved by a worker thread and executed. If the
+# execution of the event creates result events, they are enqueued after
+# execution, and the thread goes back into the pool.
+# 
+# == Synopsis
+# 
+#   require "mues/EventQueue"
+# 
+#   queue = MUES::EventQueue.new( 2, 10, 1.5, events )
+#   queue.enqueue( moreEvents )
+# 
+# == Rcsid
+# 
+# $Id: eventqueue.rb,v 1.10 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "thread"
 #require "sync"	<-- ConditionVariable doesn't grok these
 
-require "mues/Namespace"
+require "mues"
 require "mues/WorkerThread"
 require "mues/Exceptions"
 require "mues/Events"
 
 module MUES
 
-	### Thread work group class
-	class EventQueue < Object ; implements Debuggable
+	### A scalable thread work crew class
+	class EventQueue < Object ; implements MUES::Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.9 2001/11/01 17:06:49 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.10 2002/04/01 16:27:31 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2
@@ -133,10 +55,10 @@ module MUES
 		@@DefaultThreshold	= 0.2
 		@@DefaultSafeLevel	= 2
 
-		### (PROTECTED) METHOD: initialize( minWorkers=Fixnum, maxWorkers=Fixnum,
-		###											threadThreshold=Float, safeLevel=Fixnum )
-		### Initialize the queue object
-		protected
+
+		### Create and return a new MUES::EventQueue object with the specified
+		### configuration. The queue will not be running -- you'll need to call
+		### #start before events will be processed.
 		def initialize( minWorkers=@@DefaultMinWorkers, 
 					    maxWorkers=@@DefaultMaxWorkers, 
 					    thresh=@@DefaultThreshold, 
@@ -168,16 +90,34 @@ module MUES
 			@supervisorMutex = Mutex.new
 		end
 
-		###########################################################
-		###	P U B L I C   M E T H O D S
-		###########################################################
+
+		######
 		public
+		######
 
-		### Attribute accessors
-		attr_accessor :minWorkers, :maxWorkers, :threshold
-		attr_reader	:threadCount, :idle, :supervisor, :idleWorkers, :workers
+		# The number of minimum workers to maintain
+		attr_accessor :minWorkers
 
-		### METHOD: start()
+		# The maximum number of works to allow to run at any time
+		attr_accessor :maxWorkers
+
+		# The length of time, in seconds, that the supervisor thread should
+		# pause at the end of each cycle.
+		attr_accessor :threshold
+
+
+		# The supervisor thread object
+		attr_reader :supervisor
+
+		# The ThreadGroup containing the worker threads not currently
+		# dispatching an event.
+		attr_reader :idleWorkers
+
+		# The ThreadGroup containing the worker threads which are current
+		# dispatching an event.
+		attr_reader :workers
+
+
 		### Start the supervisor thread and begin processing events
 		def start
 			_debugMsg( 1, "In start()" )
@@ -197,8 +137,7 @@ module MUES
 			return true
 		end
 
-		### METHOD: enqueue( *events )
-		### Add the specified events to the end of the queue of pending events
+		### Add the specified +events+ to the end of the queue
 		def enqueue( *events )
 			events.flatten!
 			return false if events.empty?
@@ -214,12 +153,11 @@ module MUES
 			return true
 		end
 
-		### METHOD: <<( *events )
-		### Alias for enqueue( events )
+		### Alias for #enqueue
 		alias :<< :enqueue
 
-		### METHOD: priorityEnqueue( events=[ Event ] )
-		### Add the specified events to the beginning of the queue of pending events
+
+		### Add the specified +events+ to the beginning of the queue.
 		def priorityEnqueue( *events )
 			events.flatten!
 			checkEachType( events, Event )
@@ -234,8 +172,10 @@ module MUES
 		end
 
 
-		### METHOD: dequeue()
-		### Remove and return a pending event from the queue (if any)
+		### Remove and return a pending event from the queue (if any). If
+		### nonBlocking is +true+, a ThreadError will be raised if there are no
+		### events in the queue; otherwise the call will block until an event
+		### becomes available.
 		def dequeue( nonBlocking=false )
 			_debugMsg( 1, "In dequeue( nonBlocking = #{nonBlocking} )." )
 
@@ -276,9 +216,8 @@ module MUES
 		end
 
 
-		### METHOD: shutdown( secondsToWait )
 		### Inform the supervisor thread that the queue needs to be shut down, and
-		### give it secondsToWait seconds to finish up. Returns any array of any
+		### give it +secondsToWait+ seconds to finish up. Returns an array of any
 		### unprocessed events that were in the queue.
 		def shutdown( timeout=0 )
 			discardedEvents = []
@@ -326,7 +265,6 @@ module MUES
 		end
 
 
-		### METHOD: halt()
 		### Halt all queue threads forcefully.
 		def halt
 			_debugMsg( 1, "Forcefully halting all threads." )
@@ -368,20 +306,17 @@ module MUES
 			return true
 		end
 
-		### METHOD: running?
-		### Returns true if the queue is currently started and running
+		### Returns +true+ if the queue is currently started and running
 		def running?
 			return @running
 		end
 
 
-		###########################################################
-		###	P R O T E C T E D   M E T H O D S
-		###########################################################
+		#########
 		protected
+		#########
 
-		### (PROTECTED) METHOD: _supervisorThreadRoutine()
-		### The supervisor thread work method.
+		### The supervisor thread routine.
 		def _supervisorThreadRoutine
 
 			# Define a thread group where threads go when they're killed off
@@ -482,8 +417,7 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _workerThreadRoutine()
-		### The worker thread work method.
+		### The worker thread routine.
 		def _workerThreadRoutine( threadNumber )
 			_debugMsg( 1, "Worker #{WorkerThread.current.id} reporting for duty." )
 			$SAFE = @safeLevel
@@ -512,9 +446,7 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _dispatchEvent( event )
-		### Dispatch the given event to the handlers which have registered themselves
-		###		with the event's class.
+		### Dispatch the given +event+.
 		def _dispatchEvent( event )
 			unless event.is_a?( Event ) then
 				raise ArgumentError, "Argument '#{event.class.name}' is not an event object."
@@ -557,8 +489,7 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _startWorker()
-		### Start a new worker thread
+		### Start a new worker thread.
 		def _startWorker
 			@workerCount += 1
 			_debugMsg( 1, "Creating new worker thread (count is #{@workerCount})." )
@@ -571,7 +502,6 @@ module MUES
 		end
 
 
-		### (PROITECTED) METHOD: _killWorkerThread( workerThread )
 		### Kill the specified worker thread and join it immediately.
 		def _killWorkerThread( workerThread )
 			raise ArgumentError, "Cannot kill the current thread" if workerThread == Thread.current

@@ -1,190 +1,30 @@
 #!/usr/bin/ruby -w
-#####################################################################
-=begin  
+# 
+# This file contains the TableAdapter class, which is an class interacting with a
+# SQL DBMS via an adapter object.
+# 
+# == Synopsis
+#
+# 	require "tableadapter/Mysql"
+#	
+#	MyAdapter = TableAdapterClass( 'myDb', 'myTable', 'myUsername', 'myPass' )
+#	row5 = MyAdapter.lookup( 5 )
+# 
+# == Rcsid
+# 
+# $Id: Mysql.rb,v 1.7 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-= Mysql
-== Name
-
-Mysql.rb - The MySQL tableadapter class
-
-== Synopsis
-
-	
-== Description
-
-This class 
-
-== Classes
-=== TableAdapter::ObjectCache
-==== Overridden Methods
-
---- ObjectCache#[]( key )
-
-    Key lookup
-
---- ObjectCache#[]=( key, val )
-
-	Element assignment
-
---- initialize( *args )
-
-    Initialize the ObjectCache object
-
-=== TableAdapter::RowState < Hash
-==== Overridden Methods
-
---- RowState#[ column ]= value
-
-    Set the value of the specified column to the specified value
-
-==== Methods
-
---- initialize( default=nil )
-
-    Initialize the row state hash
-
---- setState( hash )
-
-    Set the hash values and checksum of the row data to those of the
-    specified hash
-
---- modifiedFields()
-
-    Return an array of all fields which have been modified since this
-    object was last retrieved from the database.
-
---- checksum()
-
-    Returns a 20-character (MD5 hexdigest) checksum String for the data
-    fields of this object.
-
---- hasChanged?()
-
-    Returns true if the data in the row state has changed
-
---- modified?()
-
-    Returns true if the fields have been modified, even if they were set
-    to the same values as they previously had.
-
-=== TableAdapter
-==== Public Class Methods
--- TableAdapter.dbKey
-
-   Returns a string which can be used to uniquely identify the table this class
-   abstracts. The string is of the form:
-
-     '((|host|)):((|database|)):((|username|))'
-
--- TableAdapter.tableKey
-
-   Returns a string which can be used to uniquely identify the table this class
-   abstracts. The string is of the form:
-
-     "#{dbKey()}:table"
-
--- TableAdapter.tableInfo
-
-   Returns a (possible cached) (({Hash})) of table information like that
-   returned by ((<TableAdapter.fetchTableInfoHash()>)).
-
--- TableAdapter.lookup( ((|*idArray|)) )
-
-   Returns an array of objects whose rowids are in ((|idArray|)).
-
--- TableAdapter.primaryKey
-
-   Returns the name of the primary key of the abstracted table.
-
--- TableAdapter.columnInfoTable
-
-   Returns a (({String})) with a human-readable table of fields information for
-   this class.
-
--- TableAdapter.dbHandle
-
-   Return a database connection to the database this class's table is in.
-
--- fetchTableInfoHash( ((|tableName|)) )
-
-   Returns a (({Hash})) of field information about the table this class
-   abstracts. The hash is of the form:
-
-	 { ((|columnName|)) => ((|ColumnInfo|)) }
-
-
--- TableAdapter.quoteValuesForField( ((|field|)), ((|*values|)) )
-
-   Returns the specified array of ((|values|)) properly quoted for the
-   ((|field|)) specified.
-
--- TableAdapter.flagList( flags )
-
-   Return an (({Array})) of flag names for the ((|flags|)) given.
-
--- TableAdapter.table
-
-   Returns the table associated with this class.
-
--- TableAdapter.database
-
-   Returns the database associated with this class.
-
--- TableAdapter.host
-
-   Returns the host associated with this class.
-
--- TableAdapter.username
-
-   Returns the username associated with this class.
-
-==== Protected class methods
--- TableAdapter.password
-
-   Returns the table associated with this class.
-
-==== Protected instance methods
-
--- TableAdapter#initialize( aRowHash=nil )
-
-   Instantiate the adapter object. If the optional row hash is given, sets the
-   row state of the object to the values contained in the hash.
-
-==== Public instance methods
-
--- TableAdapter#store
-
-   Store the row in the database.
-
--- TableAdapter#delete( cascade=false )
-
-   Delete the row this object abstracts. Note that this doesn't affect the
-   object's state except to delete its rowid (primary key). The ((|cascade|))
-   parameter isn't used yet, but will eventually when the object-relational
-   stuff works.
-
--- TableAdapter#method_missing( aSymbol, *args )
-
-   Create and call column methods.
-
--- TableAdapter#rowid
-
-   Returns the value of the primary key column for this row.
-
--- TableAdapter#rowid=((|value|))
-
-   Sets the value of the primary key column for this row to the ((|value|))
-   specified.
-
-==== ClassFactory Function
-
--- TableAdapterClass( db, table, user, password, host = nil )
-
-   Create and return an adapter class with class attributes set to the specified
-   values. See the synopsis for examples.
-
-=end
-#####################################################################
 
 require "mysql"
 require "weakref"
@@ -194,121 +34,41 @@ require "md5"
 #require "translucenthash"
 require "tableadapter/Search"
 
+### An exception class for indicating an internal problem in an adapter.
 class TableAdapterError < StandardError; end
+
+
+### The main adapter class
 class TableAdapter
 
-	### Inner class -- reference-counted object cache
-	class ObjectCache < Hash
+	### Pre-declarations for inner classes (real definitions at the bottom)
 
-		### (OVERRIDDEN) METHOD: initialize( *args )
-		### Initialize the ObjectCache object
-		def initialize( *args )
-			super( *args )
-			@mutex = Sync.new
-		end
+	class ObjectCache < Hash ; end
+	class RowState < Hash ; end
 
-		### (OVERRIDDEN) METHOD: []( key )
-		### Key lookup
-		def []( key )
-			return nil unless self.key?( key )
 
-			### Synchronize to avoid screwing up the GC setting with multiple
-			### threads
-			@mutex.synchronize( Sync::EX ) {
+	#################################################################
+	###	I N I T I A L I Z E R
+	#################################################################
 
-				# Disable garbage collection while we fetch the object behind
-				# the weak reference
-				gcWasDisabled = GC.disable
+	### Initialize an adapter object, optionally setting the state of the
+	### abstracted row to the values in the row hash specified.
+	def initialize( row=nil )
+		@row = RowState.new
 
-				# Attempt to fetch the object and then turn garbage-collection
-				# back on
-				rval = nil
-				begin
-					if super(key).weakref_alive?
-						rval = super(key).__getobj__
-					end
-
-				rescue RefError
-					rval = nil
-
-				ensure
-					GC.enable unless gcWasDisabled
-				end
-			}
-			
-			return rval
-		end
-
-		### (OVERRIDDEN) METHOD: []=( key, val )
-		### Element assignment
-		def []=( key, val )
-			super( key, WeakRef.new(val) )
-			return val
+		if row.nil?
+			@@oCache[ self.class.tableKey() ] ||= ObjectCache.new
+		elsif row.is_a?( Hash )
+			@row.setState( row )
+		else
+			raise ArgumentError, "Row must be a hash"
 		end
 	end
 
 
-	### Inner class -- checksumming row data hash
-	class RowState < Hash
-
-		### METHOD: initialize( default=nil )
-		### Initialize the row state hash
-		def initialize( default=nil )
-			super( default )
-
-			@savedChecksum = checksum()
-			@modifiedFields = {}
-			@mutex = Sync.new
-		end
-
-		### (OVERRIDDEN) METHOD: [ column ]= value
-		### Set the value of the specified column to the specified value
-		def []=( col, val )
-			@mutex.synchronize(Sync::EX) {
-				super( col, val )
-				@modifiedFields[ col ] = 1
-			}
-		end
-
-		### METHOD: setState( hash )
-		### Set the hash values and checksum of the row data to those of the
-		### specified hash
-		def setState( hash )
-			@mutex.synchronize(Sync::EX) {
-				replace( hash )
-				@savedChecksum = checksum()
-				@modifiedFields = {}
-			}
-		end
-
-		### METHOD: modifiedFields()
-		### Return an array of all fields which have been modified since this
-		### object was last retrieved from the database.
-		def modifiedFields
-			return @modifiedFields.keys.uniq
-		end
-
-		### METHOD: checksum()
-		### Returns a 20-character (MD5 hexdigest) checksum String for the data
-		### fields of this object.
-		def checksum
-			MD5.new( keys.sort.collect {|k| "#{k}=#{self[k]}"}.join(':') ).hexdigest
-		end
-
-		### METHOD: hasChanged?()
-		### Returns true if the data in the row state has changed
-		def hasChanged?
-			checksum() != @savedChecksum
-		end
-
-		### METHOD: modified?()
-		### Returns true if the fields have been modified, even if they were set
-		### to the same values as they previously had.
-		def modified?
-			return @modifiedFields.length > 0
-		end
-		
-	end
+	#################################################################
+	###	C L A S S   C O N S T A N T S
+	#################################################################
 
 	### :GENERICIZE: Constants are, obviously, Mysql-specific
 	### Class constants
@@ -348,8 +108,8 @@ class TableAdapter
 		"BINARY"		=> MysqlField::BINARY_FLAG
 	}
 
-	Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-	Rcsid = %q$Id: Mysql.rb,v 1.6 2001/11/01 17:57:25 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+	Rcsid = %q$Id: Mysql.rb,v 1.7 2002/04/01 16:27:29 deveiant Exp $
 
 
 	###########################################################################
@@ -364,31 +124,29 @@ class TableAdapter
 	### Flag: Print a warning every time we alias a real method out of the way
 	@@printMethodClashWarnings = true
 
+
 	###########################################################################
 	###	C L A S S   M E T H O D S
 	###########################################################################
 	class << self
 
-		### (CLASS) METHOD: printMethodClashWarnings?
 		### Returns the value of the flag that controls method clash warnings
 		### for redefined methods
 		def printMethodClashWarnings?
 			@@printMethodClashWarnings
 		end
 
-		### (CLASS) METHOD: printMethodClashWarnings=( trueOrFalse )
-		### Turn on or off the method clash warnings for redefined methods
+		### Turn the method clash warnings for redefined methods on or off 
 		def printMethodClashWarnings=( trueFalse )
 			raise TypeError, "Flag must be true or false" unless
 				trueFalse == true || trueFalse == false
 			@@printMethodClashWarnings = trueFalse
 		end
 
-		### (CLASS) METHOD: dbKey()
 		### Returns a string which uniquely identifies the particular database
 		### this class's table lives in. The returned string is of the form:
 		###
-		###	'host:database:username'
+		###	  'host:database:username'
 		###
 		def dbKey
 			unless database && database.is_a?( String ) && database.length > 0
@@ -399,11 +157,10 @@ class TableAdapter
 		end
 
 
-		### (CLASS) METHOD: tableKey()
 		### Returns a string which can be used to uniquely identify the table
 		### this class abstracts. The string is of the form:
 		###
-		###	"#{dbKey()}:table"
+		###	  "#{dbKey()}:table"
 		###
 		def tableKey
 			unless table && table.is_a?( String ) && table.length > 0
@@ -414,17 +171,15 @@ class TableAdapter
 		end
 
 
-		### (CLASS) METHOD: tableInfo()
 		### Returns a (possible cached) hash of table information like that
-		### returned by (({fetchTableInfoHash()}))
+		### returned by #fetchTableInfoHash.
 		def tableInfo
 			@@tableInfo[tableKey] ||= fetchTableInfoHash( table )
 		end
 
 
-		### (CLASS) METHOD: lookup( idArray ) {|obj| block }
 		### Returns an array of objects which match the rows of the abstracted
-		### table whose rowids are in the idArray specified.
+		### table whose rowids are in the <tt>ids</tt> specified.
 		def lookup( *ids )
 			ids.collect! {|elem| elem.to_a}.flatten!.compact!
 			raise ArgumentError, "No ids specified." unless ids.length > 0
@@ -494,7 +249,7 @@ class TableAdapter
 
 
 		### :GENERICIZE: Abstract this to the db-specific module
-		### (CLASS) METHOD: primaryKey()
+
 		### Returns the name of the primary key of the abstracted table.
 		def primaryKey
 			### :FIXME: Doesn't handle multiple-column primary keys yet
@@ -503,7 +258,7 @@ class TableAdapter
 
 
 		### :GENERICIZE: Abstract this (if it's kept at all)
-		### (CLASS) METHOD: columnInfoTable()
+
 		### Returns a String with a human-readable table of fields information
 		### for this class
 		def columnInfoTable
@@ -526,7 +281,7 @@ class TableAdapter
 
 
 		### :GENERICIZE: Abstract this (if it's kept at all)
-		### (CLASS) METHOD: dbHandle()
+
 		### Open, cache, and return a database connection to the database this
 		### class's table is in
 		def dbHandle
@@ -540,11 +295,10 @@ class TableAdapter
 		end
 
 
-		### (CLASS) METHOD: fetchTableInfoHash( tableName )
 		### Returns a hash of field information about the table this class
 		### abstracts. The hash is of the form:
 		###
-		###	{ String(columnName) => MysqlField(ColumnInfo) }
+		###	  { String(columnName) => MysqlField(ColumnInfo) }
 		###
 		def fetchTableInfoHash( table )
 			dbh = dbHandle()
@@ -573,7 +327,6 @@ class TableAdapter
 		end
 
 
-		### (CLASS) METHOD: quoteValuesForField( fieldName, *values )
 		### Returns the specified array of values properly quoted for the field
 		### specified.
 		def quoteValuesForField( field, *values )
@@ -613,7 +366,6 @@ class TableAdapter
 		end
 
 
-		### (CLASS) METHOD: flagList( flags )
 		### Return an Array of flag names for the flags given
 		def flagList( flags )
 			FlagMap.keys.find_all {|key|
@@ -622,33 +374,35 @@ class TableAdapter
 		end
 
 
-		### (CLASS) METHOD: table
 		### Return the table associated with this class
 		def table
 			@@table
 		end
 
-		### (CLASS) METHOD: database
+
 		### Return the database associated with this class
 		def database
 			@@database
 		end
 
-		### (CLASS) METHOD: host
+
 		### Return the host associated with this class
 		def host
 			@@host
 		end
 
-		### (CLASS) METHOD: username
+
 		### Return the username associated with this class
 		def username
 			@@username
 		end
 
-		### (PROTECTED CLASS) METHOD: password
-		### Return the password associated with this class
+
+		#########
 		protected
+		#########
+
+		### Return the password associated with this class
 		def password
 			@@password
 		end
@@ -657,33 +411,14 @@ class TableAdapter
 	end # class << self
 
 
-	###########################################################################
-	###	P R O T E C T E D   I N S T A N C E   M E T H O D S
-	###########################################################################
-	protected
+	#################################################################
+	###	I N S T A N C E   M E T H O D S
+	#################################################################
 
-	### METHOD: initialize( row=nil )
-	### Initialize an adapter object, optionally setting the state of the
-	### abstracted row to the values in the row hash specified.
-	def initialize( row=nil )
-		@row = RowState.new
-
-		if row.nil?
-			@@oCache[ self.class.tableKey() ] ||= ObjectCache.new
-		elsif row.is_a?( Hash )
-			@row.setState( row )
-		else
-			raise ArgumentError, "Row must be a hash"
-		end
-	end
-
-
-	###########################################################################
-	###	P U B L I C   I N S T A N C E   M E T H O D S
-	###########################################################################
+	######
 	public
+	######
 
-	### METHOD: store()
 	### Store the row in the database
 	def store
 
@@ -725,10 +460,9 @@ class TableAdapter
 	end
 
 
-	### METHOD: delete( cascade=false )
 	### Delete the row this object abstracts. Note that this doesn't affect the
 	### object's state except to delete its rowid (primary key). The
-	### ((|cascade|)) parameter isn't used yet, but will eventually when the
+	### <em>cascade</em> parameter isn't used yet, but will eventually when the
 	### object-relational stuff works.
 	def delete( cascade=false )
 		dbh = self.class.dbHandle()
@@ -738,29 +472,26 @@ class TableAdapter
 	end
 
 
-	### METHOD: [ key ]
 	### Column accessor method
 	def []( key )
 		return self.send( key )
 	end
 
 
-	### METHOD: [ key ]= value
 	### Column accessor method
 	def []=( key, value )
 		return self.send( "#{key}=", value )
 	end
 
 
-	### METHOD: has_key?( keyname )
 	### Returns true if the table which this object abstracts has a column named
-	### ((|keyname|)).
+	### <tt>keyname</tt>. <em>Aliases:</em> key?
 	def has_key?( keyname )
 		return self.class.tableInfo.has_key?( keyname )
 	end
 	alias :key? :has_key?
 
-	### METHOD: method_missing( aSymbol, *args )
+
 	### Create and call methods that are the same as column names
 	def method_missing( aSymbol, *args )
 		origMethName = aSymbol.id2name
@@ -819,27 +550,138 @@ class TableAdapter
 	end
 
 
-	### METHOD: rowid
 	### Fetch the value of the primary key column for this row
 	def rowid
 		send( self.class.primaryKey() )
 	end
 
 	
-	### METHOD: rowid=( arg )
 	### Set the value of the primary key column for this row
 	def rowid=( arg )
 		send( "#{self.class.primaryKey()}=", arg )
 	end
 
+
+	#################################################################
+	###	I N N E R   C L A S S E S
+	#################################################################
+
+	### Inner class -- reference-counted object cache
+	class ObjectCache < Hash
+
+		### Create and return a new ObjectCache object
+		def initialize( *args )
+			super( *args )
+			@mutex = Sync.new
+		end
+
+
+		######
+		public
+		######
+
+		### Key lookup
+		def []( key )
+			return nil unless self.key?( key )
+
+			### Synchronize to avoid screwing up the GC setting with multiple
+			### threads
+			@mutex.synchronize( Sync::EX ) {
+
+				# Disable garbage collection while we fetch the object behind
+				# the weak reference
+				gcWasDisabled = GC.disable
+
+				# Attempt to fetch the object and then turn garbage-collection
+				# back on
+				rval = nil
+				begin
+					if super(key).weakref_alive?
+						rval = super(key).__getobj__
+					end
+
+				rescue RefError
+					rval = nil
+
+				ensure
+					GC.enable unless gcWasDisabled
+				end
+			}
+			
+			return rval
+		end
+
+		### Element assignment
+		def []=( key, val )
+			super( key, WeakRef.new(val) )
+			return val
+		end
+	end
+
+
+	### Inner class -- checksumming row data hash
+	class RowState < Hash
+
+		### Create and return a new row state hash
+		def initialize( default=nil )
+			super( default )
+
+			@savedChecksum = checksum()
+			@modifiedFields = {}
+			@mutex = Sync.new
+		end
+
+		### Set the value of the specified column to the specified value
+		def []=( col, val )
+			@mutex.synchronize(Sync::EX) {
+				super( col, val )
+				@modifiedFields[ col ] = 1
+			}
+		end
+
+		### Set the hash values and checksum of the row data to those of the
+		### specified hash
+		def setState( hash )
+			@mutex.synchronize(Sync::EX) {
+				replace( hash )
+				@savedChecksum = checksum()
+				@modifiedFields = {}
+			}
+		end
+
+		### Return an array of all fields which have been modified since this
+		### object was last retrieved from the database.
+		def modifiedFields
+			return @modifiedFields.keys.uniq
+		end
+
+		### Returns a 20-character (MD5 hexdigest) checksum String for the data
+		### fields of this object.
+		def checksum
+			MD5.new( keys.sort.collect {|k| "#{k}=#{self[k]}"}.join(':') ).hexdigest
+		end
+
+		### Returns true if the data in the row state has changed
+		def hasChanged?
+			checksum() != @savedChecksum
+		end
+
+		### Returns true if the fields have been modified, even if they were set
+		### to the same values as they previously had.
+		def modified?
+			return @modifiedFields.length > 0
+		end
+		
+	end
 	
 end
 
 
-### Global function to facilitate the creation of an adapter class.
-def TableAdapterClass( db, table, user, pass, host = nil )
-	klass = Class.new( TableAdapter )
-	klass.class_eval <<-"EOF"
+### Global function to facilitate the creation of an adapter class. Returns a
+### new Adapter Class object for the specified +db+, +table+, +user+,
+### +password+, and +host+.
+def TableAdapterClass( db, table, user, password, host = nil )
+	Class.new( TableAdapter ) {
 		class << self
 			def database
 				"#{db}"
@@ -858,13 +700,10 @@ def TableAdapterClass( db, table, user, pass, host = nil )
 			end
 
 			def password
-				"#{pass}"
+				"#{password}"
 			end
 		end
-		EOF
-
-
-	return klass
+	}
 end
 
 

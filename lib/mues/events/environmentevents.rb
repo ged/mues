@@ -1,37 +1,49 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
+# 
+# This file contains a collection of environment event classes which are used to
+# interact with Environment objects in the MUES. It is included in the list of
+# files loaded by doing:
+# 
+#   require "mues/Events"
+#
+# The classes defined in this file are:
+#
+# [MUES::EnvironmentEvent]
+#	An abstract class for events used to interact with MUES::Environment
+#	objects.
+#
+# [MUES::LoadEnvironmentEvent]
+#	An event class used for instructing the MUES::Engine to load a
+#	MUES::Environment.
+#
+# [MUES::UnloadEnvironmentEvent]
+#	An event class used to instruct the MUES::Engine to shut down and unload a
+#	MUES::Environment.
+#
+# 
+# == Synopsis
+# 
+#   require "mues/Events"
+# 
+#   LoadEnvironmentEvent.new( environmentNameString )
+#   UnloadEnvironmentEvent.new( environmentNameString )  
+# 
+# == Rcsid
+# 
+# $Id: environmentevents.rb,v 1.5 2002/04/01 16:27:30 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=EnvironmentEvents.rb
-
-== Name
-
-EnvironmentEvents - A collection of environment event classes
-
-== Synopsis
-
-  LoadEnvironmentEvent.new( environmentNameString )
-  UnloadEnvironmentEvent.new( environmentNameString )  
-
-== Description
-
-This module contains event classes the instances of which are used to interact
-with Environment objects in the MUES.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 
 require "mues/events/BaseClass"
@@ -42,12 +54,17 @@ module MUES
 	###	A B S T R A C T   E V E N T   C L A S S E S
 	#################################################################
 
-	### (ABSTRACT) CLASS: EnvironmentEvent < Event
-	class EnvironmentEvent < Event ; implements AbstractClass, Debuggable
+	### An abstract class for events used to interact with MUES::Environment
+	### objects.
+	class EnvironmentEvent < Event ; implements MUES::AbstractClass, MUES::Debuggable
 
+		# The user the event is being dispatched for
 		attr_reader :user
 
-		def initialize( user=nil )
+		### Initialize a new EnvironmentEvent object. If the optional +user+
+		### argument (a MUES::User object) is given, the status of the event
+		### will be dispatched to the User as an OutputEvent.
+		def initialize( user=nil ) # :notnew:
 			checkType( user, NilClass, MUES::User )
 			@user = user
 			super()
@@ -59,36 +76,45 @@ module MUES
 	###	C O N C R E T E   E V E N T   C L A S S E S
 	#################################################################
 
-	### CLASS: LoadEnvironmentEvent < EnvironmentEvent
+	### An event class used for instructing the MUES::Engine to load an
+	### environment.
 	class LoadEnvironmentEvent < EnvironmentEvent
 
-		attr_reader :name, :spec
-		
-		### METHOD: initialize( name, spec[, user=MUES::User] )
-		### Intitialize the event to load an instance of the environment spec
-		### specified and associate it with the given name. If the optional user
-		### argument is given, the status of the event will be sent to them as
-		### an OutputEvent.
-		def initialize( name, spec, user=nil )
-			checkEachType( [name,spec], String )
+		# The name to associate with the new environment
+		attr_reader :name
+
+		# The name of the Environment class to load.
+		attr_reader :envClassName
+
+		### Create and return a new event to load an instance of the environment
+		### specified by +eventClassName+ (the name of the Environment class to
+		### load) and associate it with the given +name+. If the optional +user+
+		### argument is given (a MUES::User object), the status of the event
+		### will be sent to the User as an OutputEvent.
+		def initialize( name, envClassName, user=nil )
+			checkEachType( [name,envClassName], String )
 			checkType( user, NilClass, MUES::User )
 
 			@name = name
-			@spec = spec
+			@envClassName = envClassName
 
 			super( user )
 		end
 
 	end
 
-	### CLASS: UnloadEnvironmentEvent < EnvironmentEvent
+
+	### An event class used to instruct the MUES::Engine to shut down and unload
+	### an Environment.
 	class UnloadEnvironmentEvent < EnvironmentEvent
+
+		# The name associated with the loaded environment
 		attr_reader :name
 
-		### METHOD: initialize( envOrEnvname[, user=MUES::User] )
-		### Initialize the object with the environment specified as its
-		### target. The target may be either an environment object or the name
-		### associated with it in the Engine.
+		### Create and return a new UnloadEnvironmentEvent with the environment
+		### associated with the specified +name+ as its target. If the optional
+		### +user+ argument is given (a MUES::User object), the status of the
+		### event will be sent to the User as an OutputEvent.
 		def initialize( name, user=nil )
 			checkType( name, ::String )
 

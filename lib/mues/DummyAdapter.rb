@@ -1,107 +1,33 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
+# 
+# A testing filesystem-based objectstore adapter class. This class shouldn^t be
+# required directly; you should instead specify "Dummy" as the first argument to
+# the MUES::ObjectStore class^s constructor.
+# 
+# == Synopsis
+# 
+#    require "mues/ObjectStore"
+#    oStore = MUES::ObjectStore.new( "Dummy", "faeriemud", "localhost", "fmuser", "somepass" )
+# 
+# == Rcsid
+# 
+# $Id: DummyAdapter.rb,v 1.9 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=DummyAdapter.rb
-
-== Name
-
-DummyAdapter - An ObjectStore debugging adapter class
-
-== Synopsis
-
-   require "mues/ObjectStore"
-   oStore = MUES::ObjectStore.new( "Dummy", "faeriemud", "localhost", "fmuser", "somepass" )
-
-== Description
-
-A testing filesystem-based objectstore adapter class. This class shouldn^t be
-required directly; you should instead specify "Dummy" as the first argument to
-the MUES::ObjectStore class^s constructor.
-
-== Classes
-=== MUES::DummyAdapter
-==== Public Methods
-
---- new( db, host, user, password )
-
-	Create a new adapter object with the specified ((|db|)), ((|host|)),
-	((|user|)), and ((|password|)) values.
-
---- db
-
-    Return the database name associated with the adapter.
-
---- host
-
-    Returns the host associated with the adapter.
-
---- user
-
-    Returns the user associated with the adapter.
-
---- storeObjects( *objects )
-
-    Store the specified ((|objects|)) in the ObjectStore and return their
-    (({oids})).
-
---- fetchObject( *oids )
-
-    Fetch the objects specified by the given ((|oids|)) from the ObjectStore and
-    return them.
-
---- stored?( oid )
-
-    Returns true if an object with the specified ((|oid|)) exists in the
-    ObjectStore.
-
---- storeUserData( username, data )
-
-    Store the specified ((|userdata|)) associated with the specified
-    ((|username|)).
-
---- fetchUserData( username )
-
-    Fetch a user record for the specified ((|username|)). Throws a
-    (({NoSuchObjectError})) if no user is associated with the specified
-    ((|username|)).
-
---- createUserData( username )
-
-    Create a new user record and associate it with the given ((|username|))
-    before returning it.
-
---- deleteUserData( username )
-
-    Delete the user data associated with the specified ((|username|)).
-
---- getUsernameList
-
-	Return an array of the names of the stored user records.
-
-==== Protected Methods
-
---- _safeifyId( id )
-
-    Returns the specified ((|id|)) (a (({String}))) after stripping any
-    characters which couldn^t safely be used in a filename.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
 
 require "find"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 
 require "mues/adapters/Adapter"
@@ -110,12 +36,11 @@ module MUES
 	class ObjectStore
 		class DummyAdapter < Adapter
 
-			include Debuggable
+			include MUES::Debuggable
 
-			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-			Rcsid = %q$Id: DummyAdapter.rb,v 1.8 2001/12/06 13:38:26 red Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+			Rcsid = %q$Id: DummyAdapter.rb,v 1.9 2002/04/01 16:27:31 deveiant Exp $
 
-			### METHOD: new( config=MUES::Config )
 			### Create a new DummyAdapter ObjectStore adapter object.
 			def initialize( config )
 				super( config )
@@ -140,7 +65,6 @@ module MUES
 				end
 			end
 
-			### METHOD: storeObjects( *objects )
 			### Store the specified objects in the objectstore.
 			def storeObjects( *objects )
 				oids = []
@@ -163,7 +87,6 @@ module MUES
 				return oids
 			end
 
-			### METHOD: fetchObjects( *oids )
 			### Fetch the objects with the specified oids.
 			def fetchObjects( *ids )
 				objs = []
@@ -193,7 +116,6 @@ module MUES
 			end
 
 
-			### METHOD: stored?( id )
 			### Returns true if the id specified corresponds to a stored object.
 			def stored?( id )
 				oid = _safeifyId( id )
@@ -201,7 +123,6 @@ module MUES
 			end
 
 
-			### METHOD: storeUserData( username, data )
 			### Store the given data as the user record for the specified username
 			def storeUserData( username, data )
 				filename = "#{@dbDir}/users/%s" % _safeifyId( username )
@@ -224,7 +145,6 @@ module MUES
 				data
 			end
 
-			### METHOD: fetchUserData( username )
 			### Fetch the user record for the given username. Throws a
 			### NoSuchObjectError exception if the user record does not exist.
 			def fetchUserData( username )
@@ -252,7 +172,6 @@ module MUES
 				return obj
 			end
 
-			### METHOD: createUserData( username )
 			### Create a user record for the given username and return it
 			def createUserData( username )
 				filename = _safeifyId( username )
@@ -265,7 +184,6 @@ module MUES
 				return data
 			end
 
-			### METHOD: deleteUserData( username )
 			### Delete the user data associated with the given username
 			def deleteUserData( username )
 				filename = _safeifyId( username )
@@ -276,7 +194,6 @@ module MUES
 			end
 				
 
-			### METHOD: getUsernameList
 			### Return an array of names of the stored user records
 			def getUsernameList
 				list = []
@@ -291,12 +208,12 @@ module MUES
 			end
 
 
-			###############################################
-			###	P R O T E C T E D   M E T H O D S
-			###############################################
+			#########
 			protected
+			#########
 
-			### (PROTECTED) METHOD: safeifyId( id )
+			### Remove unsafe characters from the specified +id+ so that it can
+			### be used as a filename.
 			def _safeifyId( id )
 				checkType( id, String )
 				return id.gsub( /[^:a-zA-Z0-9]+/, "" ).untaint

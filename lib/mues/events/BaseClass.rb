@@ -1,51 +1,91 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
+# 
+# This file contains the MUES::Event class -- an abstract base class for MUES
+# events. All events in the MUES must inherit from this class in order to be
+# recognized by the event dispatcher.
+#
+# You probably shouldn't require this file directly unless you're subclassing
+# MUES::Event directly, as you can load all event classes with:
+#
+#   require 'mues/Events'
+#
+# Events in MUES are dispatched via the #dispatchEvents method of the Engine
+# (the MUES::Engine instance) to an event queue (a MUES::EventQueue
+# object). When a thread in the event queue's thread pool becomes available, the
+# event is dispatched to any interested objects.
+#
+# In order to register an object's interest in a class of events, it must
+# <em>register</em> with the event class in question. It can do so either by
+# calling the <tt>RegisterHandlers()</tt> method on the event class with itself
+# as the argument, or by calling the <tt>registerHandlerForEvents()</tt>
+# function (which is a private global method defined in MUES::Object) with the
+# event classes of interest as arguments.
+#
+# Objects which want to be able to receive events need to implement a public
+# '<tt>handleEvent</tt>' method. You can mix in a default multiple-dispatch
+# handler method by <tt>include</tt>ing the MUES::Event::Handler module.
+#
+# Event registration is hierarchal, so registering with one class also
+# effectively registers the object with any events derived from it. So, for
+# example, an object which wanted to get passed both MUES::InputEvents and
+# MUES::OutputEvents would only need to register with MUES::IOEvent, as the
+# former two inherit from the latter.
+#
+# For more about the finer details of event dispatch from the event queue, see
+# the MUES::EventQueue documentation.
+# 
+# == Synopsis
+# 
+#   require "mues/Events"
+# 
+#   module MUES
+#     class MyEvent < MUES::Event
+#      :
+#     end
+#
+#	  class MySubEvent < MyEventType
+#	   :
+#	  end
+#   end
+#
+# 	class MyClass < MUES::Object
+# 
+#	  # Register all instances to recieve MyEvent and 
+#	  # MySubEvent events:
+# 	  def initialize
+# 	    super
+# 	    MyEvent.RegisterHandlers( self )
+# 	  end
+# 
+# 	  def handleEvents( *events )
+# 	    :
+# 	  end
+# 
+# 	end
+# 
+#
+# == Rcsid
+# 
+# $Id: BaseClass.rb,v 1.6 2002/04/01 16:27:30 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=BaseClass.rb
-
-== Name
-
-BaseClass - An abstract base class for MUES events
-
-== Synopsis
-
-  require "mues/events/BaseClass"
-
-  module MUES
-    class MyEventType < MUES::Event
-     :
-    end
-  end
-
-== Description
-
-This class is an abstract base class for MUES event classes.
-
-== Classes
-
-
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 
 module MUES
 
-	### (ABSTRACT BASE) CLASS: Event < Object
-	class Event < Object ; implements Debuggable, AbstractClass
+	### Abstract base event class.
+	class Event < Object ; implements MUES::Debuggable, MUES::AbstractClass, Comparable
 
 		### Class constants
 		MaxPriority		= 64
@@ -55,12 +95,22 @@ module MUES
 		### Class attributes
 		@@Handlers = { Event => [] }
 
+
+		### Initialize a new event with the specified +priority+. This should be
+		### called by the initializer of all derivate event classes.
+		def initialize( priority=DefaultPriority ) # :notnew:
+			super()
+			self.priority = priority
+			@creationTime = Time.now
+			_debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime} (priority=#{@priority})" )
+		end
+
+
 		### Class methods
 		class << self
 
-			### (STATIC) METHOD: RegisterHandlers( *handlers )
 			### Register the specified objects as interested in events of the
-			###		receiver class
+			### receiver class
 			def RegisterHandlers( *handlers )
 				checkEachResponse( handlers, "handleEvent" )
 
@@ -69,17 +119,15 @@ module MUES
 				return @@Handlers[ self ].length
 			end
 
-			### (STATIC) METHOD: UnregisterHandlers( *handlers )
 			### Unregister the specified objects as interested in events of the
-			###		receiver class
+			### receiver class
 			def UnregisterHandlers( *handlers )
 				@@Handlers[ self ] -= handlers
 				@@Handlers[ self ].length
 			end
 
-			### (STATIC) METHOD: GetHandlers
 			### Return handlers for the specified class and its parents, most
-			###		specific first
+			### specific first
 			def GetHandlers
 				return self.ancestors.find_all { |klass| 
 					klass <= Event
@@ -88,7 +136,6 @@ module MUES
 				}.flatten.uniq
 			end
 
-			### (SINGLETON) METHOD: inherited( newSubclass )
 			### Set up a handler array for each new subclass as it is created
 			def inherited( newSubclass )
 				@@Handlers[ newSubclass ] = []
@@ -96,20 +143,19 @@ module MUES
 		end
 
 
-		### Instance methods
-		attr_reader		:creationTime, :priority
+		######
+		public
+		######
 
-		### METHOD: initialize( [priority] )
-		### Initialize a new event
-		def initialize( priority=DefaultPriority )
-			super()
-			self.priority = priority
-			@creationTime = Time.now
-			_debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime} (priority=#{@priority})" )
-		end
+		# The <tt>Time</tt> of the event's creation
+		attr_reader :creationTime
 
-		### METHOD: priority=( priority )
-		### Set the priority for this event
+		# The priority of the event (currently unused)
+		attr_reader :priority
+
+
+		### Set the priority for this event to +priority+, which should be a
+		### Fixnum between 1 and MUES::Event::MaxPriority.
 		def priority=( priority )
 			checkType( priority, Integer )
 			priority = MaxPriority if priority > MaxPriority
@@ -117,15 +163,14 @@ module MUES
 			@priority = priority
 		end
 
-		### METHOD: <=>
-		### Returns 1, 0, or -1 depending on the priority of the events specified.
+		### Comparison operator: Returns 1, 0, or -1 depending on the priority
+		### of the events specified.
 		def <=>( otherEvent )
 			checkType( otherEvent, Event )
 			( @priority <=> otherEvent.priority ).nonzero? || @creationTime <=> otherEvent.creationTime
 		end
 
-		### METHOD: to_s
-		### Stringify the event
+		### Return a stringified version of the event.
 		def to_s
 			"%s: [pri %d] at %s" % [
 				self.class.name,

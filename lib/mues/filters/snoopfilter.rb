@@ -1,42 +1,42 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# This file contains the MUES::SnoopFilter class, which is an IO snooping filter
+# class derived from MUES::IOEventFilter.
+#
+# <em><strong>This class is currently just a non-functional
+# placeholder.</strong></em>.
+# 
+# == Synopsis
+# 
+#   require "mues/filters/SnoopFilter"
+# 
+# == Rcsid
+# 
+# $Id: snoopfilter.rb,v 1.3 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=SnoopFilter.rb
-
-== Name
-
-SnoopFilter - an IO snooping filter class
-
-== Synopsis
-
-  require "mues/filters/SnoopFilter"
-
-== Description
-
-This is a snooping filter class for IOEventStreams.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/filters/IOEventFilter"
 
 module MUES
+
+	### A "snoop" filter class derived from
+	### MUES::IOEventFilter. <em><strong>This class is currently just a
+	### non-functional placeholder.</strong></em>.
 	class SnoopFilter < IOEventFilter
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: snoopfilter.rb,v 1.2 2001/05/14 12:32:55 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: snoopfilter.rb,v 1.3 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 300
 
 	end # class SnoopFilter

@@ -1,109 +1,67 @@
 #!/usr/bin/ruby
-#################################################################
-=begin 
-
-=LoginSession.rb
-
-== Name
-
-LoginSession - A login session class
-
-== Synopsis
-
-  require "mues/LoginSession"
-  require "mues/IOEventStream"
-  require "mues/IOEventFilters"
-
-  # ... later that night, in a SocketConnectEvent handler ...
-
-  sock = event.socket
-  sof = SocketOutputFilter.new( sock )
-
-  ios = IOEventStream.new
-  ios.addFilters( sof )
-
-  loginHandler = LoginSession.new( config, ios )
-
-== Description
-
-This class encapsulates the task of authenticating a connecting user. It is
-given a new IOEventStream for the connection, from which it gathers username and
-password data, creating (({UserAuthenticationEvent}))s for each attempt. The
-Engine, after determining if the authentication was valid, calls one of two
-callbacks which are associated with the UserAuthenticationEvent -- one for a
-successful login attempt, and one for a failed attempt.
-
-== Classes
-=== MUES::LoginSession
-==== Public Methods
-
---- MUES::LoginSession#authFailureCallback( reason )
-
-    Callback for authentication failure.
-
---- MUES::LoginSession#authSuccessCallback( user )
-
-    Callback for authentication success.
-
---- MUES::LoginSession#handleInputEvents( *events )
-
-    Get login and password information from input events
-
---- MUES::LoginSession#loginAttemptCount
-
-    Return the number of logins which have been attempted within the session.
-
---- MUES::LoginSession#maxTries
-
-    Return the maximum number of tries which this session will allow.
-
---- MUES::LoginSession#remoteHost
-
-    Return the name or address of the remote (connecting) host as a (({String})).
-
---- MUES::LoginSession#terminate
-
-    Terminate the session and clean up.
-
-==== Protected Methods
-
---- MUES::LoginSession#initialize( config, stream, ipAddress )
-
-    Initialize a new login session object with the ((|config|)), ((|stream|)) (a
-    ((<MUES::IOEventStream>)) object), and ((|ipAddress|)) specified.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
+#
+# This file contains the MUES::LoginSession class, which encapsulates the task
+# of authenticating a connecting user. It is given a new IOEventStream for the
+# connection. It gathers username and password data from the IOEventStream
+# through a MUES::LoginProxy object, creating UserAuthenticationEvents for each
+# attempt.
+#
+# The Engine, after determining the authentication was valid, calls one of two
+# callbacks which are associated with the UserAuthenticationEvent -- one for a
+# successful login attempt, and one for a failed attempt.
+#
+# == Synopsis
+# 
+#   require "mues/LoginSession"
+#   require "mues/IOEventStream"
+#   require "mues/IOEventFilters"
+# 
+#   # ... later that night, in a SocketConnectEvent handler ...
+# 
+#   sock = event.socket
+#   sof = SocketOutputFilter.new( sock )
+# 
+#   ios = IOEventStream.new
+#   ios.addFilters( sof )
+# 
+#   loginHandler = LoginSession.new( config, ios )
+# 
+#
+# == Rcsid
+# 
+# $Id: loginsession.rb,v 1.8 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "timeout"
 require "thread"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Config"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/IOEventFilters"
 
 module MUES
-	class LoginSession < Object; implements Debuggable
 
-		Version = %q$Revision: 1.7 $
-		Rcsid = %q$Id: loginsession.rb,v 1.7 2001/11/01 17:12:15 deveiant Exp $
+	### Login session class: encapsulates the task of authenticating a user.
+	class LoginSession < Object; implements MUES::Debuggable
 
-		### (PROTECTED) METHOD: initialize( aConfig, anIOEventStream, anIPAddrString )
-		### Initialize a new login session object with the configuration,
-		### IOEventStream, and IP address specified
-		protected
+		Version = %q$Revision: 1.8 $
+		Rcsid = %q$Id: loginsession.rb,v 1.8 2002/04/01 16:27:31 deveiant Exp $
+
+
+		### Create and initialize a new login session object with the
+		### configuration, IOEventStream, and IP address specified
 		def initialize( aConfig, anIOEventStream, remoteHost )
 			checkType( aConfig, MUES::Config )
 			checkType( anIOEventStream, MUES::IOEventStream )
@@ -143,15 +101,23 @@ module MUES
 									    PromptEvent.new(@config["login"]["userprompt"]) )
 		end
 		
-		###################################################
-		###	P U B L I C   M E T H O D S
-		###################################################
+
+		######
 		public
+		######
 
-		attr_reader :remoteHost, :loginAttemptCount, :maxTries
+		# The hostname or ip address of the connecting user
+		attr_reader :remoteHost
 
-		### METHOD: handleInputEvents( *events )
-		### Get login and password information from input events
+		# The number of login attempts that have been tried already
+		attr_reader :loginAttemptCount
+
+		# The maximum number of login attempts that will be allowed by this session
+		attr_reader :maxTries
+
+
+		### InputEvent handler: Get login and password information from input
+		### events.
 		def handleInputEvents( *newEvents )
 			returnEvents = []
 
@@ -212,8 +178,8 @@ module MUES
 		end
 
 
-		### METHOD: authSuccessCallback( user )
-		### Callback for authentication success.
+		### Callback for authentication success. Called by the MUES::Engine
+		### after the +user+ successfully authenticates. 
 		def authSuccessCallback( user )
 			_debugMsg( 1, "User authenticated successfully." )
 
@@ -242,8 +208,9 @@ module MUES
 		end
 
 
-		### METHOD: authFailureCallback( reason )
-		### Callback for authentication failure.
+		### Callback for authentication failure. Called by the MUES::Engine when
+		### the user fails to authenticate for the specified +reason+ (a
+		### String).
 		def authFailureCallback( reason="None given" )
 			_debugMsg( 1, "Login failed: #{reason}." )
 			@loginAttemptCount += 1
@@ -278,8 +245,7 @@ module MUES
 		end
 
 
-		### METHOD: terminate
-		### Terminate the session and clean up
+		### Terminate the session and clean up.
 		def terminate
 			_debugMsg( 1, "Terminating login session." )
 			@authMutex.synchronize {

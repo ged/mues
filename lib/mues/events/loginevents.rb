@@ -1,40 +1,43 @@
 #!/usr/bin/ruby
-#######################################################
-=begin
+# 
+# A collection of classes used by the MUES::LoginSession class to communicate
+# with the MUES::Engine.
+#
+# This file contains the definitions for the following event classes:
+#
+# [MUES::LoginSessionEvent]
+#	Abstract base class for MUES::LoginSession events.
+# 
+# [MUES::LoginSessionFailureEvent]
+#	A LoginSession event class for indicating a failed login session.
+# 
+# [MUES::LoginSessionEvent]
+#	A LoginSession event class for indicating a successful login session.
+# 
+# == Synopsis
+# 
+#   require "mues/events/LoginSessionEvents"
+# 
+# == Rcsid
+# 
+# $Id: loginevents.rb,v 1.6 2002/04/01 16:27:30 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=LoginSessionEvents.rb
-
-== Name
-
-LoginSessionEvents - A collection of login session event classes
-
-== Synopsis
-
-  require "mues/events/LoginSessionEvents"
-
-== Description
-
-A collection of classes used by the LoginSession class to communicate with the
-Engine.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#######################################################
 
 require "weakref"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
-
 require "mues/events/BaseClass"
 
 module MUES
@@ -43,13 +46,17 @@ module MUES
 	###	A B S T R A C T   E V E N T   C L A S S E S
 	#################################################################
 
-	### (ABSTRACT) CLASS: LoginSessionEvent < Event
-	class LoginSessionEvent < Event ; implements AbstractClass
+	### Abstract base class for LoginSession events.
+	class LoginSessionEvent < Event ; implements MUES::AbstractClass
 		autoload	:LoginSession, "mues/LoginSession"
+
+		# The MUES::LoginSession this event is associated with.
 		attr_reader	:session
 
-		### METHOD: initialize( aLoginSession )
-		def initialize( aLoginSession )
+		### Initialize a new LoginSession event with the specified
+		### MUES::LoginSession object. This method should be called by
+		### derivative classes from their initializers.
+		def initialize( aLoginSession ) # :notnew:
 			checkType( aLoginSession, LoginSession )
 			@session = WeakRef.new( aLoginSession )
 			super()
@@ -61,18 +68,21 @@ module MUES
 	###	C O N C R E T E   E V E N T   C L A S S E S
 	#################################################################
 
-	### CLASS: LoginSessionFailureEvent < LoginSessionEvent
+	### A LoginSession event class for indicating a failed login session. This
+	### happens after the user has made too many attempts to authenticate, or
+	### when a connection has been denied due to being blacklisted, etc.
 	class LoginSessionFailureEvent < LoginSessionEvent
 
+		# A message String indicating why the session failed
 		attr_reader :reason
 
-		### METHOD: initialize( aLoginSession, reason )
+		### Create and return a new event with the specified +session+ (a
+		### MUES::LoginSession object) and reason (a String).
 		def initialize( session, reason )
 			super( session )
 			@reason = reason
 		end
 
-		### METHOD: to_s
 		### Returns a stringified version of the event
 		def to_s
 			return "%s (%s)" % [ super(), @reason ]
@@ -80,24 +90,38 @@ module MUES
 	end
 
 
-	### CLASS: LoginSessionAuthEvent < LoginSessionEvent
+	### A LoginSession event for passing the information from an authentication
+	### attempt to the MUES::Engine for confirmation. It contains the
+	### authentication information and two callbacks: one for a successful
+	### authentication, and one for failed authentication.
 	class LoginSessionAuthEvent < LoginSessionEvent
 
-		attr_reader :username, :password, :remoteHost, :successCallback, :failureCallback
+		# The username entered by the user
+		attr_reader :username
 
-		### METHOD: new( aLoginSession, user, pass, remoteHostname, 
-		###				  successCallback, failureCallback )
+		# The unencrypted password entered by the user
+		attr_reader :password
+
+		# The name or IP address of the host the user is connecting from
+		attr_reader :remoteHost
+
+		# The callback (a Method object) for indicating a successful attempt
+		attr_reader :successCallback
+
+		# The callback (a Method object) for indicating a failed attempt
+		attr_reader :failureCallback
+
 		### Create a new authorization event with the specified values and
-		### return it. The ((|session|)) argument is the (({LoginSession})) that
-		### contains the socket connection, the ((|user|)) and ((|pass|))
+		### return it. The <tt>session</tt> argument is the <tt>LoginSession</tt> that
+		### contains the socket connection, the <tt>user</tt> and <tt>pass</tt>
 		### arguments are the username and password that has been given by the
-		### connecting client, the ((|remoteHostname|)) is the name of the host
-		### the client is connecting from, and the ((|successCallback|)) and
-		### ((|failureCallback|)) are (({String})), (({Method})), or (({Proc}))
+		### connecting client, the <tt>remoteHostname</tt> is the name of the host
+		### the client is connecting from, and the <tt>successCallback</tt> and
+		### <tt>failureCallback</tt> are <tt>String</tt>, <tt>Method</tt>, or <tt>Proc</tt>
 		### objects which specify a function to call to indicate successful or
-		### failed authentication. If the callback is a (({String})), it is
+		### failed authentication. If the callback is a <tt>String</tt>, it is
 		### assumed to be the name of the method to call on the specified
-		### (({LoginSession})) object.
+		### <tt>LoginSession</tt> object.
 		def initialize( session, user, pass, host, sCall, fCall )
 			checkEachType( [user,pass], String )
 			checkEachType( [sCall,fCall], String, Method, Proc )

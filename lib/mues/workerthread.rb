@@ -1,100 +1,73 @@
 #!/usr/bin/env ruby
-###########################################################################
-=begin 
+# 
+# This file provides a derivative of the Thread class which is capable of storing an
+# associated timestamp. This functionality can be used to ascertain how long the
+# thread has been in an idle state.
+# 
+# == Synopsis
+# 
+#   require "mues/WorkerThread"
+#
+#	thr = WorkerThread.new( args ) {|args| doSomething() }
+#
+#	puts "Thread #{thr.desc} has been running for #{thr.runtime} seconds."
+# 
+# == Rcsid
+# 
+# $Id: workerthread.rb,v 1.7 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#---
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=WorkerThread.rb
-
-== Name
-
-WorkerThread - A worker object class
-
-== Synopsis
-
-  require "mues/WorkerThread"
-  oStore = ObjectStore.new( "MySQL", "faeriemud", "localhost", "fmuser", "fmpass" )
-
-  objectIds = oStore.storeObjects( obj ) {|obj|
-	$stderr.puts "Stored object #{obj}"
-  }
-
-== Description
-
-This class is a derivative of the Thread class which is capable of storing an
-associated timestamp. This functionality can be used to ascertain how long the
-thread has been in an idle state.
-
-== Methods
-=== MUES::WorkerThread
-==== Protected Instance Methods
-
---- MUES::WorkerThread#initialize( *args )
-
-	Set up and initialize the thread. Sets the thread^s timestamp, and then
-	calls ((<Thread#initialize>)).
-
-==== Instance Methods
-
---- MUES::WorkerThread#stopTime( ((|newTime|)) )
-
-	Sets and/or returns the thread^s current stop time (a (({Time})) object).
-
---- MUES::WorkerThread#timestamp()
-
-	Set the stop time to the current time.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
 
 require "thread"
-require "mues/Namespace"
+require "mues"
 
 ### Add a description attribute to the thread class for diagnostics
 class Thread
+
+	# The thread description
 	attr_accessor :desc
 
 	alias_method :realInitialize, :initialize
+
+	### Override the default initializer to set the description attribute for
+	### all threads.
 	def initialize( *args, &block )
 		realInitialize( *args, &block )
 		self.desc = "(unknown): started from #{caller(1)[0]}"
 	end
 end
 
-### CLASS: MUES::WorkerThread
-### A thread subclass for worker threads in EventQueues
 module MUES
-	class WorkerThread < Thread ; implements Debuggable
 
-		### METHOD: new( *args )
-		### Initialize the thread with the given arguments.
-		protected
-		def initialize( *args )
+	### A thread subclass for worker threads in EventQueues
+	class WorkerThread < Thread ; implements MUES::Debuggable
+
+		### Create and return the thread with the given arguments.
+		def initialize( *args ) # :yeilds: *args
 			@startTime = Time.now
 			_debugMsg( 1, "Initializing worker thread at #{@startTime.ctime}" )
-			super { yield(args[0]) }
+			super { yield(*args) }
 		end
 
-		#######################################################################
-		###	P U B L I C   M E T H O D S
-		#######################################################################
-		public
 
-		### Accessors
-		attr_accessor :startTime
+		######
+		public
+		######
+
+		# The thread's start time
+		attr_reader :startTime
 		
-		### METHOD: runtime
 		### Returns the number of seconds this thread has been running
 		def runtime
-			return Time.now.to_i - startTime.to_i
+			return Time.now.to_i - @startTime.to_i
 		end
 
 	end

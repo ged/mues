@@ -1,200 +1,97 @@
-#!/usr/bin/ruby -w
-###########################################################################
-=begin 
-= IOEventStream
-== Name
-
-MUES::IOEventStream - An IO event handler stack class
-
-== Synopsis
-
-  require "mues/IOEventStream"
-  require "mues/IOEventFilters"
-  require "mues/Events"
-
-  # Create a new stream
-  stream = MUES::IOEventStream.new
-
-  # Create three filters
-  sockFilter	= MUES::SocketOutputFilter.new( aSocket )
-  macroFilter	= MUES::MacroFilter.new( aUser )
-  shellFilter	= MUES::CommandShell.new( aUser )
-
-  # Add the filters to the stream.
-  @stream.addHandlers( inputHandler, loginHandler, outputHandler )
-
-  # Send output to the user
-  connectMsg = MUES::OutputEvent.new( "Welcome to ExperimentalMUD." )
-  @stream.addOutputEvents( loginMsg )
-
-== Description
-
-(({MUES::IOEventStream})) is a filtered input/output stream class modelled after
-the ((*Chain of Responsibility*)) Pattern for the intercommunication of objects
-in the MUES engine. It is used to route input and output events for any object
-which requires a complex and mutable I/O abstraction.
-
-The stream itself is only a container; it is essentially just a stack of filter
-objects, each of which can act upon the input and output events flowing through
-the stream. A filter may, depending on its purpose and configuration, act on the
-I/O events in the stream in many different ways. It can redirect, modify,
-duplicate, and/or inject new events based on the contents of event.
-
-The stream is bi-directional, meaning that all filters contained in the stream
-see both input and output events. This allows a single filter to act on events
-flowing in both directions, possibly changing its behaviour based on the data
-contained in the events.
-
-The stream also contains its own thread of execution, so I/O in it is processed
-independently of the main thread of execution.
-
-== Modules
-=== MUES::IOEventStream::State
-
-A namespace for state constants.
-
-== Classes
-=== MUES::IOEventStream
-==== Public Methods
-
---- MUES::IOEventStream#initialize( *filters )
-
-    Initialize an (({IOEventStream})) object with the specified stack of
-    ((|filters|)) ((({MUES::IOEventFilter})) objects).
-
---- MUES::IOEventStream#update( subject, which )
-
-    Notify the stream that the ((|subject|)) (({MUES::IOEventFilter})) has
-    pending events for the cycle specified by ((|which|)), which must be either
-    (({'input'})) or (({'output'})). Returns (({true})) on success.
-
---- MUES::IOEventStream#addFilters( *filters )
-
-    Add the specified ((|filters|)) to the stream. Returns the number of
-    filters in the stream after adding.
-
---- MUES::IOEventStream#removeFilters( *filters )
-
-    Remove the specified ((|filters|)) from the stream and return them.
-
---- MUES::IOEventStream#removeFiltersOfType( class )
-
-    Remove any filters in the stream of the specified ((|class|)) and return
-    them.
-
---- MUES::IOEventStream#addEvents( *events )
-
-    Add the specified ((|events|)) to the stream for processing and notify the
-    stream that it has pending events. Returns (({true})) on success.
-
---- MUES::IOEventStream#addOutputEvents( *events )
-
-    Add the specified input ((|events|)) to the stream for processing and notify
-    the stream that it has pending events. Returns (({true})) on success.
-
---- MUES::IOEventStream#fetchOutputEvents
-
-    Remove any pending output events from the stream and return them.
-
---- MUES::IOEventStream#addInputEvents( *events )
-
-    Add the specified output ((|events|)) to the stream for processing and
-    notify the stream that it has pending events. Returns (({true})) on success.
-
---- MUES::IOEventStream#fetchInputEvents
-
-    Remove any pending input events from the stream and return them.
-
---- MUES::IOEventStream#shutdown
-
-    Shut down the stream. All filters in the stream are shut down by first
-    calling (({MUES::IOEventFilter#stop})), and then
-    (({MUES::IOEventFilter#shutdown})) in succession. Any events returned from
-    the calls to (({MUES::IOEventFilter#shutdown})) are returned in a flattened
-    (({Array})).
-
---- MUES::IOEventStream#pause
-
-    Pause the stream. No events will be processed while the stream is paused.
-
---- MUES::IOEventStream#unpause
-
-    Unpause the stream, resuming the processing of events.
-
---- MUES::IOEventStream#filters
-
-    Return the array of filters for the stream.
-
---- MUES::IOEventStream#inputEvents
-
-    Return the array of pending input events for the stream.
-
---- MUES::IOEventStream#outputEvents
-
-    Return the array of pending output events for the stream.
-
---- MUES::IOEventStream#state
-
-    Return the state of the stream object, either
-    (({MUES::IOEventStream::State::SHUTDOWN})) or
-    (({MUES::IOEventStream::State::RUNNING})).
-
---- MUES::IOEventStream#paused
-
-    Return true if the stream is currently paused.
-
---- MUES::IOEventStream#idle
-
-    Return true if the event processing thread is currently waiting for
-    notification of pending events.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
+#!/usr/bin/ruby
+# 
+# This file contains the MUES::IOEventStream class, which is is a filtered
+# input/output stream class used for the pipelining and abstraction of object
+# inter-communication in the MUES engine. It is used to route input and output
+# messages in the form of events for any object which requires a complex and
+# mutable I/O abstraction. It is modelled after the <b>Chain of Responsibility</b>
+# pattern from the [Design Patterns] book.
+# 
+# The stream itself is only a container; it is essentially just a stack of filter
+# objects, each of which can potentially act upon the input and output events
+# flowing through the stream. A filter may act on the I/O events in the stream in
+# many different ways, depending on its purpose and configuration. It can
+# redirect, modify, duplicate, and/or inject new events based on the contents of
+# each event.
+# 
+# The stream is bi-directional, meaning that all filters contained in the stream
+# see both input and output events. This allows a single filter to act on events
+# flowing in both directions.
+# 
+# The stream also has its own thread so that I/O in it is processed independently
+# of the main EventQueue.
+# 
+# == Synopsis
+# 
+#   require "mues/IOEventStream"
+#   require "mues/IOEventFilters"
+#   require "mues/Events"
+# 
+#   # Create a new stream
+#   stream = MUES::IOEventStream.new
+# 
+#   # Create three filters
+#   sockFilter	= MUES::SocketOutputFilter.new( aSocket )
+#   macroFilter	= MUES::MacroFilter.new( aUser )
+#   shellFilter	= MUES::CommandShell.new( aUser )
+# 
+#   # Add the filters to the stream.
+#   @stream.addHandlers( inputHandler, loginHandler, outputHandler )
+# 
+#   # Send output to the user
+#   connectMsg = MUES::OutputEvent.new( "Welcome to ExperimentalMUD." )
+#   @stream.addOutputEvents( loginMsg )
+# 
+# == Rcsid
+# 
+# $Id: ioeventstream.rb,v 1.13 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "sync"
 require "timeout"
 
-require "mues/Namespace"
+require "mues"
 require "mues/IOEventFilters"
 require "mues/Events"
 require "mues/WorkerThread"
 
 module MUES
 
-	### CLASS: IOEventStream < Object
-	class IOEventStream < Object ; implements Debuggable
+	### A filtered input/output stream class modelled after the Chain of
+	### Responsibility design pattern.
+	class IOEventStream < Object ; implements MUES::Debuggable
 
-		### Set up some state constants
+		### Stream state constants module. It contains the following constants:
+		###
+		### [SHUTDOWN]
+		###   The stream is shut down -- its thread is not running, and events
+		###   passed to it will not be processed.
+		###
+		### [RUNNING]
+		###   The stream is running.
 		module State
 			SHUTDOWN	= 0
 			RUNNING		= 1
 		end
 		include State
 
+
 		# Import the default event handler dispatch method
-		include Event::Handler
+		include MUES::Event::Handler
 
-		### Class variables
-		@@IoLoopInterval = 0.1
 
-		### Accessors
-		attr_reader		:filters, :inputEvents, :outputEvents, :state, :paused, :idle, :streamThread
-		alias :idle? :idle
-		alias :paused? :paused
-
-		### METHOD: new( *filters )
-		### Instantiate and return a stream object with the specified filters, if
-		###	any. Also adds default filters to the top and bottom of the stack.
+		### Instantiate and return a stream object with the specified +filters+,
+		### if any. Also adds default filters to the top and bottom of the stack.
 		def initialize( *filters )
 			checkEachType( filters, MUES::IOEventFilter )
 			super()
@@ -227,8 +124,36 @@ module MUES
 		end
 
 
-		### METHOD: update( subject=MUES::IOEventFilter, which )
-		### Notify the stream that the subject specified has pending events.
+		######
+		public
+		######
+
+		# The array of filters currently in the stream
+		attr_reader :filters
+
+		# The array of pending input events.
+		attr_reader :inputEvents
+
+		# The array of pending output events.
+		attr_reader :outputEvents
+
+		# The state flag of the stream (See MUES::IOEventStream::State).
+		attr_reader :state
+
+		# Is the stream currently paused?
+		attr_reader :paused
+		alias :paused? :paused
+
+		# Is the stream currently processing events?
+		attr_reader :idle
+		alias :idle? :idle
+
+		# The stream's thread
+		attr_reader :streamThread
+
+		### Notify the stream that the subject specified (a MUES::IOEventFilter
+		### object) has pending events of the type specified by +which+. Valid
+		### values of +which+ are 'input' and 'output'.
 		def update( subject, which )
 			checkType( subject, MUES::IOEventFilter, MUES::IOEventStream )
 			checkType( which, ::String )
@@ -255,8 +180,9 @@ module MUES
 		end
 
 
-		### METHOD: addFilters( *filters)
-		### Add the specified filters to the stream
+		### Add the specified +filters+ to the stream. They will be sorted into
+		### the stream by their sortPosition (see
+		### MUES::IOEventFilter#sortPosition).
 		def addFilters( *filters )
 			checkEachType( filters, MUES::IOEventFilter )
 			_debugMsg( 1, "Adding #{filters.size} filters to stream #{self.id}" )
@@ -276,8 +202,7 @@ module MUES
 		end
 
 
-		### METHOD: removeFilters( *filters )
-		### Remove the specified filters from the stream
+		### Remove and return the specified +filters+ from the stream.
 		def removeFilters( *filters )
 			filters.flatten!
 			filters.compact!
@@ -302,9 +227,8 @@ module MUES
 		end
 
 
-		### METHOD: removeFiltersOfType( aClass )
-		### Remove all handlers of the specified type from the IOEventStream. The
-		### default handlers cannot be removed, however.
+		### Remove all filters of the type specified by <tt>aClass</tt> from the
+		### IOEventStream. The default filters cannot be removed.
 		def removeFiltersOfType( aClass )
 			checkType( aClass, ::Class )
 			@filterMutex.synchronize( Sync::SH ) {
@@ -313,11 +237,11 @@ module MUES
 		end
 
 
-		### METHOD: findFiltersOfType( aClass ) { block }
-		### Find and return all the handlers of the specified type from the
-		### IOEventStream, passing each matching filter to the optional block,
-		### if given.
-		def findFiltersOfType( aClass )
+		### Find and return an Array of all handlers of the type specified by
+		### <tt>aClass</tt> from the IOEventStream. If a block is given, it is
+		### passed each matching filter, and the result is substituted for the
+		### filter in the return value.
+		def findFiltersOfType( aClass ) # :yields: filter
 			checkType( aClass, ::Class )
 			values = []
 
@@ -335,8 +259,7 @@ module MUES
 		end
 
 
-		### METHOD: addEvents( *events )
-		### Add the specified events to whichever side of the stream they need to be
+		### Add the specified +events+ to whichever side of the stream they need to be
 		### added to.
 		def addEvents( *events )
 			events.flatten!
@@ -362,8 +285,7 @@ module MUES
 		end
 
 
-		### METHOD: addOutputEvents( *events )
-		### Add the specified output events to the stream for processing.
+		### Add the specified output +events+ to the stream for processing.
 		def addOutputEvents( *events )
 			events.flatten!
 
@@ -376,9 +298,8 @@ module MUES
 		end
 
 
-		### METHOD: fetchOutputEvents
-		### Fetch any pending output events for processing, clearing the output
-		### events array
+		### Fetch and return any output events pending processing, clearing the
+		### output events array.
 		def fetchOutputEvents
 			events = []
 			@outputEventMutex.synchronize(Sync::EX) {
@@ -391,8 +312,7 @@ module MUES
 		end
 
 
-		### METHOD: addInputEvents( *events )
-		### Add the specified input events to the stream for processing.
+		### Add the specified input +events+ to the stream for processing.
 		def addInputEvents( *events )
 			events.flatten!
 
@@ -403,9 +323,8 @@ module MUES
 		end
 
 
-		### METHOD: fetchInputEvents( *events )
-		### Fetch any pending input events for processing, clearing the input
-		### events array
+		### Fetch and return any input events pending processing, clearing the
+		### input events array.
 		def fetchInputEvents
 			events = []
 			@inputEventMutex.synchronize(Sync::EX) {
@@ -417,8 +336,8 @@ module MUES
 		end
 
 
-		### METHOD: shutdown
-		### Shut down all the filters contained in the stream and prepare for destruction.
+		### Shut down all the filters contained in the stream, shut down the
+		### stream's thread, and prepare the stream for destruction.
 		def shutdown
 			results = []
 
@@ -428,8 +347,7 @@ module MUES
 
 				### Shut each filter down and clear them
 				@filters.reverse.each {|f|
-					f.stop( self )
-					results << f.shutdown
+					results << f.stop( self )
 				}
 				@filters.clear
 			}
@@ -456,8 +374,7 @@ module MUES
 		end
 
 
-		### METHOD: pause
-		### Stop processing events until unpause() is called.
+		### Stop processing events until #unpause is called.
 		def pause
 			@notificationMutex.synchronize {
 				@paused = true
@@ -465,8 +382,7 @@ module MUES
 		end
 
 
-		### METHOD: unpause
-		### Start processing events again
+		### Resume processing events if the stream was paused.
 		def unpause
 			@notificationMutex.synchronize {
 				@paused = false
@@ -476,14 +392,12 @@ module MUES
 		end
 
 
-		#########################################################
-		###	P R O T E C T E D   M E T H O D S
-		#########################################################
+		#########
 		protected
+		#########
 
-		### (PROTECTED) METHOD: _streamThreadRoutine
-		### Procedure that is run by the stream's thread which moves events through
-		### the stream as they are generated/added.
+		### Stream thread routine -- moves events through the stream as they are
+		### generated/added.
 		def _streamThreadRoutine
 
 			### While the stream is running, filter IOEvents through it,
@@ -505,7 +419,8 @@ module MUES
 
 				@notificationMutex.synchronize {
 					if ( @notifyingInputObjects + @notifyingOutputObjects ).empty?
-						_debugMsg( 3, "No pending IO. Waiting on notification (#{@notification.inspect}) for #{@notificationMutex.inspect}." )
+						_debugMsg( 3, "No pending IO. Waiting on notification " +
+								   "(#{@notification.inspect}) for #{@notificationMutex.inspect}." )
 						@idle = true
 						begin @notification.wait( @notificationMutex ) end until ! @paused
 						@idle = false
@@ -519,7 +434,6 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _filterInputEvents
 		### Filter any input events that are currently queued through the stream's
 		### filters. The filters are called in order from output to input.
 		def _filterInputEvents
@@ -561,7 +475,6 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _filterOutputEvents
 		### Filter any output events that are currently queued through the stream's
 		### filters. The filters are called in order from output to output.
 		def _filterOutputEvents
@@ -607,10 +520,9 @@ module MUES
 		end
 
 
-		### Event handlers
-
-		### (PROTECTED) METHOD: _handleOutputEvent( event )
-		### Handle incoming IO events
+		### Handle IO events coming in from outside of the stream (ie., from the
+		### Engine itself). This is useful for sending broadcast messages and
+		### such through the Engine.
 		def _handleOutputEvent( event )
 			checkType( event, MUES::OutputEvent )
 			return unless @state == RUNNING
@@ -619,5 +531,4 @@ module MUES
 		end
 
 	end #class IOEventStream
-
 end #module MUES

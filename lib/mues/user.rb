@@ -1,178 +1,76 @@
 #!/usr/bin/ruby
-#################################################################
-=begin 
-= User.rb
-== Name
-
-MUES::User - a user connection class for the MUES Engine
-
-== Synopsis
-
-  require "mues/User"
-
-== Description
-
-Instances of this class represent a remote client who has connected to the
-MUES. It contains an IOEventStream object which distributes input and output
-between the remote client and the objects with which the user object is
-associated, and information about the client.
-
-== Modules
-=== MUES::User::AccountType
-
-Namespace for account type constants. Contains:
-
-: AccountType::USER
-
-  Normal user. No special permissions.
-
-: AccountType::CREATOR
-
-  Creator permissions allow the user to start and stop their own Environments,
-  examine the state of any object inside an Environment which they have
-  started, and fetch limited runtime statistics from the Engine.
-
-: AccountType::IMPLEMENTOR
-
-  Implementor permissions allow the user to start and stop any Environment,
-  view the state of any object in any Environment, interact with the Engine to
-  a limited degree (shutdown, restart, reload config), view the banlist, etc.
-
-: AccountType::ADMIN
-
-  Unlimited permissions.
-
-== Classes
-=== MUES::User
-==== Public Methods
-
---- MUES::User#new( userDataHash )
-
-    Initialize a new user object with the hash of attributes specified
-
---- MUES::User#<=>( otherUser )
-
-    Comparison operator -- returns 1, 0, or -1 to indicate sort order for the
-    receiver and the specified ((|otherUser|)) object. Objects sorted in this
-    fashion will be ordered by accounttype, with more permissioned users first, and
-    then by username.
-
---- MUES::User#activate( stream[, motd] )
-
-    Activate the user object with the given ((|stream|)), which must be an
-    instance of ((<MUES::IOEventStream>)) or one of its subclasses, and output
-    the specified ((|motd|)) (({String})), if given.
-
---- MUES::User#activated?
-
-    Returns (({true})) if the user has been activated (ie., has a connected IO
-    stream).
-
---- MUES::User#dbInfo
-
-    Return the value of the dbInfo attribute.
-
---- MUES::User#deactivate
-
-    Deactivate the user, shutting down her IO stream.
-
---- MUES::User#ioEventStream
-
-    Return the value of the ioEventStream attribute.
-
---- MUES::User#isCreator?
-
-    Returns (({true})) if the user has ((<creator>)) permissions.
-
---- MUES::User#isImplementor?
-
-    Returns (({true})) if the user has ((<implementor>)) permissions.
-
---- MUES::User#isAdmin?
-
-    Returns (({true})) if the user has ((<admin>)) permissions.
-
---- MUES::User#method_missing( aSymbol, *args )
-
-    Create and call methods that are the same as user data keys
-
---- MUES::User#password=( newPassword )
-
-    Reset the user^s password to ((|newPassword|)).
-
---- MUES::User#reconnect( stream )
-
-    Reconnect using the socket filter (or equivalent) from the specified
-    ((|stream|)) (a ((<MUES::IOEventStream>)) object), disconnecting the current
-    one.
-
---- MUES::User#remoteHost
-
-    Returns the remote host (if any) that the client is connected from as a
-    (({String})).
-
---- MUES::User#remoteHost=( newIp )
-
-    Sets the User^s (({remoteHost})) and (({lastHost})) attributes to the
-    specified ((|newIp|)).
-
---- MUES::User#to_s
-
-    Returns a stringified version of the user object
-
-==== Protected Methods
-
---- MUES::User#initialize( dbInfo )
-
-    Initialize the user object with the given ((|dbInfo|)) object. The dbInfo
-    object must either be a Hash or an object which behaves like one in that it
-    must respond to the (({[]})), (({[]=})), and (({has_key?})) methods.
-
---- MUES::User#_handleIOEvent( anEvent )
-
-    IO event handler method
-
---- MUES::User#_handleOtherEvent
-
-    Handle any event that doesn^t have an explicit handler by raising an
-    UnhandledEventError.
-
---- MUES::User#_handleTickEvent
-
-    Handle server tick events by delegating them to any subordinate objects
-    that need them.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
+# 
+# User.rb contains the MUES::User class. Instances of this class represent a
+# remote client who has connected to the MUES and provided the proper
+# authentication. It contains a MUES::IOEventStream object which distributes
+# input and output between the remote client and the objects with which the user
+# object is associated, and information about the client.
+# 
+# == Synopsis
+# 
+#   require "mues/User"
+# 
+# == To Do
+#
+# * Remove the hard-coded AccountTypes and replace it with configurable
+#   types. This will require some deep thought about what to do when types change
+#   between multiple runs of the environment, how to specify conversion functions
+#   for modified types when there are already users who are of old types, etc.
+#
+# * Add hooks for persistance via Martin's ObjectStoreService.
+#
+# == Rcsid
+# 
+# $Id: user.rb,v 1.14 2002/04/01 16:27:31 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# * Alexis Lee <red@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "date"
 require "md5"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/IOEventFilters"
 
 module MUES
-	class User < Object ; implements Debuggable
 
-		include Event::Handler
+	# A user connection class for the MUES::Engine
+	class User < Object ; implements MUES::Debuggable
+
+		include MUES::Event::Handler
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.13 2001/12/06 13:38:25 red Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.14 2002/04/01 16:27:31 deveiant Exp $
 
-		# User AccountType constants
+		# User AccountType constants module. Contains the following constants:
+		# 
+		# [USER]
+		#   Normal user. No special permissions.
+		# 
+		# [CREATOR]
+		#   Creator permissions allow the user to start and stop their own Environments,
+		#   examine the state of any object inside an Environment which they have
+		#   started, and fetch limited runtime statistics from the Engine.
+		# 
+		# [IMPLEMENTOR]
+		#   Implementor permissions allow the user to start and stop any Environment,
+		#   view the state of any object in any Environment, interact with the Engine to
+		#   a limited degree (shutdown, restart, reload config), view the banlist, etc.
+		# 
+		# [ADMIN]
+		#   Unlimited permissions.
 		module AccountType
 			USER		= 0		# Regular user
 			CREATOR		= 1		# Can world-interaction access
@@ -183,10 +81,8 @@ module MUES
 		end
 		AccountType.freeze
 
-		### :SYNC: Changes in this structure should be accompanied by changes in
-		### the corresponding table definition in '../sql/mues.user.sql'
-		### :FIXME: Obviously, manually keeping these two the same is non-optimal...
-		DefaultDbInfo = {
+		### User attribute defaults
+		@@Defaults = {
 			'username'			=> 'guest',
 			'cryptedPass'		=> MD5.new( '' ).hexdigest,
 			'realname'			=> 'Guest User',
@@ -204,42 +100,44 @@ module MUES
 			'userVersion'		=> Version
 		}
 
-		### METHOD: new( userDataHash )
-		### Initialize a new user object with the hash of attributes specified
-		protected
-		def initialize( dbInfo )
-			checkResponse( dbInfo, '[]', '[]=', 'has_key?' )
+		### Create a new user object with the hash (or hash-like object) of
+		### attributes specified
+		def initialize( attributes )
+			checkResponse( attributes, '[]', '[]=', 'has_key?' )
 			super()
 
 			@remoteHost = nil
 			@ioEventStream = nil
 			@activated = false
 
-			@dbInfo = dbInfo
+			@dbInfo = attributes
 		end
 
-		###################################################################
-		###	P U B L I C   M E T H O D S
-		###################################################################
+		######
 		public
+		######
 
-		### Accessors
 		### :FIXME: Do these need to be accessors? Or can they be readers?
-		attr_accessor	:ioEventStream, :dbInfo
 
-		### METHOD: activated?
+		# The IOEventStream object belonging to this user
+		attr_accessor	:ioEventStream
+
+		# The has of persistant info (Yuck. This needs to change. [MG])
+		attr_accessor	:dbInfo
+
+
 		### Returns true if the engine has activated this user object
 		def activated?
 			@activated
 		end
 
-		### METHOD: remoteHost
+
 		### Returns the remote IP (if any) that the client is connected from
 		def remoteHost
 			@remoteHost
 		end
 
-		### METHOD: remoteHost=( newIp )
+
 		### Sets the remote IP that the client is connected from, and sets the
 		### user's 'lastHost' attribute.
 		def remoteHost=( newIp )
@@ -248,28 +146,25 @@ module MUES
 			@remoteHost = @dbInfo['lastHost'] = newIp
 		end
 
-		### METHOD: isCreator?
+
 		### Returns true if this user has creator permissions
 		def isCreator?
 			return @dbInfo['accounttype'].to_i >= AccountType::CREATOR
 		end
 
 
-		### METHOD: isImplementor?
 		### Returns true if this user has implementor permissions
 		def isImplementor?
 			return @dbInfo['accounttype'].to_i >= AccountType::IMPLEMENTOR
 		end
 
 
-		### METHOD: isAdmin?
 		### Returns true if this user has admin permissions
 		def isAdmin?
 			return @dbInfo['accounttype'].to_i >= AccountType::ADMIN
 		end
 
 
-		### METHOD: to_s
 		### Returns a stringified version of the user object
 		def to_s
 			if self.isCreator?
@@ -280,14 +175,12 @@ module MUES
 		end
 
 
-		### METHOD: <=>( anotherUser )
 		### Comparison operator
 		def <=>( otherUser )
 			( @dbInfo['accounttype'] <=> otherUser.accounttype ).nonzero? ||
 			@dbInfo['username'] <=> otherUser.username
 		end
 
-		### METHOD: password=( newPassword )
 		### Reset the user's password to ((|newPassword|)). The password will be
 		### encrypted before being stored.
 		def password=( newPassword )
@@ -297,7 +190,6 @@ module MUES
 		end
 
 
-		### METHOD: activate( stream=MUES::IOEventStream[, motd=String] )
 		### Activate the user, set up their environment with the given stream,
 		### and output the specified 'message of the day', if given.
 		def activate( stream, motd=nil )
@@ -324,7 +216,6 @@ module MUES
 		end
 
 
-		### METHOD: deactivate( )
 		### Deactivate our IOEventStream and prepare to be destroyed
 		def deactivate
 			results = []
@@ -343,7 +234,6 @@ module MUES
 		end
 
 
-		### METHOD: reconnect( anIOEventStream )
 		### Reconnect with the client connection from another io stream
 		def reconnect( stream )
 			checkType( stream, MUES::IOEventStream )
@@ -369,7 +259,6 @@ module MUES
 		end
 
 
-		### METHOD: method_missing( aSymbol, *args )
 		### Create and call methods that are the same as user data keys
 		def method_missing( aSymbol, *args )
 			origMethName = aSymbol.id2name
@@ -403,27 +292,16 @@ module MUES
 		end
 
 
-		###################################################################
-		###	P R O T E C T E D   M E T H O D S
-		###################################################################
+		#########
 		protected
+		#########
 
-		### (PROTECTED) METHOD: _handleIOEvent( anEvent )
 		### IO event handler method
 		def _handleIOEvent( event )
 			@ioEventStream.addEvents( event )
 		end
 
 
-		### (PROTECTED) METHOD: _handleTickEvent
-		### Handle server tick events by delegating them to any subordinate objects
-		### that need them.
-		#def _handleTickEvent( event )
-		#	[]
-		#end
-
-
-		### (PROTECTED) METHOD: _handleOtherEvent
 		### Handle any event that doesn't have an explicit handler by raising an
 		### UnhandledEventError.
 		def _handleOtherEvent( event )

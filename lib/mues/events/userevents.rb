@@ -1,36 +1,30 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# This file contains a collection of user event classes for the
+# MUES::Engine. User events are events which facilitate the interaction of
+# user objects and the Engine.
+# 
+# == Synopsis
+# 
+#   require "mues/events/UserEvents"
+# 
+# == Rcsid
+# 
+# $Id: userevents.rb,v 1.8 2002/04/01 16:27:30 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=UserEvents.rb
 
-== Name
-
-UserEvents - A collection of user event classes
-
-== Synopsis
-
-  require "mues/events/UserEvents"
-
-== Description
-
-A collection of user event classes for the MUES Engine. User events are
-events which facilitate the interaction between user objects and the Engine.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 
 require "mues/events/BaseClass"
@@ -43,20 +37,21 @@ module MUES
 	###	A B S T R A C T   E V E N T   C L A S S E S
 	###########################################################################
 
-	### (ABSTRACT) CLASS: UserEvent < Event
-	class UserEvent < Event ; implements AbstractClass
+	### Abstract user event class
+	class UserEvent < Event ; implements MUES::AbstractClass
 		autoload	:User, "mues/User"
+
+		# The user object associated with the event
 		attr_reader :user
 
-		### METHOD: new( aUser )
-		### Returns a new user event with the specified target user
+		### Initialize a new user event with the specified target user. This
+		### method should be called by derivates' initializers.
 		def initialize( aUser )
 			checkType( aUser, User )
 			@user = aUser
 			super()
 		end
 
-		### METHOD: to_s
 		### Returns a stringified version of the event
 		def to_s
 			return "%s: %s" % [
@@ -71,14 +66,19 @@ module MUES
 	###	C O N C R E T E   E V E N T   C L A S S E S
 	#######################################################
 
-	### CLASS: UserLoginEvent < UserEvent
+	### User login event class. This event is used by the MUES::LoginSession
+	### class to indicate to the MUES::Engine that the target user has logged in
+	### successfully.
 	class UserLoginEvent < UserEvent
 
-		attr_reader	:stream, :loginSession
+		# The MUES::IOEventStream that was used by the LoginSession.
+		attr_reader	:stream
 
-		### METHOD: new( aUser, anIOEventStream, aLoginSession )
-		### Returns a new UserLoginEvent with the specified target user and
-		### IOEventStream
+		# The finished login session
+		attr_reader :loginSession
+
+		### Returns a new UserLoginEvent with the specified target user,
+		### IOEventStream, and LoginSession.
 		def initialize( aUser, anIOEventStream, aLoginSession )
 			super( aUser )
 

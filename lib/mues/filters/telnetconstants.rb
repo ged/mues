@@ -1,40 +1,36 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
-
-=TelnetConstants.rb
-
-== Name
-
-TelnetConstants - A collection of telnet-related constants
-
-== Synopsis
-
-  require "mues/filters/TelnetConstants"
-  include TelnetConstants
-
-== Description
-
-
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
+# 
+# This module contains a collection of telnet-related constants for use in the
+# MUES::TelnetOutputFilter.
+# 
+# == Synopsis
+# 
+#   require "mues/filters/TelnetConstants"
+#   include MUES::TelnetConstants
+# 
+# == Rcsid
+# 
+# $Id: telnetconstants.rb,v 1.2 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+# Some of the code in this module was taken from the Ruby telnet module by Wakou
+# Aoyama <wakou@fsinet.or.jp>.
+#
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 module TelnetConstants
 
 	### Class constants
-	Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-	Rcsid = %q$Id: telnetconstants.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+	Rcsid = %q$Id: telnetconstants.rb,v 1.2 2002/04/01 16:27:29 deveiant Exp $
 
 	### Codes taken and reformatted from the standard library telnet module.
 	### Author: Wakou Aoyama <wakou@fsinet.or.jp>

@@ -1,60 +1,47 @@
 #!/usr/bin/ruby
-###########################################################################
-=begin
+# 
+# This is the default input event filter. It is included in every IOEventStream as
+# a last-resort input event handler.
+# 
+# == Synopsis
+# 
+#   require "mues/filters/DefaultInputFilter"
+# 
+# == Rcsid
+# 
+# $Id: defaultinputfilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# * Alexis Lee <red@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-=DefaultInputFilter.rb
-
-== Name
-
-DefaultInputFilter - a default input filter class
-
-== Synopsis
-
-  require "mues/filters/DefaultInputFilter"
-
-== Description
-
-This is the default input event filter. It is included in every IOEventStream as
-a last-resort input event handler.
-
-== Classes
-=== MUES::DefaultInputFilter
-==== Public Methods
-
---- MUES::DefaultInputFilter#initialize
-
-    Initialize the filter.
-
---- MUES::DefaultInputFilter#handleInputEvents( *events )
-
-    Handle the given ((|events|)) by creating an OutputEvent containing an error
-	message for each.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
-
-require "mues/Namespace"
+require "mues"
 require "mues/filters/IOEventFilter"
 
 module MUES
+
+	### The default input filter class, a derivative of the MUES::IOEventFilter
+	### class which is placed in every MUES::IOEventStream to catch events which
+	### aren't processed by any other filter.
 	class DefaultInputFilter < IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: defaultinputfilter.rb,v 1.4 2001/12/07 17:43:39 red Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: defaultinputfilter.rb,v 1.5 2002/04/01 16:27:29 deveiant Exp $
 		DefaultSortPosition = 1000
 
+
 		### Class attributes
+
+		# Error message array.
 		@@ErrorMessages = [ 
 			"Huh?", 
 			"Sorry, could you rephrase that?",
@@ -66,16 +53,16 @@ module MUES
 			"%s: Command not found."
 		]
 
-		### METHOD: initialize
-		### Initialize the input filter
+
+		### Create and return a new default input filter.
 		def initialize
 			super
 			@errorIndex = 0
 		end
 
-		### METHOD: handleInputEvents( *events )
-		### Handle the given ((|events|)) by creating an OutputEvent containing
-		### an error message for each.
+
+		### Handle the given <tt>events</tt> by creating an OutputEvent
+		### containing an error message for each.
 		def handleInputEvents( *events )
 			events.flatten.each do |e|
 				Thread.critical = true
