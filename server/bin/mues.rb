@@ -30,7 +30,7 @@ A basic non-forking MUES server.
 require "mues/Engine"
 require "mues/Config"
 
-ConfigFile = "MUES.cfg"
+ConfigFile = "bin/MUES.cfg"
 
 ### Main function
 def main
