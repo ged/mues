@@ -11,7 +11,6 @@ World - MUES World object class
 
   require "mues/World"
   require "mues/Config"
-  require "mues/ObjectStore"
 
   worldConf = MUES::Config.new( "world.conf" )
   world = World.new( "testworld", worldConf )
@@ -39,8 +38,8 @@ require "mues/Namespace"
 module MUES
 	class World < Object
 
-		Version = %q$Revision: 1.2 $
-		Rcsid = %q$Id: environment.rb,v 1.2 2001/03/29 02:33:48 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
 
 
 	end

@@ -41,8 +41,8 @@ module MUES
 
 		include AbstractClass
 
-		Version = %q$Revision: 1.2 $
-		Rcsid = %q$Id: Science.rb,v 1.2 2001/03/29 02:31:32 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: Science.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
 
 	end
 end
