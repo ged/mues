@@ -1,8 +1,8 @@
 /*
 
-   MUES Player Table Schema (MySQL)
-	$Id: mues.user.sql,v 1.2 2001/05/14 12:35:59 deveiant Exp $
-	Time-stamp: <25-Apr-2001 12:22:35 deveiant>
+   MUES User Table Schema (MySQL)
+	$Id: mues.user.sql,v 1.3 2001/07/30 12:50:43 deveiant Exp $
+	Time-stamp: <21-Jul-2001 20:18:00 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -13,16 +13,16 @@
 
  */
 
-/* The Player table */
-DROP TABLE IF EXISTS player;
-CREATE TABLE player (
+/* The User table */
+DROP TABLE IF EXISTS muesuser;
+CREATE TABLE muesuser (
 	
 	/* Tableadapter fields */
 	id					INT				UNSIGNED auto_increment PRIMARY KEY,
 	ts					TIMESTAMP(12),
 	
 	/* Data fields */
-	playerVersion		VARCHAR(10)		NOT NULL,
+	userVersion			VARCHAR(10)		NOT NULL,
 	username			VARCHAR(50) 	NOT NULL,
 	cryptedPass			VARCHAR(20)		NOT NULL,							-- MD5 hexdigest
 	realname			VARCHAR(75),
