@@ -3,7 +3,7 @@ require 'runit/cui/testrunner'
 
 require 'mues/Config.rb'
 
-class TestConfig__Section < RUNIT::TestCase
+class ConfigSectionTestCase < RUNIT::TestCase
 
 	$SectionObj = nil
 	$SectionName = "testsection"
@@ -86,11 +86,11 @@ end
 
 if $0 == __FILE__
 	if ARGV.size == 0
-		suite = TestConfig__Section.suite
+		suite = ConfigSectionTestCase.suite
 	else
 		suite = RUNIT::TestSuite.new
 		ARGV.each do |testmethod|
-			suite.add_test(TestConfig__Section.new(testmethod))
+			suite.add_test(ConfigSectionTestCase.new(testmethod))
 		end
 	end
 	RUNIT::CUI::TestRunner.run(suite)

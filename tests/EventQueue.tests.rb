@@ -19,7 +19,7 @@ module MUES
 	end
 
 	### Event queue tests
-	class TestEventQueue < RUNIT::TestCase
+	class EventQueueTestCase < RUNIT::TestCase
 
 		$MockHandler = nil
 		$QueueObj = nil
@@ -103,11 +103,11 @@ end
 
 if $0 == __FILE__
 	if ARGV.size == 0
-		suite = MUES::TestEventQueue.suite
+		suite = MUES::EventQueueTestCase.suite
 	else
 		suite = RUNIT::TestSuite.new
 		ARGV.each do |testmethod|
-			suite.add_test(MUES::TestEventQueue.new(testmethod))
+			suite.add_test(MUES::EventQueueTestCase.new(testmethod))
 		end
 	end
 	RUNIT::CUI::TestRunner.run(suite)

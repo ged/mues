@@ -4,7 +4,7 @@ require 'runit/cui/testrunner'
 require 'mues/Engine.rb'
 
 module MUES
-	class TestEngine < RUNIT::TestCase
+	class EngineTestCase < RUNIT::TestCase
 
 		def setup
 			$Engine = MUES::Engine.instance
@@ -24,11 +24,11 @@ end
 
 if $0 == __FILE__
 	if ARGV.size == 0
-		suite = MUES::TestEngine.suite
+		suite = MUES::EngineTestCase.suite
 	else
 		suite = RUNIT::TestSuite.new
 		ARGV.each do |testmethod|
-			suite.add_test(MUES::TestEngine.new(testmethod))
+			suite.add_test(MUES::EngineTestCase.new(testmethod))
 		end
 	end
 	RUNIT::CUI::TestRunner.run(suite)

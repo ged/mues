@@ -6,7 +6,7 @@ require 'runit/cui/testrunner'
 require 'mues/Config.rb'
 
 module MUES
-	class TestConfig < RUNIT::TestCase
+	class ConfigTestCase < RUNIT::TestCase
 
 		$ConfigFile = "test.cfg"
 		$ConfigContent = <<-EOF
@@ -82,11 +82,11 @@ end
 
 if $0 == __FILE__
 	if ARGV.size == 0
-		suite = MUES::TestConfig.suite
+		suite = MUES::ConfigTestCase.suite
 	else
 		suite = RUNIT::TestSuite.new
 		ARGV.each do |testmethod|
-			suite.add_test(MUES::TestConfig.new(testmethod))
+			suite.add_test(MUES::ConfigTestCase.new(testmethod))
 		end
 	end
 	RUNIT::CUI::TestRunner.run(suite)

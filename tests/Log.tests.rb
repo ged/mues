@@ -36,7 +36,7 @@ module MUES
 	end
 
 	### Log tests
-	class TestLog < RUNIT::TestCase
+	class LogTestCase < RUNIT::TestCase
 
 		$Logfile = "testlog.#{$$}"
 		$Levels = {
@@ -105,11 +105,11 @@ end
 
 if $0 == __FILE__
 	if ARGV.size == 0
-		suite = MUES::TestLog.suite
+		suite = MUES::LogTestCase.suite
 	else
 		suite = RUNIT::TestSuite.new
 		ARGV.each do |testmethod|
-			suite.add_test(MUES::TestLog.new(testmethod))
+			suite.add_test(MUES::LogTestCase.new(testmethod))
 		end
 	end
 	RUNIT::CUI::TestRunner.run(suite)
