@@ -2,8 +2,8 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-    Time-stamp: <16-Jul-2002 09:21:04 deveiant>
-	$Id: muesconfig.dtd,v 1.6 2002/07/16 15:22:04 deveiant Exp $
+    Time-stamp: <07-Sep-2002 23:21:09 deveiant>
+	$Id: muesconfig.dtd,v 1.7 2002/09/12 09:54:12 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
 	Time-stamp: "26-May-2002 22:22:46 deveiant"
@@ -28,7 +28,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.6 $ -->
+<!-- A version string like $Revision: 1.7 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -41,14 +41,13 @@
 <!ENTITY % ClassName        "CDATA">
 
 
-
 <!--
 
   Base element
 
   -->
 
-<!ELEMENT muesconfig            (general,engine,logging,environments,commandshell)>
+<!ELEMENT muesconfig            (general,engine,login,logging,environments,commandshell)>
 <!ATTLIST muesconfig
             version             %FormatVersion;     #REQUIRED
             time-stamp          %Number;            #REQUIRED
@@ -57,22 +56,25 @@
 
 
 <!-- General config section -->
-<!ELEMENT general               (server-name,server-description?,server-admin,root-dir)>
+<!ELEMENT general               (server-name,server-description,server-admin,root-dir,motd)>
 
 <!ELEMENT server-name           (#PCDATA)>
 <!ELEMENT server-description    (#PCDATA)>
 <!ELEMENT server-admin          (#PCDATA)>
 <!ELEMENT root-dir              (#PCDATA)>
-
+<!ELEMENT motd                  (#PCDATA)>
 
 
 <!-- Engine config section -->
-<!ELEMENT engine                ((tick-length|exception-stack-size|debug-level)*,eventqueue,objectstore,listeners)>
+<!ELEMENT engine                (tick-length,exception-stack-size,debug-level,poll-interval,
+                                eventqueue,privilegedeventqueue,objectstore,listeners)>
 <!ELEMENT tick-length           (#PCDATA)>
+<!ELEMENT poll-interval         (#PCDATA)>
 <!ELEMENT exception-stack-size  (#PCDATA)>
 <!ELEMENT debug-level           (#PCDATA)>
 
-<!ELEMENT eventqueue            (minworkers|maxworkers|threshold|safelevel)*>
+<!ELEMENT eventqueue            (minworkers,maxworkers,threshold,safelevel)>
+<!ELEMENT privilegedeventqueue  (minworkers,maxworkers,threshold,safelevel)>
 <!ELEMENT minworkers            (#PCDATA)>
 <!ELEMENT maxworkers            (#PCDATA)>
 <!ELEMENT threshold             (#PCDATA)>
@@ -80,14 +82,19 @@
 
 <!ELEMENT listeners             (listener)*>
 
-<!ELEMENT listener              (filter-class,bind-port,bind-address,use-wrapper?)>
+<!ELEMENT listener              (param*)>
 <!ATTLIST listener
-            name                ID                  #REQUIRED>
+            name                ID                  #REQUIRED
+            class               %ClassName;         #REQUIRED>
 
-<!ELEMENT filter-class          (#PCDATA)>
-<!ELEMENT bind-port             (#PCDATA)>
-<!ELEMENT bind-address          (#PCDATA)>
-<!ELEMENT use-wrapper           (#PCDATA)>
+
+<!-- Login config section -->
+<!ELEMENT login                 (maxtries,timeout,banner,userprompt,passprompt)>
+<!ELEMENT maxtries              (#PCDATA)>
+<!ELEMENT timeout               (#PCDATA)>
+<!ELEMENT banner                (#PCDATA)>
+<!ELEMENT userprompt            (#PCDATA)>
+<!ELEMENT passprompt            (#PCDATA)>
 
 
 <!-- Logging config section (Log4R format) -->
@@ -132,7 +139,7 @@
 
 <!-- Environment/s config section -->
 <!ELEMENT environments          (environment)*>
-<!ELEMENT environment           (description,objectstore,(param)*)>
+<!ELEMENT environment           (description,(param)*)>
 <!ATTLIST environment
             name                %Text;              #REQUIRED
             class               %ClassName;         #REQUIRED>
@@ -140,15 +147,17 @@
 
 
 <!-- CommandShell config section -->
-<!ELEMENT commandshell          ((param)*,commandspath)>
+<!ELEMENT commandshell          (commandpath,(param)*)>
 <!ATTLIST commandshell
-            class               %ClassName;         #REQUIRED>
+            shell-class         %ClassName;         #IMPLIED
+            table-class         %ClassName;         #IMPLIED
+            parser-class        %ClassName;         #IMPLIED>
 
-<!ELEMENT commandspath          (directory+)>
+<!ELEMENT commandpath           (directory+)>
 <!ELEMENT directory             (#PCDATA)>
 
 <!-- Universal elements -->
-<!ELEMENT objectstore           (backend,memorymanager,visitor?)>
+<!ELEMENT objectstore           (backend,memorymanager,(param)*)>
 <!ATTLIST objectstore
             name                ID                  #REQUIRED>
 
@@ -158,10 +167,6 @@
 
 <!ELEMENT memorymanager         (param)*>
 <!ATTLIST memorymanager
-            class               %ClassName;         #REQUIRED>
-
-<!ELEMENT visitor               (param)*>
-<!ATTLIST visitor
             class               %ClassName;         #REQUIRED>
 
 <!ELEMENT param                 ANY>
