@@ -1,3 +1,1097 @@
+2002-10-31 00:27  Michael Granger <ged@FaerieMUD.org>
+
+	* HACKING (1.2):
+
+	- Fixes suggested by Stillflame.
+	
+2002-10-31 00:25  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/CATALOG (1.2):
+
+	- Added the HACKING file.
+	
+2002-10-31 00:24  Michael Granger <ged@FaerieMUD.org>
+
+	* README (1.7):
+
+	- Changed back to alpha again, 'cause it just doesn't feel beta.
+	
+	- Added a reference to the HACKING file.
+	
+2002-10-31 00:21  Michael Granger <ged@FaerieMUD.org>
+
+	* HACKING (1.1):
+
+	Initial commit.
+	
+2002-10-30 19:24  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/snoop.cmd (1.1):
+
+	Initial commit.
+	
+2002-10-30 19:19  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/listeners/SocketListener.rb (1.7):
+
+	- Fixed return value of releaseOutputFilter().
+	
+2002-10-30 19:18  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/SnoopFilter.rb (1.5):
+
+	- Finished and (minimally) tested.
+	
+2002-10-30 19:18  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/ParticipantProxy.rb (1.9):
+
+	- Aesthetic cleanups.
+	
+2002-10-30 19:18  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/EventDelegator.rb (1.14):
+
+	- Refactored the delegation of events to be more flexible and make less
+	  assumptions about what it's interacting with.
+	
+2002-10-30 19:17  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/: ConsoleOutputFilter.rb (1.12),
+	SocketOutputFilter.rb (1.18), TelnetOutputFilter.rb (1.14):
+
+	- Changed default sort position to 15.
+	
+2002-10-30 19:17  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/events/SystemEvents.rb (1.14):
+
+	- Cleaned up event classes to conform to the standard layout.
+	
+2002-10-30 19:16  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/LoginSession.rb (1.19):
+
+	- Reworked interactions with EventDelegator to reflect changes to its API.
+	
+	- Line-length cleanups.
+	
+2002-10-30 19:15  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/IOEventStream.rb (1.26):
+
+	- Compact returned filter list in findFiltersOfType().
+	
+2002-10-30 19:14  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.37):
+
+	- Cleaned up shutdown cycle a bit.
+	
+2002-10-30 19:14  Michael Granger <ged@FaerieMUD.org>
+
+	* howto/TODO (1.1):
+
+	Initial commit.
+	
+2002-10-29 17:38  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/StorableObject.rb (1.28):
+
+	- Added version constants to the classes.
+	
+2002-10-29 13:06  Michael Granger <ged@FaerieMUD.org>
+
+	* hostreport.rb (1.1):
+
+	Initial commit.
+	
+2002-10-29 13:02  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/ObjectSpaceVisitor.rb (1.7):
+
+	- Fixed Version and Rcsid constants.
+	
+2002-10-29 13:00  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/os-extensions/MemoryManager.rb (1.8):
+
+	- Added Version and Rcsid constants.
+	
+2002-10-29 12:58  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.32):
+
+	- Added Version and Rcsid constants to all classes.
+	
+2002-10-29 12:51  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/: ObjectStore.rb (1.37), ObjectSpaceVisitor.rb (1.6),
+	os-extensions/Backend.rb (1.9):
+
+	- Fixed Version and Rcsid constants.
+	
+2002-10-29 12:45  Michael Granger <ged@FaerieMUD.org>
+
+	* ext/mues/polymorphic.c (1.13):
+
+	- Added Version and Rcsid constants to MUES::PolymorphicObject.
+	
+2002-10-29 12:28  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/PollProxy.rb (1.4):
+
+	- Added Version and Rcsid constants.
+	
+2002-10-29 12:05  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Object.rb (1.7):
+
+	- Added Version and Rcsid constants to MUES::Version.
+	
+2002-10-29 12:05  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/WorkerThread.rb (1.12):
+
+	- Added Version and Rcsid constants to WorkerThreadGroup.
+	
+2002-10-29 12:02  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/WorkerThread.rb (1.11):
+
+	- Added Version and Rcsid constants.
+	
+2002-10-29 09:49  Michael Granger <ged@FaerieMUD.org>
+
+	* utils.rb (1.12):
+
+	- Added method documentation.
+	
+2002-10-29 00:38  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/objects.cmd (1.3):
+
+	- Added filtering by classname to the /objects command.
+	
+2002-10-29 00:37  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/eval.cmd (1.2):
+
+	- Added new command: 'context'
+	
+2002-10-29 00:37  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.36):
+
+	- Fixed up the error-handler for the user eval event.
+	
+2002-10-29 00:36  Michael Granger <ged@FaerieMUD.org>
+
+	* utils.rb (1.11):
+
+	- Added a flag to testForRequiredLibrary() so it doesn't always have to be
+	  fatal if it can't find the lib.
+	
+	- New function errorMessage().
+	
+2002-10-27 17:30  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Mixins.rb (1.15):
+
+	- Fixed header documentation.
+	
+2002-10-27 17:26  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.31):
+
+	- Aesthetic reorg of CommandShell::Context.
+	
+2002-10-27 17:13  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/users.cmd (1.9):
+
+	- Added comments to the code for the /deluser command.
+	
+2002-10-27 17:13  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/environments.cmd (1.5):
+
+	- Changed the call to removeFilters() in the diconnect command to stopFilters()
+	  to reflect changes in the IOEventStream's API.
+	
+2002-10-27 17:11  Michael Granger <ged@FaerieMUD.org>
+
+	* server/environments/NullEnvironment.rb (1.9):
+
+	- Fixed a bug in the handling of the :name constructor parameter.
+	
+2002-10-27 17:11  Michael Granger <ged@FaerieMUD.org>
+
+	* server/minimal-config.xml (1.6):
+
+	- Bumped minworkers for the privileged event queue to 2.
+	
+	- Replaced the relative directories in commandspath and envpath to PI-using
+	  fully-qualified ones.
+	
+2002-10-27 17:08  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/ParticipantProxy.rb (1.8):
+
+	- New method: #disconnect.
+	
+2002-10-27 17:08  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/EventDelegator.rb (1.13):
+
+	- Fully-qualified superclass.
+	
+2002-10-27 17:07  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.30):
+
+	- Changed the default sort position of the shell to the inner-most position, as
+	  the ParticipantProxies should have the option of not sending events onward to
+	  it once they're in place.
+	
+2002-10-27 17:06  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/User.rb (1.31):
+
+	- Added newlines to the useradd questionnaire finalizer message.
+	
+2002-10-27 17:04  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Role.rb (1.8):
+
+	- Method documentation/naming cleanups.
+	
+2002-10-27 17:04  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/ObjectStore.rb (1.36):
+
+	- Replaced a useless type-check with a check for an empty name attribute.
+	
+2002-10-27 17:03  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/IOEventStream.rb (1.25):
+
+	- Fixed the bug in the event handling method that was caused by failing to
+	  propagate the name-change of the filter-finishing method.
+	
+2002-10-27 17:01  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/: Environment.rb (1.16), Listener.rb (1.6):
+
+	- Made the derivative directory list configurable.
+	
+2002-10-27 14:27  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.35):
+
+	- Fixed the cancelScheduledEvents() method, which was leaving an empty array
+	  behind when the last event at a particular time was removed.
+	
+2002-10-27 14:23  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Config.rb (1.22):
+
+	- Updated documentation to reflect changes in the DTD and the method layout.
+	
+	- Added PI-handling to more text-sections.
+	
+	- Added configurable search-path to the listeners section.
+	
+	- Updated the default configuration.
+	
+2002-10-27 14:01  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/muesconfig.dtd (1.9):
+
+	- Added configurable search path for MUES::Listener classes.
+	
+2002-10-27 14:01  Michael Granger <ged@FaerieMUD.org>
+
+	* quickstart.rb (1.8):
+
+	- Added code to create the server/log directory if it isn't already.
+	
+2002-10-27 11:21  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Config.rb (1.21):
+
+	- Added lowercase-only aliases for the envpath element for consistency with the
+	  element name.
+	
+	- Added code to remove the default value of the envPath if they've specified
+	  anything at all in that section.
+	
+2002-10-27 11:16  Michael Granger <ged@FaerieMUD.org>
+
+	* server/minimal-config.xml (1.5):
+
+	- Added a default for the new environments/envpath element.
+	
+2002-10-27 11:14  Michael Granger <ged@FaerieMUD.org>
+
+	* server/minimal-config.xml (1.4):
+
+	- Changed the doctype to the PUBLIC one.
+	
+2002-10-27 11:11  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Config.rb (1.20):
+
+	- Added code to support the new 'envPath' child of the 'environments' element.
+	
+2002-10-27 09:59  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/muesconfig.dtd (1.8):
+
+	- Added an optional 'envpath' element to the 'environments' element to allow
+	  specification of a derivative search path for the Environment factory.
+	
+2002-10-26 13:07  Michael Granger <ged@FaerieMUD.org>
+
+	* TODO (1.15):
+
+	- Added some new items to the 'future' list.
+	
+2002-10-26 13:06  Michael Granger <ged@FaerieMUD.org>
+
+	* experiments/nonblockStdin.rb (1.1):
+
+	Initial commit.
+	
+2002-10-26 13:06  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/os-extensions/Backend.rb (1.8):
+
+	- Changed aliasing code to use the new MUES::Object::alias_class_method.
+	
+2002-10-26 13:05  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/listeners/SocketListener.rb (1.6):
+
+	- Moved filterDebugLevel parameter-setting and ivar into the parent class.
+	
+2002-10-26 13:04  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/OutputFilter.rb (1.3):
+
+	- Now implements MUES::AbstractClass.
+	
+	- Added an abstract method 'puts' for writing to a filter directly without using
+	  events.
+	
+2002-10-26 13:03  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/: filters/ConsoleOutputFilter.rb (1.11),
+	listeners/ConsoleListener.rb (1.4):
+
+	- Mostly working now. Still need to figure out why errors don't shut the filter
+	  down cleanly sometimes.
+	
+2002-10-26 13:02  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/events/Event.rb (1.14):
+
+	- Fixed inheritance callback, which was clobbering the FactoryMethods
+	  inheritance callback.
+	
+2002-10-26 13:02  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/User.rb (1.30):
+
+	- Added leading tab-stripping to the motd code.
+	
+	- Solidified the code for reconnect().
+	
+2002-10-26 13:00  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/: PollProxy.rb (1.3), filters/SocketOutputFilter.rb
+	(1.17):
+
+	- Aesthetic changes.
+	
+2002-10-26 13:00  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Object.rb (1.6):
+
+	- Fixed alias_class_method, which wasn't seeing methods that were mixed in.
+	
+	- Fixed error-mangling in alias_class_method.
+	
+2002-10-26 12:59  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Mixins.rb (1.14):
+
+	- Removed all the verbose FactoryMethods debugging.
+	
+2002-10-26 12:59  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/LoginSession.rb (1.18):
+
+	- Changed call to stream.removeFilters() to stream.stopFilters() to reflect
+	  changes in the MUES::IOEventStream class.
+	
+2002-10-26 12:58  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Listener.rb (1.5):
+
+	- Generalized listener filter debug level.
+	
+2002-10-26 12:57  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/IOEventStream.rb (1.24):
+
+	- Split filter stop and remove methods so filters can be transferred on
+	  reconnect without stopping them.
+	
+2002-10-26 12:55  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/EventQueue.rb (1.21):
+
+	- Added error-handling to the worker thread routine to catch errors outside of
+	  event dispatch.
+	
+2002-10-26 12:54  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.34):
+
+	- Modified signal handlers to never ignore SIGTERM.
+	
+	- Fixed Listener cleanup - registered ListenerEvent and fixed the call to
+	  releaseOutputFilter().
+	
+2002-10-25 13:01  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Object.rb (1.5):
+
+	- Added exception-mangling rescue blocks for the code-generation functions.
+	
+2002-10-24 23:10  Michael Granger <ged@FaerieMUD.org>
+
+	* tests/mues/CommandShell.tests.rb (1.3):
+
+	- Changed loadCommands() test to loadNewCommands() to reflect API change.
+	
+2002-10-24 23:09  Michael Granger <ged@FaerieMUD.org>
+
+	* tests/muesunittest.rb (1.7):
+
+	- Removed require of a system mock object lib, as there's no telling which one
+	  it might be.
+	
+2002-10-24 23:09  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/users.cmd (1.8):
+
+	- New command /deluser.
+	
+2002-10-24 23:04  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/Questionnaire.rb (1.9):
+
+	- Added error-handling to the input event handler to avoid a questionnaire
+	  getting stuck in a stream when the finalizer errors.
+	
+	- Added a new factory method Confirmation() that builds a single-step
+	  questionnaire for confirming some action.
+	
+2002-10-24 23:02  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/IOEventStream.rb (1.23):
+
+	- Re-added abort_on_exception for the stream thread, as the error-handlers for
+	  the event loop are working.
+	
+2002-10-24 22:58  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.33):
+
+	- New method consoleMessage().
+	
+	- Fixed setup methods that weren't returning arrays, or were returning arrays as
+	  side effects.
+	
+2002-10-24 21:33  Michael Granger <ged@FaerieMUD.org>
+
+	* server/minimal-config.xml (1.3):
+
+	- Added default Log4R logging configuration.
+	
+2002-10-24 21:14  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/SocketOutputFilter.rb (1.16):
+
+	- New method isLocal?().
+	
+	- Added a new remoteIp ivar + accessor.
+	
+2002-10-24 21:13  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/: ConsoleOutputFilter.rb (1.10), OutputFilter.rb
+	(1.2):
+
+	- New method isLocal?().
+	
+2002-10-24 21:12  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/events/SystemEvents.rb (1.13):
+
+	- Reparented SignalEvent under PrivilegedSystemEvent so signal events can call
+	  trap().
+	
+2002-10-24 21:11  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/events/LoginSessionEvents.rb (1.11):
+
+	- Fixed some inaccuracies in the method docs.
+	
+	- Deprecated remoteHost() in favor of peerName() to facilitate listener changes
+	  in the Engine.
+	
+	- Added a filter ivar + accessor.
+	
+2002-10-24 21:09  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/LoginSession.rb (1.17):
+
+	- Deprecated remoteHost() in favor of peerName() to facilitate listener changes
+	  in the Engine.
+	
+	- Added an outputFilter ivar + accessor.
+	
+2002-10-24 21:07  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.32):
+
+	- Bugfixes to bring the login system into line with the Listeners code. Thanks
+	  to Count Zero <binaryhazard@gmx.net> for the report.
+	
+2002-10-24 18:33  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.31):
+
+	- Print a message to STDERR if it's a tty when handling a SignalEvent.
+	
+2002-10-24 18:24  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Log.rb (1.11):
+
+	- Commented out Log4R debugging.
+	
+2002-10-24 18:24  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/IOEventStream.rb (1.22):
+
+	- Added begin/rescue blocks around the event-filtering routines to prevent
+	  errors from crashing the server or hanging the stream.
+	
+2002-10-24 18:22  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/EventQueue.rb (1.20):
+
+	- Fixed the longstanding bug in which non-MUES exceptions which occurred in
+	  worker threads caused the server to crash. Forgot to fully-qualify 'Exception'
+	  in the rescue clause. Thanks to GhostGanz from
+	  irc://irc.openprojects.net/#ruby-lang for the fix.
+	
+2002-10-24 18:18  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.30):
+
+	- Upgraded logging messages for user actions to NOTICE level.
+	
+	- Added an error-check that doesn't allow activated users to be removed.
+	
+2002-10-24 18:17  Michael Granger <ged@FaerieMUD.org>
+
+	* test.rb (1.6):
+
+	- Added a workaround for a bug that shows up in the simpleformatter in recent
+	  versions of Ruby 1.7.3:
+	
+	    /usr/lib/ruby/site_ruby/1.7/log4r/formatter/formatter.rb:57:
+		  in `sprintf': unnumbered(1) mixed with numbered (ArgumentError)
+	
+2002-10-24 09:49  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.29):
+
+	- Documented the abbrev-table algorithm.
+	
+2002-10-24 09:45  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.28):
+
+	- Fixed an abbrev-table bug in MUES::CommandShell::CommandTable that caused
+	  commands with names that exactly matched an abbreviated form of a previously
+	  loaded command to be discarded. Reported by Martin Chase
+	  <stillflame@FaerieMUD.org>.
+	
+2002-10-24 08:52  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Mixins.rb (1.13):
+
+	- Removed duplicate getUserByName() function.
+	
+2002-10-24 00:42  Martin Chase <stillflame@FaerieMUD.org>
+
+	* server/environments/HackEnvironment.rb (1.2):
+
+	should have its own package space
+	
+2002-10-23 23:04  Martin Chase <stillflame@FaerieMUD.org>
+
+	* server/environments/HackEnvironment.rb (1.1):
+
+	initial import
+	
+2002-10-23 12:32  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/TODO (1.5):
+
+	- Turned the command list into a definition list so the docs are a little
+	  prettier.
+	
+2002-10-23 12:30  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/events/IOEvents.rb (1.12):
+
+	- Updated notes about the OutputEvent types.
+	
+2002-10-23 12:29  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Mixins.rb (1.12):
+
+	- Fixed definition-list in docs.
+	
+2002-10-23 12:29  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.29):
+
+	- Restricted 'init' mode to connections coming from localhost.
+	
+2002-10-23 12:28  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Config.rb (1.19):
+
+	- Corrected misspellings.
+	
+2002-10-23 12:28  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/makedocs.rb (1.8):
+
+	- Added preliminary Rimport support. It doesn't work yet due to quirks in both
+	  RDoc and ri.
+	
+2002-10-23 12:27  Michael Granger <ged@FaerieMUD.org>
+
+	* quickstart.rb (1.7):
+
+	- Updated dependencies section.
+	
+	- Removed obsolete user-adding code.
+	
+2002-10-23 12:26  Michael Granger <ged@FaerieMUD.org>
+
+	* install.rb (1.6):
+
+	- Added dependency-checking.
+	
+2002-10-23 12:24  Michael Granger <ged@FaerieMUD.org>
+
+	* README (1.6), INSTALL (1.6), TODO (1.14):
+
+	- Updated for release 0.02.
+	
+2002-10-23 12:24  Michael Granger <ged@FaerieMUD.org>
+
+	* README.ObjectStore (1.2):
+
+	- Obsoleted by docs in README and lib/mues/ObjectStore.rb.
+	
+2002-10-23 07:21  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/LoginSession.rb (1.16):
+
+	- Added code to strip indent space from the login banner before displaying.
+	
+	- Cleanups for release.
+	
+2002-10-23 07:18  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/User.rb (1.29):
+
+	- Fixed a lingering call to the deprecated capitalized form of the event handler
+	  registration methods.
+	
+	- Cleanups for release.
+	
+2002-10-22 23:14  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.28):
+
+	- Added reference to file docs for class header.
+	
+2002-10-22 23:00  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/help.cmd (1.4):
+
+	- Fixed header a bit.
+	
+2002-10-22 23:00  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/eval.cmd (1.1):
+
+	Initial commit after moving here from the CommandShell lib.
+	
+2002-10-22 22:59  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.27):
+
+	- Moved the 'eval' command out into the shellCommands directory so it can be
+	  removed from the shell more easily.
+	
+2002-10-22 22:58  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/events/CommandEvents.rb (1.2):
+
+	- Finished up the MUES::EvalCommandEvent class.
+	
+2002-10-22 22:58  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/User.rb (1.28):
+
+	- Converted event registration to use the MUES::Event::Handler function instead
+	  of manually registering.
+	
+2002-10-22 22:57  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Events.rb (1.14):
+
+	- Added a require for the CommandEvents library.
+	
+2002-10-22 22:57  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/EventQueue.rb (1.19):
+
+	- Tightened method rescue block to (hopefully) cover all exception classes.
+	
+	- Wrapped the actual event dispatch in another begin/rescue to cover the times
+	  when the outer rescue doesn't work.
+	
+2002-10-22 22:56  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.27):
+
+	- Added handler for the EvalCommandEvent class.
+	
+2002-10-22 22:55  Michael Granger <ged@FaerieMUD.org>
+
+	* TODO (1.13):
+
+	- Removed last three tasks for this release.
+	
+2002-10-22 22:02  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/users.cmd (1.7):
+
+	- Added Martin's name to the authors list.
+	
+2002-10-22 21:03  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/TelnetOutputFilter.rb (1.13):
+
+	- Fixed backspace-hang bug in parseInputBuffer().
+	
+2002-10-22 21:02  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/SocketOutputFilter.rb (1.15):
+
+	- Fixed logging output of unescaped input strings.
+	
+2002-10-22 20:49  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/os-extensions/BerkeleyDBBackend.rb (1.10):
+
+	- Solved the lookup crash problem
+	
+	- Better comments.
+	
+2002-10-22 20:35  Michael Granger <ged@FaerieMUD.org>
+
+	* TODO (1.12):
+
+	- Removed two finished tasks.
+	
+2002-10-22 20:34  Michael Granger <ged@FaerieMUD.org>
+
+	* server/bin/: createUser.rb (1.4), deleteUser.rb (1.4),
+	showUser.rb (1.7):
+
+	- Removed in favor of in-server tools + init mode.
+	
+2002-10-22 20:17  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/printobject.cmd (1.5):
+
+	- Modified to use MUES::UtilityFunctions::getObjectByRubyId() instead of
+	  traversing objectspace itself.
+	
+2002-10-22 20:17  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/help.cmd (1.3):
+
+	- Fixed indentation for help table.
+	
+2002-10-22 20:16  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/filters.cmd (1.4):
+
+	- Added code to handle users who aren't logged in.
+	
+2002-10-22 20:14  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/listeners/TelnetListener.rb (1.4):
+
+	- Updated documentation.
+	
+	- Added a new 'debug-level' parameter.
+	
+2002-10-22 20:13  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/listeners/SocketListener.rb (1.5):
+
+	- Updated/rearranged documentation.
+	
+	- Changed parameter names to be consistant with how they'll come out of the
+	  MUES::Config object.
+	
+	- Added a new 'debug-level' parameter.
+	
+2002-10-22 20:12  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/IOEventFilter.rb (1.19):
+
+	- Bumped the debug level of the most verbose debugging messages.
+	
+2002-10-22 20:11  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.26):
+
+	- Modified /debug commandShell command to be able to query/set any object's
+	  debug level, instead of just the shell's.
+	
+2002-10-22 20:10  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/events/Event.rb (1.13):
+
+	- Changed capitalized class methods into normal ones; capitalized ones have
+	  deprecated aliases.
+	
+	- Added getEventClasses() method to MUES::Event.
+	
+2002-10-22 20:09  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/ObjectStore.rb (1.35):
+
+	- Added a to_s() method.
+	
+2002-10-22 20:09  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Object.rb (1.4):
+
+	- Added a Class#alias_class_method method.
+	
+	- Added deprecate_method() and deprecate_class_method() functions to
+	  MUES::Object.
+	
+2002-10-22 20:07  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Mixins.rb (1.11):
+
+	- Fixed code that limited the backtrace to non-Mixin code.
+	
+	- Made some indentation/line-length aesthetic changes.
+	
+	- Added trimString(), getObjectByRubyId(), and getObjectByMuesId() functions to
+	  UtilityFunctions mixin.
+	
+	- Removed ANSI-colored log lines.
+	
+2002-10-22 20:05  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Events.rb (1.13):
+
+	- Updated synopsis with accurate code.
+	
+	- Changed MUES::Event::RegisterHandlers() to registerHandlers() in the Handler
+	  mixin to reflect deprecation of the capitalized form.
+	
+	- Added an unregisterHandlerForEvents() method to the Handler mixin.
+	
+	- Changed calls to class.method_defined? to respond_to? to account for
+	  superclass handler methods.
+	
+2002-10-22 20:02  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/EventQueue.rb (1.18):
+
+	- Added a timeout to the join on the supervisor thread in halt().
+	
+	- Changed MUES::Event::GetHandlers() call to getHandlers() to reflect
+	  deprecation of the capitalized form.
+	
+2002-10-22 20:01  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.26):
+
+	- Updated documentation.
+	
+	- Made allocate() a private method.
+	
+	- Assigned the main thread to a mainThread ivar.
+	
+	- Made changes to the poll loop to increase responsiveness.
+	
+2002-10-22 19:57  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Config.rb (1.18):
+
+	- Commented out debugging line inadventantly committed in the last version.
+	
+2002-10-22 12:20  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Config.rb (1.17):
+
+	- Fixed handling of Ruby-ish values for content, which also involved factoring
+	  out various bits of other classes and methods which were doing it before.
+	
+	- Fixed PI-handling.
+	
+	- New method: MUES::Config::Element#parents
+	
+	- Added an attr_reader to MUES::Config::Element for the @parent ivar.
+	
+2002-10-22 12:17  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/makesitedocs.rb (1.11):
+
+	- Simplified verbose and debugging flag code.
+	
+	- Fixed the bug in --upload that caused the default to be the empty string if
+	  none was specified.
+	
+	- Removed spurious '/' in default upload URL.
+	
+2002-10-22 12:15  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/makedocs.rb (1.7):
+
+	- Aesthetic fixes to output.
+	
+2002-10-22 12:15  Michael Granger <ged@FaerieMUD.org>
+
+	* utils.rb (1.10):
+
+	- Made findRdocableFiles grok the $VERBOSE flag
+	
+2002-10-22 12:13  Michael Granger <ged@FaerieMUD.org>
+
+	* TODO (1.11):
+
+	- Added a new task.
+	
+2002-10-20 21:50  Michael Granger <ged@FaerieMUD.org>
+
+	* INSTALL (1.5):
+
+	- Bumped Ruby-Poll requirement to 0.03 for removal of error-checks on
+	  tcpwrappered sockets.
+	
+2002-10-19 09:50  Michael Granger <ged@FaerieMUD.org>
+
+	* TODO (1.10):
+
+	- Split into now and later sections.
+	
+	- Removed some tasks that were already done; added a few new ones.
+	
+2002-10-17 18:35  Martin Chase <stillflame@FaerieMUD.org>
+
+	* lib/mues/User.rb (1.27):
+
+	Altered the question for the setuser command
+	
+2002-10-17 08:50  Michael Granger <ged@FaerieMUD.org>
+
+	* server/shellCommands/TODO (1.4):
+
+	- Updated for 20021017.
+	
+2002-10-17 08:50  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/filters/CommandShell.rb (1.25):
+
+	- Reworked CommandShell and CommandShell::Factory to facilitate propagating
+	  changed command tables to active user shells using the Observer pattern.
+	
+2002-10-17 08:48  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.25):
+
+	- Clarified and added notes about where the bans code should go.
+	
+2002-10-17 08:48  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/makesitedocs.rb (1.10):
+
+	- Refactored almost all functionality into functions in makedocs.rb so they can
+	  be maintained in only one place.
+	
+2002-10-17 08:47  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/makedocs.rb (1.6):
+
+	- Propagated all the changes/enhancements made in makesitedocs.rb (upload,
+	  diagrams, verbosity, etc).
+	
+	- Refactored into functions so makesitedocs.rb can share all the core
+	  functionality.
+	
+	- Made the list of documentation using utils.rb's findRdocableFiles(), which
+	  reads the docs/CATALOG documenation catalog file.
+	
+2002-10-17 08:44  Michael Granger <ged@FaerieMUD.org>
+
+	* docs/CATALOG (1.1), server/shellCommands/.cvsignore (1.1):
+
+	Initial commit.
+	
+2002-10-17 08:44  Michael Granger <ged@FaerieMUD.org>
+
+	* utils.rb (1.9):
+
+	- Removed the verbose stuff from the manifest functions, changed to use $VERBOSE
+	  now instead.
+	
+2002-10-17 08:43  Michael Granger <ged@FaerieMUD.org>
+
+	* makedist.rb (1.11):
+
+	- Modified to reflect the changes made to utils.rb
+	
+2002-10-17 08:43  Michael Granger <ged@FaerieMUD.org>
+
+	* install.rb (1.5):
+
+	- Cleaned up some functions
+	
+	- Made compilation of the C extension conditional on its not already existing.
+	
 2002-10-15 06:37  Michael Granger <ged@FaerieMUD.org>
 
 	* server/shellCommands/users.cmd (1.6):
@@ -4071,6 +5165,14 @@
 	
 2002-02-23 21:45  Martin Chase <stillflame@FaerieMUD.org>
 
+	* docs/UseCase-ObjectStoreService.uml (1.1),
+	docs/UseCase-PolymorphicObjects.uml (1.1), lib/mues/ObjectStore.rb
+	(1.1), lib/mues/services/ObjectStoreService.rb (1.1):
+
+	Initial revision
+	
+2002-02-23 21:45  Martin Chase <stillflame@FaerieMUD.org>
+
 	* docs/UseCase-ObjectStoreService.uml (1.1.1.1),
 	docs/UseCase-PolymorphicObjects.uml (1.1.1.1),
 	lib/mues/ObjectStore.rb (1.1.1.1),
@@ -4078,14 +5180,6 @@
 	Alpha_1_1):
 
 	initial import
-	
-2002-02-23 21:45  Martin Chase <stillflame@FaerieMUD.org>
-
-	* docs/UseCase-ObjectStoreService.uml (1.1),
-	docs/UseCase-PolymorphicObjects.uml (1.1), lib/mues/ObjectStore.rb
-	(1.1), lib/mues/services/ObjectStoreService.rb (1.1):
-
-	Initial revision
 	
 2002-02-16 12:54  Michael Granger <ged@FaerieMUD.org>
 
@@ -4174,19 +5268,19 @@
 	
 2002-02-11 17:31  Michael Granger <ged@FaerieMUD.org>
 
+	* ext/: extconf.rb (1.1), polymorphic.c (1.1), mues/extconf.rb
+	(1.1), mues/polymorphic.c (1.1):
+
+	Initial revision
+	
+2002-02-11 17:31  Michael Granger <ged@FaerieMUD.org>
+
 	* ext/: extconf.rb (1.1.1.1), polymorphic.c (1.1.1.1),
 	mues/extconf.rb (1.1.1.1), mues/polymorphic.c (1.1.1.1) (utags:
 	ALPHA_1_1):
 
 	Initial import.
 	
-	
-2002-02-11 17:31  Michael Granger <ged@FaerieMUD.org>
-
-	* ext/: extconf.rb (1.1), polymorphic.c (1.1), mues/extconf.rb
-	(1.1), mues/polymorphic.c (1.1):
-
-	Initial revision
 	
 2001-12-07 13:02  Michael Granger <ged@FaerieMUD.org>
 
@@ -4394,7 +5488,7 @@
 2001-11-01 11:04  Michael Granger <ged@FaerieMUD.org>
 
 	* server/bin/: deleteUser.rb (1.3), showUser.rb (1.6) (utags:
-	RELEASE_0_02, RELEASE_0_01):
+	RELEASE_0_01, RELEASE_0_02):
 
 	- Added library path checking
 	
@@ -4650,6 +5744,22 @@
 	
 2001-11-01 08:52  Michael Granger <ged@FaerieMUD.org>
 
+	* Artistic (1.1), INSTALL (1.1, RELEASE_0_01), QUICKSTART (1.1,
+	RELEASE_0_01), README (1.1), install.rb (1.1), makedist.rb (1.1),
+	quickstart.rb (1.1), utils.rb (1.1), docs/IOEventFilters.dia (1.1),
+	docs/MUES-Engine.png (1.1), docs/MUES.svg (1.1),
+	docs/Properties.txt (1.1), docs/makedocs.rb (1.1, RELEASE_0_01),
+	docs/stylesheets/rd.css (1.1), experiments/vklass (1.1),
+	lib/hashslice.rb (1.1, RELEASE_0_01),
+	lib/mues/filters/TelnetConstants.rb (1.1, RELEASE_0_01),
+	server/environments/ObjectEnv.rb (1.1, RELEASE_0_01),
+	server/environments/ObjectEnvironment.rb (1.1, RELEASE_0_01),
+	sql/README (1.1):
+
+	Initial revision
+	
+2001-11-01 08:52  Michael Granger <ged@FaerieMUD.org>
+
 	* Artistic (1.1.1.1, RELEASE_0_02, RELEASE_0_01), INSTALL
 	(1.1.1.1), QUICKSTART (1.1.1.1), README (1.1.1.1), install.rb
 	(1.1.1.1, RELEASE_0_01), makedist.rb (1.1.1.1), quickstart.rb
@@ -4666,22 +5776,6 @@
 	(1.1.1.1, RELEASE_0_02, RELEASE_0_01) (utags: ALPHA_0_1):
 
 	Restructured from the Ruby-MUES module
-	
-2001-11-01 08:52  Michael Granger <ged@FaerieMUD.org>
-
-	* Artistic (1.1), INSTALL (1.1, RELEASE_0_01), QUICKSTART (1.1,
-	RELEASE_0_01), README (1.1), install.rb (1.1), makedist.rb (1.1),
-	quickstart.rb (1.1), utils.rb (1.1), docs/IOEventFilters.dia (1.1),
-	docs/MUES-Engine.png (1.1), docs/MUES.svg (1.1),
-	docs/Properties.txt (1.1), docs/makedocs.rb (1.1, RELEASE_0_01),
-	docs/stylesheets/rd.css (1.1), experiments/vklass (1.1),
-	lib/hashslice.rb (1.1, RELEASE_0_01),
-	lib/mues/filters/TelnetConstants.rb (1.1, RELEASE_0_01),
-	server/environments/ObjectEnv.rb (1.1, RELEASE_0_01),
-	server/environments/ObjectEnvironment.rb (1.1, RELEASE_0_01),
-	sql/README (1.1):
-
-	Initial revision
 	
 2001-10-29 15:42  Michael Granger <ged@FaerieMUD.org>
 
@@ -4987,7 +6081,7 @@
 2001-07-30 16:26  Michael Granger <ged@FaerieMUD.org>
 
 	* sql/: MUES.sql (1.3), mues.ban.sql (1.2), mues.denyallow.sql
-	(1.2) (utags: RELEASE_0_02, RELEASE_0_01):
+	(1.2) (utags: RELEASE_0_01, RELEASE_0_02):
 
 	- Made changes to reflect the changes in the core classes
 	
@@ -5238,7 +6332,7 @@
 2001-07-30 03:52  Michael Granger <ged@FaerieMUD.org>
 
 	* experiments/: classInstanceVars.rb (1.1), inheritedSubclass.rb
-	(1.1) (utags: RELEASE_0_02, RELEASE_0_01):
+	(1.1) (utags: RELEASE_0_01, RELEASE_0_02):
 
 	Initial release
 	
@@ -6011,8 +7105,8 @@
 2001-05-14 05:07  Michael Granger <ged@FaerieMUD.org>
 
 	* experiments/: lookupMuesUser.rb (1.1), muesAddUser.rb (1.1),
-	rmysql.rb (1.1), segfault.rb (1.1) (utags: RELEASE_0_02,
-	RELEASE_0_01):
+	rmysql.rb (1.1), segfault.rb (1.1) (utags: RELEASE_0_01,
+	RELEASE_0_02):
 
 	Snapshot for 20010514.
 	
@@ -6055,42 +7149,22 @@
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
-	* lib/mues/: Player.rb (1.3), User.rb (1.3):
+	* lib/mues/ClassLibrary.rb (1.3):
 
-	- Added code to support state being saved/restored through ObjectStore objects.
+	- Changed version constant to extract a float version from the RCS revision
 	
-	- Added Role constants and some predicate methods for player role
-	
-	- Added method_missing method to auto-generate delegating accessors
+2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/: mues.rb (1.5), mues/Namespace.rb (1.5):
+
+	- Added an instance attribute (objectStoreData) to the MUES::Object class to
+	  support storage of ObjectStore metadata.
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
 	* lib/mues/Debugging.rb (1.4):
 
 	- Fixed variable collision
-	
-2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
-
-	* lib/mues/: Environment.rb (1.3), Science.rb (1.3), World.rb
-	(1.3):
-
-	- Added extractor to derive Version from RCS Revision tag
-	
-2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
-
-	* lib/mues/Engine.rb (1.5):
-
-	- Converted old login mechanism to use new LoginSession objects
-	
-	- Added scheduled events code
-	
-2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
-
-	* lib/mues/EventQueue.rb (1.3):
-
-	- Initial code to support prioritized events added
-	
-	- Added method comment headers
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
@@ -6105,16 +7179,34 @@
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
-	* lib/: mues.rb (1.5), mues/Namespace.rb (1.5):
+	* lib/mues/EventQueue.rb (1.3):
 
-	- Added an instance attribute (objectStoreData) to the MUES::Object class to
-	  support storage of ObjectStore metadata.
+	- Initial code to support prioritized events added
+	
+	- Added method comment headers
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
-	* lib/mues/ClassLibrary.rb (1.3):
+	* lib/mues/Config.rb (1.3):
 
-	- Changed version constant to extract a float version from the RCS revision
+	- Added Version and Rcsid constants
+	
+	- Added function/method comments
+	
+2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/Engine.rb (1.5):
+
+	- Converted old login mechanism to use new LoginSession objects
+	
+	- Added scheduled events code
+	
+2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/mues/: Environment.rb (1.3), Science.rb (1.3), World.rb
+	(1.3):
+
+	- Added extractor to derive Version from RCS Revision tag
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
@@ -6127,11 +7219,13 @@
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
-	* lib/mues/Config.rb (1.3):
+	* lib/mues/: Player.rb (1.3), User.rb (1.3):
 
-	- Added Version and Rcsid constants
+	- Added code to support state being saved/restored through ObjectStore objects.
 	
-	- Added function/method comments
+	- Added Role constants and some predicate methods for player role
+	
+	- Added method_missing method to auto-generate delegating accessors
 	
 2001-04-06 02:19  Michael Granger <ged@FaerieMUD.org>
 
@@ -6416,6 +7510,42 @@
 	
 2001-03-14 19:22  Michael Granger <ged@FaerieMUD.org>
 
+	* docs/MUES.rd (1.1), experiments/ServiceClient.rb (1.1),
+	experiments/ServiceServer.rb (1.1), experiments/TestServices.rb
+	(1.1), experiments/eventHandler.rb (1.1, RELEASE_0_01),
+	experiments/eventHandlerTest.rb (1.1), experiments/frametest.rb
+	(1.1), experiments/metaClass.rb (1.1), experiments/objstore.rb
+	(1.1), experiments/queueOrder.rb (1.1), experiments/serviceTest.rb
+	(1.1), experiments/testSwitch.rb (1.1), lib/mues.rb (1.1),
+	lib/mues/Adapter.rb (1.1), lib/mues/BdbAdapter.rb (1.1),
+	lib/mues/ClassLibrary.rb (1.1), lib/mues/Config.rb (1.1),
+	lib/mues/Debugging.rb (1.1), lib/mues/DummyAdapter.rb (1.1),
+	lib/mues/Engine.rb (1.1), lib/mues/Environment.rb (1.1),
+	lib/mues/EventQueue.rb (1.1), lib/mues/Events.rb (1.1),
+	lib/mues/Exceptions.rb (1.1), lib/mues/IOEventFilters.rb (1.1),
+	lib/mues/IOEventStream.rb (1.1), lib/mues/Log.rb (1.1),
+	lib/mues/MUES.rb (1.1), lib/mues/MysqlAdapter.rb (1.1),
+	lib/mues/Namespace.rb (1.1), lib/mues/Player.rb (1.1),
+	lib/mues/Science.rb (1.1), lib/mues/User.rb (1.1),
+	lib/mues/WorkerThread.rb (1.1), lib/mues/World.rb (1.1),
+	server/bin/mues.rb (1.1), sql/MUES.sql (1.1), sql/createTables.sh
+	(1.1), sql/mues.ban.sql (1.1), sql/mues.object.sql (1.1),
+	sql/mues.player.sql (1.1), sql/mues.user.sql (1.1),
+	tests/mues/ClassLibrary.tests.rb (1.1), tests/mues/Config.tests.rb
+	(1.1), tests/mues/ConfigSection.tests.rb (1.1),
+	tests/mues/Engine.tests.rb (1.1), tests/mues/EventQueue.tests.rb
+	(1.1), tests/mues/Log.tests.rb (1.1),
+	tests/mues/ObjectStore.tests.rb (1.1), tests/mues/Science.tests.rb
+	(1.1), lib/mues/metaclass/Association.rb (1.1),
+	lib/mues/metaclass/Attribute.rb (1.1), lib/mues/metaclass/Class.rb
+	(1.1), lib/mues/metaclass/Interface.rb (1.1),
+	lib/mues/metaclass/Method.rb (1.1), lib/mues/metaclass/Namespace.rb
+	(1.1), lib/mues/metaclass/Operation.rb (1.1):
+
+	Initial revision
+	
+2001-03-14 19:22  Michael Granger <ged@FaerieMUD.org>
+
 	* docs/MUES.rd (1.1.1.1), experiments/ServiceClient.rb (1.1.1.1,
 	RELEASE_0_02, RELEASE_0_01), experiments/ServiceServer.rb (1.1.1.1,
 	RELEASE_0_02, RELEASE_0_01), experiments/TestServices.rb (1.1.1.1,
@@ -6458,40 +7588,4 @@
 	lib/mues/metaclass/Operation.rb (1.1.1.1) (utags: PRE-ALPHA):
 
 	Re-import after CVS Repository Lost
-	
-2001-03-14 19:22  Michael Granger <ged@FaerieMUD.org>
-
-	* docs/MUES.rd (1.1), experiments/ServiceClient.rb (1.1),
-	experiments/ServiceServer.rb (1.1), experiments/TestServices.rb
-	(1.1), experiments/eventHandler.rb (1.1, RELEASE_0_01),
-	experiments/eventHandlerTest.rb (1.1), experiments/frametest.rb
-	(1.1), experiments/metaClass.rb (1.1), experiments/objstore.rb
-	(1.1), experiments/queueOrder.rb (1.1), experiments/serviceTest.rb
-	(1.1), experiments/testSwitch.rb (1.1), lib/mues.rb (1.1),
-	lib/mues/Adapter.rb (1.1), lib/mues/BdbAdapter.rb (1.1),
-	lib/mues/ClassLibrary.rb (1.1), lib/mues/Config.rb (1.1),
-	lib/mues/Debugging.rb (1.1), lib/mues/DummyAdapter.rb (1.1),
-	lib/mues/Engine.rb (1.1), lib/mues/Environment.rb (1.1),
-	lib/mues/EventQueue.rb (1.1), lib/mues/Events.rb (1.1),
-	lib/mues/Exceptions.rb (1.1), lib/mues/IOEventFilters.rb (1.1),
-	lib/mues/IOEventStream.rb (1.1), lib/mues/Log.rb (1.1),
-	lib/mues/MUES.rb (1.1), lib/mues/MysqlAdapter.rb (1.1),
-	lib/mues/Namespace.rb (1.1), lib/mues/Player.rb (1.1),
-	lib/mues/Science.rb (1.1), lib/mues/User.rb (1.1),
-	lib/mues/WorkerThread.rb (1.1), lib/mues/World.rb (1.1),
-	server/bin/mues.rb (1.1), sql/MUES.sql (1.1), sql/createTables.sh
-	(1.1), sql/mues.ban.sql (1.1), sql/mues.object.sql (1.1),
-	sql/mues.player.sql (1.1), sql/mues.user.sql (1.1),
-	tests/mues/ClassLibrary.tests.rb (1.1), tests/mues/Config.tests.rb
-	(1.1), tests/mues/ConfigSection.tests.rb (1.1),
-	tests/mues/Engine.tests.rb (1.1), tests/mues/EventQueue.tests.rb
-	(1.1), tests/mues/Log.tests.rb (1.1),
-	tests/mues/ObjectStore.tests.rb (1.1), tests/mues/Science.tests.rb
-	(1.1), lib/mues/metaclass/Association.rb (1.1),
-	lib/mues/metaclass/Attribute.rb (1.1), lib/mues/metaclass/Class.rb
-	(1.1), lib/mues/metaclass/Interface.rb (1.1),
-	lib/mues/metaclass/Method.rb (1.1), lib/mues/metaclass/Namespace.rb
-	(1.1), lib/mues/metaclass/Operation.rb (1.1):
-
-	Initial revision
 	
