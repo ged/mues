@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
 =Adapter.rb
@@ -32,15 +32,19 @@ Adapter - An ObjectStore adapter abstract base class
 			...
 		end
 
-		def storePlayerData( username, data )
+        def storeUserData( username, data )
 			...
 		end
 
-		def fetchPlayerData( username )
+        def fetchUserData( username )
 			...
 		end
 
-		def createPlayerData( username )
+        def createUserData( username )
+            ...
+        end
+
+        def deleteUserData( username )
 			...
 		end
 
@@ -48,11 +52,70 @@ Adapter - An ObjectStore adapter abstract base class
     end
   end
 
-
 == Description
 
 This is an abstract base class which defines the required interface for
-MUES::ObjectStore adapters.
+MUES::ObjectStore adapters. You shouldn^t use this class except as a superclass
+for your own adapter classes.
+
+== Methods
+=== Protected Methods
+
+--- initialize( db, host, user, password )
+
+	Initialize the adapter object with the specified ((|db|)), ((|host|)),
+	((|user|)), and ((|password|)) values.
+
+=== Attribute Accessor Methods
+
+--- db
+
+    Return the database name associated with the adapter.
+
+--- host
+
+    Returns the host associated with the adapter.
+
+--- user
+
+    Returns the user associated with the adapter.
+
+=== Abstract Methods
+
+--- storeObjects( *objects )
+
+    Store the specified ((|objects|)) in the ObjectStore and return their
+    (({oids})).
+
+--- fetchObject( *oids )
+
+    Fetch the objects specified by the given ((|oids|)) from the ObjectStore and
+    return them.
+
+--- stored?( oid )
+
+    Returns true if an object with the specified ((|oid|)) exists in the
+    ObjectStore.
+
+--- storeUserData( username, data )
+
+    Store the specified ((|userdata|)) associated with the specified
+    ((|username|)).
+
+--- fetchUserData( username )
+
+    Fetch a user record for the specified ((|username|)). Throws a
+    (({NoSuchObjectError})) if no user is associated with the specified
+    ((|username|)).
+
+--- createUserData( username )
+
+    Create a new user record and associate it with the given ((|username|))
+    before returning it.
+
+--- deleteUserData( username )
+
+    Delete the user data associated with the specified ((|username|)).
 
 == Author
 
@@ -65,7 +128,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-###########################################################################
+#################################################################
 
 require "mues/Namespace"
 require "mues/Exceptions"
@@ -75,14 +138,41 @@ module MUES
 
 		class AdapterError < Exception; end
 
-		class Adapter < Object
-
-			include Debuggable
-			include AbstractClass
+		class Adapter < Object ; implements Debuggable, AbstractClass
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: Adapter.rb,v 1.5 2001/07/18 02:01:39 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: Adapter.rb,v 1.6 2001/07/30 11:59:46 deveiant Exp $
+
+			### Class variables
+			@@AdapterClasses = {}
+
+			### Class methods
+			class << self
+			
+				### (CLASS) METHOD: inherit( subclass=Class )
+				### Called when this class is inherited.
+				def inherited( subclass )
+					debugMsg( 2, "Adding ObjectStore adapter class '#{subclass.name}'" )
+					@@AdapterClasses[ subclass.name ] = subclass
+				end
+
+				### (CLASS) METHOD: getAdapterClass( name )
+				### Returns the adapter class that matches the specified name,
+				### if any.
+				def getAdapterClass( name )
+					checkType( name, ::String )
+
+					@@AdapterClasses.each {|className,klass|
+						return klass if className =~ name
+					}
+
+					return nil
+				end
+
+			end
+
+			### Protected methods
 
 			### METHOD: initialize( db, host, user, password )
 			### Initialize the adapter with the specified values
@@ -94,38 +184,17 @@ module MUES
 				@password	= password
 			end
 
-
-			###################################################################
-			###	P U B L I C   M E T H O D S
-			###################################################################
+			### Public methods
 			public
 
 			attr_reader :db, :host, :user
-
-			def storeObject( obj )
-				raise VirtualMethodError, "Required method 'storeObject' unimplemented."
-			end
-
-			def fetchObject( id )
-				raise VirtualMethodError, "Required method 'fetchObject' unimplemented."
-			end
-
-			def hasObject?( id )
-				raise VirtualMethodError, "Require method 'hasObject?' unimplemented."
-			end
-
-			def storePlayerData( username, data )
-				raise VirtualMethodError, "Required method 'storePlayerData' unimplemented."
-			end
-
-			def fetchPlayerData( username )
-				raise VirtualMethodError, "Required method 'fetchPlayerData' unimplemented."
-			end
-
-			def createPlayerData( username )
-				raise VirtualMethodError, "Required method 'createPlayerData' unimplemented."
-			end
-
+			abstract :storeObjects,
+				:fetchObjects,
+				:stored? ,
+				:storeUserData,
+				:fetchUserData,
+				:createUserData,
+				:deleteUserData
 		end
 	end
 end
