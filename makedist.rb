@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.10 2002/10/13 23:29:15 deveiant Exp $
+#	$Id: makedist.rb,v 1.11 2002/10/17 14:43:37 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -28,8 +28,8 @@ Options = [
 
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.10 2002/10/13 23:29:15 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.11 2002/10/17 14:43:37 deveiant Exp $
 
 $Programs = {
 	'tar'	=> nil,
@@ -88,7 +88,6 @@ trap("INT") { system "stty", stty_save; exit }
 def main
 	filelist = []
 	snapshot = false
-	verbose = false
 
 	# Read command-line options
 	opts = GetoptLong::new( *Options )
@@ -99,7 +98,7 @@ def main
 			snapshot = true
 
 		when '--verbose'
-			verbose = true
+			$VERBOSE = true
 
 		else
 			MUES::Log.error( "No such option '#{opt}'" )
@@ -118,7 +117,7 @@ def main
 	end
 	replaceMessage( "All required programs found.\n" )
 
-	filelist = getVettedManifest( verbose )
+	filelist = getVettedManifest()
 
 	version = distName = nil
 	if snapshot
