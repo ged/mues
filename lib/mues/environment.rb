@@ -47,7 +47,7 @@
 #
 # == Rcsid
 # 
-# $Id: environment.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
+# $Id: environment.rb,v 1.15 2002/09/12 10:33:21 deveiant Exp $
 # 
 # == Authors
 # 
@@ -63,6 +63,7 @@
 require "sync"
 
 require "mues/Object"
+require "mues/Mixins"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/Role"
@@ -71,31 +72,18 @@ require "mues/IOEventFilters"
 module MUES
 
 	### Environment abstract base class
-	class Environment < Object ; implements MUES::AbstractClass,
+	class Environment < MUES::Object ; implements MUES::AbstractClass,
 			MUES::Notifiable, MUES::Debuggable
 
 		include MUES::TypeCheckFunctions, MUES::Event::Handler, MUES::FactoryMethods
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.14 2002/08/02 20:03:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.15 2002/09/12 10:33:21 deveiant Exp $
 
 
 		### Class methods
-
-		### Create and return an Array of environments from the specified
-		### configuration (a MUES::Config::EnvironmentsSection).
-		def self.createFromConfig( config )
-			MUES::TypeCheckFunctions::checkType( config, MUES::Config )
-
-			return config.environments.collect {|name,confighash|
-				self.create( confighash['class'],
-							 name,
-							 confighash['description'],
-							 confighash['parameters'] )
-			}
-		end
 
 		### Return an array of environment class names which have been loaded
 		def self.listEnvClasses
@@ -106,10 +94,18 @@ module MUES
 
 		### Initialize subsystems after engine startup (stub).
 		def self.atEngineStartup( theEngine )
+			[]
 		end
 
 		### Clean up subsystems before engine shutdown (stub).
 		def self.atEngineShutdown( theEngine )
+			[]
+		end
+
+		### Derivatives search path
+		### :TODO: This should be configurable.
+		def self.derivativeDirs
+			[ "server/environments" ]
 		end
 
 
