@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.26 2004/02/29 04:43:29 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -48,9 +48,15 @@ class EventQueue < Object ; implements MUES::Debuggable
 
 	include MUES::TypeCheckFunctions
 
-	### Class constants
-	Version	= /([\d\.]+)/.match( %q{$Revision: 1.26 $} )[1]
-	Rcsid	= %q$Id: eventqueue.rb,v 1.26 2004/02/29 04:43:29 deveiant Exp $
+	# SVN Revision
+	SVNRev = %q$Rev$
+
+	# SVN Id
+	SVNId = %q$Id$
+
+	# SVN URL
+	SVNURL = %q$URL$
+
 
 	### Class attributes
 	DefaultMinWorkers	= 2
@@ -431,9 +437,9 @@ class EventQueue < Object ; implements MUES::Debuggable
 
 			if ! @idleWorkers.list.empty?
 				workersRemaining = @idleWorkers.list.length
-				self.log.info "%s: Sending shutdown events to %d idle workers. " +
-					"%d active workers remain." %
-					[ self.name, workersRemaining, @workers.list.length ]
+				self.log.info \
+					"%s: Sending shutdown to %d idle workers. %d active workers remain." %
+					[ self.name, @idleWorkers.list.length, @workers.list.length ]
 				@queueMutex.synchronize {
 					@idleWorkers.list.each do
 						@queuedEvents.push( ThreadShutdownEvent::new )
