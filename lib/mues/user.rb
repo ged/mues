@@ -18,27 +18,27 @@ between the remote client and the objects with which the user object is
 associated, and information about the client.
 
 == Modules
-=== MUES::User::Type
+=== MUES::User::AccountType
 
-Namespace for type constants. Contains:
+Namespace for account type constants. Contains:
 
-: Type::USER
+: AccountType::USER
 
   Normal user. No special permissions.
 
-: Type::CREATOR
+: AccountType::CREATOR
 
   Creator permissions allow the user to start and stop their own Environments,
   examine the state of any object inside an Environment which they have started,
   and fetch limited runtime statistics from the Engine.
 
-: Type::IMPLEMENTOR
+: AccountType::IMPLEMENTOR
 
   Implementor permissions allow the user to start and stop any Environment, view
   the state of any object in any Environment, interact with the Engine to a
   limited degree (shutdown, restart, reload config), view the banlist, etc.
 
-: Type::ADMIN
+: AccountType::ADMIN
 
   Unlimited permissions.
 
@@ -54,7 +54,7 @@ Namespace for type constants. Contains:
 
     Comparison operator -- returns 1, 0, or -1 to indicate sort order for the
     receiver and the specified ((|otherUser|)) object. Objects sorted in this
-    fashion will be ordered by type, with more permissioned users first, and
+    fashion will be ordered by accounttype, with more permissioned users first, and
     then by username.
 
 --- MUES::User#activate( stream )
@@ -168,11 +168,11 @@ module MUES
 		include Event::Handler
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.10 2001/10/07 15:08:53 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.11 2001/11/01 17:18:35 deveiant Exp $
 
-		# User type constants
-		module Type
+		# User AccountType constants
+		module AccountType
 			USER		= 0		# Regular user
 			CREATOR		= 1		# Can world-interaction access
 			IMPLEMENTOR	= 2		# Has server-interaction access
@@ -180,7 +180,7 @@ module MUES
 
 			Name = %w{User Creator Implementor Admin}
 		end
-		Type.freeze
+		AccountType.freeze
 
 		### :SYNC: Changes in this structure should be accompanied by changes in
 		### the corresponding table definition in '../sql/mues.user.sql'
@@ -196,7 +196,7 @@ module MUES
 			'timeCreated'		=> Time.now,
 			'firstLoginTick'	=> 0,
 
-			'type'				=> Type::USER,
+			'accounttype'		=> AccountType::USER,
 			'flags'				=> 0,
 			'preferences'		=> {},
 
@@ -250,29 +250,29 @@ module MUES
 		### METHOD: isCreator?
 		### Returns true if this user has creator permissions
 		def isCreator?
-			return @dbInfo['type'] >= Type::CREATOR
+			return @dbInfo['accounttype'].to_i >= AccountType::CREATOR
 		end
 
 
 		### METHOD: isImplementor?
 		### Returns true if this user has implementor permissions
 		def isImplementor?
-			return @dbInfo['type'] >= Type::IMPLEMENTOR
+			return @dbInfo['accounttype'].to_i >= AccountType::IMPLEMENTOR
 		end
 
 
 		### METHOD: isAdmin?
 		### Returns true if this user has admin permissions
 		def isAdmin?
-			return @dbInfo['type'] >= Type::ADMIN
+			return @dbInfo['accounttype'].to_i >= AccountType::ADMIN
 		end
 
 
 		### METHOD: to_s
 		### Returns a stringified version of the user object
 		def to_s
-			if @dbInfo['type'] > Type::USER
-				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> (#{Type::Name[@dbInfo['type']]})"
+			if self.isCreator?
+				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}> (#{AccountType::Name[@dbInfo['accounttype'].to_i]})"
 			else
 				return "#{@dbInfo['username'].capitalize} <#{@dbInfo['emailAddress']}>"
 			end
@@ -282,7 +282,7 @@ module MUES
 		### METHOD: <=>( anotherUser )
 		### Comparison operator
 		def <=>( otherUser )
-			( @dbInfo['type'] <=> otherUser.type ).nonzero? ||
+			( @dbInfo['accounttype'] <=> otherUser.accounttype ).nonzero? ||
 			@dbInfo['username'] <=> otherUser.username
 		end
 
