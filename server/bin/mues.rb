@@ -27,25 +27,77 @@ A basic non-forking MUES server.
 =end
 ###########################################################################
 
+### Set the include path and config file based on where we're executing from
+if $0 =~ /server#{File::Separator}bin#{File::Separator}/
+	baseDir = $0.gsub( /server#{File::Separator}bin#{File::Separator}.*/, '' )
+	baseDir = '.' if baseDir.empty?
+	$: << File.join( baseDir, "lib" )
+	DefaultConfigFile = File.join( baseDir, "MUES.cfg" )
+elsif $0 =~ /#{File::Separator}bin#{File::Separator}/
+	baseDir = $0.gsub( /#{File::Separator}bin#{File::Separator}.*/, '' )
+	baseDir = '.' if baseDir.empty?
+	DefaultConfigFile = File.join( baseDir, "MUES.cfg" )
+else
+	DefaultConfigFile = "MUES.cfg"
+end
+
+
 require "mues/Engine"
 require "mues/Config"
-
-ConfigFile = "bin/MUES.cfg"
 
 ### Main function
 def main
 
-	### Instantiate the configuration and the server objects
-	config = MUES::Config.new( ConfigFile )
+	configFile = ARGV.shift || DefaultConfigFile
+
+	# Instantiate the configuration object, aborting if we can't find it
+	begin
+		config = MUES::Config.new( configFile )
+	rescue Errno::ENOENT
+		$stderr.puts( "Cannot find config file '#{configFile}'.\nPlease double-check the path and try again." )
+		exit 1
+	end
+
+	# Instantiate the server object
 	engine = MUES::Engine.instance
 
-	engine.debugLevel = 5
+	# Start up and run the server as a daemon
+	if config['startasdaemon']
+		puts "Starting the MUES server in the background...\n"
+		engine.debugLevel = 0
+		daemonize()
+	else
+		engine.debugLevel = config['engine']['debuglevel']
+		puts "Starting the MUES server in the foreground...\n"
+	end
 
-	### Start up and run the server
-	puts "Starting up...\n"
 	engine.start( config )
-	puts "Shut down...\n"
+end
+
+### Become a daemon process
+def daemonize
+
+	# First fork
+	if Process.fork then Process.exit!(0); end
+
+	# Become session leader
+	Process.setsid
+
+	# Second fork
+	if Process.fork then Process.exit!(0); end
+
+	# Set CWD to the root dir and set umask
+	Dir.chdir( "/" )
+	File.umask( 0 )
+
+	# Close all our filehandles and reopen them to /dev/null
+	File.open( "/dev/null", File::TRUNC|File::RDWR ) {|devnull|
+		$stdin.close	&& $stdin.reopen( devnull )
+		$stdout.close	&& $stdout.reopen( devnull )
+		$stderr.close	&& $stderr.reopen( devnull )
+	}
 	
+	return true
 end
 
 
