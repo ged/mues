@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.18 2002/09/12 10:31:35 deveiant Exp $
+# $Id: engine.rb,v 1.19 2002/09/15 00:08:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -123,9 +123,9 @@ require "sync"
 require "digest/md5"
 require "poll"
 
-require "mues/Config"
 require "mues/Mixins"
 require "mues/Object"
+require "mues/Config"
 require "mues/Log"
 require "mues/EventQueue"
 require "mues/Exceptions"
@@ -149,7 +149,7 @@ module MUES
 		# dispatch method
 		include MUES::TypeCheckFunctions,
 			MUES::SafeCheckFunctions,
-			MUES::TaintingFunctions,
+			MUES::UntaintingFunctions,
 			MUES::Event::Handler
 
 
@@ -173,8 +173,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.18 2002/09/12 10:31:35 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.19 2002/09/15 00:08:13 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -630,6 +630,11 @@ module MUES
 			self.log.info( "Creating command shell factory." )
 			@commandShellFactory = config.createCommandShellFactory
 
+			# Schedule an event to periodically update commands
+			reloadEvent = CallbackEvent.new( @commandShellFactory.method('rebuildCommandRegistry') )
+			self.scheduleEvents( @commandShellFactory.reloadInterval, reloadEvent ) if
+				@commandShellFactory.reloadInterval.nonzero?
+
 			return []
 		end
 
@@ -747,6 +752,8 @@ module MUES
 		### propagated when it was started, which should be propagated by the
 		### caller.
 		def loadEnvironment( className, instanceName )
+			checkType( className, ::String, ::Class )
+			checkType( instanceName, ::String )
 			results = []
 
 			@environmentsMutex.synchronize( Sync::SH ) {
@@ -1333,8 +1340,8 @@ module MUES
 		def handleLoadEnvironmentEvent( event )
 			checkType( event, MUES::EnvironmentEvent )
 			
-			envClass = untaint( event.envClassName, /([a-z][\w:]+)/i )
-			envName  = untaint( event.name, /(\w+)/ )
+			envClass = *untaint( event.envClassName, /([a-z][\w:]+)/i )
+			envName  = *untaint( event.name, /(\w+)/ )
 			results = self.loadEnvironment( envClass, envName )
 
 			# Report success
