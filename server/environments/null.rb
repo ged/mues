@@ -3,11 +3,11 @@
 # This file contains the MUES::NullEnvironment class, a <strong>VERY</strong> simple
 # testing MUES::Environment class.
 # 
-# This is a barebones environment used in testing. It doesn^t really contain any
+# This is a barebones environment used in testing. It doesn't really contain any
 # interesting functionality other than the ability to return roles and allow
 # connections.
 # 
-# Well, maybe there^s a few other things you can do...
+# Well, maybe there's a few other things you can do...
 # 
 # == Synopsis
 # 
@@ -64,10 +64,16 @@ module MUES
 
 		include MUES::TypeCheckFunctions
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.11 2003/10/13 04:02:10 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
 
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
+
+		# Default description of new instances
 		DefaultDescription = %Q{
 		This is a barebones environment used in testing. It doesn't really contain any
 		interesting functionality other than the ability to return roles and allow
@@ -76,12 +82,14 @@ module MUES
 		Well, maybe there's a few other things you can do...
 		}.gsub( /^[ \t]*/, '' )
 
+		# Parameters for the objectstore
 		ObjectStoreParams = {
 			:backend	=> 'Flatfile',
 			:memmgr		=> 'Null',
 			:indexes	=> [:class],
 			:visitor	=> MUES::ObjectSpaceVisitor,
 		}
+
 
 		### Instantiate and return a new MUES::NullEnvironment object.
 		def initialize( instanceName, description=DefaultDescription, params={} )
@@ -157,8 +165,8 @@ module MUES
 		def getAvailableRoles( user )
 			checkType( user, MUES::User )
 
-			roles = [ MUES::Role.new( self, "muggle", "An average schmoe participant" ) ]
-			roles << MUES::Role.new( self, "admin", "Administrative participant" ) if user.isAdmin?
+			roles = [ MUES::Role.new( self, "muggle", "An average schmoe" ) ]
+			roles << MUES::Role.new( self, "admin", "An admin" )
 
 			return roles
 		end
@@ -262,6 +270,10 @@ module MUES
 						sayEvent = MUES::OutputEvent.new( "#{user.to_s} says: '#{$1}'\n\n" )
 						@environment.broadcast( sayEvent, self )
 						queueOutputEvents( MUES::OutputEvent.new("You say: '#{$1}'\n\n") )
+
+					# 'Quit' command
+					when /^quit/
+						@environment.broadcast( "#{user.to_s} quits." )
 
 					else
 						results << event
