@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.34 2002/10/13 23:14:13 deveiant Exp $
+#  $Id: objectstore.rb,v 1.35 2002/10/23 02:09:31 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.34 $
-		RcsId	= %q$Id: objectstore.rb,v 1.34 2002/10/13 23:14:13 deveiant Exp $
+		Version	= %q$Revision: 1.35 $
+		RcsId	= %q$Id: objectstore.rb,v 1.35 2002/10/23 02:09:31 deveiant Exp $
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"
@@ -311,7 +311,7 @@ module MUES
 
 		### Closes the database.
 		def close
-			self.log.info( "Closing objectstore #@name" )
+			self.log.info( "Closing '#@name' objectstore" )
 			objects = @memmgr.shutdown
 
 			self.log.info { "Syncing objectspace (%d objects) to backing store" % objects.length }
@@ -375,6 +375,17 @@ module MUES
 		def indexKeys( index )
 			@backend.indexKeys( index )
 		end
+
+
+		### Returns the objectstore as a human-readable string.
+		def to_s
+			"ObjectStore '%s' (%s/%s)" % [
+				@name,
+				@backend.class.name,
+				@memmgr.class.name
+			]
+		end
+
 
 
 		#########
