@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilters.rb,v 1.6 2002/04/01 16:27:31 deveiant Exp $
+# $Id: ioeventfilters.rb,v 1.7 2002/09/12 11:36:58 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,16 +31,20 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/filters/ClientOutputFilter"
-require "mues/filters/CommandShell"
-require "mues/filters/DefaultInputFilter"
-require "mues/filters/DefaultOutputFilter"
 require "mues/filters/IOEventFilter"
-require "mues/filters/LoginProxy"
-require "mues/filters/MacroFilter"
-require "mues/filters/SnoopFilter"
+require "mues/filters/OutputFilter"
+require "mues/filters/InputFilter"
+require "mues/filters/DefaultOutputFilter"
+require "mues/filters/DefaultInputFilter"
+
+require "mues/filters/ClientOutputFilter"
 require "mues/filters/SocketOutputFilter"
 require "mues/filters/TelnetOutputFilter"
 require "mues/filters/ConsoleOutputFilter"
+
+require "mues/filters/CommandShell"
+require "mues/filters/LoginProxy"
+require "mues/filters/MacroFilter"
+require "mues/filters/SnoopFilter"
 require "mues/filters/ParticipantProxy"
 
