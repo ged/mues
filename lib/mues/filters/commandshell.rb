@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.20 2002/10/04 05:08:12 deveiant Exp $
+# $Id: commandshell.rb,v 1.21 2002/10/12 11:28:32 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,8 +72,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.20 2002/10/04 05:08:12 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.21 2002/10/12 11:28:32 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -824,8 +824,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.20 2002/10/04 05:08:12 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.21 2002/10/12 11:28:32 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
@@ -1088,7 +1088,7 @@ logout
 ### 'Debug' command
 = debug
 
-== Restrictions
+== Restriction
 implementor
 
 == Abstract
@@ -1116,7 +1116,7 @@ displays the current level if none is specified.
 ### 'Eval' command
 = eval
 
-== Restrictions
+== Restriction
 admin
 
 == Abstract
