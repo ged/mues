@@ -16,7 +16,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.24 2002/08/02 20:10:10 deveiant Exp $
+# $Id: mues.rb,v 1.25 2002/08/29 07:14:07 deveiant Exp $
 # 
 # == Authors
 # 
@@ -57,6 +57,8 @@ class Module
 	alias :implements? :include?
 end
 
+require 'mues/Object'
+require 'mues.so'
 require 'mues/Engine'
 
 
