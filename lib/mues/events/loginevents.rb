@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: loginevents.rb,v 1.9 2002/08/29 07:07:14 deveiant Exp $
+# $Id: loginevents.rb,v 1.10 2002/09/12 12:16:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -38,7 +38,7 @@ require "weakref"
 
 require "mues/Object"
 require "mues/Exceptions"
-require "mues/events/Event"
+require "mues/events/PrivilegedEvent"
 
 module MUES
 
@@ -47,7 +47,7 @@ module MUES
 	#################################################################
 
 	### Abstract base class for LoginSession events.
-	class LoginSessionEvent < Event ; implements MUES::AbstractClass
+	class LoginSessionEvent < PrivilegedEvent ; implements MUES::AbstractClass
 
 		include MUES::TypeCheckFunctions
 
