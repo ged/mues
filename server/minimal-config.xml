@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/09/27 16:23:01 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/25 03:33:53 $">
 
   <!--
 
@@ -9,6 +9,8 @@
   is used as the default configuration if a MUES::Config object is instantiated
   without any argument. For the actual defaults, see the end of
   lib/mues/Config.rb.
+
+  $Id: minimal-config.xml,v 1.3 2002/10/25 03:33:53 deveiant Exp $
 
   -->
 
@@ -111,10 +113,42 @@
   </login>
 
 
-  <!-- Logging system configuration (Log4R format). Empty means log everything
-       to STDERR. -->
+  <!-- Logging system configuration (Log4R format). Empty means use MUES::Log's
+		default configuration (everything to STDERR). -->
   <logging>
 	<log4r_config>
+	  <!-- Log4R pre-config -->
+	  <pre_config>
+		<parameter name="logpath" value="server/log" />
+		<parameter name="colorPattern" value="\e[1;32m[%d] [%l] %C:\e[0m %.1024m" />
+		<parameter name="plainPattern" value="[%d] [%l] %C: %.1024m" />
+	  </pre_config>
+	  
+	  <!-- Log Outputters -->
+	  <outputter type="IOOutputter" name="console" fdno="2">
+		<formatter type="PatternFormatter" pattern="#{colorPattern}"
+		  date_pattern="%Y/%m/%d %H:%M:%S %Z" />
+	  </outputter>
+	  <outputter type="FileOutputter" name="serverlog"
+		filename="#{logpath}/server.log" trunc="false">
+		<formatter type="PatternFormatter" pattern="#{plainPattern}"
+		  date_pattern="%Y/%m/%d %H:%M:%S %Z" />
+	  </outputter>
+	  <outputter type="FileOutputter" name="errorlog"
+		filename="#{logpath}/error.log" trunc="true">
+		<formatter type="PatternFormatter" pattern="#{plainPattern}"
+		  date_pattern="%Y/%m/%d %H:%M:%S %Z" />
+	  </outputter>
+	  <outputter type="FileOutputter" name="environmentlog"
+		filename="#{logpath}/environments.log" trunc="false">
+		<formatter type="PatternFormatter" pattern="#{plainPattern}"
+		  date_pattern="%Y/%m/%d %H:%M:%S %Z" />
+	  </outputter>
+	  
+	  <!-- Loggers -->
+	  <logger name="MUES::Engine" level="INFO"  outputters="serverlog" />
+	  <logger name="MUES"         level="WARN"  outputters="errorlog" />
+	  <logger name="root"         level="CRIT"  outputters="console" />
 	</log4r_config>
   </logging>
 
