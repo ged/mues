@@ -1,29 +1,29 @@
 /*
  *		FaerieMUD RDoc Stylesheet
- *		$Id: rdoc.css,v 1.1 2002/03/30 19:01:09 deveiant Exp $
+ *		$Id: rdoc.css,v 1.2 2003/06/06 22:33:14 deveiant Exp $
  *
  *		Author:		Michael Granger
- *		Time-stamp:	<23-Feb-2002 01:37:24 deveiant>
+ *		Time-stamp:	<04-Nov-2002 08:57:50 deveiant>
  *
  */
 
-@import url("http://www.FaerieMUD.org/stylesheets/base.css");
-
-BODY {
+body {
     margin: 0;
     padding: 0;
 }
 
-H1, H2, H3, H4, H5, H6 { text-align: left; }
-H1, H2 { color: white; background: transparent }
-H2, H3, H4, H5, H6 { margin-top: 1em; margin-bottom: 0.5em; }
-H1 { font: bold 120% sans-serif; margin-bottom: 0; margin-top: 0; }
-H2 { font: bold 110% sans-serif }
-H3 { font: bold 105% sans-serif }
-H4 { font: bold 100% sans-serif }
-H5 { font: italic 100% sans-serif }
-H6 { font: small-caps 100% sans-serif }
+h1,h2,h3,h4 { margin: 0; color: #fefefe; background: transparent; }
+h1 { font-size: 120%; }
+h2,h3,h4 { margin-top: 1em; }
 
+a { background: #ffd; color: #093; text-decoration: none; }
+
+/* Override the base stylesheet's Anchor inside a table cell */
+td > a {
+	background: #FFD;
+	color: #093;
+	text-decoration: none;
+}
 
 /* Structural elements */
 
