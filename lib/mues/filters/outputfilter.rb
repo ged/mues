@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 # 
 # This file contains the MUES::OutputFilter class, a derivative of
-# MUES::IOEventFilter. It is a base class for filters which provide IO
+# MUES::IOEventFilter. It is an abstract base class for filters which provide IO
 # abstraction for a user client of some sort.
 # 
 # == Synopsis
@@ -16,7 +16,7 @@
 # 
 # == Rcsid
 # 
-# $Id: outputfilter.rb,v 1.2 2002/10/25 03:13:22 deveiant Exp $
+# $Id: outputfilter.rb,v 1.3 2002/10/26 19:04:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -34,11 +34,11 @@ require 'mues/filters/IOEventFilter'
 module MUES
 
 	### Instances.
-	class OutputFilter < MUES::IOEventFilter
+	class OutputFilter < MUES::IOEventFilter ; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: outputfilter.rb,v 1.2 2002/10/25 03:13:22 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: outputfilter.rb,v 1.3 2002/10/26 19:04:23 deveiant Exp $
 		DefaultSortPosition = 5
 
 		### Create a new OutputFilter object with the specified
@@ -63,6 +63,9 @@ module MUES
 		public
 		######
 
+		# Virtual methods
+		abstract :puts
+
 		# The location of the entity on the other end of the filter, usually a
 		# peer network address or file/socket path.
 		attr_reader :peerName
@@ -86,6 +89,7 @@ module MUES
 			results = []
 
 			if @originListener
+				self.log.debug "Returning a ListenerCleanupEvent for %s" % self.to_s
 				results << MUES::ListenerCleanupEvent::new( @originListener, self )
 			end
 			
