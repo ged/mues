@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: incrementalmemorymanager.rb,v 1.2 2002/07/15 18:59:11 stillflame Exp $
+# $Id: incrementalmemorymanager.rb,v 1.3 2002/07/15 22:22:25 stillflame Exp $
 # 
 # == Authors
 # 
@@ -51,14 +51,15 @@ module MUES
 		class IncrementalMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.2 2002/07/15 18:59:11 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.3 2002/07/15 22:22:25 stillflame Exp $
 
 			### Create a new IncrementalMemoryManager object.
 			def initialize( *args )
 				super( *args )
 				@maturationThread = nil
 				@collectorThread = nil
+				@matureMutex = Sync::new
 				@matureObjects = {}
 				@interval		= @config['interval']		|| 50
 				@cycleLength	= @config['cycleLength']	|| 10
@@ -146,10 +147,10 @@ module MUES
 			# it finds.
 			def collectorThreadRoutine( visitor )
 				while true
-					@mutex.synchronize( Sync::SH ) {
+					@matureMutex.synchronize( Sync::SH ) {
 						@matureObjectSpace.each {|o|
 							reclaim(o)
-							@mutex.synchronize( Sync::EX ) {
+							@matureMutex.synchronize( Sync::EX ) {
 								@matureObjectSpace.delete(o)
 							}
 						}
@@ -161,13 +162,15 @@ module MUES
 			# that reponds true to the visitor.
 			def maturationThreadRoutine( visitor )
 				while true
-					@active_objects.each {|o|
-						if (! o.shallow?) && o.accept(visitor)
-							@mutex.synchronize( Sync::EX ) {
-								# use of a hash automatically takes care of duplicates.
-								@matureObjectSpace[o] = nil
-							}
-						end
+					@mutex.synchronize( Sync::SH ) {
+						@activeObjects.each {|o|
+							if (! o.shallow?) && o.accept(visitor)
+								@matureMutex.synchronize( Sync::EX ) {
+									# use of a hash automatically takes care of duplicates.
+									@matureObjectSpace[o] = nil
+								}
+							end
+						}
 					}
 				end
 			end
@@ -175,10 +178,10 @@ module MUES
 			### Stores all the (non-shallow) objects in the object store.
 			def saveAllObjects 
 				@mutex.synchronixe( Sync::EX ) {
-					@active_objects.each_value {|o|
+					@activeObjects.each_value {|o|
 						@objectStore.store(o) unless o.shallow?
 					}
-					@active_objects.clear
+					@activeObjects.clear
 				}
 			end
 
