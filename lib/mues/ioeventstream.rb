@@ -116,7 +116,7 @@ module MUES
 		### Add the specified filters to the stream
 		def addFilters( *filters )
 			_debugMsg( 1, "Adding #{filters.size} filters to stream #{self.id}" )
-			return unless @state == RUNNING
+
 			@filterMutex.synchronize {
 				@filters |= filters
 			}
@@ -126,7 +126,7 @@ module MUES
 		### Remove the specified filters from the stream
 		def removeFilters( *filters )
 			_debugMsg( 1, "Removing #{filters.size} filters from stream #{self.id}" )
-			return unless @state == RUNNING
+
 			returnFilters = []
 			@filterMutex.synchronize {
 				returnFilters = @filters & filters
@@ -303,15 +303,18 @@ module MUES
 
 			### Get the currently queued output events and clear the queue
 			events = fetchOutputEvents()
-			events.flatten!
 			_debugMsg( 1, "#{events.size} output events to filter." )
 
 			### Delegate the list of events to each filter in turn, and catch any
 			### that are returned for the next filter
 			@filters.sort.reverse.each do |filter|
+
 				_debugMsg( 1, "Sending #{events.size} output events to a #{filter.class.name}." )
-				results = filter.handleOutputEvents( events )
+				results = filter.handleOutputEvents( *events )
 				_debugMsg( 1, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
+
+				# If the filter returned nil or its isFinished flag is set,
+				# get all of its queued events and remove it from the stream.
 				if ( results.nil? || filter.isFinished ) then
 					_debugMsg( 1, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
 					removeFilters( filter )
@@ -321,6 +324,7 @@ module MUES
 					events = filter.queuedOutputEvents
 					next
 				end
+
 				events = results.flatten
 			end
 
