@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.2 2001/11/01 19:51:04 deveiant Exp $
+#	$Id: quickstart.rb,v 1.3 2001/11/01 22:16:46 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -55,7 +55,8 @@ def main
 			newUsername = prompt( "Username" )
 			error "Username must be at least 3 characters in length." unless newUsername.length >= 3
 		end
-		
+
+		$: << "lib"
 		require "server/bin/createUser.rb"
 		u = UserTool.new
 		u.createUser( newUsername, "server/MUES.cfg" )
