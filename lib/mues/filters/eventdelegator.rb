@@ -28,7 +28,7 @@
 #
 # == Rcsid
 # 
-# $Id: eventdelegator.rb,v 1.13 2002/10/28 00:08:00 deveiant Exp $
+# $Id: eventdelegator.rb,v 1.14 2002/10/31 02:18:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -40,6 +40,8 @@
 #
 # Please see the file COPYRIGHT for licensing details.
 #
+
+require 'sync'
 
 require "mues/Object"
 require "mues/Events"
@@ -53,23 +55,46 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid = %q$Id: eventdelegator.rb,v 1.13 2002/10/28 00:08:00 deveiant Exp $
-		DefaultSortPosition = 600
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
+		Rcsid = %q$Id: eventdelegator.rb,v 1.14 2002/10/31 02:18:11 deveiant Exp $
 
-		### Create and return a EventDelegator object for the given client. The
-		### object must respond to the #handleInputEvents method.
-		def initialize( delegate, sortPosition=DefaultSortPosition )
-			super( sortPosition )
+		DefaultSortPosition	= 600
+		DefaultHandlers = {
+			:input	=> :handleInputEvents,
+			:output => :handleOutputEvents,
+		}
 
-			unless delegate.respond_to?(:handleInputEvents) ||
-					delegate.respond_to?(:handleOutputEvents)
-				raise ArgumentError, "Delegate must respond to either :handleInputEvents, "
-					":handleOutputEvents, or both"
-			end
+
+		### Create and return a EventDelegator object for the given
+		### <tt>delegate</tt>, which will be called through the specified
+		### handlers, each of which can be a Method, Proc, String, Symbol,
+		### <tt>false</tt>, or <tt>nil</tt>. A Method or a Proc will be used
+		### as-is, a String or Symbol is used to look up a method on the
+		### <tt>delegate</tt> object via #method(), <tt>false</tt> indicates
+		### that no handler should be called for that type of event, and
+		### <tt>nil</tt> indicates that the defaults should be used
+		### (<tt>:handleInputEvents</tt> and <tt>:handleOutputEvents</tt>). When
+		### events of the appropriate type are received, the specified handler
+		### is called via the #call method, with one or more events as arguments: eg.,
+		###
+		###   handler.call( *events )
+		###
+		### At least one of the handlers must result in an object that responds
+		### to the #call method.
+		def initialize( delegate, inHandler=nil, outHandler=nil, sortPos=DefaultSortPosition )
+			super( sortPos )
+
+			@inputHandler = normalizeHandler( delegate, inHandler, "input" )
+			@outputHandler = normalizeHandler( delegate, outHandler, "output" )
+			@handlerMutex = Sync::new
+				
+			raise MUES::Exception, "No valid handlers found." unless
+				@inputHandler || @outputHandler
 
 			@delegate = delegate
+			@connected = true
 		end
+
 
 
 		######
@@ -81,10 +106,11 @@ module MUES
 			events.flatten!
 			checkEachType( events, MUES::InputEvent )
 			
-			events = super( *events )
-			if @delegate.respond_to?( :handleInputEvents )
-				events = @delegate.handleInputEvents( self, *events )
-			end
+			@handlerMutex.synchronize( Sync::SH ) {
+				events = super( *events )
+				return events unless @connected
+				events = @inputHandler.call( self, *events ) if @inputHandler
+			}
 
 			return events
 		end
@@ -95,13 +121,72 @@ module MUES
 			events.flatten!
 			checkEachType( events, MUES::OutputEvent )
 			
-			events = super( *events )
-			if @delegate.respond_to?( :handleOutputEvents )
-				events = @delegate.handleOutputEvents( self, *events )
-			end
+			@handlerMutex.synchronize( Sync::SH ) {
+				events = super( *events )
+				return events unless @connected
+				events = @outputHandler.call( self, *events ) if @outputHandler
+			}
 
 			return events
 		end
+
+
+		### Return a stringified description of the filter.
+		def to_s
+			"%s filter for %s [%d]" %
+				[ self.class.name, @delegate.to_s, @sortPosition ]
+		end
+
+
+		### Disconnect the delegator from the delegate and set the filter's
+		### state to 'finished'.
+		def disconnect
+			@handlerMutex.synchronize( Sync::EX ) {
+				@connected = false
+				@inputHandler = nil
+				@outputHandler = nil
+			}
+
+			self.finish
+		end
+
+
+
+		#########
+		protected
+		#########
+
+		### Given a delegate object, a handler object, and a direction
+		### (input/output), normalize it into something that can be called via a
+		### #call method, or nil. If it cannot be normalized, an exception is
+		### #raised.
+		def normalizeHandler( delegate, handler, direction )
+			handler = DefaultHandlers[direction.intern] if
+				handler.nil?
+
+			case handler
+			when false
+				return false
+
+			when Method, Proc
+				return handler
+
+			when Symbol, String
+				unless delegate.respond_to?( handler )
+					raise NoMethodError,
+						"Delegate does not respond to the %s handler (%s)" %
+						  [ direction, handler.to_s ],
+						caller(2)
+				end
+
+				return delegate.method( handler )
+
+			else
+				raise TypeError, "Unknown %s handler type '%s'" %
+					[ direction, handler.class.name ]
+			end
+		end
+			
 
 
 	end # class EventDelegator
