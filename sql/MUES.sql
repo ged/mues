@@ -1,7 +1,7 @@
 /*
    MUES Database Schema (MySQL)
-	$Id: MUES.sql,v 1.1 2001/03/15 02:22:16 deveiant Exp $
-	Time-stamp: <28-Jan-2001 02:39:57 deveiant>
+	$Id: MUES.sql,v 1.2 2001/05/14 12:34:22 deveiant Exp $
+	Time-stamp: <31-Mar-2001 10:23:30 deveiant>
 
 	Michael Granger <ged@FaerieMUD.org>
 	Copyright (c) 1998-2001 The FaerieMUD Consortium. All rights reserved.
@@ -19,11 +19,12 @@ CREATE DATABASE mues;
 USE mues;
 
 /* --- CHANGE THE PASSWORD IN THIS STATEMENT --- */
-GRANT ALL PRIVILEGES ON mues.*
+GRANT SELECT,INSERT,UPDATE,DELETE ON mues.*
 	TO mues@localhost
 	IDENTIFIED BY 'changeme';
 
-
 #include "mues.player.sql"
-#include "mues.ban.sql"
+#include "mues.denyallow.sql"
+#include "mues.object.sql"
+
 
