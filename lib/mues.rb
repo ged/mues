@@ -21,7 +21,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.16 2002/03/30 19:09:45 deveiant Exp $
+# $Id: mues.rb,v 1.17 2002/04/11 16:58:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -412,8 +412,8 @@ module MUES
 
 		##
 		# Class constants
-		Version	= %q$Revision: 1.16 $
-		RcsId	= %q$Id: mues.rb,v 1.16 2002/03/30 19:09:45 deveiant Exp $
+		Version	= %q$Revision: 1.17 $
+		RcsId	= %q$Id: mues.rb,v 1.17 2002/04/11 16:58:26 deveiant Exp $
 
 		##
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -481,19 +481,6 @@ module MUES
 		def engine
 			raise SecurityError, "Unauthorized request for engine instance." if self.tainted? || $SAFE >= 3
 			return MUES::Engine.instance
-		end
-
-
-		##
-		# Register <tt>handlerObject</tt> to receive events of the specified
-		# <tt>eventClasses</tt> or any of their derivatives. See the docs for MUES::Event
-		# for how to handle events.
-		def registerHandlerForEvents( handlerObject, *eventClasses )
-			checkResponse( handlerObject, "handleEvent" )
-
-			eventClasses.each do |eventClass|
-				eventClass.RegisterHandlers( handlerObject )
-			end
 		end
 
 
