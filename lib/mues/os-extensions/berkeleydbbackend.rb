@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.9 2002/10/14 09:44:40 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.10 2002/10/23 02:49:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -44,8 +44,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.9 2002/10/14 09:44:40 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.10 2002/10/23 02:49:18 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,
@@ -72,9 +72,11 @@ module MUES
 					">= 3.3.x and BDB >= 0.2.1" unless
 					BDB::Common::instance_methods.include? 'associate'
 
+				# Figure out what the target directory is
 				@dir = File::join( ObjectStore::Backend::StoreDir, @name )
 				Dir::mkdir( @dir ) unless File.directory?( @dir )
 
+				# Open the environment object and then the primary database handle.
 				@env = BDB::Env::new( @dir, EnvFlags, EnvOptions )
 				@db = @env.open_db( BDB::Hash, @name, nil, BDB::CREATE )
 
@@ -167,6 +169,7 @@ module MUES
 
 				objs = []
 				begin
+					# Do the fetch, duplicates okay
 					@env.begin( 0, @indexes[key.to_s.intern] ) do |txn, idx|
 						objs.replace idx.duplicates(val, false).
 							collect {|o| Marshal::restore(o) }
@@ -215,32 +218,57 @@ module MUES
 				
 				begin
 					cursors = []
+
+					# Start transaction
 					@env.begin( 0, @db ) do |txn, db|
+
+						# Create a cursor for each index => value pair.
 						indexValuePairs.each {|idx,vals|
 							vals = [ vals ] unless vals.is_a?( Array )
 							debugMsg 2, "Looking up values '#{vals.inspect}' for idx '#{idx.inspect}'"
+
 							vals.each {|val|
 								debugMsg 3, "Fetching cursor for '#{val}'"
 								cursor = txn.associate( @indexes[idx] ).cursor
 								rval = cursor.set( val )
-								debugMsg 2, "Got a cursor with #{cursor.count} values."
+
+								# If the cursor didn't find any values, the
+								# lookup fails, so close the failing cursor,
+								# stick a nil in the cursor array to signify the
+								# failure, and break out of the index => val
+								# loop.
+								if rval.nil?
+									debugMsg 1, "Lookup failed: No matching values for #{idx.inspect} = #{val.inspect}."
+									cursors << nil
+									cursor.close
+									break
+								else
+									debugMsg 2, "Got a cursor with #{cursor.count} values."
+								end
 
 								cursors << cursor
 							}
 						}
 
-						debugMsg 2, "Preparing to do a join with #{cursors.length} cursors."
+						# Unless one of the cursors failed, do the join and
+						# fetch the results
+						unless cursors.include?( nil )
+							debugMsg 2, "Preparing to do a join with #{cursors.length} cursors."
 
-						db.join(cursors) {|key,val|
-							objs << Marshal::restore( val )
-							debugMsg 5, "Added obj: <%s> in join." % objs[-1].inspect
-						}
+							db.join(cursors) {|key,val|
+								objs << Marshal::restore( val )
+								debugMsg 5, "Added obj: <%s> in join." % objs[-1].inspect
+							}
+						end
 
+						# Close all of the valid cursors
 						debugMsg 3, "Closing cursors..."
-						cursors.each {|cursor| cursor.close}
+						cursors.each {|cursor| cursor.close unless cursor.nil?}
 
 						debugMsg 2, "Leaving join transaction..."
 					end
+
+				# On an error, attempt to recover the DB
 				rescue => err
 					self.log.error "Transaction failed while fetching: %s: %s" % [
 						err.message, err.backtrace.join("\n\t") ]
@@ -265,6 +293,7 @@ module MUES
 				checkOpened()
 				objs = []
 				
+				# Normalize all the target objects into their ids
 				objects.collect! {|obj|
 					case obj
 					when MUES::StorableObject
@@ -279,11 +308,15 @@ module MUES
 				}
 
 				begin
+
+					# Delete each object inside of a transaction
 					@env.begin( BDB::TXN_COMMIT, @db ) do |txn, db|
 						debugMsg 3, "Removing values for ids '%s'" % objs.inspect
 						objects.each {|id| db.delete( id )}
 						debugMsg 3, "Done with transaction"
 					end
+
+				# On an error, attempt to recover the DB
 				rescue => err
 					self.log.error "Transaction failed while removing: %s: %s" % [
 						err.message, err.backtrace.join("\n\t") ]
