@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.11 2002/10/17 14:43:37 deveiant Exp $
+#	$Id: makedist.rb,v 1.12 2002/10/31 08:26:05 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -28,8 +28,8 @@ Options = [
 
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.11 2002/10/17 14:43:37 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.12 2002/10/31 08:26:05 deveiant Exp $
 
 $Programs = {
 	'tar'	=> nil,
@@ -113,9 +113,9 @@ def main
 	for prog in $Programs.keys
 		$Programs[ prog ] = findProgram( prog ) or
 			abort "Required program #{prog} not found."
-		replaceMessage( "  #{prog}: %s\n" % $Programs[prog] )
+		message( "  #{prog}: %s\n" % $Programs[prog] )
 	end
-	replaceMessage( "All required programs found.\n" )
+	message( "All required programs found.\n" )
 
 	filelist = getVettedManifest()
 
@@ -124,7 +124,7 @@ def main
 		version = promptWithDefault( "Snapshot version", Time::now.strftime('%Y%m%d') )
 		distName = "%s-%s" % [ project, version ]
 	else
-		releaseVersion = extractNextVersionFromTags( MANIFEST[0] )
+		releaseVersion = extractNextVersionFromTags( filelist[0] )
 		version = promptWithDefault( "Distribution version", releaseVersion )
 		distName = "%s-%s" % [ project, version ]
 
