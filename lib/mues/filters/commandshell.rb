@@ -30,13 +30,15 @@
 #
 #  require "mues/filters/CommandShell"
 #
+#  cfactory = MUES::CommandShell::Factory::new( 'server/shellCommands' )
+#
 # == To Do
 # 
 # * Perhaps add soundex matching if there are no abbrev matches for a command?
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.17 2002/09/12 12:36:01 deveiant Exp $
+# $Id: commandshell.rb,v 1.18 2002/09/15 07:41:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -71,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.17 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.17 2002/09/12 12:36:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.18 2002/09/15 07:41:44 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -820,8 +822,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.17 2002/09/12 12:36:01 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.18 2002/09/15 07:41:44 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
@@ -829,16 +831,23 @@ module MUES
 			DefaultParserClass	= MUES::CommandShell::CommandParser
 
 			### Create and return a new CommandFactory, configured with the
-			### specified <tt>shellClass</tt>, <tt>tableClass</tt>,
-			### <tt>parserClass</tt>, <tt>commandPath</tt>, and
-			### <tt>shellParameters</tt>.
-			def initialize( shellClass=nil, tableClass=nil, parserClass=nil,
-						    commandPath=[], shellParameters={} )
+			### specified <tt>commandPath</tt> and <tt>shellParameters</tt>. The
+			### classes that will be used in construction can be specified with
+			### the <tt>shellClass</tt>, <tt>tableClass</tt>, and
+			### <tt>parserClass</tt> arguments, which can be either the class
+			### object or a name suitable for passing to the appropriate
+			### factory's #create method. They default to MUES::CommandShell,
+			### MUES::CommandShell::CommandTable, and
+			### MUES::CommandShell::CommandParser, respectively.
+			def initialize( commandPath=[], shellParameters={},
+						    shellClass=DefaultShellClass,
+						    tableClass=DefaultTableClass,
+						    parserClass=DefaultParserClass )
+				checkType( commandPath, ::Array )
+				checkType( shellParameters, ::Hash, ::NilClass )
 				checkType( shellClass, ::Class, ::String, ::NilClass )
 				checkType( tableClass, ::Class, ::String, ::NilClass )
 				checkType( parserClass, ::Class, ::String, ::NilClass )
-				checkType( commandPath, ::Array )
-				checkType( shellParameters, ::Hash, ::NilClass )
 
 				# Classes used to build a shell
 				@shellClass			= shellClass || DefaultShellClass
@@ -867,11 +876,6 @@ module MUES
 				end
 				
 				buildCommandRegistry()
-
-				# Schedule an event to periodically update commands
-				@reloadEvent = CallbackEvent.new( self.method('rebuildCommandRegistry') )
-				scheduleEvents( @reloadInterval, @reloadEvent )
-
 				return self
 			end
 
@@ -880,17 +884,37 @@ module MUES
 			public
 			######
 
-			# The Array of directories to search for command source files
-			attr_reader :commandPath
-
 			# The registry of all loaded commands, keyed by command and alias
-			attr_reader :registry
+			attr_reader		:registry
+
+			# Flag that indicates whether or not the factory's registry of
+			# commands has been built.
+			attr_reader		:registryIsBuilt
+			alias :registryIsBuilt? :registryIsBuilt
+
+			# The Array of directories to search for command source files
+			attr_accessor	:commandPath
+
+			# The number of seconds to use as the interval for scheduling
+			# reloads (in the format understood by MUES::Engine#scheduleEvents).
+			attr_accessor	:reloadInterval
+			
+			# The class of objects that will be used by the factory for the shell itself.
+			attr_accessor	:shellClass
+
+			# The class of objects that will be used by the factory for the
+			# shell's command table.
+			attr_accessor	:tableClass
+
+			# The class of object that will be used by the factory to parse
+			# command definitions.
+			attr_accessor	:parserClass
+
 
 
 			### Returns a instance of MUES::CommandShell or one of its
 			### derivatives (as specified by the configuration which created the
-			### factory), tailored for the specified user (a MUES::User object),
-			### and configured according to the specified config object.
+			### factory) tailored for the specified user (a MUES::User object).
 			def createShellForUser( user )
 				table = createCommandTableForUser( user )
 				return CommandShell::create( @shellClass, user, table, @shellParameters )
