@@ -21,8 +21,25 @@
 # == Synopsis
 #
 #   require "ObjectStore"
+#   require "StorableObject"
 #
-#   #:?:  i'll figure this out later.
+#   $store = ObjectStore.new("test_store")
+#   objs = []
+#   ids = []
+#   40.times do
+#      obj << StorableObject.new
+#      ids << obj[-1].id
+#   end
+#   $store.store( objs )
+#
+#   #...
+#
+#   object = $store.retrieve( ids[12] )
+#   object.read_only_do {|x| puts x}
+#   object.attribute_A = 3.14159262546
+#   $store.store( object )
+#
+#   $store.close
 #
 # == Description
 #
@@ -38,6 +55,9 @@
 #
 # * Martin Chase <stillflame@FaerieMUD.org>
 #
+
+$: << "/home/touch/archives/arunadb_0_80" if File.directory?(
+				"/home/touch/archives/arunadb_0_80" )
 
 require "a_catalog" #arunadb file
 require "a_table"   #arunadb file
@@ -115,16 +135,16 @@ class ObjectStore
 	###   serialize - the symbol for the method to serialize the objects
 	###   deserialize - the symbol for the method to deserialize the objects
 	def initialize( filename, database, indexes = [],
-				    serialize = nil, deserialize = nil)
-		@filename = filename
-		@indexes = indexes
-		@serialize = serialize
-		@deserialize = deserialize
-
-		add_indexes( @indexes )
-		
-		@database = database
-		@table = @database[-1]
+		        serialize = nil, deserialize = nil)
+	  @filename = filename
+	  @indexes = indexes
+	  @serialize = serialize
+	  @deserialize = deserialize
+	  
+	  add_indexes( @indexes )
+	  
+	  @database = database
+	  @table = @database[-1]
 	end
 	
 	######
@@ -153,11 +173,11 @@ class ObjectStore
 	### Gets the object specified by the given id out of the database
 	### Well, not really.  returns a StorableObject style shallow reference
 	def retrieve ( id )
-		StorableObject.new( id )
+	  StorableObject.new( id )
 	end
 
 	### *ACTUALLY* gets the object specifed by the given id out of the database
-	def _retrieve ( id )
+	def _retrieve ( id , read_only = false )
 	end
 
 	def add_indexes ( *indexes )
