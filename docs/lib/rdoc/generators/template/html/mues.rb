@@ -1,3 +1,26 @@
+#
+# = FaerieMUD MUES RDoc HTML template
+#
+# This is an HTML template for RDoc that dictates a bit more of the appearance
+# of the output to cascading stylesheets than the default. It is designed for
+# inline code, and will toggle the display of each method's source with a click
+# on the method name.
+#
+# == CVSID
+#
+#   $Id: mues.rb,v 1.3 2002/05/28 17:07:24 deveiant Exp $
+#
+# == Authors
+#
+# * Michael Granger <ged@FaerieMUD.org>
+#
+# Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
+#
+# This document is Open Content. You may use, modify, and/or redistribute this
+# document under the terms of the Open Content License. (See
+# http://www.opencontent.org/ for details)
+#
+
 module RDoc
 	module Page
 
@@ -15,13 +38,18 @@ STYLE = %{/*
 ###	H E A D E R   T E M P L A T E  
 #####################################################################
 
-HEADER = %{<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+XHTML_PREAMBLE = %{<?xml version="1.0" encoding="%charset%"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "DTD/xhtml1-transitional.dtd">
+}
+
+HEADER = XHTML_PREAMBLE + %{
 <!--
 
     The FaerieMUD Consortium: %title%
 
     Author:     Michael Granger
-        
     Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
@@ -32,12 +60,13 @@ HEADER = %{<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
       - Lao-Tzu
 
   -->
-<HTML>
-<HEAD>
-	<TITLE>%title%</TITLE>
-	<META http-equiv="Content-Type" content="text/html; charset=%charset%">
-	<LINK rel="stylesheet" href="http://www.FaerieMUD.org/stylesheets/rdoc.css" type="text/css" media="screen">
-	<SCRIPT language="javascript" type="text/javascript">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<title>%title%</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=%charset%" />
+	<meta http-equiv="Content-Script-Type" content="text/javascript" />
+	<link rel="stylesheet" href="http://www.FaerieMUD.org/stylesheets/rdoc.css" type="text/css" media="screen" />
+	<script type="text/javascript">
 	<!-- Hide
 
 	function popupCode( url ) {
@@ -63,11 +92,11 @@ HEADER = %{<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 		return true;
 	}
 	
-	// Unhide --> 
-	</SCRIPT>
+	// Unhide -->
+	</script>
 
-</HEAD>
-<BODY>
+</head>
+<body>
 }
 
 
@@ -76,72 +105,72 @@ HEADER = %{<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 #####################################################################
 
 CONTEXT_CONTENT = %{
-	<DIV class="contextContent">
+	<div id="contextContent">
 IF:diagram
-		<DIV id="diagram">
+		<div id="diagram">
 			%diagram%
-		</DIV>
+		</div>
 ENDIF:diagram
 
 IF:description
-		<DIV id="description">
+		<div id="description">
 			%description%
-		</DIV>
+		</div>
 ENDIF:description
 
 IF:requires
-		<DIV id="requires-list">
-			<H2 class="section-bar">Required files</H2>
+		<div id="requires-list">
+			<h2 class="section-bar">Required files</h2>
 
 			<div class="name-list">
 START:requires
 			HREF:aref:name:&nbsp;&nbsp;
 END:requires
 			</div>
-		</DIV>
+		</div>
 ENDIF:requires
 
 IF:methods
-		<DIV id="method-index">
-			<H2 class="section-bar">Methods</H2>
+		<div id="method-index">
+			<h2 class="section-bar">Methods</h2>
 
-			<DIV id="method-index-list">
+			<div id="method-index-list">
 START:methods
 			HREF:aref:name:&nbsp;&nbsp;
 END:methods
-			</DIV>
-		</DIV>
+			</div>
+		</div>
 ENDIF:methods
 
 IF:attributes
-		<DIV id="attributes">
-			<H2 class="section-bar">Attributes</H2>
+		<div id="attributes">
+			<h2 class="section-bar">Attributes</h2>
 
-			<DIV id="attribute-list">
-				<TABLE>
+			<div id="attribute-list">
+				<table>
 
 START:attributes
-				<TR valign="top">
-					<TD class="attr-name">%name%</td>
-					<TD align="center" class="attr-rw">&nbsp;[%rw%]&nbsp;</td>
-					<TD>%a_desc%</TD>
-				</TR>
+				<tr valign="top">
+					<td class="attr-name">%name%</td>
+					<td align="center" class="attr-rw">&nbsp;[%rw%]&nbsp;</td>
+					<td>%a_desc%</td>
+				</tr>
 
 END:attributes
-				</TABLE>
-			</DIV>
-		</DIV>
+				</table>
+			</div>
+		</div>
 ENDIF:attributes
 			
 IF:classlist
-		<DIV id="class-list">
-			<H2 class="section-bar">Classes and Modules</H2>
+		<div id="class-list">
+			<h2 class="section-bar">Classes and Modules</h2>
 
 			%classlist%
-		</DIV>
+		</div>
 ENDIF:classlist
 
-	</DIV>
+	</div>
 
 }
 
@@ -150,18 +179,25 @@ ENDIF:classlist
 ###	F O O T E R   T E M P L A T E
 #####################################################################
 FOOTER = %{
-<DIV id="copyright">
-	<P>Copyright &copy; 1999-2002, <A href="http://www.FaerieMUD.org/">The FaerieMUD
-	Consortium</A>. This material may be distributed only subject to the terms and
-	conditions set forth in the Open Publication License, v1.0 or later (the latest
-	version is presently available at &lt;<A
-	href="http://www.opencontent.org/openpub/">http://www.opencontent.org/openpub/</A>&gt;). Distribution
-	of substantively modified versions of this document is prohibited without the
-	explicit permission of the copyright holder.</P>
-</DIV>
+<div id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer"><img
+        src="/images/valid-xhtml10.png"
+        alt="Valid XHTML 1.0!" height="31" width="88" border="0" /></a>
+  </p>
+</div>
 
-</BODY>
-</HTML>
+<div id="copyright">
+	<p>Copyright &copy; 1999-2002, <a href="http://www.FaerieMUD.org/">The FaerieMUD
+	Consortium</a>. This material may be distributed only subject to the terms and
+	conditions set forth in the Open Publication License, v1.0 or later (the latest
+	version is presently available at &lt;<a
+	href="http://www.opencontent.org/openpub/">http://www.opencontent.org/openpub/</a>&gt;). Distribution
+	of substantively modified versions of this document is prohibited without the
+	explicit permission of the copyright holder.</p>
+</div>
+
+</body>
+</html>
 }
 
 
@@ -170,13 +206,13 @@ FOOTER = %{
 #####################################################################
 
 FILE_PAGE = %{
-	<DIV id="fileHeader">
-		<H1>%short_name%</H1>
-		<TABLE class="header-table">
-		<TR valign="top"><TD><STRONG>Path:</STRONG></TD><TD>%full_path%</TD></TR>
-		<TR valign="top"><TD><STRONG>Last Update:</STRONG></TD><TD>%dtm_modified%</TD></TR>
-		</TABLE>
-	</DIV>
+	<div id="fileHeader">
+		<h1>%short_name%</h1>
+		<table class="header-table">
+		<tr valign="top"><td><strong>Path:</strong></td><td>%full_path%</td></tr>
+		<tr valign="top"><td><strong>Last Update:</strong></td><td>%dtm_modified%</td></tr>
+		</table>
+	</div>
 }
 
 
@@ -185,12 +221,12 @@ FILE_PAGE = %{
 #####################################################################
 
 CLASS_PAGE = %{
-    <DIV id="classHeader">
-        <H1>%full_name% <SUP class="typeNote">(%classmod%)</SUP></H1>
-        <TABLE class="header-table">
-        <TR valign="top">
-            <TD><STRONG>In:</STRONG></TD>
-            <TD>
+    <div id="classHeader">
+        <h1>%full_name% <sup class="typeNote">(%classmod%)</sup></h1>
+        <table class="header-table">
+        <tr valign="top">
+            <td><strong>In:</strong></td>
+            <td>
 START:infiles
 IF:full_path_url
                 <a href="%full_path_url%">
@@ -199,17 +235,17 @@ ENDIF:full_path_url
 IF:full_path_url
                 </a>
 ENDIF:full_path_url
-<br>
+<br />
 END:infiles
-            </TD>
-        </TR>
-        </TABLE>
+            </td>
+        </tr>
+        </table>
 
 IF:parent
-        <TABLE class="header-table">
-        <TR valign="top">
-            <TD><STRONG>Parent:</STRONG>
-            <TD>
+        <table class="header-table">
+        <tr valign="top">
+            <td><strong>Parent:</strong>
+            <td>
 IF:par_url
                 <a href="%par_url%">
 ENDIF:par_url
@@ -217,11 +253,11 @@ ENDIF:par_url
 IF:par_url
                </a>
 ENDIF:par_url
-            </TD>
-        </TR>
-        </TABLE>
+            </td>
+        </tr>
+        </table>
 ENDIF:parent
-    </DIV>
+    </div>
 }
 
 
@@ -233,66 +269,67 @@ METHOD_LIST = %{
 
 		<!-- if includes -->
 IF:includes
-		<DIV id="includes">
-			<H2 class="section-bar">Included Modules</H2>
+		<div id="includes">
+			<h2 class="section-bar">Included Modules</h2>
 
-			<DIV id="includes-list">
+			<div id="includes-list">
 START:includes
-		    <SPAN class="include-name">HREF:aref:name:</span>
+		    <span class="include-name">HREF:aref:name:</span>
 END:includes
-		</DIV>
+			</div>
+		</div>
 ENDIF:includes
 
 
 		<!-- if method_list -->
 IF:method_list
-		<DIV id="methods">
+		<div id="methods">
 START:method_list
 IF:methods
-			<H2 class="section-bar">%type% %category% methods</H2>
+			<h2 class="section-bar">%type% %category% methods</h2>
 
 START:methods
 			<!-- %name%%params% -->
-			<DIV id="method-%aref%" class="method-detail">
-				<A name="%aref%"></a>
+			<div id="method-%aref%" class="method-detail">
+				<a name="%aref%"></a>
 
-				<DIV class="method-signature">
+				<div class="method-heading">
 IF:codeurl
-					<A href="%codeurl%" target="Code" class="methodtitle"
-						onClick="popupCode('%codeurl%');return false;">
+					<a href="%codeurl%" target="Code" class="method-signature"
+						onclick="popupCode('%codeurl%');return false;">
 ENDIF:codeurl
 IF:sourcecode
-					<A href="#" class="methodtitle"
-						onClick="toggleCode('%aref%-source');return false;">
+					<a href="#%aref%" class="method-signature"
+						onclick="toggleCode('%aref%-source');return false;">
 ENDIF:sourcecode
-					<H3 class="method-name">%name%<SPAN class="method-args">%params%</SPAN></H3>
+					<span class="method-name">%name%</span><span class="method-args">%params%</span>
 IF:codeurl
-					</A>
+					</a>
 ENDIF:codeurl
 IF:sourcecode
-					</A>
+					</a>
 ENDIF:sourcecode
-				</DIV>
+				</div>
 			
-				<DIV class="method-description">
+				<div class="method-description">
 IF:m_desc
 					%m_desc%
 ENDIF:m_desc
 IF:sourcecode
-					<DIV class="source-code" id="%aref%-source">
-<PRE>
+					<div class="method-source-code" id="%aref%-source">
+<pre>
 %sourcecode%
-</PRE>
-					</DIV>
+</pre>
+					</div>
 ENDIF:sourcecode
-				</DIV>
-			</DIV>
+				</div>
+			</div>
 
 END:methods
 ENDIF:methods
 END:method_list
 
-		</DIV>
+		</div>
 ENDIF:method_list
 }
 
@@ -305,11 +342,11 @@ BODY = HEADER + %{
 
 !INCLUDE!  <!-- banner header -->
 
-	<DIV id="bodyContent">
+	<div id="bodyContent">
 
 } + CONTEXT_CONTENT + METHOD_LIST + %{
 
-	</DIV>
+	</div>
 
 } + FOOTER
 
@@ -319,33 +356,38 @@ BODY = HEADER + %{
 ###	S O U R C E   C O D E   T E M P L A T E
 #####################################################################
 
-SRC_PAGE = %{<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+SRC_PAGE = XHTML_PREAMBLE + %{
 <!--
 
     The FaerieMUD Consortium: %title%
 
     Author:     Michael Granger
-        
     Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
     document under the terms of the Open Content License. (See
     http://www.opencontent.org/ for details)
 
-      "The way is empty yet use will not drain it."
-      - Lao-Tzu
+	  They arise spontaneously,
+        the principles of all things.
+
+      Water need not think
+        to offer itself as a home
+          for clean moonlight.
+
+        - Sogi
 
   -->
-<HTML>
-<HEAD>
-	<META http-equiv="Content-Type" content="text/html; charset=%charset%">
-	<TITLE>%title%</TITLE>
-	<LINK rel="stylesheet" href="http://www.FaerieMUD.org/stylesheets/rdoc.css" type="text/css">
-</HEAD>
-<BODY>
-	<PRE>%code%</PRE>
-</BODY>
-</HTML>
+<html>
+<head>
+	<title>%title%</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=%charset%" />
+	<link rel="stylesheet" href="http://www.FaerieMUD.org/stylesheets/rdoc.css" type="text/css" />
+</head>
+<body>
+	<pre>%code%</pre>
+</body>
+</html>
 }
 
 
@@ -357,86 +399,76 @@ FR_INDEX_BODY = %{
 !INCLUDE!
 }
 
-FILE_INDEX = %{<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+FILE_INDEX = XHTML_PREAMBLE + %{
 <!--
 
     The FaerieMUD Consortium: %list_title%
 
     Author:     Michael Granger
-        
     Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
     document under the terms of the Open Content License. (See
     http://www.opencontent.org/ for details)
 
-      "The way is empty yet use will not drain it."
-      - Lao-Tzu
-
   -->
-<HTML>
-<HEAD>
-	<TITLE>%list_title%</TITLE>
-	<META http-equiv="Content-Type" content="text/html; charset=%charset%">
-	<LINK rel="stylesheet" href="rdoc-style.css" type="text/css">
-	<BASE target="docwin">
-</HEAD>
-<BODY>
-<DIV id="index">
-	<H1 class="section-bar">%list_title%</H1>
-	<DIV id="index-entries">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<title>%list_title%</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=%charset%" />
+	<link rel="stylesheet" href="rdoc-style.css" type="text/css" />
+	<base target="docwin" />
+</head>
+<body>
+<div id="index">
+	<h1 class="section-bar">%list_title%</h1>
+	<div id="index-entries">
 START:entries
-		<A href="%href%">%name%</a><br />
+		<a href="%href%">%name%</a><br />
 END:entries
-	</DIV>
-</DIV>
-</BODY>
-</HTML>
+	</div>
+</div>
+</body>
+</html>
 }
 
 CLASS_INDEX = FILE_INDEX
 METHOD_INDEX = FILE_INDEX
 
-INDEX = %{<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+INDEX = %{<?xml version="1.0" encoding="%charset%"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"
+     "DTD/xhtml1-frameset.dtd">
+
 <!--
 
     The FaerieMUD Consortium: %title%
 
     Author:     Michael Granger
-        
     Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
     document under the terms of the Open Content License. (See
     http://www.opencontent.org/ for details)
 
-      "The way is empty yet use will not drain it."
-      - Lao-Tzu
-
   -->
-<HTML>
-<HEAD>
-	<TITLE>%title%</title></HEAD>
-
-	<META http-equiv="Content-Type" content="text/html; charset=%charset%">
-</HEAD>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<title>%title%</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=%charset%" />
+</head>
 <frameset rows="20%, 80%">
     <frameset cols="25%,35%,45%">
-        <frame src="fr_file_index.html"   title="Files" name="Files">
-        <frame src="fr_class_index.html"  name="Classes">
-        <frame src="fr_method_index.html" name="Methods">
+        <frame src="fr_file_index.html"   title="Files" name="Files" />
+        <frame src="fr_class_index.html"  name="Classes" />
+        <frame src="fr_method_index.html" name="Methods" />
     </frameset>
-    <frame  src="%initial_page%" name="docwin">
+    <frame src="%initial_page%" name="docwin" />
 </frameset>
-<noframes>
-	  <body bgcolor="white">
-		Click <a href="html/index.html">here</a> for a non-frames
-		version of this page.
-	  </body>
-</noframes>
-</HTML>
+</html>
 }
 
 
-end
-end
+	end # module Page
+end # class RDoc
+
