@@ -18,7 +18,7 @@ Interface - An interface metaclass
 
 == Author
 
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
+Michael Granger <ged@FaerieMUD.org>
 
 Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
 
@@ -29,17 +29,18 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
-require "metaclass/Operation"
-require "metaclass/Attribute"
-require "metaclass/Association"
+require 'metaclass/Constants'
 
+module Metaclass
 
-module MetaClass
+	autoload :Operation, "metaclass/Operation"
+	autoload :Attribute, "metaclass/Attribute"
+	autoload :Association, "metaclass/Association"
 
-	class Interface < Object
+	class Interface
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: interface.rb,v 1.2 2001/05/14 12:36:59 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: interface.rb,v 1.3 2002/03/30 19:15:24 deveiant Exp $
 
 
 	end
