@@ -35,11 +35,20 @@
 # * Martin Chase <stillflame@FaerieMUD.org>
 #
 
+$: << ".."
 
 require "PolymorphicObject"
 require "ObjectStore"
 
 class StorableObject < PolymorphicObject
+
+  ### This undefines all the methods for this object, so that any call to it will
+  ###   envoke #method_missing.
+  self.public_instance_methods(true).each {|method|
+    break if method == "become" or method == "__send__" or
+      method == "__id__"
+    undef_method( method )
+  }
 
   #########
   protected
