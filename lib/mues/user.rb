@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.27 2002/10/18 00:35:28 stillflame Exp $
+# $Id: user.rb,v 1.28 2002/10/23 04:58:29 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.27 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.27 2002/10/18 00:35:28 stillflame Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.28 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.28 2002/10/23 04:58:29 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -370,8 +370,7 @@ module MUES
 
 			debugMsg( 1, "MOTD is: #{motd.inspect}" )
 
-			MUES::OutputEvent::RegisterHandlers( self )
-			#TickEvent.RegisterHandlers( self )
+			registerHandlerForEvents( self, MUES::OutputEvent ) #MUES::TickEvent )
 			return []
 		end
 
