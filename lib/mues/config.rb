@@ -10,7 +10,7 @@
 # The config file can be in any format for which there is a loader class; see
 # the CONFIGURATION file for more information about the details.
 #
-# == Rcsid
+# == Subversion ID
 # 
 # $Id$
 # 
@@ -48,14 +48,16 @@ module MUES
 	### can also dump the configuration back into a string for writing.
 	class Config < MUES::Object
 		extend Forwardable
+		include MUES::TypeCheckFunctions
 
-		### Class constants/methods
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-		Rcsid = %q$Id$
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		def self::debugMsg( *msgs )
-			$stderr.puts msgs.join
-		end
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# Define the layout and defaults for the underlying structs
 		Defaults = {
@@ -91,28 +93,7 @@ module MUES
 					:argHash		=> {},
 				},
 
-				:listeners => {
-					'shell' => {
-						:kind	=> 'telnet',
-						:params	=> {
-							:bindPort		=> 4848,
-							:bindAddress	=> '0.0.0.0',
-							:useWrapper		=> false,
-							:questionnaire	=> {
-								:name => 'login',
-								:params => {
-									:userPrompt => 'Username: ',
-									:passPrompt => 'Password: ',
-								}
-							},
-							:banner => <<-'...END'.gsub(/\t+/, ''),
-								--- #{general.serverName} ---------------
-								#{general.serverDescription}
-								Contact: #{general.serverAdmin}
-							...END
-						},
-					},
-				},
+				:listeners => {},
 			},
 
 			:environments => {
@@ -261,6 +242,7 @@ module MUES
 		### Create a new MUES::Config object. Values passed in via the
 		### +confighash+ will be used instead of the defaults.
 		def initialize( confighash={} )
+			checkType( confighash, Hash )
 			ihash = self.class.internifyKeys( confighash )
 			mergedhash = Defaults.merge( ihash, &MUES::HashMergeFunction )
 			@struct = ConfigStruct::new( mergedhash )
@@ -428,7 +410,7 @@ module MUES
  					[ env[:kind], name ]
 				MUES::Environment::create(
 					env[:kind],
-					name,
+					name.to_s,
 					env[:description],
 					env[:params] )
 			}
@@ -442,8 +424,7 @@ module MUES
 				self.engine.listeners.nitems
 
 			return self.engine.listeners.collect {|name, lconfig|
-				self.log.info "Calling create for a '%s' listener named '%s': " +
-					"parameters: %s." %
+				self.log.info "Calling create for a '%s' listener named '%s': parameters: %s." %
 					[ lconfig[:kind], name, lconfig[:params].inspect ]
 
 				MUES::Listener::create( *(lconfig[:kind, :name, :params]) )
@@ -486,6 +467,7 @@ module MUES
 			# config values.
 			Kernel::methods(false).each {|meth|
 				next if /^(?:__|dup|object_id|inspect|class|raise|method_missing)/.match( meth )
+				next unless method_defined?( meth )
 				undef_method( meth )
 			}
 
