@@ -40,17 +40,29 @@
 #
 
 #require "ArunaDB"
+require "StorableObject/StorableObject.rb"
 
 class ObjectStore
 
-	######
-	#Class
-	######
+	#########
+	# Class #
+	#########
 
 	### Loads in the specified database, and returns the ObjectStore attached to it
 	### arguments:
 	###   filename - the filename of the ObjectStore config file (?)
 	def ObjectStore.load (filename)
+		file = File.open(filename)
+		conf = file.readlines
+		file.close
+
+		#:TODO: parse the data to reveal the location of the database, the
+		#       database interface object, and the index, serialize and
+		#       deserialize methods.
+		#:?:    was this file going to be serialized objects itself?
+		
+		#:TODO: return a new ObjectStore object, but without calling initialize.
+		#       how?
 	end
 
 	#########
@@ -76,7 +88,7 @@ class ObjectStore
 
 		add_indexes( @indexes )
 
-		#actually create the database here
+		#:TODO: actually create the database here
 
 		objects.each {|o|
 			store(o)
@@ -100,7 +112,7 @@ class ObjectStore
 	###   This method does not have any way of telling if there are active objects
 	###   in the environment which need to be stored.  Use an ObjectStoreGC to keep
 	###   track of those objects.
-	def close
+	def close 
 	end
 
 	### Gets the object specified by the given id out of the database
@@ -115,6 +127,15 @@ class ObjectStore
 
 	def add_indexes ( *indexes )
 		@indexes << indexes.flatten
+	end
+
+	def empty? 
+	end
+
+	def open? 
+	end
+
+	def entries 
 	end
 
 end
