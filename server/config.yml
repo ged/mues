@@ -4,6 +4,9 @@ general:
   server description: An experimental MUES server
   server admin: MUES ADMIN <muesadmin@localhost>
   root dir: .
+  includePath:
+    - server
+    - server/lib
   motd: |
     MUES Server Command Shell:
     /help for help
@@ -44,11 +47,14 @@ login:
     password prompt: 'Password: '
 logging:
   MUES:
-    level: notice
-  MUES:
-	level: info
+    level: debug
+    outputters: ''
+  MUES::Engine:
+    level: info
+    outputters:
+      file: server/log/server.log
 environments:
-  envpath: '*root/server/environments'
+  envpath: '*rootDir/server/environments'
   autoload:
   - class: Null
     name: null
