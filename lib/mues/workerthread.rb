@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 ###########################################################################
-=begin
+=begin 
 
 =WorkerThread.rb
 
@@ -64,24 +64,28 @@ module MUES
 
 		include Debuggable
 
-		### Accessors
-		attr_accessor :stopTime
-		
-		### (PROTECTED) METHOD: initialize( *args )
+		### METHOD: new( *args )
 		### Initialize the thread with the given arguments.
 		protected
 		def initialize( *args )
 			$SAFE = 2
-			@stopTime = Time.now
-			_debugMsg( 1, "Initializing worker thread at #{@stopTime.ctime}" )
+			@startTime = Time.now
+			_debugMsg( 1, "Initializing worker thread at #{@startTime.ctime}" )
 			super { yield(args[0]) }
 		end
 
-		### METHOD: timestamp()
-		### Stamp the thread with the current time
+		#######################################################################
+		###	P U B L I C   M E T H O D S
+		#######################################################################
 		public
-		def timestamp
-			stopTime( Time.now )
+
+		### Accessors
+		attr_accessor :startTime
+		
+		### METHOD: runtime
+		### Returns the number of seconds this thread has been running
+		def runtime
+			return Time.now.to_i - startTime.to_i
 		end
 
 	end
