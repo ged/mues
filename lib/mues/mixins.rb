@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.6 2002/10/04 17:42:00 deveiant Exp $
+# $Id: mixins.rb,v 1.7 2002/10/06 01:58:21 deveiant Exp $
 # 
 # == Authors
 # 
@@ -75,7 +75,9 @@ module MUES
 			klass.instance_eval do @isAbstract = true end
 
 			def klass.new( *args, &block )
-				raise InstantiationError if self.instance_eval do @isAbstract end
+				if self.instance_variables.include?("@isAbstract")
+					raise InstantiationError if self.instance_eval do @isAbstract end
+				end
 				super( *args, &block )
 			end
 
