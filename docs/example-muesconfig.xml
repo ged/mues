@@ -1,72 +1,110 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/07/12 15:26:01 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/09/12 09:47:54 $">
 
-  <!-- General server configuration -->
+  <!-- General server configuration:
+	server-name:		The name of the server
+    server-description:	A short description of the server
+	server-admin:		The email address of the primary contact for the server.
+    root-dir:			The directory the server should consider its root. All
+						relative paths will have this path prepended.
+  -->
   <general>
 	<server-name>Experimental MUD</server-name>
 	<server-description>An experimental MUES server.</server-description>
 	<server-admin>MUES Admin &lt;muesadmin@localhost&gt;</server-admin>
 	<root-dir>server</root-dir>
+	<motd>== Message of the day ==</motd>
   </general>
 
 
   <!-- Engine (core) configuration -->
   <engine>
 
-	<!-- Number of floating-point seconds between tick events -->
+	<!-- Engine config:
+		tick-length:			Number of floating-point seconds between tick events
+		exception-stack-size:	Number of untrapped exceptions to keep around
+		debug-level:			Debugging level
+		poll-interval:			Floating-point seconds between poll (IO) loops.
+	-->
 	<tick-length>1.0</tick-length>
 	<exception-stack-size>10</exception-stack-size>
 	<debug-level>0</debug-level>
+	<poll-interval>0.5</poll-interval>
 
-	<!-- Engine's EventQueue configuration -->
+	<!-- Engine's EventQueue configuration:
+		minworkers:		Minimum number of worker threads running
+		maxworkers:		Maximum number of worker threads running
+		threshold:		Number of floating point seconds between changes to
+						the worker thread count.
+		safelevel:		What worker threads will set their $SAFE to when
+						starting up.
+	 -->
 	<eventqueue>
-	  <!-- Minimum number of worker threads to have running at all times -->
 	  <minworkers>5</minworkers>
-
-	  <!-- Maximum number of worker threads to have running at any time -->
 	  <maxworkers>50</maxworkers>
-	  
-	  <!-- What $SAFE should be set to running inside a worker thread -->
-	  <safelevel>2</safelevel>
-
-	  <!-- The number of seconds to wait before changing the number of worker
-	  threads that are currently running -->
 	  <threshold>2</threshold>
+	  <safelevel>2</safelevel>
 	</eventqueue>
 
+	<privilegedeventqueue>
+	  <minworkers>1</minworkers>
+	  <maxworkers>5</maxworkers>
+	  <threshold>1.5</threshold>
+	  <safelevel>1</safelevel>
+	</privilegedeventqueue>
+
 	<!-- Engine objectstore config -->
-	<objectstore name="mues">
-	  <backend class="BerkeleyDB"></backend>
-	  <memorymanager class="Simple">
-		<param name="interval">50</param>
-	  </memorymanager>
-	  <visitor class="ObjectSpaceVisitor">
-	  </visitor>
+	<objectstore name="engine">
+	  <backend class="DBI">
+		<param name="dsn">dbi:Mysql:objectstore</param>
+		<param name="username">mues</param>
+		<param name="password">mu3s/p4ss</param>
+	  </backend>
+	  <memorymanager class="Null" />
 	</objectstore>
 
-	<!-- Listener objects -->
+	<!-- List of MUES::Listener objects to create on startup -->
 	<listeners>
 
 	  <!-- Telnet listener: MUES::TelnetOutputFilter -->
-	  <listener name="telnet">
-		<filter-class>MUES::TelnetOutputFilter</filter-class>
-		<bind-port>23</bind-port>
-		<bind-address>0.0.0.0</bind-address>
-		<use-wrapper>true</use-wrapper>
+	  <listener class="Telnet" name="telnet">
+		<param name="bind-port">23</param>
+		<param name="bind-address">0.0.0.0</param>
+		<param name="use-wrapper">true</param>
 	  </listener>
 	  
 	  <!-- Client listener: MUES::ClientOutputFilter (BEEP) -->
-	  <listener name="client">
-		<filter-class>MUES::ClientOutputFilter</filter-class>
-		<bind-port>2424</bind-port>
-		<bind-address>0.0.0.0</bind-address>
-		<use-wrapper>false</use-wrapper>
+	  <listener class="Client" name="client">
+		<param name="bind-port">2424</param>
+		<param name="bind-address">0.0.0.0</param>
+		<param name="use-wrapper">false</param>
 	  </listener>
 	</listeners>
   </engine>
-  
+
+  <!-- MUES::LoginSession configuration:
+		maxtries:	Maximum number of login attempts before disconnecting.
+		timeout:	Number of seconds to allow for login before disconnecting.
+		banner:		Text to display before first login attempt
+		userprompt:	The text used to prompt for the username
+		passprompt:	The text used to prompt for the password
+	 -->
+  <login>
+	<maxtries>3</maxtries>
+	<timeout>120</timeout>
+	<banner>
+
+	  --- <?config general.server-name?> ---------------
+	  <?config general.server-description?>
+	  Contact: <?config general.server-admin?>
+
+	</banner>
+	<userprompt>Username: </userprompt>
+	<passprompt>Password: </passprompt>
+  </login>
+
 
   <!-- Logging system configuration (Log4R format) -->
   <logging>
@@ -77,7 +115,7 @@
 		<parameter name="logpath" value="server/log" />
 		<parameter name="mypattern" value="%l [%d] %m" />
 	  </pre_config>
-
+	  
 	  <!-- Log Outputters -->
 	  <outputter type="IOOutputter" name="console" fdno="2" />
 	  <outputter type="FileOutputter" name="serverlog"
@@ -97,38 +135,35 @@
   </logging>
 
   
-  <!-- Environments which are to be loaded at startup -->
+  <!-- MUES::Environments which are to be loaded at startup -->
   <environments>
 	<environment name="null" class="NullEnv">
 	  <description>A testing environment without any surrounding.</description>
-	  <objectstore name="FaerieMUD">
-		<backend class="BerkeleyDB" />
-		<memorymanager class="PMOS" />
-	  </objectstore>
 	</environment>
 	
 	<environment name="testing" class="MUES::ObjectEnv">
 	  <description>A surroundings/object proving ground.</description>
-	  <objectstore name="testing-objectenv">
-		<backend class="Flatfile" />
-		<memorymanager class="Simple">
-		  <param name="interval">100</param>
-		</memorymanager>
-	  </objectstore>
 	</environment>
   </environments>
 
   
-  <!-- Services which are to be loaded at startup -->
-  <services>
-	<service name="objectstore" class="MUES::ObjectStoreService" />
-	<service name="soap" class="MUES::SOAPService">
-	  <param name="listen-port">7680</param>
-	  <param name="listen-address">0.0.0.0</param>
-	  <param name="use-wrappers">true</param>
-	</service>
-	<service name="physics" class="MUES::ODEService" />
-	<service name="weather" class="MUES::WeatherService" />
-  </services>
+  <!-- MUES::CommandShell configuration:
+	shell-class:	Which class to instantiate for users' command shells.
+    table-class:	Which class to instantiate for the users' command shell
+					command lookup table.
+    parser-class:	Which class to instantiate to parse command files.
+	commandspath:	A list of directories to search for command definitions.
+
+    Parameters are specific to the configured class.
+  -->
+  <commandshell shell-class="MUES::CommandShell">
+	<commandpath>
+	  <directory>server/commands</directory>
+	  <directory>/some/other/directory/with/commands</directory>
+	</commandpath>
+	<param name="reload-interval">50</param>
+	<param name="default-prompt">mues&gt; </param>
+	<param name="command-prefix">/</param>
+  </commandshell>
 
 </muesconfig>
