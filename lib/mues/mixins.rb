@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.20 2003/06/14 16:25:11 deveiant Exp $
+# $Id: mixins.rb,v 1.21 2003/09/12 02:19:37 deveiant Exp $
 # 
 # == Authors
 # 
@@ -304,9 +304,9 @@ module MUES
 					if block_given? then
 						yield( method, anObject )
 					else
-						raise TypeError,
-							"Argument '#{anObject.inspect}' does not answer the '#{method}()' method",
-							caller(1).find_all {|frame| frame !~ __FILE__}
+						raise TypeError, "Argument '#{anObject.inspect}' does "\
+							"not answer the '#{method}()' method",
+							caller(1).find_all {|frame| /#{frame}/ !~ __FILE__}
 					end
 				end
 			end
@@ -320,7 +320,8 @@ module MUES
 		### specified, or raising a <tt>TypeError</tt> if one of the methods is
 		### unimplemented.
 		def checkEachResponse( anArray, *requiredMethods, &errBlock ) # :yeilds: method, object
-			raise ScriptError, "First argument to checkEachResponse must be an array" unless
+			raise ScriptError,
+				"First argument to checkEachResponse must be an array" unless
 				anArray.is_a?( Array )
 
 			anArray.each do |anObject|
@@ -328,9 +329,9 @@ module MUES
 					checkResponse anObject, *requiredMethods, &errBlock
 				else
 					checkResponse( anObject, *requiredMethods ) {|method, object|
-						raise TypeError,
-							"Argument '#{anObject.inspect}' does not answer the '#{method}()' method",
-							caller(1).find_all {|frame| frame !~ __FILE__}
+						raise TypeError, "Argument '#{anObject.inspect}' does "\
+							"not answer the '#{method}()' method",
+							caller(1).find_all {|frame| /#{frame}/ !~ __FILE__}
 					}
 				end
 			end
