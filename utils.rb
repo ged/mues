@@ -1,16 +1,27 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.14 2002/11/04 15:10:32 deveiant Exp $
+#	$Id: utils.rb,v 1.15 2003/06/06 22:24:44 deveiant Exp $
 #
-#	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
+#	Copyright (c) 2001-2003, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
 #	http://language.perl.com/misc/Artistic.html)
 #
 
-require "readline"
-include Readline
+
+BEGIN {
+	begin
+		require 'readline'
+		include Readline
+	rescue LoadError => e
+		$stderr.puts "Faking readline..."
+		def readline( prompt )
+			$stderr.print prompt.chomp
+			return $stdin.gets.chomp
+		end
+	end
+}
 
 module UtilityFunctions
 
@@ -331,4 +342,46 @@ module UtilityFunctions
 		return cmdpipe.readlines
 	end
 
+	### Execute a block with $VERBOSE set to +false+, restoring it to its
+	### previous value before returning.
+	def verboseOff
+		raise LocalJumpError, "No block given" unless block_given?
+
+		thrcrit = Thread.critical
+		oldverbose = $VERBOSE
+		begin
+			Thread.critical = true
+			$VERBOSE = false
+			yield
+		ensure
+			$VERBOSE = oldverbose
+			Thread.critical = false
+		end
+	end
+
+
+	### Try the specified code block, printing the given 
+	def try( msg )
+		result = nil
+		message "Trying #{msg}..."
+
+		begin
+			rval = nil
+			if block_given?
+				rval = yield
+			else
+				file, line = caller(1)[0].split(/:/,2)
+				rval = eval( msg, nil, file, line.to_i )
+			end
+
+			result = rval.inspect
+		rescue Exception => err
+			nicetrace = err.backtrace.delete_if {|frame|
+				/in `(try|eval)'/ =~ frame
+			}.join("\n\t")
+			result = err.message + "\n\t" + nicetrace
+		ensure
+			puts result
+		end
+	end
 end
