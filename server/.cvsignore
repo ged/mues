@@ -1,4 +1,5 @@
 .DS_Store
+._*
 MUES.cfg
 config.xml
 log

@@ -1,5 +1,7 @@
+.DS_Store
 MUES-*
 docs/html
 objectstores
 test.log
 worknotes.txt
+._*
