@@ -32,7 +32,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.7 2002/04/01 16:27:31 deveiant Exp $
+# $Id: events.rb,v 1.8 2002/04/11 16:59:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -98,6 +98,18 @@ module MUES
 					self.class.method_defined?( :_handleEvent )
 
 				raise UnhandledEventError, "No handler defined for #{event.class.name}s"
+			end
+
+			##
+			# Register <tt>handlerObject</tt> to receive events of the specified
+			# <tt>eventClasses</tt> or any of their derivatives. See the docs for MUES::Event
+			# for how to handle events.
+			def registerHandlerForEvents( handlerObject, *eventClasses )
+				checkResponse( handlerObject, "handleEvent" )
+
+				eventClasses.each do |eventClass|
+					eventClass.RegisterHandlers( handlerObject )
+				end
 			end
 
 		end
