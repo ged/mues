@@ -62,6 +62,23 @@ http://language.perl.com/misc/Artistic.html)
 require "md5"
 require "mues/Exceptions"
 
+### Borrowed from Hipster's component "conceptual script" -
+### http://www.xs4all.nl/~hipster/
+class Module
+	def abstract(*ids)
+		for id in ids
+			name = id.id2name
+			class_eval %Q{
+				def #{name}(*a)	 
+					raise NotImplementError, "#{name} not implemented"
+				end
+			}
+		end
+	end
+	
+	alias :implements, :include
+end
+
 class Object
 
 	### FUNCTION: checkType( anObject, *validTypes )
@@ -166,12 +183,11 @@ module MUES
 	end
 
 	### (ABSTRACT) CLASS: MUES::Object
-	class Object < ::Object
-		include AbstractClass
+	class Object < ::Object; implements AbstractClass
 
 		### Class constants
-		Version	= %q$Revision: 1.7 $
-		RcsId	= %q$Id: mues.rb,v 1.7 2001/05/15 02:09:04 deveiant Exp $
+		Version	= %q$Revision: 1.8 $
+		RcsId	= %q$Id: mues.rb,v 1.8 2001/06/25 14:08:54 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( *ignored )
 		protected
