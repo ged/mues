@@ -47,7 +47,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
+# $Id: listener.rb,v 1.11 2003/10/13 06:27:27 deveiant Exp $
 # 
 # == Authors
 # 
@@ -74,19 +74,18 @@ module MUES
 		include MUES::Factory
 
 		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
 
 		# CVS id tag 
-		Rcsid = %q$Id: listener.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
+		Rcsid = %q$Id: listener.rb,v 1.11 2003/10/13 06:27:27 deveiant Exp $
 
 		#############################################################
 		###	C L A S S   M E T H O D S
 		#############################################################
 
 		# The directories to search for derivative classes
-		@derivativeDirs = [ File::join(::Config::CONFIG['sitelibdir'], "mues/listeners") ]
-		class << self
-			attr_accessor :derivativeDirs
+		def self::derivativeDirs
+			[ "mues/listeners" ]
 		end
 
 
