@@ -115,7 +115,9 @@ module MUES
 				objectTable = "#{objectList.length} active MUES objects:\n\n" <<
 					"\t        Id  Class                          Frozen  Tainted\n"
 				
-				objectList.each {|obj|
+				objectList.sort {|a,b|
+					(a.class.name <=> b.class.name).nonzero? || a.id <=> b.id
+				}.each {|obj|
 					objectTable << "\t%10d  %-30s   %1s      %1s\n" % [
 						obj.id,
 						obj.class.name,
@@ -128,7 +130,32 @@ module MUES
 			end
 
 		end # class ObjectsCommand
-		
+
+ 		### 'Filters' command
+		class FiltersCommand < ImplementorCommand
+
+			### METHOD: initialize()
+			### Initialize a new ObjectsCommand object
+			def initialize
+				@name				= 'filters'
+				@synonyms			= %w{}
+				@description		= "Display the user's event filters."
+
+				super
+			end
+
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### Invoke the objects command
+			def invoke( context, args )
+				filterList = [ "Filters currently in your stream:" ]
+				context.user.ioEventStream.filters.sort.each {|filter|
+					filterList << filter.to_s
+				}
+				return OutputEvent.new( filterList.join("\n\t") + "\n" )
+			end
+
+		end # class ObjectsCommand
+
 	end # class CommandShell
 end # module MUES
 
