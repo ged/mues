@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.11 2004/02/29 04:17:48 deveiant Exp $
+#	$Id: quickstart.rb,v 1.12 2004/03/14 01:43:49 stillflame Exp $
 #
 #	Copyright (c) 2001-2004, The FaerieMUD Consortium.
 #
@@ -32,6 +32,9 @@ RequiredLibraries = [
 	[ 'forwardable', "Forwardable",
 		'http://raa.ruby-lang.org/list.rhtml?name=forwardable',
 		'ftp://ftp.ruby-lang.org/pub/ruby/contrib/forwardable-1.1.tgz' ],
+	[ 'pluginfactory', "PluginFactory", 
+		'http://raa.ruby-lang.org/list.rhtml?name=pluginfactory',
+		'http://www.devEiate.org/code/PluginFactory-0.01.tar.gz' ],
 	[ 'hashslice', "HashSlice",
 		'http://raa.ruby-lang.org/list.rhtml?name=HashSlice',
 		'http://www.deveiate.org/code/Ruby-HashSlice-1.03.tar.bz2' ],

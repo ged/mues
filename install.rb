@@ -1,11 +1,11 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.8 2003/09/12 04:37:01 deveiant Exp $
+#	$Id: install.rb,v 1.9 2004/03/14 01:43:49 stillflame Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
-#	Copyright (c) 2001, 2002, 2003, The FaerieMUD Consortium.
+#	Copyright (c) 2001, 2002, 2003, 2004, The FaerieMUD Consortium.
 #
 #	This is free software. You may use, modify, and/or redistribute this
 #	software under the terms of the Perl Artistic License. (See
@@ -23,8 +23,8 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.8 $
-$rcsId		= %q$Id: install.rb,v 1.8 2003/09/12 04:37:01 deveiant Exp $
+$version	= %q$Revision: 1.9 $
+$rcsId		= %q$Id: install.rb,v 1.9 2004/03/14 01:43:49 stillflame Exp $
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
@@ -35,6 +35,9 @@ RequiredLibraries = [
 	[ 'io/reactor', "IO-Reactor", 
 		'http://raa.ruby-lang.org/list.rhtml?name=IO-Reactor',
 		'http://www.devEiate.org/code/IO-Reactor-0.05.tar.gz' ],
+	[ 'pluginfactory', "PluginFactory", 
+		'http://raa.ruby-lang.org/list.rhtml?name=pluginfactory',
+		'http://www.devEiate.org/code/PluginFactory-0.01.tar.gz' ],
 	[ 'rexml/document', 'REXML',
 		'http://raa.ruby-lang.org/list.rhtml?name=REXML',
 		'http://www.germane-software.com/archives/rexml_2.5.2.tgz' ],

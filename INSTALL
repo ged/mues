@@ -30,6 +30,10 @@ your mileage may vary.
   RAA::		 http://raa.ruby-lang.org/list.rhtml?name=IO-Reactor
   Download:: http://www.devEiate.org/code/IO-Reactor
 
+* PluginFactory - Autoloading factory pattern
+  RAA::		 http://raa.ruby-lang.org/list.rhtml?name=pluginfactory
+  Download:: http://www.devEiate.org/code/PluginFactory-0.01.tar.gz
+
 * Log4R - Logging library (>= 1.0.2)
   Homepage:: http://log4r.sourceforge.net/
   Download:: http://sourceforge.net/project/showfiles.php?group_id=43396
