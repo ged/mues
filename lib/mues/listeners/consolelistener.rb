@@ -26,7 +26,7 @@
 
 require 'mues/object'
 require 'mues/listener'
-
+require 'mues/filters/commandshell'
 
 module MUES
 

@@ -531,8 +531,8 @@ class EventQueue < Object ; implements MUES::Debuggable
 				raise EventRecursionError, event if resultEvent == event
 
 				unless resultEvent.kind_of?( MUES::Event )
-					self.log.error "%s: Discarding non-event result '%s' from " +
-						"consequences of %s" %
+					self.log.error \
+						"%s: Discarding non-event result '%s' from consequences of %s" %
 						[self.name, resultEvent.inspect, event.to_s]
 					next
 				end

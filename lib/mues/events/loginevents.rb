@@ -173,11 +173,10 @@ module MUES
 		### METHOD: to_s
 		### Returns a stringified version of the event
 		def to_s
-			return "%s: '%s' with password '%s' from '%s'" % [
+			return "%s: '%s' with password '%s'" % [
 				super(),
 				@username,
-				@password,
-				@filter.peerName
+				@password
 			]
 		end
 	end

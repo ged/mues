@@ -165,7 +165,7 @@ module MUES
 			super()
 
 			@remoteHost			= nil
-			@ioEventStream		= nil
+			@stream				= nil
 			@activated			= false
 
 			@username			= attributes[:username]		|| 'guest'
@@ -277,11 +277,13 @@ module MUES
 
 		### Activate the user, set up their environment with the given stream,
 		### and output the specified 'message of the day', if given.
-		def activate( stream, *filters )
+		def activate( stream )
 			# Set the stream
-			@ioEventStream = stream
-			@ioEventStream.unpause
+			@stream = stream
+			@stream.unpause
 			@activated = true
+
+			self.log.debug "Activating %p" % self
 
 			registerHandlerForEvents( self, MUES::OutputEvent ) #MUES::TickEvent )
 			return []
@@ -297,7 +299,7 @@ module MUES
 
 			# Shut down the IO event stream
 			@activated = false
-			results.replace @ioEventStream.shutdown if @ioEventStream
+			results.replace @stream.shutdown if @stream
 			results.flatten!
 			
 			# Return any events that need dispatching
@@ -321,15 +323,15 @@ module MUES
 
 			# Get the current stream's socket output filter/s and flush 'em
 			# before closing it and replacing it with the new one.
-			@ioEventStream.pause
-			results.replace @ioEventStream.stopFiltersOfType( MUES::OutputFilter ) {|filter|
+			@stream.pause
+			results.replace @stream.stopFiltersOfType( MUES::OutputFilter ) {|filter|
 				filter.puts( "[Reconnect from #{newFilter.remoteHost}]" )
 				newFilter.sortPosition = filter.sortPosition
 			}
 			
-			@ioEventStream.addFilters( newFilter )
-			@ioEventStream.addEvents( MUES::InputEvent.new("") )
-			@ioEventStream.unpause
+			@stream.addFilters( newFilter )
+			@stream.addEvents( MUES::InputEvent.new("") )
+			@stream.unpause
 
 			return results
 		end
@@ -338,9 +340,11 @@ module MUES
 		### Lull the user for storage (MUES::StorableObject interface).
 		def lull!( objStore )
 			@remoteHost			= nil
-			@ioEventStream		= nil
+			@stream				= nil
 			@activated			= false
 
+			# :FIXME: This should probably be 'super' instead. Needs
+			# investigation, though.
 			return true
 		end
 
@@ -353,7 +357,7 @@ module MUES
 
 		### IO event handler method
 		def handleIOEvent( event )
-			@ioEventStream.addEvents( event )
+			@stream.addEvents( event )
 		end
 
 

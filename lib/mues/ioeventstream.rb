@@ -138,7 +138,10 @@ module MUES
 			@streamThread.abort_on_exception = true
 			@streamThread.desc = "IOEventStream thread [Stream #{self.object_id}]"
 
-			self.log.debug "%p initialized." % self
+			# Proc to be run before anything else when the stream is unpaused
+			@unpauseTask = nil
+
+			#self.log.debug "%p initialized." % self
 
 			# self.debugLevel = 5
 		end
@@ -170,6 +173,17 @@ module MUES
 
 		# The stream's thread
 		attr_reader :streamThread
+
+		# Task to be run by the stream's thread when it's unpaused
+		attr_reader :unpauseTask
+
+
+		### Inject an output event with the given +msg+ into the stream.
+		def puts( msg )
+			ev = MUES::OutputEvent::new( msg.chomp + "\n" )
+			self.addOutputEvents( ev )
+		end
+
 
 		### Notify the stream that the subject specified (a MUES::IOEventFilter
 		### object) has pending events of the type specified by +which+. Valid
@@ -205,7 +219,7 @@ module MUES
 		### MUES::IOEventFilter#sortPosition).
 		def addFilters( *filters )
 			checkEachType( filters, MUES::IOEventFilter )
-			debugMsg( 1, "Adding #{filters.size} filters to stream #{self.object_id}" )
+			debugMsg( 1, "Adding #{filters.nitems} filters to stream #{self.object_id}" )
 
 			### Add each filter that isn't already in the stream, adding it to
 			### the array of filters, and notifying each one that it should
@@ -214,7 +228,10 @@ module MUES
 				nonMemberSet = (filters - @filters)
 
 				@filters += nonMemberSet
-				nonMemberSet.each {|f| f.start( self )}
+				nonMemberSet.each {|f|
+					self.log.debug "Starting %s" % [ f ]
+					f.start( self )
+				}
 			}
 
 			debugMsg( 2, "Stream now has #{@filters.size} filters." )
@@ -447,12 +464,17 @@ module MUES
 		end
 
 
-		### Resume processing events if the stream was paused.
-		def unpause
+		### Resume processing events if the stream was paused. If the optional
+		### +task+ block is given, it will be run by the stream's thread before
+		### resuming normal operations.
+		def unpause( &task )
 			@notificationMutex.synchronize {
+				@unpauseTask = task
 				@paused = false
 				debugMsg( 5, "Signalling for unpause." )
-				@notification.signal unless ( @notifyingInputObjects + @notifyingOutputObjects ).empty?
+				@notification.signal unless @notifyingInputObjects.empty? &&
+					@notifyingOutputObjects.empty? &&
+					@unpauseTask.nil?
 			}
 		end
 
@@ -490,20 +512,31 @@ module MUES
 								[ err.message, err.backtrace.join("\n\t") ]
 						end
 					end
+
+					# Reaqcuire the lock if we lost it (e.g., continuation, etc.)
+					@filterMutex.try_lock( Sync::SH ) unless @filterMutex.locked?
 				}
 
 				@notificationMutex.synchronize {
-					if ( @notifyingInputObjects + @notifyingOutputObjects ).empty?
-						debugMsg( 3, "No pending IO. Waiting on notification " +
-								   "(#{@notification.inspect}) for #{@notificationMutex.inspect}." )
+					if @notifyingInputObjects.empty? && @notifyingOutputObjects.empty?
 						@idle = true
 						begin @notification.wait( @notificationMutex ) end while self.paused?
 						@idle = false
-						debugMsg(3, "Got notification. %s notifying objects." % [
-									  ( @notifyingInputObjects + @notifyingOutputObjects ).length
-								  ])
 					end
 				}
+
+				# If there was a task given when the stream was unpaused,
+				# execute it
+				if !@unpauseTask.nil?
+					self.log.debug "Running an unpause task %p." % @unpauseTask
+
+					@filterMutex.synchronize( Sync::SH ) {
+						@unpauseTask.call
+						@unpauseTask = nil
+					}
+
+					self.log.debug "Done with unpause task." % @unpauseTask
+				end
 			end
 		end
 

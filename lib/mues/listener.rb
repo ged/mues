@@ -63,7 +63,9 @@
 require 'rbconfig'
 require 'pluginfactory'
 
+require 'mues/mixins'
 require 'mues/object'
+require 'mues/filters/loginsession'
 require 'mues/reactorproxy'
 
 
@@ -72,7 +74,7 @@ module MUES
 	### An abstract base class for listener objects.
 	class Listener < MUES::Object; implements MUES::AbstractClass
 
-		include PluginFactory
+		include PluginFactory, MUES::ServerFunctions
 
 		# SVN Revision
 		SVNRev = %q$Rev$
@@ -115,9 +117,6 @@ module MUES
 
 			@filterDebugLevel	= params[:filterDebug].to_i
 
-		#	raise ArgumentError, "No questionnaire config given for %s" % self unless
-		#		params.key?(:questionnaire)
-
 			super()
 		end
 
@@ -146,6 +145,34 @@ module MUES
 		abstract :createOutputFilter, :releaseOutputFilter
 
 
+		### Handle an IO::Reactor +event+ from the specified +reactor+ on the
+		### given +sock+.
+		def handleReactorEvent( sock, event, reactor )
+
+			# The 'sock' argument goes unused because each listener already
+			# knows what IO it's wrapping, but that's part of the IO::Reactor's
+			# callback interface.
+
+			case event
+
+			# Normal readable event (incoming connection) -- create an
+			# appropriate output filter and dispatch a connect event.
+			when :read
+				self.log.notice "Connect event for #{self.to_s}."
+				ofilter = self.createOutputFilter( reactor )
+				dispatchEvents( ListenerConnectEvent::new(self, ofilter) )
+
+			# Error events
+			when :error
+				dispatchEvents( ListenerErrorEvent::new(self, reactor) )
+
+			# Everything else
+			else
+				self.log.error( "Unhandled Listener reactor event #{event.inspect}" )
+			end
+		end
+
+
 		### Halt the listener and accept no more clients.
 		def stop
 			@io = nil
@@ -165,22 +192,16 @@ module MUES
 				[ self, @params ]
 			
 			# Load the configured questionnaire
-			if @params.key?( :questionnaire ) ||
-				@params[:questionnaire].nil? ||
-				@params[:questionnaire].empty? ||
-				@params[:questionnaire][:name].nil? ||
-				@params[:questionnaire][:name].empty? ||
+			if @params.key?( :loginsession )
+				liconfig = @params[:loginsession]
+				self.log.debug "Loading login session filter for %s" % self
 
-				qconfig = @params[:questionnaire]
-				self.log.debug "Loading questionnaire for %s" % self
+				loginsession = MUES::LoginSession::create( liconfig[:kind],
+					filter.peerName, liconfig[:params] )
+				loginsession.debugLevel = 5 # @filterDebugLevel
+				self.log.debug "Loaded %p for %s" % [ loginsession, self ]
 
-				qnaire = MUES::Questionnaire::load( qconfig[:name], self.name )
-				qconfig[:params].each {|k,v| qnaire.data[k] = v }
-				qnaire.data[:filter] = filter
-				qnaire.debugLevel = @filterDebugLevel
-				self.log.debug "Loaded %p for %s" % [ qnaire, self ]
-
-				filters << qnaire
+				filters << loginsession
 			end
 
 			return filters

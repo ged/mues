@@ -95,15 +95,15 @@ module MUES
 		### Create a new filter, optionally setting the sort position to
 		### the value specified.
 		def initialize( order=nil )
-			@sortPosition = if order.nil?
-								if self.class.const_defined? "DefaultSortPosition"
-									self.class.const_get :DefaultSortPosition
-								else
-									DefaultSortPosition
-								end
-							else
-								order
-							end
+			if order.nil?
+				if self.class.const_defined? "DefaultSortPosition"
+					@sortPosition = self.class.const_get :DefaultSortPosition
+				else
+					@sortPosition = DefaultSortPosition
+				end
+			else
+				@sortPosition = order
+			end
 
 			raise TypeError,
 				"Sort position: expected a Fixnum, not a %s" %

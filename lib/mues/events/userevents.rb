@@ -42,16 +42,20 @@ module MUES
 
 		include MUES::TypeCheckFunctions
 
-		# The user object associated with the event
-		attr_reader :user
-
 		### Initialize a new user event with the specified target user. This
 		### method should be called by derivates' initializers.
-		def initialize( aUser )
-			checkType( aUser, User )
-			@user = aUser
+		def initialize( user )
+			@user = user
 			super()
 		end
+
+
+		######
+		public
+		######
+
+		# The user object associated with the event
+		attr_reader :user
 
 		### Returns a stringified version of the event
 		def to_s
@@ -72,23 +76,29 @@ module MUES
 	### successfully.
 	class UserLoginEvent < UserEvent
 
+		### Returns a new UserLoginEvent with the specified target user,
+		### IOEventStream, and LoginSession.
+		def initialize( user, stream, session )
+			super( user )
+
+			@stream = stream
+			@session = session
+		end
+
+
+		######
+		public
+		######
+
 		# The MUES::IOEventStream that was used by the LoginSession.
 		attr_reader	:stream
 
 		# The finished login session
-		attr_reader :loginSession
+		attr_reader :session
 
-		### Returns a new UserLoginEvent with the specified target user,
-		### IOEventStream, and LoginSession.
-		def initialize( aUser, anIOEventStream, aLoginSession )
-			super( aUser )
-
-			checkType( anIOEventStream, MUES::IOEventStream )
-			checkType( aLoginSession, MUES::LoginSession )
-			@stream = anIOEventStream
-			@loginSession = aLoginSession
-		end
 	end
+
+
 
 	### CLASS: UserIdleTimeoutEvent < UserEvent
 	class UserIdleTimeoutEvent < UserEvent; end

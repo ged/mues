@@ -89,7 +89,7 @@ module MUES
 			self.debugLevel = 5
 
 			@state = State::STARTING
-			super( "Console", originListener, sortOrder )
+			super( "<console>", originListener, sortOrder )
 
 			self.log.info "Starting write thread."
 			@outputThread = Thread::new { outputThreadRoutine() }

@@ -62,15 +62,18 @@
 # When an incoming connection is detected on one of the Engine's MUES::Listener
 # objects, the listener object creates a MUES::OutputFilter appropriate to the
 # protocol it is listening for and dispatches a MUES::ListenerConnectEvent. The
-# Engine then creates a MUES::Questionnaire object configured to handle logins
-# which gathers authentication information and dispatches a MUES::UserAuthEvent
-# with it and two callbacks -- one for success and one for failure. The Engine
-# looks up the MUES::User object of the user logging in, checks authentication
-# and authorization, and calls the appropriate callback. On a successful login,
-# the LoginSession creates a MUES::UserLoginEvent and dispatches it to the
-# Engine, which creates a MUES::CommandShell for the user, and adds the user to
-# its user table.
-# 
+# Engine then fetches other appropriate initial filters (e.g., loginsession,
+# commandshell, etc.) from the listener. The MUES::LoginSession class can be
+# used to present the user with a username/password prompt sequence, and
+# dispatch a MUES::UserAuthEvent with the authentication data and two callbacks
+# -- one for success and one for failure. The Engine looks up the MUES::User
+# object of the user logging in, checks authentication and authorization, and
+# calls the appropriate callback. On a successful login, the LoginSession
+# creates a MUES::UserLoginEvent and dispatches it to the Engine, which creates
+# a MUES::CommandShell for the user, and adds the user to its user table.
+#
+# :TODO: The above needs rewriting.
+#
 # ==== Event Dispatch and Handling
 # 
 # The Engine contains the main dispatch mechanism for events in the server in
@@ -255,7 +258,6 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		@exceptionStack			= []
 		@exceptionStackMutex	= Sync::new
 
-		@commandShellFactory	= nil
 		@objectStore			= nil
 
 		super()
@@ -500,7 +502,7 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		status +=	" MUES Engine %s\n" % self.version
 		status +=   " *** Init Mode ***\n" if self.initMode?
 		status +=	" Up %s at tick %s " % [ timeDelta(Time::now - @startTime), @tick ]
-		status +=	" %d users logging in\n" % [ @loginSessions.length ]
+		status +=	" %d users logging in\n" % [ @streams.length ]
 		@usersMutex.synchronize(Sync::SH) {
 			status +=	" %d users active, %d linkdead\n\n" % 
 				[ @users.find_all {|pl,st| st["status"] == "active"}.size,
@@ -578,14 +580,14 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	### Queue the given +events+ for dispatch.
 	def dispatchEvents( *events )
 		checkEachType( events, MUES::Event )
-		checkStateRunning "dispatch events: %s" %
-			events.collect {|ev| ev.to_s}.join(", ")
+		evdesc = events.collect {|ev| ev.to_s}.join(", ")
+		checkStateRunning "dispatch events: %s" % evdesc
 
-		# self.log.debug( "Dispatching #{events.length} events." )
+		# self.log.debug( "Dispatching events: #{evdesc}." )
 		pevents = events.find_all {|ev| ev.kind_of?(MUES::PrivilegedEvent)}
 		events -= pevents
 		debugMsg( 5, "Dispatching %d regular events, %d privileged events." % 
-				 [events.length, pevents.length] )
+			 [events.length, pevents.length] )
 
 		@privilegedEventQueue.enqueue( *pevents )	unless pevents.empty?
 		@eventQueue.enqueue( *events )				unless events.empty?
@@ -741,7 +743,6 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		setupEvents += setupEventHandlers( config )
 		setupEvents += setupEventQueue( config )
 		setupEvents += setupPrivilegedEventQueue( config )
-		setupEvents += setupCommandShellFactory( config )
 
 		# Set the server name to the one specified by the config
 		@name = @config.general.serverName
@@ -788,7 +789,8 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 								  EnvironmentEvent,
 								  CallbackEvent,
 								  RebuildCommandRegistryEvent,
-								  EvalCommandEvent
+								  EvalCommandEvent,
+								  LoginEvent
 								 )
 
 		return []
@@ -820,25 +822,6 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 
 		@privilegedEventQueue.debugLevel = 0
 		@privilegedEventQueue.start( &method(:dispatchEvents) )
-
-		return []
-	end
-
-
-	### Set up the MUES::CommandShell::Factory used to create new user
-	### command shells. It creates instances of the class specified in the
-	### specified config (a MUES::Config object), which defaults to
-	### MUES::CommandShell.
-	def setupCommandShellFactory( config )
-
-		### Create the factory
-		self.log.info( "Creating command shell factory." )
-		@commandShellFactory = config.createCommandShellFactory
-
-		# Schedule an event to periodically update commands
-		reloadEvent = MUES::RebuildCommandRegistryEvent::new
-		self.scheduleEvents( @commandShellFactory.reloadInterval, reloadEvent ) if
-			@commandShellFactory.reloadInterval.nonzero?
 
 		return []
 	end
@@ -1076,33 +1059,6 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	end
 
 
-	### Callback for listeners registered with the IO::Reactor -- called when
-	### the reactor notices one of the listeners has an event pending.
-	def createConnectEvent( sock, event, listener )
-		case event
-
-		# Normal readable event
-		when :read
-			self.log.notice "Connect event for #{listener.to_s}."
-
-			# Ask the listener for an appropriate output event filter for the
-			# connection event.
-			ofilter = listener.createOutputFilter( @reactor )
-
-			# Dispatch an event with the new filter
-			self.dispatchEvents( ListenerConnectEvent::new(listener, ofilter) )
-
-		# Error events
-		when :error
-			self.dispatchEvents( ListenerErrorEvent::new(listener, @reactor) )
-
-		# Everything else
-		else
-			self.log.error( "Unhandled Listener reactor event #{event.inspect}" )
-		end
-	end
-
-
 	### Register the specified listener with the Engine's IO::Reactor
 	### object.
 	def registerListener( listener )
@@ -1113,8 +1069,8 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 
 		# Now register the listener with the reactor object
 		@ioMutex.synchronize( Sync::EX ) {
-			@reactor.register listener.io, :read, listener,
-				&method(:createConnectEvent)
+			@reactor.register listener.io, :read, @reactor,
+				&(listener.method(:handleReactorEvent))
 		}
 
 		return true
@@ -1403,7 +1359,7 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		ofilter = event.outputFilter
 
 		self.log.notice "Handling new connection on %s: from %s" %
-			[ofilter.class.name, listener.to_s, ofilter.peerName]
+			[listener.to_s, ofilter.peerName]
 
 		# :TODO: Handle IP bans here
 
@@ -1413,8 +1369,11 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 
 		# Create the event stream, add the new filters to the stream
 		ios = IOEventStream::new
-		ios.addFilters( ofilter, *filters )
+		ios.pause
 		self.log.debug "Created %p for incoming connection" % ios
+		ios.addFilters( ofilter, *filters )
+		ios.puts ""
+		ios.unpause
 
 		# Add the new stream to the stream list for this engine
 		@streamsMutex.synchronize( Sync::EX ) { @streams << ios }
@@ -1435,12 +1394,6 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	def handleListenerCleanupEvent( event )
 		results = event.listener.releaseOutputFilter( @reactor, event.filter ) || []
 		return *results
-	end
-
-
-	### Handle reload requests for the CommandShell::Factory.
-	def handleRebuildCommandRegistryEvent( event )
-		return @commandShellFactory.rebuildCommandRegistry
 	end
 
 
@@ -1478,13 +1431,12 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 
 	### Handle MUES::UserLoginEvent +event+.
 	def handleUserLoginEvent( event )
-		user = event.user
-
 		results = []
 		debugMsg( 3, "In handleUserLoginEvent. Event is: #{event.to_s}" )
 
+		user = event.user
 		stream = event.stream
-		loginSession = event.loginSession
+		loginSession = event.session
 
 		# :TODO: Handle user bans here.
 
@@ -1492,16 +1444,15 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		user.lastLoginDate = Time.now
 		user.lastHost = loginSession.peerName
 
-		### If the user object is already active (ie., already connected
-		### and has a shell), remove the old socket connection and
-		### re-connect with the new one. Otherwise just activate the
-		### user object.
+		### If the user object is already active (i.e., already connected),
+		### remove the old stream and re-connect with the new one. Otherwise
+		### just activate the user object.
 		if user.activated?
 			self.log.notice( "User #{user.to_s} reconnected." )
 			results << user.reconnect( stream )
 		else
 			self.log.notice( "Login succeeded for #{user.to_s}." )
-			results << user.activate( stream, cshell, config.general.motd )
+			results << user.activate( stream )
 		end
 
 		# Add the activated user to our userlist, and remove the spent
@@ -1509,8 +1460,8 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		@usersMutex.synchronize(Sync::EX) {
 			@users[ user ] = { "status" => "active" }
 		}
-		@loginSessionsMutex.synchronize( Sync::EX ) {
-			@loginSessions -= [ loginSession ]
+		@streamsMutex.synchronize( Sync::EX ) {
+			@streams -= [ stream ]
 		}
 
 		return results
@@ -1643,8 +1594,8 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	def handleLoginFailureEvent( event )
 		self.log.notice( "Login failed. Terminating." )
 
-		@loginSessionsMutex.synchronize(Sync::EX) {
-			@loginSessions -= [ session ]
+		@streamsMutex.synchronize(Sync::EX) {
+			@streams -= [ event.stream ]
 		}
 
 		return []
