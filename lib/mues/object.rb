@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.9 2003/06/06 22:34:13 deveiant Exp $
+# $Id: object.rb,v 1.10 2003/08/04 02:39:58 deveiant Exp $
 # 
 # == Authors
 # 
@@ -92,8 +92,8 @@ module MUES
 		include Comparable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.9 2003/06/06 22:34:13 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.10 2003/08/04 02:39:58 deveiant Exp $
 
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
@@ -158,28 +158,16 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.9 2003/06/06 22:34:13 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.10 2003/08/04 02:39:58 deveiant Exp $
 
 
-		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
-		### attributes to it. Any arguments passed are ignored.
-		def initialize( *ignored ) # :notnew:
-			# checkVirtualMethods() # <- Not working yet
-			@muesid = MUES::Object::generateMuesId( self )
-			@version = self.class.version
-
-			if $DEBUG
-				objRef = "%s [%d]" % [ self.class.name, self.object_id ]
-				ObjectSpace.define_finalizer( self, MUES::Object::makeFinalizer(objRef) )
-			end
-		end
-
-
-		### Class methods
+		#############################################################
+		###	C L A S S   M E T H O D S
+		#############################################################
 
 		### Returns a MUES::Version object that represents the class's version.
-		def self.version
+		def self::version
 			ver = nil
 
 			if self.const_defined?( :Version )
@@ -194,7 +182,7 @@ module MUES
 		
 		### Returns a finalizer closure to keep track of object
 		### garbage-collection.
-		def self.makeFinalizer( objDesc ) #  :TODO: This shouldn't be left in a production server.
+		def self::makeFinalizer( objDesc )
 			return Proc.new {
 				if Thread.current != Thread.main
 					MUES::Log.debug {"[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."}
@@ -206,7 +194,7 @@ module MUES
 
 		
 		### Returns a unique id for an object
-		def self.generateMuesId( obj )
+		def self::generateMuesId( obj )
 			raw = "%s:%s:%.6f" % [ $$, obj.object_id, Time.new.to_f ]
 			return Digest::MD5::hexdigest( raw )
 		end
@@ -218,7 +206,7 @@ module MUES
 		### not, it is being removed, and the target method will be aliased to
 		### an internal method and wrapped in a warning method with the original
 		### name.
-		def self.deprecate_method( oldSym, newSym=oldSym )
+		def self::deprecate_method( oldSym, newSym=oldSym )
 			warningMessage = ''
 
 			# If the method is being removed, alias it away somewhere and build
@@ -254,7 +242,7 @@ module MUES
 
 
 		### Like Object::deprecate_method, but for class methods.
-		def self.deprecate_class_method( oldSym, newSym=oldSym )
+		def self::deprecate_class_method( oldSym, newSym=oldSym )
 			warningMessage = ''
 
 			# If the method is being removed, alias it away somewhere and build
@@ -273,7 +261,7 @@ module MUES
 			# Build the method that logs a warning and then calls the true
 			# method.
 			class_eval %Q{
-				def self.#{oldSym.to_s}( *args )
+				def self::#{oldSym.to_s}( *args )
 					MUES::Log.warn "warning: %s: #{warningMessage}" % caller(1)
 					send( #{newSym.inspect}, *args )
 				rescue => err
@@ -281,6 +269,24 @@ module MUES
 					Kernel::raise err, err.message, err.backtrace[2..-1]
 				end
 			}
+		end
+
+
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
+
+		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
+		### attributes to it. Any arguments passed are ignored.
+		def initialize( *ignored ) # :notnew:
+			# checkVirtualMethods() # <- Not working yet
+			@muesid = MUES::Object::generateMuesId( self )
+			@version = self.class.version
+
+			if $DEBUG
+				objRef = "%s [%d]" % [ self.class.name, self.object_id ]
+				ObjectSpace.define_finalizer( self, MUES::Object::makeFinalizer(objRef) )
+			end
 		end
 
 
