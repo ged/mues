@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.7 2002/10/12 10:33:49 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.8 2002/10/13 23:24:05 deveiant Exp $
 # 
 # == Authors
 # 
@@ -44,15 +44,15 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.7 2002/10/12 10:33:49 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.8 2002/10/13 23:24:05 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,
 				:set_lk_detect	=> 1,
 				:set_verbose	=> true,
 			}
-			EnvFlags = BDB::CREATE|BDB::INIT_TRANSACTION|BDB::INIT_MPOOL|BDB::INIT_LOG
+			EnvFlags = BDB::CREATE|BDB::INIT_TRANSACTION|BDB::RECOVER
 
 			### Turn on strict checking. Should be turned off for production.
 			@@StrictMode = false
@@ -75,7 +75,7 @@ module MUES
 				@dir = File::join( ObjectStore::Backend::StoreDir, @name )
 				Dir::mkdir( @dir ) unless File.directory?( @dir )
 
-				@env = BDB::Env.new( @dir, EnvFlags, EnvOptions )
+				@env = BDB::Env::new( @dir, EnvFlags, EnvOptions )
 				@db = @env.open_db( BDB::Hash, @name, nil, BDB::CREATE )
 
 				@open = true
