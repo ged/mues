@@ -9,7 +9,7 @@
 # 
 # == Rcsid
 # 
-# $Id: defaultinputfilter.rb,v 1.6 2002/08/02 20:03:43 deveiant Exp $
+# $Id: defaultinputfilter.rb,v 1.7 2002/08/29 07:20:50 deveiant Exp $
 # 
 # == Authors
 # 
@@ -23,19 +23,18 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "mues/Object"
-require "mues/filters/IOEventFilter"
+require "mues/filters/InputFilter"
 
 module MUES
 
-	### The default input filter class, a derivative of the MUES::IOEventFilter
+	### The default input filter class, a derivative of the MUES::InputFilter
 	### class which is placed in every MUES::IOEventStream to catch events which
 	### aren't processed by any other filter.
-	class DefaultInputFilter < IOEventFilter
+	class DefaultInputFilter < MUES::InputFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: defaultinputfilter.rb,v 1.6 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: defaultinputfilter.rb,v 1.7 2002/08/29 07:20:50 deveiant Exp $
 		DefaultSortPosition = 1000
 
 
