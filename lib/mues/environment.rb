@@ -1,138 +1,115 @@
 #!/usr/bin/ruby
-#################################################################
-=begin
-
-=Environment.rb
-== Name
-
-Environment - MUES Environment object class
-
-== Synopsis
-
-  require "mues/Environment"
-
-  environment = MUES::Environment.new
-  environment.name = "Faerith"
-
-  roles = environment.getAvailableRoles( aUser )
-  participantObj = environment.connect( aUser, roles[0] )
-  
-== Description
-
-This is an abstract base class for MUES environment objects.
-
-== Classes
-
-=== MUES::Environment
-==== Class Methods
-
---- MUES::Environment.atEngineShutdown( theEngine )
-
-    Clean up subsystems before engine shutdown
-
---- MUES::Environment.atEngineStartup( theEngine )
-
-    Initialize subsystems after engine startup
-
---- MUES::Environment.create( concreteClassName )
-
-    Load and instantiate the class specified by concreteClassName
-    and return it
-
---- MUES::Environment.inherited( aSubClass )
-
-    Register the specified class with the list of child classes
-
---- MUES::Environment.listEnvClasses()
-
-    Return an array of environment classes which have been loaded
-
---- MUES::Environment.loadEnvClasses( config=MUES::Config )
-
-    Iterate over each file in the environments directory, loading
-    each one if it^s changed since last we loaded
-
-==== Public Method
-
---- MUES::Environment#name
-
-    Return the name of the environment.
-
---- MUES::Environment#description
-
-    Return the environment description.
-
-==== Protected Methods
-
---- MUES::Environment#initialize( aName, aDescription )
-
-    Initialize an environment object with the specified name and description
-
-==== Abstract Methods
-
---- MUES::Environment#getAvailableRoles( aUser )
-
-    Returns an Array of MUES::Role objects that are available to the specified
-    user.
-
---- MUES::Environment#getParticipantProxy( aUser, aRole )
-
-	Connect the specified user to the environment in the specified role and
-	return a MUES::ParticipantProxy object if the connection is successful, or
-	raise a EnvironmentConnectFailed exception with an explanatory message
-	describing the failure if the connection could not be established.
-
---- MUES::Environment#start
-
-    Start the environment instance.
-
---- MUES::Environment#stop
-
-    Stop the environment instance.
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-#################################################################
+#
+# This is an abstract base class for MUES environment objects. Environments are
+# objects which contain the main context of interaction between Users and other
+# objects, as well as the expression of the rules of that interaction. It is the
+# Universe of Discourse in which the interaction takes place. In a game context,
+# for example, the Environment contains the logic for all gameplay, including
+# rules for movement about a space, class definitions for in-game objects, and a
+# function library which can be used in the expression of those objects to
+# interact with the containing server and the world itself.
+# 
+# == Synopsis
+# 
+#   require "mues/Environment"
+# 
+#   environment = MUES::Environment.new
+#   environment.name = "Faerith"
+# 
+#   roles = environment.getAvailableRoles( aUser )
+#   [...]
+#   participantObj = environment.connect( aUser, roles[0] )
+#   
+# == Contract
+#
+# Subclasses are required to provide implementations of the following methods:
+#
+# [<b><tt>getParticipantProxy( <em>user</em>, <em>role</em> )</tt></b>]
+#	Factory method; should instantate and return a MUES::ParticipantProxy object
+#	(or an instance of one of its subclasses) for the specified <em>user</em>
+#	and <em>role</em>. Should raise an exception of type MUES::EnvironmentError
+#	(or a subclass) if the operation is not possible for some reason.
+#
+# [<b><tt>removeParticipantProxy( <em>proxy</em> )</tt></b>]
+#	Should remove the specified <em>proxy</em> object from the environment's
+#	list of participants, if it exists therein. Should return true on success,
+#	false if the specified proxy was not listed as a participant in this
+#	environment. Should raise an error of type MUES::EnvironmentError (or a
+#	subclass) if the operation is not possible for some other reason.
+#
+# [<b><tt>start()</tt></b>]
+#	Start the environment running.
+#
+# [<b><tt>stop()</tt></b>]
+#	Stop/shut the environment down.
+#
+# == Rcsid
+# 
+# $Id: environment.rb,v 1.9 2002/04/01 16:12:30 deveiant Exp $
+# 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
 require "sync"
 
-require "mues/Namespace"
+require "mues"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/Role"
+require "mues/IOEventFilters"
 
 module MUES
-	
-	### Exception class
-	def_exception :EnvironmentNameConflictError, "Environment name conflict error", Exception
+
+	### Exception class used for indicating a problem in an environment object
+	def_exception :EnvironmentError, "General environment error", Exception
+
+	### Exception class used when an environment is created with the same name as
+	### an already-extant one.
+	def_exception :EnvironmentNameConflictError, "Environment name conflict error", EnvironmentError
+
+	### Exception class used to indicate a problem with a role object in an environment.
+	def_exception :EnvironmentRoleError, "Environment role error", EnvironmentError
+
 
 	### Environment abstract base class
-	class Environment < Object ; implements AbstractClass, Notifiable, Debuggable
+	class Environment < Object ; implements MUES::AbstractClass, Notifiable, MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.8 2001/11/01 17:03:26 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.9 2002/04/01 16:12:30 deveiant Exp $
 
 		### Class variables
 		@@ChildClasses = {}
 		@@EnvMutex = Sync.new
 		@@EnvLoadTime = Time.at(0) # Set initial load time to epoch
 
+		### Initialize the environment with the specified name and
+		### description. This method should be called from derivatives'
+		### constructors.
+		def initialize( aName, aDescription ) # :notnew:
+			checkType( aName, ::String )
+			checkType( aDescription, ::String )
+
+			@name			= aName
+			@description	= aDescription
+
+			super()
+		end
+
 		### Class methods
 		class << self
 
-			### (CLASS) METHOD: loadEnvClasses( config=MUES::Config )
-			### Iterate over each file in the environments directory, loading
-			### each one if it's changed since last we loaded
+			### Iterate over each file in the environments directory specified by
+			### +config+ (a MUES::Config object), loading each one if it's changed
+			### since last we loaded.
 			def loadEnvClasses( config )
 				checkType( config, MUES::Config )
 				envdir = config["Environments"]["EnvironmentsDir"] or
@@ -142,11 +119,11 @@ module MUES
 					envdir = File.join( config['rootdir'], envdir )
 				end
 
-				### Load all ruby source in the configured directory newer
-				### than our last load time. Each child will be registered
-				### in the @@ChildClasses array as it's loaded (assuming
-				### it's implemented correctly -- if it isn't, we don't much
-				### care).
+				# Load all ruby source in the configured directory newer
+				# than our last load time. Each child will be registered
+				# in the @@ChildClasses array as it's loaded (assuming
+				# it's implemented correctly -- if it isn't, we don't much
+				# care).
 				@@EnvMutex.synchronize( Sync::EX ) {
 
 					# Get the old load time for comparison and set it to the
@@ -154,8 +131,8 @@ module MUES
 					oldLoadTime = @@EnvLoadTime
 					@@EnvLoadTime = Time.now
 					
-					### Search top-down for ruby files newer than our last
-					### load time, loading any we find.
+					# Search top-down for ruby files newer than our last
+					# load time, loading any we find.
 					Find.find( envdir ) {|f|
 						Find.prune if f =~ %r{^\.} # Ignore hidden stuff
 
@@ -166,15 +143,13 @@ module MUES
 				}
 			end
 
-			### (CLASS) METHOD: listEnvClasses()
 			### Return an array of environment classes which have been loaded
 			def listEnvClasses
 				return @@ChildClasses.keys.sort
 			end
 
-			### (CLASS) METHOD: create( concreteClassName )
-			### Load and instantiate the class specified by concreteClassName
-			### and return it
+			### Load and instantiate the environment class specified by
+			### <tt>className</tt> and return it.
 			def create( className )
 				checkType( className, ::String )
 
@@ -192,18 +167,16 @@ module MUES
 				return env
 			end
 
-			### (CLASS) METHOD: atEngineStartup( theEngine )
-			### Initialize subsystems after engine startup
+			### Initialize subsystems after engine startup (stub).
 			def atEngineStartup( theEngine )
 			end
 
-			### (CLASS) METHOD: atEngineShutdown( theEngine )
-			### Clean up subsystems before engine shutdown
+			### Clean up subsystems before engine shutdown (stub).
 			def atEngineShutdown( theEngine )
 			end
 
-			### (CLASS) METHOD: inherited( aSubClass )
-			### Register the specified class with the list of child classes
+			### Register the specified class <tt>aSubClass</tt> with the list of
+			### available child classes.
 			def inherited( aSubClass )
 				checkType( aSubClass, ::Class )
 				@@ChildClasses[ aSubClass.name ] = aSubClass
@@ -211,31 +184,17 @@ module MUES
 		end
 
 
-		#############################################################
-		###	P R O T E C T E D   M E T H O D S
-		#############################################################
-		protected
-
-		### (PROTECTED) METHOD: initialize( aName, aDescription )
-		### Initialize an environment object with the specified name and description
-		def initialize( aName, aDescription )
-			checkType( aName, ::String )
-			checkType( aDescription, ::String )
-
-			@name			= aName
-			@description	= aDescription
-
-			super()
-		end
-
-
-		#############################################################
-		###	P U B L I C   M E T H O D S
-		#############################################################
+		######
 		public
+		######
 
-		### Accessors
-		attr_reader :name, :description
+		# The name of the environment object
+		attr_reader :name
+
+		# The user-readable description of the object
+		attr_reader :description
+
+		### Virtual methods
 		abstract	:getParticipantProxy, :getAvailableRoles, :start, :stop
 
 	end # class Environment
