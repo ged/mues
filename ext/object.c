@@ -1,6 +1,6 @@
 /*
  *	object.c - C extensions for the MUES::Object class
- *	$Id: object.c,v 1.4 2002/10/13 23:19:00 deveiant Exp $
+ *	$Id: object.c,v 1.5 2003/04/19 06:54:38 deveiant Exp $
  *
  *	This file contains extensions for the MUES::Object base class.
  *
@@ -8,7 +8,7 @@
  *		Martin Chase <stillflame@FaerieMUD.org>
  *		Michael Granger <ged@FaerieMUD.org>
  *
- *	Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
+ *	Copyright (c) 2002, 2003 The FaerieMUD Consortium. All rights reserved.
  *
  *  This module is free software. You may use, modify, and/or redistribute this
  *  software under the terms of the Perl Artistic License. (See
@@ -66,16 +66,16 @@ mues_abstract( argc, argv, self )
 	// Check to make sure the abstract method is being declared in an abstract
 	// class
 	absClass = rb_const_get(mues_mMUES, rb_intern( "AbstractClass" ));
-	mues_debug( "Checking <%s> class to make sure it implements AbstractClass",
-				rb_class2name(self) );
+	DebugMsg(( "Checking <%s> class to make sure it implements AbstractClass",
+				rb_class2name(self) ));
 	if( rb_mod_include_p(self, absClass) == Qfalse )
 		rb_raise( rb_eScriptError, "Cannot declare abstract methods for a concrete class" );
 
-	mues_debug( "Adding %d virtual methods.", argc );
+	DebugMsg(( "Adding %d virtual methods.", argc ));
 
 	// Iterate over each symbol, adding an abstract method for each one.
 	for(i = 0; i < argc; i++) {
-		mues_debug( "...adding abstract method '%s'", rb_id2name(SYM2ID( argv[i] )) );
+		DebugMsg(( "...adding abstract method '%s'", rb_id2name(SYM2ID( argv[i] )) ));
 		rb_define_method( self, rb_id2name(SYM2ID( argv[i] )), mues_dummy_method, -1 );
 	}
 
@@ -119,10 +119,10 @@ mues_abstract_arity(argc, argv, self)
 
 	// Now set the tuple for this method and set it back in the class
 	rb_hash_aset( virtualMethodTable, symbol, arity );
-	mues_debug( "Virtual method '%s' required arity set to %d in virtual methods table of %s class",
+	DebugMsg(( "Virtual method '%s' required arity set to %d in virtual methods table of %s class",
 				rb_id2name(SYM2ID( symbol )),
 				FIX2INT(arity),
-				rb_class2name(self) );
+				rb_class2name(self) ));
 
 	rb_iv_set( self, "@virtualMethods", virtualMethodTable );
 	if ( !RTEST(rb_ivar_defined( self, rb_intern("@virtualMethods") )) )
@@ -150,26 +150,26 @@ mues_check_definition(spec, klass)
 	methodSym[0]	= rb_ary_entry(spec, 0);
 	targetArity	= FIX2INT( rb_ary_entry(spec, 1) );
 
-	mues_debug( "Checking method %s of %s for target arity %d",
-				rb_id2name(SYM2ID( methodSym[0] )),
-				rb_class2name(klass),
-				targetArity );
+	DebugMsg(( "Checking method %s of %s for target arity %d",
+			   rb_id2name(SYM2ID( methodSym[0] )),
+			   rb_class2name(klass),
+			   targetArity ));
 
 	// Get the unbound method from the tested class
 	unboundMethod = rb_funcall( klass, rb_intern("instance_method"), 1, methodSym );
-	mues_debug( "   calling unboundMethod.arity()" );
+	DebugMsg(( "   calling unboundMethod.arity()" ));
 	actualArity   = NUM2INT( rb_funcall(unboundMethod, rb_intern("arity"), 0, 0) );
 
-	mues_debug( "   actual arity for %s is %d", rb_id2name(SYM2ID( methodSym )), actualArity );
+	DebugMsg(( "   actual arity for %s is %d", rb_id2name(SYM2ID( methodSym )), actualArity ));
 
 	// Normalize optional-argument arity
 	if ( actualArity < 0 ) actualArity = abs( actualArity + 1 );
 
 	// Test actual against target
-	if ( targetArity > actualArity )
-		mues_debug( "...%d > %d: raising an error", targetArity, actualArity );
-	rb_raise( mues_eVirtualMethodError,
-			  "Insufficient arity for overridden method");
+	if ( targetArity > actualArity ) {
+		DebugMsg(( "...%d > %d: raising an error", targetArity, actualArity ));
+		rb_raise( mues_eVirtualMethodError, "Insufficient arity for overridden method");
+	}
 
 	return Qtrue;
 }
@@ -189,24 +189,24 @@ mues_check_virtual_methods(self)
 	VALUE virtualMethods, klass;
   
 	klass = CLASS_OF( self );
-	mues_debug( "Checking virtual methods for %s class (id = %d)",
-				rb_class2name(klass),
-				(int)klass );
+	DebugMsg(( "Checking virtual methods for %s class (id = %d)",
+			   rb_class2name(klass),
+			   (int)klass ));
   
 	while( klass && klass != mues_cMuesObject ) {
-		mues_debug( "  Inspecting class %s", rb_class2name(klass) );
+		DebugMsg(( "  Inspecting class %s", rb_class2name(klass) ));
 
 		// If the class in question has a virtual method table, test each of them
 		if ( RTEST(rb_ivar_defined( klass, rb_intern("@virtualMethods") )) ) {
 			virtualMethods = rb_iv_get( klass, "@virtualMethods" );
 
 			if ( TYPE(virtualMethods) == T_HASH ) {
-				mues_debug( "  Found %d hash entries in @virtualMethods",
-							RHASH(virtualMethods)->tbl->num_entries );
+				DebugMsg(( "  Found %d hash entries in @virtualMethods",
+						   RHASH(virtualMethods)->tbl->num_entries ));
 				rb_iterate( rb_each, virtualMethods, mues_check_definition, (VALUE)klass );
 			}
 		} else {
-			mues_debug( "  Skipping: No virtual methods table for %s class.", rb_class2name(klass) );
+			DebugMsg(( "  Skipping: No virtual methods table for %s class.", rb_class2name(klass) ));
 		}
 
 		klass = RCLASS(klass)->super;
@@ -223,7 +223,7 @@ Init_Mues_Object()
 	mues_cMuesObject = rb_define_class_under( mues_mMUES, "Object", rb_cObject );
 #endif
 
-	mues_debug( "Initializing MUES::Object C extensions." );
+	DebugMsg(( "Initializing MUES::Object C extensions." ));
 	mues_cMuesObject = rb_const_get( mues_mMUES, rb_intern("Object") );
 
 	// Add abstract() and abstract_arity() to the Module class as private methods

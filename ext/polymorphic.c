@@ -1,6 +1,6 @@
 /*
  *	polymorphic.c - Polymorphic backend for MUES::StorableObject
- *	$Id: polymorphic.c,v 1.13 2002/10/29 19:45:50 deveiant Exp $
+ *	$Id: polymorphic.c,v 1.14 2003/04/19 06:54:45 deveiant Exp $
  *
  *	This module defines the MUES::PolymorphicObject class which is a derivative
  *	of MUES::Object that allows it to exchange its identity with another
@@ -11,7 +11,7 @@
  *		Martin Chase <stillflame@FaerieMUD.org>
  *		Michael Granger <ged@FaerieMUD.org>
  *
- *	Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
+ *	Copyright (c) 2002, 2003 The FaerieMUD Consortium. All rights reserved.
  *
  *  This module is free software. You may use, modify, and/or redistribute this
  *  software under the terms of the Perl Artistic License. (See
@@ -84,13 +84,13 @@ void
 Init_Mues_PolymorphicObject()
 {
 	static char
-		rcsid[]		= "$Id: polymorphic.c,v 1.13 2002/10/29 19:45:50 deveiant Exp $",
-		revision[]	= "$Revision: 1.13 $";
+		rcsid[]		= "$Id: polymorphic.c,v 1.14 2003/04/19 06:54:45 deveiant Exp $",
+		revision[]	= "$Revision: 1.14 $";
 
 	VALUE vstr		= rb_str_new( (revision+11), strlen(revision) - 11 - 2 );
 	VALUE rcsstr	= rb_str_new( rcsid, strlen(rcsid) );
 
-	mues_debug( "Initializing MUES::PolymorphicObject C extension." );
+	DebugMsg(( "Initializing MUES::PolymorphicObject C extension." ));
 
 #if FOR_RDOC_PARSER
 	mues_mMUES = rb_define_module( "MUES" );
