@@ -30,7 +30,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.13 2002/10/04 09:56:10 deveiant Exp $
+# $Id: class.rb,v 1.14 2002/10/04 11:00:41 deveiant Exp $
 # 
 # == Authors
 # 
@@ -61,16 +61,16 @@ module MUES
 		### to build other classes.
 		class Class
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
-			Rcsid = %q$Id: class.rb,v 1.13 2002/10/04 09:56:10 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
+			Rcsid = %q$Id: class.rb,v 1.14 2002/10/04 11:00:41 deveiant Exp $
 
 			# Mix in comparison methods
 			include Comparable
 
 			# Mix in instance vars, accessors, and methods for associated classes
-			include Metaclass::Attribute::Methods
-			include Metaclass::Operation::Methods
-			include Metaclass::Interface::Methods
+			include MUES::Metaclass::Attribute::Methods
+			include MUES::Metaclass::Operation::Methods
+			include MUES::Metaclass::Interface::Methods
 
 
 			### Create and return a new Class metaclass object with the specified
