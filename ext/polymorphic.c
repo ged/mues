@@ -1,6 +1,6 @@
 /*
  *	polymorphic.c - A polymorphic object class for Ruby
- *	$Id: polymorphic.c,v 1.5 2002/02/15 07:34:10 deveiant Exp $
+ *	$Id: polymorphic.c,v 1.6 2002/02/16 19:54:12 deveiant Exp $
  *
  *	This module defines a PolymorphicObject class which is capable of exchanging its
  *	identity with another PolymorphicObject by calling its #become() method. It is
@@ -35,11 +35,13 @@
 VALUE cPolymorphicObject;
 
 /*
- * Cause the receiver to switch itself with the specified +other+
- * object. The +other+ object must also be a PolymorphicObject.
+ * become( other ) -> anObject
+ * ---
+ * Cause the receiver to switch itself with the specified +other+ object. The
+ * +other+ object must also be a PolymorphicObject. Returns the new receiver.
  */
 VALUE
-mo_become( self, other ) 
+polyobj_become( self, other ) 
 	 VALUE self, other;
 {
   long t[5];
@@ -68,6 +70,6 @@ mo_become( self, other )
 // Initializer
 void Init_PolymorphicObject() {
   cPolymorphicObject = rb_define_class( "PolymorphicObject", rb_cObject );
-  rb_define_method( cPolymorphicObject, "become", mo_become, 1 );
+  rb_define_method( cPolymorphicObject, "become", polyobj_become, 1 );
 }
 
