@@ -1,6 +1,6 @@
 #!/usr/bin/ruby -w
 ###########################################################################
-=begin
+=begin 
 = IOEventStream
 == Name
 
@@ -69,6 +69,7 @@ http://language.perl.com/misc/Artistic.html)
 ###########################################################################
 
 require "thread"
+require "sync"
 require "timeout"
 
 require "mues/Namespace"
@@ -81,35 +82,43 @@ module MUES
 	### CLASS: IOEventStream < Object
 	class IOEventStream < Object
 		module State
-			SHUTDOWN = 0
-			RUNNING = 1
+			SHUTDOWN	= 0
+			RUNNING		= 1
 		end
 
 		include Debuggable
 		include Event::Handler
 		include IOEventStream::State
 
-		@@IoLoopInterval = 0.5
+		@@IoLoopInterval = 0.1
 
-		### METHOD: initialize( *filters )
-		### Initialize a newly-created stream object with the specified filters, if
+		### Accessors
+		attr_reader		:filters, :inputEvents, :outputEvents, :state, :streamThread
+		attr_accessor	:sleepTime
+
+		### METHOD: new( *filters )
+		### Instantiate and return a stream object with the specified filters, if
 		###	any. Also adds default filters to the top and bottom of the stack.
 		def initialize( *filters )
-			checkEachType( filters, IOEventFilter )
+			checkEachType( filters, MUES::IOEventFilter )
 			super()
 
 			### Start the stack out with default filters and the ones specified in
 			### the constructor ones
 			@filters = [ DefaultInputFilter.new, filters, DefaultOutputFilter.new ].flatten
-			@filterMutex = Mutex.new
+			@filterMutex = Sync.new
+
 			@inputEvents = []
-			@inputEventMutex = Mutex.new
+			@inputEventMutex = Sync.new
 			@outputEvents = []
-			@outputEventMutex = Mutex.new
+			@outputEventMutex = Sync.new
+
 			@state = RUNNING
+			@paused = false
 			@sleepTime = 0.0
 			@streamCond = ConditionVariable.new
-			@streamThread = Thread.new { _doStreamThreadRoutine }
+			@streamThread = Thread.new { _streamThreadRoutine }
+			@streamThread.abort_on_exception = true
 		end
 
 		### METHOD: addFilters( *filters)
@@ -117,9 +126,11 @@ module MUES
 		def addFilters( *filters )
 			_debugMsg( 1, "Adding #{filters.size} filters to stream #{self.id}" )
 
-			@filterMutex.synchronize {
+			@filterMutex.synchronize(Sync::EX) {
 				@filters |= filters
 			}
+
+			_debugMsg( 2, "Stream now has #{@filters.size} filters." )
 		end
 
 		### METHOD: removeFilters( *filters )
@@ -128,11 +139,13 @@ module MUES
 			_debugMsg( 1, "Removing #{filters.size} filters from stream #{self.id}" )
 
 			returnFilters = []
-			@filterMutex.synchronize {
+
+			@filterMutex.synchronize(Sync::EX) {
 				returnFilters = @filters & filters
 				@filters -= filters
 			}
 
+			_debugMsg( 2, "Stream now has #{@filters.size} filters." )
 			return returnFilters
 		end
 
@@ -141,7 +154,7 @@ module MUES
 		### Remove all handlers of the specified type from the IOEventStream. The
 		### default handlers cannot be removed, however.
 		def removeFiltersOfType( aClass )
-			checkType( aClass, Class )
+			checkType( aClass, ::Class )
 			removeFilters( @filters.find_all {|filter| filter.is_a?( aClass )} )
 		end
 
@@ -152,33 +165,57 @@ module MUES
 		def addEvents( *events )
 			events.flatten!
 
-			addOutputEvents( events.find_all {|ev| ev.is_a? OutputEvent} )
-			addInputEvents( events.find_all {|ev| ev.is_a? InputEvent} )
+			dispatch = [[],[],[]]
+			ret = []
+
+			events.each {|ev|
+				case ev
+				when OutputEvent
+					dispatch[0].push ev
+
+				when InputEvent
+					dispatch[1].push ev
+
+				when TickEvent
+					dispatch[2].push ev
+
+				else
+					raise UnhandledEventError, ev
+				end
+			}
+					
+			addOutputEvents( *dispatch[0] )
+			addInputEvents( *dispatch[1] )
+			addTickEvents( *dispatch[2] )
+
+			return ret
 		end
+
 
 		### METHOD: addOutputEvents( *events )
 		### Add the specified output events to the stream for processing.
 		def addOutputEvents( *events )
 			events.flatten!
 
-			_debugMsg( 1, "Adding #{events.size} output events to the queue for the next run." )
+			_debugMsg( 3, "Adding #{events.size} output events to the queue for the next run." )
 
-			@outputEventMutex.synchronize do
+			@outputEventMutex.synchronize(Sync::EX) {
 				@outputEvents += events
-			end
+			}
 		end
 
 
 		### METHOD: fetchOutputEvents
-		### Fetch any pending output events for processing, clearing the output events array
+		### Fetch any pending output events for processing, clearing the output
+		### events array
 		def fetchOutputEvents
 			events = []
-			@outputEventMutex.synchronize do
+			@outputEventMutex.synchronize(Sync::EX) {
 				events += @outputEvents
 				@outputEvents.clear
-			end
+			}
 
-			_debugMsg( 1, "Fetched #{events.size} queued output events." )
+			_debugMsg( 3, "Fetched #{events.size} queued output events." )
 			return events
 		end
 
@@ -188,20 +225,21 @@ module MUES
 		def addInputEvents( *events )
 			events.flatten!
 
-			@inputEventMutex.synchronize do
+			@inputEventMutex.synchronize(Sync::EX) {
 				@inputEvents += events
-			end
+			}
 		end
 
 
 		### METHOD: fetchInputEvents( *events )
-		### Fetch any pending input events for processing, clearing the input events array
+		### Fetch any pending input events for processing, clearing the input
+		### events array
 		def fetchInputEvents
 			events = []
-			@inputEventMutex.synchronize do
+			@inputEventMutex.synchronize(Sync::EX) {
 				events += @inputEvents
 				@inputEvents.clear
-			end
+			}
 
 			return events
 		end
@@ -211,26 +249,44 @@ module MUES
 		### Shut down all the filters contained in the stream and prepare for destruction.
 		def shutdown
 			_debugMsg( 1, "Shutting down event stream #{self.id}." )
-			@filterMutex.synchronize do
+			@filterMutex.synchronize(Sync::EX) {
 				@state = SHUTDOWN
-			end
 
-			### Shut each filter down and clear them
-			@filters.each do |filter|
-				filter.shutdown
-			end
-			@filters.clear
+				### Shut each filter down and clear them
+				@filters.reverse.each {|filter| filter.shutdown}
+				@filters.clear
+			}
 
 			### Join on the stream's thread
-			begin
-				timeout( 2.0 ) do
-					@streamThread.join
+			unless @streamThread == Thread.current
+				begin
+					timeout( 2.0 ) do
+						@streamThread.join
+					end
+				rescue TimeoutError
+					@streamThread.kill
 				end
-			rescue TimeoutError
-				@streamThread.kill
 			end
-			
+
 			return true
+		end
+
+
+		### METHOD: pause
+		### Stop processing events until unpause() is called.
+		def pause
+			@filterMutex.synchronize( Sync::EX ) {
+				@paused = true
+			}
+		end
+
+
+		### METHOD: unpause
+		### Stop processing events until unpause() is called.
+		def unpause
+			@filterMutex.synchronize( Sync::EX ) {
+				@paused = false
+			}
 		end
 
 
@@ -239,17 +295,21 @@ module MUES
 		#############################################################################
 		protected
 
-		### (PROTECTED) METHOD: _doStreamThreadRoutine
+		### (PROTECTED) METHOD: _streamThreadRoutine
 		### Procedure that is run by the stream's thread which moves events through
 		### the stream as they are generated/added.
-		def _doStreamThreadRoutine
+		def _streamThreadRoutine
 
 			while @state == RUNNING do
 
 				startTime = Time.now
 
-				_filterInputEvents()
-				_filterOutputEvents()
+				@filterMutex.synchronize( Sync::SH ) {
+					unless @paused
+						_filterInputEvents()
+						_filterOutputEvents()
+					end
+				}
 
 				### Calculate how much time we have left in this loop, and catch a
 				### quick nap if there's time
@@ -269,26 +329,29 @@ module MUES
 			### Get the currently queued input events and clear the queue
 			events = fetchInputEvents()
 			events.flatten!
-			_debugMsg( 1, "#{events.size} input events to filter." )
+			_debugMsg( 2, ">>> Starting input cycle: #{events.size} input events to filter." )
 
 			### Delegate the list of events to each filter in turn, and catch any
 			### that are returned for the next filter
-			@filters.sort.each do |filter|
-				_debugMsg( 1, "Sending #{events.size} input events to a #{filter.class.name}." )
-				results = filter.handleInputEvents( events )
-				_debugMsg( 1, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
-				if ( results.nil? || filter.isFinished ) then
-					_debugMsg( 1, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
-					removeFilters( filter )
-					oev = filter.queuedOutputEvents
-					_debugMsg( 1, "Adding #{oev.size} output events from finished filter to queue for next cycle." )
-					addOutputEvents( oev )
-					events = filter.queuedInputEvents
-					next
-				end
-				_debugMsg( 1, "#{results.size} events left after filtering." )
-				events = results.flatten
-			end
+			@filterMutex.synchronize(Sync::SH) {
+				@filters.sort.each {|filter|
+					_debugMsg( 3, "Sending #{events.size} input events to a #{filter.class.name} "+
+							   "(sort order = #{filter.sortPosition})." )
+					results = filter.handleInputEvents( *events )
+					_debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
+					if ( results.nil? || filter.isFinished )
+						_debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
+						removeFilters( filter )
+						oev = filter.queuedOutputEvents
+						_debugMsg( 2, "Adding #{oev.size} output events from finished filter to queue for next cycle." )
+						addOutputEvents( oev )
+						events = filter.queuedInputEvents
+						next
+					end
+					_debugMsg( 3, "#{results.size} events left after filtering." )
+					events = results.flatten
+				}
+			}
 
 			### The filters should handle all events...
 			raise UnhandledEventError, events[0] if events.size > 0
@@ -303,30 +366,33 @@ module MUES
 
 			### Get the currently queued output events and clear the queue
 			events = fetchOutputEvents()
-			_debugMsg( 1, "#{events.size} output events to filter." )
+			_debugMsg( 2, "<<< Starting output cycle: #{events.size} output events to filter." )
 
 			### Delegate the list of events to each filter in turn, and catch any
 			### that are returned for the next filter
-			@filters.sort.reverse.each do |filter|
+			@filterMutex.synchronize(Sync::SH) {
+				@filters.sort.reverse.each {|filter|
 
-				_debugMsg( 1, "Sending #{events.size} output events to a #{filter.class.name}." )
-				results = filter.handleOutputEvents( *events )
-				_debugMsg( 1, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
+					_debugMsg( 3, "Sending #{events.size} output events to a #{filter.class.name} "+
+							   "(sort order = #{filter.sortPosition})." )
+					results = filter.handleOutputEvents( *events )
+					_debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if results.is_a? Array
 
-				# If the filter returned nil or its isFinished flag is set,
-				# get all of its queued events and remove it from the stream.
-				if ( results.nil? || filter.isFinished ) then
-					_debugMsg( 1, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
-					removeFilters( filter )
-					iev = filter.queuedInputEvents
-					_debugMsg( 1, "Adding #{iov.size} input events from finished filter to queue for next cycle." )
-					addInputEvents( iev )
-					events = filter.queuedOutputEvents
-					next
-				end
+					# If the filter returned nil or its isFinished flag is set,
+					# get all of its queued events and remove it from the stream.
+					if ( results.nil? || filter.isFinished ) then
+						_debugMsg( 2, "#{filter.to_s} indicated it was finished. Removing it from the stream." )
+						removeFilters( filter )
+						iev = filter.queuedInputEvents
+						_debugMsg( 2, "Adding #{iov.size} input events from finished filter to queue for next cycle." )
+						addInputEvents( iev )
+						events = filter.queuedOutputEvents
+						next
+					end
 
-				events = results.flatten
-			end
+					events = results.flatten
+				}
+			}
 
 			### The filters should handle all events...
 			events.flatten!
@@ -339,7 +405,7 @@ module MUES
 		### (PROTECTED) METHOD: _handleOutputEvent( event )
 		### Handle incoming IO events
 		def _handleOutputEvent( event )
-			checkType( event, OutputEvent )
+			checkType( event, MUES::OutputEvent )
 			return unless @state == RUNNING
 
 			addOutputEvents( event )
