@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: attribute.rb,v 1.3 2002/03/30 19:12:30 deveiant Exp $
+# $Id: attribute.rb,v 1.4 2002/04/09 06:52:39 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,8 +39,8 @@ module Metaclass
 		DEFAULT_SCOPE = Scope::INSTANCE
 		DEFAULT_VISIBILITY = Visibility::PUBLIC
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: attribute.rb,v 1.3 2002/03/30 19:12:30 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: attribute.rb,v 1.4 2002/04/09 06:52:39 deveiant Exp $
 
 		### Create and return a new attribute with the specified name. If the
 		### optional <tt>validTypes</tt> argument is specified, the attribute
@@ -50,10 +50,18 @@ module Metaclass
 		### accessability of any accessor methods generated in host classes.
 		def initialize( name, validTypes=nil, scope=DEFAULT_SCOPE, visibility=DEFAULT_VISIBILITY )
 			name = name.id2name if name.is_a? Symbol
+
 			raise TypeError, "Illegal attribute name #{name}" unless
 				name.kind_of? String
-			unless ( validTypes == nil || validTypes.type === ::Class || validTypes.type == Class ||
-					(validTypes.is_a?( Array ) && !validTypes.find {|x| !x.type === ::Class && !x.type == Class}) )
+
+			# Test to be sure that validTypes is either nil, a Class, a
+			# Metaclass::Class, or an array of either kind of Class
+			unless ( validTypes == nil || 
+					 validTypes.type === ::Class || 
+					 validTypes.type == Metaclass::Class || 
+					 (validTypes.is_a?( Array ) && 
+                      !validTypes.find {|x| !x.type === ::Class && !x.type == Metaclass::Class}) 
+					)
 				raise TypeError, "ValidType must be a Class or an array of classes, not a '#{validTypes.type.inspect}'" 
 			end
 			raise TypeError, "Illegal value for scope." unless
@@ -63,6 +71,9 @@ module Metaclass
 			@scope = scope
 			@visibility = visibility
 			@validTypes = validTypes.to_a.flatten.compact
+
+			@accessorOp = nil
+			@mutatorOp = nil
 		end
 
 
@@ -99,9 +110,9 @@ module Metaclass
 		### Returns a Metaclass::Operation object suitable for addition to a
 		### Metaclass::Class object as an accessor method.
 		def makeAccessorOp
-			return Metaclass::AccessorOperation.new( self.name,
-													 self.scope,
-													 self.visibility )
+			@accessorOp ||= Metaclass::AccessorOperation.new( self.name,
+															 self.scope,
+															 self.visibility )
 		end
 
 		### Returns a Metaclass::Operation object suitable for addition to a
@@ -109,11 +120,10 @@ module Metaclass
 		### list of #validTypes, the mutator will do type-checking for one of
 		### those types with <tt>kind_of?</tt>.
 		def makeMutatorOp
-			return Metaclass::MutatorOperation.new( "#{self.name}=",
-												    self.validTypes,
-												    self.scope,
-												    self.visibility
-												   )
+			@mutatorOp ||= Metaclass::MutatorOperation.new( "#{self.name}",
+														   self.validTypes,
+														   self.scope,
+														   self.visibility )
 		end
 
 	end
