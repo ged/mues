@@ -59,7 +59,7 @@
 # 
 # == Rcsid
 # 
-# $Id: trainmemorymanager.rb,v 1.1 2002/07/10 05:07:05 stillflame Exp $
+# $Id: trainmemorymanager.rb,v 1.2 2002/07/10 18:22:50 stillflame Exp $
 # 
 # == Authors
 # 
@@ -82,8 +82,8 @@ module MUES
 		class TrainMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-			Rcsid = %q$Id: trainmemorymanager.rb,v 1.1 2002/07/10 05:07:05 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+			Rcsid = %q$Id: trainmemorymanager.rb,v 1.2 2002/07/10 18:22:50 stillflame Exp $
 
 			######
 			public
@@ -226,6 +226,17 @@ module MUES
 				while true
 					loop_time = Time.now
 					checkTrains( visitor )
+					case @trainyard.objectCount / @active_objects.length
+					when (@trainObjectRatio*.95)..(@trainObjectRatio*1.05)
+						#close enough, leave it alone
+					when @trainObjectRatio..1.0
+						#too much trash, go faster
+						@trainInterval *= .9
+					when 0..@trainObjectRatio
+						#too often, slow down
+						@trainInterval *= 1.1
+					end
+
 					
 					until (Time.new - loop_time >= @trainInterval) do
 						Thread.pass
@@ -233,10 +244,14 @@ module MUES
 				end
 			end
 
-			# checks the train yard for cars in need of deletion.
-			# should only look at one car each iteration - @trainyard[0][0] - the
-			# first car on the first train.  the train is then "deleted" or not
-			# based on the way the references between trains are networked.
+			# checks the train yard for cars in need of deletion.  should only
+			# look at one car each iteration - @trainyard[0][0] - the first car
+			# on the first train.  the train is then "deleted" or not based on
+			# the way the references between trains are networked.  if it is not
+			# deleted, the objects in the car are shuffled off to the newest
+			# train that references them, or the newest train if reference from
+			# outside mature object space, or to the end of the oldest train if
+			# not referenced.
 			def checkTrains( visitor )
 				@trainyard[0][0].objects.each {|old|
 					deleteMe = true
@@ -246,24 +261,27 @@ module MUES
 						}.compress
 						if residence.empty?
 							deleteMe = false
-						elseif residence[0] == @trainyard[0]
-							
+						elseif residence[0] == @trainyard[0] # do nothing
 						else
 							deleteMe = false
+							residence[-1].
 						end
 					}
 				}
 
 				if deleteMe
+					# no outside references were found, so trash the train
 					self.delete(@trainyard.trains.shift.cars.collect {|c|
 									c.objects
 								}.flatten)
 				else
-					@trainyard.trains.push( @trainyard.trains.unshift )
+					# put this car, with all the remaining objects, onto the end
+					# of this train
+					@trainyard.[0].cars.push( @trainyard[0].cars.unshift )
 				end
 			end
 
-			# replace the object with a shallow reference
+			# replace the object(s) with a shallow reference
 			def delete( *objs )
 				objs.to_a.each {|o|
 					@mutex.synchronize( Sync::EX ) {
@@ -288,6 +306,15 @@ module MUES
 				# return the maximum car size
 				def carSize 
 					return @memoryManager.carSize
+				end
+
+				# returns the number of objects in the trainyard
+				def objectCount 
+					count = 0
+					@trains.each {|t| t.cars.each {|c|
+							count += c.objects.length
+						}}
+					return count
 				end
 
 				# takes a newly matured object and puts it into the trainyard.
@@ -317,23 +344,36 @@ module MUES
 
 				# creates a new MMTrain object, with the specifed car size, or 1024
 				# bytes.
-				def initialize 
+				def initialize( m_m )
+					@memoryManager = m_m
+					@cars = []
+					@cars << MMCar::new( m_m )
 				end
 
 				# the array of cars on this train
 				attr_accessor :cars
 
-				# the max size for the cars on this train
-				attr_accessor :carSize
+				def addObj( obj, fromRefs, toRefs )
+					if @memoryManager.carSize <= @cars[-1].size
+						@cars << MMCar::new(@memoryManager)
+					end
+					@cars[-1].addObj(obj, fromRefs, toRefs)
+				end
 
 			end # class MMTrain
 
 			class MMCar < MUES::Object
 
-				def initialize( car_size = 2**10 )
-					@objects = []
-					@maxSize = car_size
+				def initialize( m_m )
+					@memoryManager = m_m
+					@objects = {}
+					@maxSize = m_m.car_size
 					@size = 0
+				end
+
+				# adds the object to the car
+				def addObj( obj, fromRefs, toRefs )
+					@objects[obj] = [fromRefs, toRefs]
 				end
 
 				# returns the objects that belong to this car
