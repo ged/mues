@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.29 2002/10/24 15:49:23 deveiant Exp $
+# $Id: commandshell.rb,v 1.30 2002/10/28 00:07:37 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,9 +73,9 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.29 2002/10/24 15:49:23 deveiant Exp $
-		DefaultSortPosition = 700
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.30 2002/10/28 00:07:37 deveiant Exp $
+		DefaultSortPosition = 990
 
 		### Class globals
 
@@ -888,8 +888,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.29 2002/10/24 15:49:23 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.30 2002/10/28 00:07:37 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
