@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 ###########################################################################
 
-=begin
+=begin 
 
 =Namespace.rb
 
@@ -31,6 +31,19 @@ Environment Server. Requiring it adds four type-checking functions
 (({checkEachResponse()}))) to the Ruby (({Object})) class, defines the
 (({MUES::})) namespace, the base object class ((({MUES::Object}))), and a mixin
 for abstract classes ((({MUES::AbstractClass}))).
+
+== Functions
+=== Global Functions
+
+--- registerHandlerForEvents( handlerObject, *eventClasses )
+
+    Register ((|handlerObject|)) to receive events of the specified
+    ((|eventClasses|)) or any of their derivatives. See the docs for MUES::Event
+    for how to handle events.
+
+--- engine()
+
+	Returns the engine object.
 
 == Author
 
@@ -157,8 +170,8 @@ module MUES
 		include AbstractClass
 
 		### Class constants
-		Version	= %q$Revision: 1.5 $
-		RcsId	= %q$Id: Namespace.rb,v 1.5 2001/04/06 08:19:20 deveiant Exp $
+		Version	= %q$Revision: 1.6 $
+		RcsId	= %q$Id: Namespace.rb,v 1.6 2001/05/14 12:04:50 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( *ignored )
 		protected
@@ -200,6 +213,19 @@ module MUES
 			
 			return Engine.instance
 		end
+
+		### (PRIVATE GLOBAL) FUNCTION: registerHandlerForEvents( anObject, *eventClasses )
+		### Register the specified object as being interested in events of the
+		### type/s specified by ((|eventClasses|)).
+		private
+		def registerHandlerForEvents( handlerObject, *eventClasses )
+			checkResponse( handlerObject, "handleEvent" )
+
+			eventClasses.each do |eventClass|
+				eventClass.RegisterHandlers( handlerObject )
+			end
+		end
+
 
 		### (PRIVATE GLOBAL) METHOD: __GenerateMuesId
 		### Returns a unique id for an object
