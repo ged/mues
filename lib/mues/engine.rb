@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.29 2002/10/23 18:29:19 deveiant Exp $
+# $Id: engine.rb,v 1.30 2002/10/25 00:18:52 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.29 2002/10/23 18:29:19 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.30 2002/10/25 00:18:52 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -448,7 +448,7 @@ module MUES
 			checkType( user, MUES::User )
 			checkStateRunning( "register a user" )
 
-			self.log.info( "Registering user object for '%s'" % user.login )
+			self.log.notice( "Registering user object for '%s'" % user.login )
 			@objectStore.store( user )
 		end
 
@@ -460,7 +460,10 @@ module MUES
 			checkType( user, MUES::User )
 			checkStateRunning( "unregister a user" )
 
-			self.log.info( "Unregistering user object for '%s'" % user.login )
+			raise MUES::EngineError, "Cannot unregister an activated user" if
+				user.activated?
+
+			self.log.notice( "Unregistering user object for '%s'" % user.login )
 			@objectStore.remove( user )
 		end
 
