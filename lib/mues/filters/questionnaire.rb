@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.9 2002/10/25 05:04:34 deveiant Exp $
+# $Id: questionnaire.rb,v 1.10 2003/04/19 08:16:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.9 2002/10/25 05:04:34 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.10 2003/04/19 08:16:10 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -658,7 +658,7 @@ module MUES
 
 				elsif (( match = validator.match( data ) ))
 					if match.size > 1
-						result = match.to_ary[ 1 .. -1 ]
+						result = match.to_a[ 1 .. -1 ]
 					else
 						result = data
 					end

@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+# $Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
 		DefaultSortPosition = 990
 
 		### Class globals
@@ -288,8 +288,8 @@ module MUES
 			include MUES::User::AccountType, MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
 
 
 			### Instantiate and return a new Command object with the specified
@@ -518,8 +518,8 @@ module MUES
 		class Context < MUES::Object ; implements MUES::Debuggable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
 
 
 			### Create and return a new Context object with the specified shell
@@ -571,8 +571,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
 
 
 			### Instantiate and return a new <tt>CommandTable</tt> object which
@@ -601,7 +601,7 @@ module MUES
 						# adding unambiguous ones, and deleting ones that would
 						# be ambiguous (ie., because they're already in the
 						# table).
-						( 1 .. word.length ).to_ary.reverse.each {|len|
+						( 1 .. word.length ).to_a.reverse.each {|len|
 							abbrev = word[ 0, len ]
 							occurrenceTable[ abbrev ] ||= 0
 							seen = occurrenceTable[ abbrev ] += 1
@@ -730,8 +730,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
 
 
 			### Instantiate and return a parser object which will create command
@@ -915,8 +915,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.32 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.32 2002/10/29 19:58:33 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.33 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.33 2003/04/19 08:16:01 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
