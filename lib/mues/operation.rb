@@ -27,7 +27,7 @@
 # 
 # == Rcsid
 # 
-# $Id: operation.rb,v 1.4 2002/04/11 15:55:23 deveiant Exp $
+# $Id: operation.rb,v 1.5 2002/06/04 06:55:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -81,8 +81,8 @@ module Metaclass
 
 		COMMENT_WRAP_WIDTH		= 77
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: operation.rb,v 1.4 2002/04/11 15:55:23 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: operation.rb,v 1.5 2002/06/04 06:55:40 deveiant Exp $
 
 		
 		### Return a new Operation with the specified name. If the code argument
@@ -92,7 +92,7 @@ module Metaclass
 		### visibility argument specifies from where it can be called.
 		def initialize( name, code=DEFAULT_CODE, scope=DEFAULT_SCOPE, visibility=DEFAULT_VISIBILITY )
 			@name = name
-			@code = code
+			@code = ' ' * 4 + code.squeeze("\n").strip
 			@visibility = visibility
 			@scope = scope
 			@arguments = []
@@ -204,21 +204,24 @@ module Metaclass
 			defLine += "( #{argList} )" if argList != ''
 
 			# Normalize the indent of the code
-			code = @code
+			indent = nil
+			code = @code.
+				split( /\s+\n/ ).
+				find_all {|line| line =~ /\S/ }.
+				collect  {|line| line.gsub( /^\s+/, (' ' * 4) ) }.
+				join("\n")
 
 			# Build the array of source
 			definition = []
 			definition << buildMethodComment() if includeComment
-			if argCheckCode != ''
-				definition << "def #{defLine}" << argCheckCode << "\n" << @code << "end"
+			unless argCheckCode.empty?
+				definition << "def #{defLine}" << argCheckCode << code << "end"
 			else
-				definition << "def #{defLine}" << @code << "end"
+				definition << "def #{defLine}" << code << "end"
 			end
 
 			# Add scope and visibility code
 			if @scope == Scope::CLASS
-				definition.unshift "class <<self"
-
 				case @visibility
 				when Visibility::PROTECTED
 					definition << "protected :#{methodName}"
@@ -226,6 +229,10 @@ module Metaclass
 					definition << "public :#{methodName}"
 				end
 
+				# Add an additional level of indent
+				definition.collect! {|line| "    #{line}"}
+
+				definition.unshift "class <<self"
 				definition.push "end"
 			else
  				case @visibility
@@ -238,6 +245,7 @@ module Metaclass
 				end
 			end
 
+			# Add a trailing blank line and return
 			definition << ""
 			return definition
 		end
@@ -301,39 +309,167 @@ module Metaclass
 
 		### Build and return the method's argument type-checking code
 		def buildArgCheckBlock
-			return "    " + arguments.collect {|arg| arg.buildCheckCode}.flatten.join("\n    ") + "\n"
+			block = ''
+
+			unless arguments.empty?
+				block = "    " + arguments.collect {|arg| arg.buildCheckCode}.flatten.join("")
+			end
+
+			return block.strip
 		end
 
 
-	end
-end
+
+		### Mixin module that provides Metaclass::Operation accessor methods and
+		### instance variables for classes which include them.
+		module Methods
+
+			### Initialize @operations and @classOperations instance variables
+			### for including classes (or ones that call super(), anyway.
+			def initialize( *args ) # :notnew
+				@operations			= {}
+				@classOperations	= {}
+
+				super( *args )
+			end
+
+
+			######
+			public
+			######
+
+			# The Hash of operations belonging to instances this class, keyed by name
+			attr_reader :operations
+
+			# The Hash of class operations belonging to this class, keyed by name
+			attr_reader :classOperations
 
 
 
-if $0 == __FILE__
-	op = Metaclass::Operation.new( "unimplemented" )
-	op.description = "A simple test method with no code."
+			### Test for the operation specified. Returns true if instances of the
+			### class have an operation with the specified operation, which may be a
+			### Metaclass::Operation object, or a String containing the name of the
+			### operation to test for.
+			def hasOperation?( operation )
+				if operation.kind_of? Metaclass::Operation
+					return true if @operations.has_value? operation
+				else
+					return @operations.has_key? operation.to_s
+				end
+			end
 
-	op2 = Metaclass::Operation.new( "doSomething", <<-"EOF" )
-		iterations.times do
-			puts "Look, ma, I'm doin' something!"
-		end
+			
+			### Test for the class operation specified. Returns true if instances of
+			### the class have an operation with the specified operation, which may
+			### be a Metaclass::Operation object, or a String containing the name of
+			### the operation to test for.
+			def hasClassOperation?( operation )
+				if operation.kind_of? Metaclass::Operation
+					return true if @classOperations.has_value? operation
+				else
+					return @classOperations.has_key? operation.to_s
+				end
+			end
 
-		puts "Okay. That's enough for now. Here's my second arg: \#{secondArg}"
-	EOF
+			### Add the specified operation (a Metaclass::Operation object) to the
+			### class. If the optional +name+ argument is given, it will be used as
+			### the method name instead of the operation's own name. Returns true if the
+			### operation was successfully added.
+			def addOperation( operation, name=nil )
+				raise ArgumentError, "Illegal argument 1: Metaclass::Operation object." unless
+					operation.kind_of?( Metaclass::Operation )
 
-	op2.description = "A more complex testing method"
-	op2.addArgument( "iterations", Integer )
-	op2.addArgument( "secondArg", String, '"the Default Value"' )
-	op2.addArgument( "unused" )
-	op2.addArgument( "unused2", [ Array, Class, String, Fixnum ] )
+				# Normalize the name and set the operation in the appropriate
+				# operation hash
+				name ||= operation.name
+				if operation.scope == Scope::INSTANCE
+					@operations[ name ] = operation
+				else
+					@classOperations[ name ] = operation
+				end
+
+				# If the class object's already been instantiated, turn off warnings
+				# about redefinition, and eval the new method into the class object
+				if self.instance
+					oldVerbose = $VERBOSE
+					$VERBOSE = false
+					self.instance.module_eval { operation.methodDefinition(name) }
+					$VERBOSE = oldVerbose
+				end
+
+				return true
+			end
 
 
-	puts "Method one:"
-	puts op.methodDefinition
+			### Remove the specified operation (a Metaclass::Operation object, or a
+			### String containing the name associated with the operation). Returns
+			### the removed operation if successful, or <tt>nil</tt> if the
+			### specified operation was not found.
+			def removeOperation( operation )
+				raise ArgumentError,
+					"Expected a Metaclass::Operation or a String, not a #{operation.type.name}" unless
+					operation.kind_of?( Metaclass::Operation ) || operation.kind_of?( String )
 
-	puts
+				# Look for and remove the specified attribute
+				rval = @operations.find {|name,opObj|
+					opObj == operation || name == operation
+				}
 
-	puts "Method two:"
-	puts op2.methodDefinition( "renamedMethod" )
-end
+				# If we found the pair, remove them and their associated operations, if present
+				if rval
+					if self.instance
+						self.instance.module_eval { remove_method rval[0].intern }
+					end
+
+					rval = @operations.delete( rval[0] )
+				end
+
+				return rval
+			end
+
+
+			### Return the code necessary to add the receiver's class operations
+			### to the current scope
+			def classOperationsDeclaration( includeComments = true )
+				decl = []
+
+				unless @classOperations.empty?
+					decl << "### Class operations" if includeComments
+					decl << @classOperations.sort {|x,y|
+						x[1] <=> y[1]
+					}.collect {|opname,op|
+						op.methodDefinition(opname,includeComments)
+					}
+					
+					decl << ""
+				end
+
+				return decl
+			end
+
+			### Return the code necessary to add the receiver's instance
+			### operations to the current scope
+			def operationsDeclaration( includeComments = true )
+				decl = []
+
+				### Add operations to the declaration
+				unless @operations.empty?
+					decl << "### Operations" if includeComments
+					decl << @operations.sort {|x,y|
+						x[1] <=> y[1]
+					}.collect {|opname,op|
+						op.methodDefinition(opname,includeComments)
+					}
+
+					decl << ""
+				end
+
+				return decl
+			end
+		
+		end # module Methods
+
+	end # class Operation
+
+end # module Metaclass
+
