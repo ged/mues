@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.22 2002/10/12 15:34:24 deveiant Exp $
+# $Id: engine.rb,v 1.23 2002/10/13 23:10:34 deveiant Exp $
 # 
 # == Authors
 # 
@@ -170,8 +170,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.22 2002/10/12 15:34:24 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.23 2002/10/13 23:10:34 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -888,7 +888,7 @@ module MUES
 
 					# Unload the environment object, reporting any errors
 					@environmentsMutex.synchronize( Sync::EX ) {
-						results << @environments[instanceName].shutdown()
+						results << @environments[instanceName].stop()
 						@environments.delete( instanceName )
 					}
 				end
@@ -1086,6 +1086,9 @@ module MUES
 			cleanupEvents.compact!
 			debugMsg( 1, "Got #{cleanupEvents.length} cleanup events." )
 			@privilegedEventQueue.priorityEnqueue( *cleanupEvents ) unless cleanupEvents.empty?
+
+			### Close and sync the objectstore
+			@objectStore.close
 
 			### Shut down the event queue
 			clearSignalHandlers()
