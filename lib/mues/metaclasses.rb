@@ -16,7 +16,7 @@
 # 
 # == Rcsid
 #
-# $Id: metaclasses.rb,v 1.2 2002/03/30 19:10:01 deveiant Exp $
+# $Id: metaclasses.rb,v 1.3 2002/07/07 18:17:44 deveiant Exp $
 #
 # == Authors
 # 
@@ -37,4 +37,6 @@ require 'metaclass/Namespace'
 require 'metaclass/Operation'
 require 'metaclass/Parameter'
 require 'metaclass/Class'
-
+require 'metaclass/VirtualOperation'
+require 'metaclass/AccessorOperation'
+require 'metaclass/MutatorOperation'
