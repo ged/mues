@@ -56,7 +56,7 @@ module MUES
 					return OutputEvent.new( usage() )
 				end
 
-				return [ OutputEvent.new( "Attempting to load the '#{$1}' environment as '#{$2}'" ),
+				return [ OutputEvent.new( "Attempting to load the '#{$1}' environment as '#{$2}'\n" ),
 					LoadEnvironmentEvent.new( $2, $1, context.user ) ]
 			end
 			
@@ -101,15 +101,14 @@ module MUES
 			end
 
 			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
-			### Invoke the unloadenvironment command, which generates a
-			### UnloadEnvironmentEvent with the environment specifications.
+			### Create an output event with a list of the loaded environments.
 			def invoke( context, args )
-				output = "\nAvailable MUES Environment classes:\n"
+				output = "\nAvailable MUES Environment classes:\n\t"
 				list = MUES::Environment.listEnvClasses
 				if list.empty?
 					output << "(None)"
 				else
-					output << list.join("\t\n")
+					output << list.join("\n\t")
 				end
 				output << "\n"
 
