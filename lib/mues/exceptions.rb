@@ -34,9 +34,34 @@ require "e2mmap"
 
 ### MUD-specific errors
 module MUES
-	extend Exception2MessageMapper
 
-	def_exception :Exception,			"MUES error",						StandardError
+	### Base exception class
+	class Exception < StandardError
+		Message = "MUES error"
+
+		def initialize( message=nil )
+			message ||= self.class.const_get( "Message" )
+			super( message )
+		end
+	end
+
+	#extend Exception2MessageMapper
+	def MUES.def_exception( name, message, superclass=StandardError )
+		name = name.id2name if name.kind_of?( Fixnum )
+		eClass = Class.new( superclass )
+		eClass.module_eval %Q{
+			def initialize( *args )
+				if ! args.empty?
+					msg = args.collect {|a| a.to_s}.join
+					super( "#{message}: \#{msg}" )
+				else
+					super( "#{message}" )
+				end					
+			end
+		}
+		const_set( name, eClass )
+	end
+
 	def_exception :EngineException,		"Engine error",						Exception
 	def_exception :EventQueueException,	"Event queue error",				Exception
 	def_exception :LogError,			"Error in log handle",				Exception
@@ -69,7 +94,6 @@ module MUES
 	def_exception :InstantiationError,	"Instantiation attempted of abstract class",	TypeError
 	def_exception :SocketIOError,		"Error condition on socket.",					IOError
 	def_exception :ParseError,			"Error while parsing.",							SyntaxError
-
 end
 
 
