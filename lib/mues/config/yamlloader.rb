@@ -4,9 +4,9 @@
 # MUES::Config::Loader. This is a loader class that loads the configuration from
 # a YAML-format file.
 # 
-# == Rcsid
+# == Subversion ID
 # 
-# $Id: yamlloader.rb,v 1.1 2003/11/27 05:48:17 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -33,11 +33,14 @@ class Config
 	### MUES.
 	class YamlLoader < MUES::Config::Loader
 
-		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.1 $} )[1]
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# CVS id tag
-		Rcsid = %q$Id: yamlloader.rb,v 1.1 2003/11/27 05:48:17 deveiant Exp $
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 
 		######
@@ -55,7 +58,7 @@ class Config
 		### Save configuration values to the YAML +file+ specified.
 		def save( confighash, filename )
 			self.log.info "Saving YAML-format configuration to '%s'" % filename
-			File::open( filename, File::WRONLY|File::CREAT ) {|ofh|
+			File::open( filename, File::WRONLY|File::CREAT|File::TRUNC ) {|ofh|
 				ofh.print( confighash.to_yaml )
 			}
 		end
