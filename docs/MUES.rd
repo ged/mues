@@ -37,16 +37,15 @@ Config class is loaded, and is used to load the server configuration file. The
 'Engine' class is then loaded and instantiated, and the method (({start()})) is
 called with the Config object as an argument.
 
-==== MUES Class Library Overview
+==== MUES Classes
 
 : ((*MUES*)) - (({mues/Namespace}))
 
-  A collection of modules, functions, and base classes for the Multi-User
-  Environment Server. Requiring it adds four type-checking functions
-  ((({checkType()})), (({checkEachType()})), (({checkResponse()})), and
-  (({checkEachResponse()}))) to the Ruby (({Object})) class, defines the
-  (({MUES::})) namespace, the base object class ((({MUES::Object}))), and a mixin
-  for abstract classes ((({MUES::AbstractClass}))).
+  A collection of modules, functions, and base classes for the MUES
+  namespace. Requiring it defines the (({MUES::})) namespace, the base object
+  class ((({MUES::Object}))), and several mixin/interfaces for MUES Classes
+  ((({MUES::AbstractClass})), (({MUES::Notifiable})), and
+  (({MUES::Debuggable}))).
 
 : ((*MUES::Engine*)) - (({mues/Engine}))
 
@@ -114,11 +113,6 @@ called with the Config object as an argument.
   a ((<MUES::Player>)) object, but it can be used to route input and output events
   for any object which requires a complex I/O abstraction.
 
-: ((*MUES::Debugging*)) - (({mues/Debugging}))
-
-  This module is a mixin that can be used to add debugging facilities to objects
-  or classes.
-
 : ((*MUES::Science*)) - (({mues/Science}))
 
   An abstract base class for world "science" object classes. World sciences are
@@ -156,8 +150,57 @@ called with the Config object as an argument.
 
   An abstract factory class for MUES world objects.
 
+===== MUES Interfaces/Mixins
+
+: ((*MUES::Notifiable*)) - from (({mues/Namespace}))
+
+  An interface that can be implemented by objects (typically, but not
+  necessarily, classes) which need global notification of changes to the
+  Engine^s state outside of the event system. This can be used for
+  initialization, cleanup, etc. when the event system is not running.
+  
+  The methods which it requires/implements are:
+
+--- atEngineStartup( engineObject )
+
+    This method will be called after the engine has started and is ready for
+    events.
+
+--- AtEngineShutdown( engineObject )
+
+	This method will be called just before the engine shuts down, and can be
+	used to queue critical cleanup events that need to be executed before the
+	event subsystem is shut down.
+
+: (({MUES::Debuggable})) - from (({mues/Namespace}))
+
+  A mixin that can be used to add debugging capability to a class and
+  its instances.
+
+  Mixing Debuggable into your class gives you the following methods:
+
+--- debugMsg( level, message )
+
+    Output the specified messages to STDERR if the debugging level for the
+    receiver is at ((|level|)) or higher.
+
+--- debugLevel=( value )
+
+	Set the debugging level for the receiver to the specified
+	((|level|)). The ((|level|)) may be a (({Fixnum})) between 0 and 5, or
+	(({true})) or (({false})). Setting the level to 0 or (({false})) turns
+	debugging off.
+    
+--- debugLevel()
+
+	Return the debug level of the receiver as a (({Fixnum})).
+
+--- debugged?
+
+	Return true if the receiver's debug level is >= 1.
+
 == History
 
-  $Id: MUES.rd,v 1.3 2001/06/25 14:00:17 deveiant Exp $
+  $Id: MUES.rd,v 1.4 2001/07/17 15:54:09 deveiant Exp $
 
 =end
