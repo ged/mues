@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.3 2002/03/30 19:13:11 deveiant Exp $
+# $Id: class.rb,v 1.4 2002/04/04 17:08:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -65,8 +65,8 @@ module Metaclass
 
 		include Comparable
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: class.rb,v 1.3 2002/03/30 19:13:11 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: class.rb,v 1.4 2002/04/04 17:08:26 deveiant Exp $
 
 
 		### Create and return a new Class metaclass object with the specified
@@ -83,6 +83,9 @@ module Metaclass
 			@interfaces			= []
 
 			@superclass			= superclass
+
+			# The generated anonymous class
+			@classObj			= nil
 		end
 
 		
@@ -135,6 +138,13 @@ module Metaclass
 			return self
 		end
 
+		### Add the specified interface (a Metaclass::Interface object) to the
+		### class. Returns +true+ if the interface was successfully added.
+		def addInterface( interface )
+			self.interfaces << interface
+			return true
+		end
+
 
 		### Add the specified attribute (a Metaclass::Attribute object) to the
 		### class. If the optional +name+ argument is given, it will be used as
@@ -178,6 +188,28 @@ module Metaclass
 				end
 			end
 
+			return true
+		end
+
+
+		### Add the specified operation (a Metaclass::Operation object) to the
+		### class. If the optional +name+ argument is given, it will be used as
+		### the method name instead of the operation's own name. Returns true if the
+		### operation was successfully added.
+		def addOperation( operation, name=nil )
+			raise TypeError, "Illegal argument 1: Metaclass::Operation object." unless
+				operation.kind_of?( Metaclass::Operation )
+
+			# Normalize the name and set the operation in the appropriate
+			# operation hash
+			name ||= operation.name
+			if operation.scope == Scope::INSTANCE
+				@operations[ name ] = operation
+			else
+				@classOperations[ name ] = operation
+			end
+
+			return true
 		end
 
 
@@ -220,28 +252,15 @@ module Metaclass
 			decl = []
 
 			### Add interfaces to the declaration
-			if @interfaces.length > 0
+			if @interfaces.length.nonzero?
 				decl << "### Interfaces"
-			end
-
-			### Add attributes to the declaration
-			if @attributes.length > 0
-				decl << "### Attributes"
-				decl << @attributes.sort {|x,y|
-					x[1] <=> y[1]
-				}.collect {|attrname,attr|
-					if attr.validTypes.length > 0
-						"attr_typechecked_accessor :#{attrname}, #{attr.validTypes.inspect}"
-					else
-						"attr_accessor :#{attrname}"
-					end
-				}
-
-				decl << ""
+				decl << @interfaces.collect {|iface|
+					
+					
 			end
 
 			### Add operations to the declaration
-			if @operations.length > 0
+			unless @operations.empty?
 				decl << "### Operations" if includeComments
 				decl << @operations.sort {|x,y|
 					x[1] <=> y[1]
@@ -264,6 +283,17 @@ module Metaclass
 				return decl.flatten.join("\n")
 			end
 		end
+
+
+		### (Potentially) instantiate and return the anonymous class object
+		### instantiated from the receiver.
+		def classObj
+			@classObj ||= Class::new( self.superclass.classObj ) {|klass|
+				klass.class_eval self.classDefinition( false, false )
+			}
+		end
+
+
 	end # class Class
 
 end # module Metaclass
