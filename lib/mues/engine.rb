@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.37 2002/10/31 02:14:39 deveiant Exp $
+# $Id: engine.rb,v 1.38 2002/10/31 07:59:13 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.37 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.37 2002/10/31 02:14:39 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.38 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.38 2002/10/31 07:59:13 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1561,15 +1561,22 @@ module MUES
 
 			# If we're running in init mode, the user is logging in as 'admin',
 			# and they're coming from the localhost, create a dummy admin user.
-			if self.initMode? && username == 'admin' && filter.isLocal?
-				self.log.notice( "ADMIN connection (init mode) from %s" % filter.peerName )
-				user = MUES::User::new( :accountType => 'admin',
-									    :username => 'admin',
-									    :realname => 'Init Mode Admin',
-									    :emailAddress => 'muesadmin@localhost',
-									    :lastLoginDate => Time::now,
-									    :lastHost => filter.peerName )
-				results << event.successCallback.call( user )
+			if self.initMode? && username == 'admin'
+				if filter.isLocal?
+					self.log.notice( "ADMIN connection (init mode) from %s" % filter.peerName )
+					user = MUES::User::new( :accountType => 'admin',
+										    :username => 'admin',
+										    :realname => 'Init Mode Admin',
+										    :emailAddress => 'muesadmin@localhost',
+										    :lastLoginDate => Time::now,
+										    :lastHost => filter.peerName )
+					results << event.successCallback.call( user )
+				else					
+					self.log.error "Refusing non-local ADMIN connection from %s." %
+						filter.peerName
+					results << event.failureCallback.
+						call( "Admin connection must be from local host." )
+				end
 
 			# Otherwise, try to fetch the user from the objecstore and authenticate her
 			else
