@@ -28,7 +28,7 @@ BEGIN {
 }
 
 verboseOff {
-	require 'tests/muesunittest'
+	require 'muestestcase'
 	require 'find'
 	require 'test/unit'
 	require 'test/unit/testsuite'
