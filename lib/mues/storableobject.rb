@@ -73,6 +73,7 @@ module MUES #:nodoc:
 		### Copy initializer: copy state from the +original+ object to the
 		### receiver.
 		def initialize_copy( original )
+			super
 
 			# Deep copy all instance variables by default
 			self.instance_variables.each {|ivar|
@@ -81,7 +82,11 @@ module MUES #:nodoc:
 				when Numeric, NilClass, TrueClass, FalseClass, Symbol
 					newval = oval
 				else
-					newval = oval.dup
+					begin
+						newval = oval.dup
+					rescue ::Exception
+						newval = oval
+					end
 				end
 				self.instance_variable_set( ivar, newval )
 			}
