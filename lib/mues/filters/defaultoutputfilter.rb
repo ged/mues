@@ -10,7 +10,7 @@
 # 
 # == Rcsid
 # 
-# $Id: defaultoutputfilter.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+# $Id: defaultoutputfilter.rb,v 1.6 2002/08/29 07:22:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -24,19 +24,18 @@
 #
 
 
-require "mues/Object"
-require "mues/filters/IOEventFilter"
+require "mues/filters/OutputFilter"
 
 module MUES
 
 	# This is the default output event filter, derived from the
 	# MUES::IOEventFilter class. It is included in every MUES::IOEventStream as
 	# a last-resort output event handler.
-	class DefaultOutputFilter < IOEventFilter
+	class DefaultOutputFilter < MUES::OutputFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.5 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: defaultoutputfilter.rb,v 1.6 2002/08/29 07:22:31 deveiant Exp $
 		DefaultSortPosition = 0
 
 		### Create and return a new default output filter with a history of the
@@ -44,7 +43,7 @@ module MUES
 		### most recent output events to have been caught by this filter, for
 		### use in reconnections, etc.
 		def initialize( size=10 )
-			super()
+			super( "default" )
 			@history = []
 			@maxHistorySize = size
 		end
