@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.18 2002/10/23 02:02:25 deveiant Exp $
+# $Id: eventqueue.rb,v 1.19 2002/10/23 04:57:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.18 2002/10/23 02:02:25 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.19 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.19 2002/10/23 04:57:26 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -512,7 +512,12 @@ module MUES
 			event.class.getHandlers.each do |handler|
 				debugMsg( 2, "Invoking #{event.class.name} handler (a #{handler.class} object)." )
 
-				results = handler.handleEvent( event )
+				results = begin
+							  handler.handleEvent( event )
+						  rescue Exception => e
+							  self.log.error( "#{self.name}: Untrapped exception #{e.class.name}: #{e.message}" )
+							  [UntrappedExceptionEvent::new( e )]
+						  end
 				results = [ results ] unless results.is_a? Array
 
 				results.flatten.compact.each {|resultEvent|
@@ -531,7 +536,7 @@ module MUES
 			### Return the result events
 			debugMsg( 2, "Returning #{consequences.length} consequential events." )
 			return consequences
-		rescue => e
+		rescue Exception => e
 			self.log.error( "#{self.name}: Untrapped exception #{e.class.name}: #{e.message}" )
 			return [UntrappedExceptionEvent::new( e )]
 		end
