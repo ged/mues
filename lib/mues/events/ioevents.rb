@@ -26,6 +26,9 @@
 # [MUES::DebugOutputEvent]
 #	Output event class for events that carry debugging information.
 #
+# [MUES::ErrorOutputEvent]
+#   Output event class for events that carry error information.
+#
 # [MUES::FormattedOutputEvent]
 #   Output event for data which contains formatting tags.
 #
@@ -57,7 +60,7 @@
 #
 # == Rcsid
 # 
-# $Id: ioevents.rb,v 1.10 2002/09/15 07:38:46 deveiant Exp $
+# $Id: ioevents.rb,v 1.11 2002/10/14 09:37:14 deveiant Exp $
 # 
 # == Authors
 # 
@@ -138,9 +141,14 @@ module MUES
 	class HiddenInputPromptEvent < PromptEvent; end
 
 
-	### Derivative of the OutputEvent class for events that carry debugging
+	### Derivative of the MUES::OutputEvent class for events that carry debugging
 	### information. <em>Currently unused.</em>
 	class DebugOutputEvent < OutputEvent ; end
+
+
+	### Derivative of the MUES:::OutputEvent class for events that carry
+	### information meant to be displayed as an error.
+	class ErrorOutputEvent < OutputEvent ; end
 
 
 	### This class is a derivative of MUES::OutputEvent, instances of which
