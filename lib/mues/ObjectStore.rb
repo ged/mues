@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 ###########################################################################
-=begin
+=begin 
 
 =ObjectStore.rb
 
@@ -62,9 +62,9 @@ module MUES
 		include Event::Handler
 		include Debuggable
 
-		### Constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: ObjectStore.rb,v 1.4 2001/04/06 08:19:20 deveiant Exp $
+		### Class Constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: ObjectStore.rb,v 1.5 2001/05/14 12:05:38 deveiant Exp $
 
 		AdapterSubdir = 'mues/adapters'
 		AdapterPattern = /#{AdapterSubdir}\/(\w+Adapter).rb$/	#/
@@ -77,6 +77,8 @@ module MUES
 		class << self
 
 			### (CLASS) METHOD: _loadAdapters
+			### Search for adapters in the subdir specified in the AdapterSubdir
+			### class constant, attempting to load each one.
 			def _loadAdapters
 				return true if @@AdaptersAreLoaded
 
@@ -121,7 +123,7 @@ module MUES
 			def _getAdapterClass( name )
 				_loadAdapters()
 				ObjectSpace.each_object( Class ) {|klass|
-					if klass.name == name || klass.name == "MUES::ObjectStore::#{name}Adapter"
+					if klass.name == "#{name}Adapter" || klass.name == "MUES::ObjectStore::#{name}Adapter"
 						return klass
 					end
 				}
@@ -130,7 +132,7 @@ module MUES
 
 			### (CLASS) _getAdapter( driver, db, host, user, password )
 			def _getAdapter( driver, db, host, user, password )
-				_loadAdapters() unless @@AdaptersAreLoaded
+				_loadAdapters()
 				klass = _getAdapterClass( driver )
 				raise UnknownAdapterError, "Could not fetch adapter class '#{driver}'" unless klass
 				klass.new( db, host, user, password )
@@ -167,15 +169,46 @@ module MUES
 		end
 
 		### METHOD: fetchPlayer( username ) { |obj| block } -> Player
-		### With no associated block, fetchPlayer returns a player object for
-		### the username specified, or (({nil})) if no such player exists. If
-		### the optional code block is given, it will be passed the player
-		### object as an argument, and the player object will be automatically
-		### stored and de-allocated when the block terminates.
+		### Returns a player object for the username specified unless the
+		### optional code block is given, in which case it will be passed the
+		### player object as an argument. When the block exits, the player
+		### object will be automatically stored and de-allocated, and (({true}))
+		### is returned if storing the player object succeeded. If the player
+		### doesn't exist, (({ObjectStore.fetchPlayer})) returns (({nil})).
 		def fetchPlayer( username )
-			checkType( username, String )
+			checkType( username, ::String )
 			playerData = @dbAdapter.fetchPlayerData( username )
 			return nil if playerData.nil?
+
+			player = Player.new( playerData )
+
+			if block_given?
+				yield( player )
+				storePlayer( player )
+				return nil
+			else
+				return player
+			end
+		end
+
+		### METHOD: storePlayer( player )
+		### Store the given player in the datastore, returning true on success
+		def storePlayer( aPlayer )
+			checkType( aPlayer, MUES::Player )
+			newDbInfo = @dbAdapter.storePlayerData( aPlayer.username, aPlayer.dbInfo )
+			aPlayer.dbInfo = newDbInfo
+
+			return true
+		end
+
+		### METHOD: createPlayer( username, role ) { |obj| block } -> Player
+		### Returns a new player object for the username specified unless the
+		### optional code block is given, in which case it will be passed the
+		### player object as an argument. When the block exits, the player
+		### object will be automatically stored and de-allocated. In this case,
+		### (({ObjectStore.fetchPlayer})) returns (({true})).
+		def createPlayer( username, role=MUES::Player::Role::PLAYER )
+			playerData = @dbAdapter.createPlayerData( username )
 
 			player = Player.new( playerData )
 
@@ -187,13 +220,13 @@ module MUES
 				return player
 			end
 		end
-
-		### METHOD: storePlayer( player )
-		### Store the given player in the datastore, returning true on success
-		def storePlayer( aPlayer )
-			checkType( aPlayer, Player )
-			@dbAdapter.storePlayerData( aPlayer.username, aPlayer.dbInfo )
+		
+		### METHOD: deletePlayer( username )
+		### Deletes the named player from the objectstore.
+		def deletePlayer( username )
+			@dbAdapter.deletePlayerData( username )
 		end
+		
 
 	end
 end
