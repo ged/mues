@@ -32,6 +32,9 @@
 #    An interface/mixin that designates a class as being interested in receiving
 #    a notification when the Engine is starting or stopping.
 #
+# [<tt>MUES::UntaintingFunctions</tt>]
+#    A mixin that adds untainting functions to the including scope.
+#
 # == Synopsis
 # 
 #   require "mues/Mixins"
@@ -43,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.1 2002/08/02 20:10:09 deveiant Exp $
+# $Id: mixins.rb,v 1.2 2002/09/12 12:04:48 deveiant Exp $
 # 
 # == Authors
 # 
@@ -57,6 +60,7 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
+require 'pp'
 
 module MUES
 
@@ -102,14 +106,14 @@ module MUES
 	module Notifiable
 		@@NotifiableClasses = []
 
-		##
-		# Returns an array of classes which implement the MUES::Notifiable interface.
+		### Returns an array of classes which implement the MUES::Notifiable
+		### interface.
 		def self.classes
 			@@NotifiableClasses
 		end
 
-		##
-		# Add the class which is including us to our array of notifiable classes.
+		### Add the class which is including us to our array of notifiable
+		### classes.
 		def self.included( klass )
 			@@NotifiableClasses |= [ klass ]
 			
@@ -138,8 +142,8 @@ module MUES
 		end
 
 
-		# Returns the current debugging level as a Fixnum. Higher values = more
-		# debugging output
+		### Returns the current debugging level as a Fixnum. Higher values = more
+		### debugging output
 		def debugLevel
 			@debugLevel ||= 0
 		end
@@ -332,29 +336,45 @@ module MUES
 		module_function
 		###############
 
-		##
-		# Check the current $SAFE level, and if it is greater than
-		# <tt>permittedLevel</tt>, raise a SecurityError.
+		### Check the current $SAFE level, and if it is greater than
+		### <tt>permittedLevel</tt>, raise a SecurityError.
 		def checkSafeLevel( permittedLevel=2 )
-			raise SecurityError, "Call to restricted method from insecure space" if
+			raise SecurityError, "Call to restricted method from insecure space ($SAFE = #{$SAFE})", caller(1) if
 				$SAFE > permittedLevel
 			return true
 		end
 
-		##
-		# Check the current $SAFE level and the taintedness of the current
-		# <tt>self</tt>, raising a SecurityError if <tt>$SAFE</tt> is greater
-		# than <tt>permittedLevel</tt>, or <tt>self</tt> is tainted.
+		### Check the current $SAFE level and the taintedness of the current
+		### <tt>self</tt>, raising a SecurityError if <tt>$SAFE</tt> is greater
+		### than <tt>permittedLevel</tt>, or <tt>self</tt> is tainted.
 		def checkTaintAndSafe( permittedLevel=2 )
-			raise SecurityError, "Call to restricted code from insecure space" if
+			raise SecurityError, "Call to restricted code from insecure space ($SAFE = #{$SAFE})", caller(1) if
 				$SAFE > permittedLevel
-			raise SecurityError, "Call to restricted code with tainted receiver" if
+			raise SecurityError, "Call to restricted code with tainted receiver", caller(1) if
 				self.tainted?
 			return true
 		end
 
 	end # module SafeCheckFunctions
 
+
+	### Mixin module that adds untainting functions to the current scope.
+	module UntaintingFunctions
+		
+		###############
+		module_function
+		###############
+
+		### Return an Array of untainted parts of the specified <tt>string</tt>
+		### after having been untainted with the given <tt>pattern</tt> (a
+		### Regexp object). The pattern should contain paren-groups for all the
+		### parts it wishes returned.
+		def untaint( string, pattern )
+			match = pattern.match( string ) or return nil
+			parts = match.to_a[ 1 .. -1 ].collect{|part| part.untaint}
+		end
+
+	end
 
 
 	### A mixin module that adds Engine-access functions to the including
@@ -365,13 +385,60 @@ module MUES
 		module_function
 		###############
 
-		##
-		# Fetch running engine object. Restricted to non-tainted objects running
-		# with a <tt>$SAFE</tt> level higher than 3.
-		def engine
+		### Schedule the specified <tt>events</tt> to be dispatched at the
+		### <tt>time</tt> specified. If <tt>time</tt> is a <tt>Time</tt> object,
+		### it will be executed at the tick which occurs immediately after the
+		### specified time. If <tt>time</tt> is a positive <tt>Integer</tt>, it is
+		### assumed to be a tick offset, and the event will be dispatched
+		### <tt>time</tt> ticks from now.  If <tt>time</tt> is a negative
+		### <tt>Integer</tt>, it is assumed to be a repeating event which requires
+		### dispatch every <tt>time.abs</tt> ticks.
+		def scheduleEvents( time, *events )
 			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
-			return MUES::Engine.instance
+			MUES::Engine::instance.scheduleEvents( time, *events )
 		end
+
+
+		### Removes and returns the specified +events+ (MUES::Event objects), if
+		### they were scheduled.
+		def cancelScheduledEvents( *events )
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			MUES::Engine::instance.cancelScheduledEvents( *events )
+		end
+
+
+		### Queue the given +events+ for dispatch.
+		def dispatchEvents( *events )
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			MUES::Engine::instance.dispatchEvents( *events )
+		end
+
+
+		### Returns an Arry of the names of the loaded environments
+		def getEnvironmentNames
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.getEnvironmentNames
+		end
+
+		### Get the loaded environment with the specified +name+.
+		def getEnvironment( name )
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.getEnvironment( name )
+		end
+
+		### Fetch a connected user object by +name+. Returns +nil+ if no such
+		### user is currently connected.
+		def getUserByName( name )
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.getUserByName( name )
+		end
+
+		### Return a multi-line string indicating the current status of the engine.
+		def engineStatusString
+			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
+			return MUES::Engine::instance.statusString
+		end
+
 	end # module ServerFunctions
 
 
@@ -380,43 +447,38 @@ module MUES
 	### subclasses may be instantiated by name.
 	module FactoryMethods
 
+		@@registeredDerivatives = {}
+		def self.registeredDerivatives
+			@@registeredDerivatives
+		end
+
+
 		### Inclusion callback -- Adds the factory methods to the including
 		### class.
 		def self.included( klass )
-			subtype = nil
-
 			require "mues/Log"
 
-			# Figure out the parts of the class name we'll need later
-			if klass.name =~ /^.*::(.*)/
-				subtype = $1
-			else
-				subtype = klass.name
-			end
+			subtype = if klass.name =~ /^.*::(.*)/ then $1 else klass.name end
+			MUES::Log.debug( "\e[33;01mAdding FactoryMethods to #{klass.inspect} for #{subtype} objects\e[0m" )
 
-			#MUES::Log.debug { "Adding FactoryMethods to #{klass.inspect} for #{subtype} objects" }
-
-			# Eval the stuff that needs strict scoping in a string instead of a
-			# code block so each class gets its own @@registeredDerivatives and
-			# subtype value.
-			klass.instance_eval %Q{
-				@@registeredDerivatives = {}
+			### Add a class global to hold derivative classes by various keys and
+			### the class methods.
+			klass.instance_eval {
+				@@registeredDerivatives[self] = {}
 
 				### Returns an Array of registered derivatives
 				def self.getDerivativeClasses
-					@@registeredDerivatives.values.uniq
+					@@registeredDerivatives[self].values.uniq
 				end
 
 				### Returns the type name used when searching for a derivative.
 				def self.factoryType
-					return "#{subtype}"
+					if self.name =~ /^.*::(.*)/
+						return $1
+					else
+						return self.name
+					end
 				end
-
-			}
-
-			# Add a class global to hold derivative classes by various keys and
-			# the class methods.
-			klass.instance_eval {
 
 				### Given the <tt>className</tt> of the class to instantiate,
 				### and other arguments bound for the constructor of the new
@@ -425,13 +487,13 @@ module MUES
 				### appropriately-named file cannot be found), and instantiates
 				### it with the given <tt>args</tt>. The <tt>className</tt> may
 				### be the the fully qualified name of the class, the class
-				### object itself, or the non-unique part of the class name. The
-				### following examples would all try to load an instantiate a
+				### object itself, or the unique part of the class name. The
+				### following examples would all try to load and instantiate a
 				### class called "MUES::FooListener" if MUES::Listener included
 				### MUES::FactoryMethods (which it does):
 				###   obj = MUES::Listener::create( 'MUES::FooListener' )
 				###   obj = MUES::Listener::create( MUES::FooListener )
-				###   obj = MUES::LIstener::create( 'Foo' )
+				###   obj = MUES::Listener::create( 'Foo' )
 				### If the including class responds to a method called
 				### <tt>beforeCreation</tt>, it will be called after the
 				### subclass is looked up, but before it is instantiated,
@@ -462,28 +524,37 @@ module MUES
 				### the Factory for later lookup. This is how the factory class
 				### finds the classes named by the #create method. The hash of
 				### loaded subclasses can be found in the class variable
-				### '@@registeredDerivatives'.
+				### '<tt>@@registeredDerivatives</tt>'.
 				def self.inherited( subClass )
+					MUES::Log.debug( "\e[33;01m%s (factory) inherited by %s\e[0m" % [self.name, subClass.name] )
+					return self.superclass.inherited( subClass ) unless @@registeredDerivatives.has_key?( self )
 					factoryType = self.factoryType
+
+					MUES::Log.debug( "Adding derivative '%s' to the %s factory" % [
+										subClass.name, factoryType ])
+
 					truncatedName =
 						if subClass.name.match( /(?:.*::)?(\w+)(?:#{factoryType})/ )
 							Regexp.last_match[1]
 						else
-							subClass.name.sub( /.*::/ )
+							subClass.name.sub( /.*::/, '' )
 						end
 					
-
-					MUES::Log.debug {
-						"Registering the %s %s class as %s" % [
-							subClass.name,
-							factoryType,
-							truncatedName
-						]
+					[ subClass.name, truncatedName, subClass ].each {|key|
+						MUES::Log.debug( "Registering the %s %s(%s) as %s (%s) for %s" % [
+											subClass.name,
+											factoryType,
+											subClass.type.name,
+											key, key.type.name,
+											self.name
+										])
+						@@registeredDerivatives[self][ key ] = subClass
 					}
 
-					@@registeredDerivatives[ subClass.name ] = subClass
-					@@registeredDerivatives[ truncatedName ] = subClass
-					@@registeredDerivatives[ subClass ] = subClass
+					MUES::Log.debug( "%d derivatives now registered for %s Factory" %
+									 [@@registeredDerivatives[self].keys.length, factoryType] )
+
+					#super( subClass )
 				end
 
 
@@ -491,11 +562,27 @@ module MUES
 				### to #create, attempt to load the corresponding class if it is
 				### not already loaded and return the class object.
 				def self.getSubclass( className )
-					unless @@registeredDerivatives.has_key? className
+					return self if ( self.name == className || className == '' )
+					return className if className.is_a?( Class ) && className >= self
+
+					MUES::Log.debug( "Fetching the '#{className}' derivative of #{self.name}" )
+					unless @@registeredDerivatives[self].has_key? className
 						self.loadDerivative( className )
+						unless ( @@registeredDerivatives[self].has_key? className )
+							pp @@registeredDerivatives
+							raise Exception,
+								"loadDerivative(%s) didn't add a '%s' key to the registry for %s" %
+								[ className, className, self.name ]
+						end
+						unless ( @@registeredDerivatives[self][className].is_a? Class )
+							pp @@registeredDerivatives
+							raise Exception,
+								"loadDerivative(%s) added something other than a class to the registry for %s" %
+								[ className, self.name ]
+						end
 					end
 					
-					return @@registeredDerivatives[ className ]
+					return @@registeredDerivatives[self][ className ]
 				end
 
 
@@ -512,10 +599,38 @@ module MUES
 					className = className.to_s
 					factoryType = self.factoryType
 
-					MUES::Log.debug {"%s: (%s Factory): loadDerivative( %s )" % [
+					MUES::Log.debug( "%s: (%s Factory): loadDerivative( %s )" % [
 							self.name, factoryType, className
-						]}
+						])
 
+					# Get the unique part of the derived class name and try to
+					# load it from one of the derivative subdirs, if there are
+					# any.
+					modName = self.getModuleName( className )
+					self.requireDerivative( modName )
+
+					# Check to see if the specified listener is now loaded. If it
+					# is not, raise an error to that effect.
+					unless @@registeredDerivatives[self][ className ]
+						MUES::Log.debug( "Failed to load '%s' via %s.create" % [
+											className, self.name ])
+						raise RuntimeError,
+							"Couldn't find a %s named '%s'" % [
+							factoryType,
+							className
+						], caller(3)
+					end
+					
+					return true
+				end
+
+
+				### Build and return the unique part of the given
+				### <tt>className</tt> either by stripping leading namespaces if
+				### the name already has the name of the factory type in it
+				### (eg., 'My::FooService' for MUES::Service, or by appending
+				### the factory type if it doesn't.
+				def self.getModuleName( className )
 					if className =~ /\w+#{factoryType}/
 						modName = className.sub( /(?:.*::)?(\w+)(?:#{factoryType})?/,
 												"\1#{factoryType}" )
@@ -523,23 +638,39 @@ module MUES
 						modName = "%s#{factoryType}" % className
 					end
 
-					# See if we have a special subdir that derivatives live in
-					if ( self.respond_to?(:derivativeDirs) && (subdirs = self.derivativeDirs) )
-						subdirs = subdirs.to_a
+					return modName
+				end
+
+
+				### If the factory responds to the #derivativeDirs method, call
+				### it and use the returned array as a list of directories to
+				### search for the module with the specified <tt>modName</tt>.
+				def self.requireDerivative( modName )
+
+					# See if we have a list of special subdirs that derivatives
+					# live in
+					if ( self.respond_to?(:derivativeDirs) )
+						subdirs = self.derivativeDirs
+						subdirs = [ subdirs ] unless subdirs.is_a?( Array )
+						MUES::TypeCheckFunctions::checkEachType( subdirs, ::String )
+
+					# If not, just try requiring it from $LOAD_PATH
 					else
 						subdirs = ['']
 					end
 
-					subdirs.each {|subdir|
-						modPath = File::join( subdir, modName )
+					# Iterate over the subdirs until we successfully require a
+					# module.
+					subdirs.collect {|dir| dir.strip}.each {|subdir|
+						modPath = subdir.empty? ? modName : File::join( subdir, modName )
 
-						MUES::Log.debug {
+						MUES::Log.debug(
 							%Q{Trying to load '%s' %s with 'require "%s"'} % [
-								className,
-								factoryType,
+								modName,
+								self.factoryType,
 								modPath
 							]
-						}
+						)
 
 						# Try to require the module that defines the specified
 						# listener
@@ -556,19 +687,10 @@ module MUES
 						end
 					}
 
-					# Check to see if the specified listener is now loaded. If it
-					# is not, raise an error to that effect.
-					unless @@registeredDerivatives.has_key? className
-						raise RuntimeError,
-							"Couldn't find a %s named '%s'" % [
-							factoryType,
-							className
-						], caller(3)
-					end
-					
-					return true
 				end
 			}
+
+
 
 			super( klass )
 		end # method included
