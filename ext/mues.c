@@ -1,6 +1,6 @@
 /*
  *	mues.c - C extensions for MUES
- *	$Id: mues.c,v 1.6 2003/04/19 06:52:51 deveiant Exp $
+ *	$Id: mues.c,v 1.7 2003/10/13 05:11:50 deveiant Exp $
  *
  *	This module loads various subordinate C extensions for MUES.
  *
@@ -64,7 +64,7 @@ void
 Init_mues()
 {
   // Load the Ruby code first to define most of the class heirarchy.
-  rb_require("mues/Object");
+  rb_require("mues/object");
 
   DebugMsg(( "Initializing the MUES C extensions." ));
 
