@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 # 
-# This file contains the MUES::NullEnv class, a <strong>VERY</strong> simple
+# This file contains the MUES::NullEnvironment class, a <strong>VERY</strong> simple
 # testing MUES::Environment class.
 # 
 # This is a barebones environment used in testing. It doesn^t really contain any
@@ -11,12 +11,12 @@
 # 
 # == Synopsis
 # 
-#   mues> /loadenv NullEnv nullWorld
-#   Attempting to load the 'NullEnv' environment as 'nullWorld'
+#   mues> /loadenv NullEnvironment nullWorld
+#   Attempting to load the 'NullEnvironment' environment as 'nullWorld'
 #   Successfully loaded 'nullWorld'
 # 
 #   mues> /roles
-#   nullWorld (NullEnv):
+#   nullWorld (NullEnvironment):
 #        muggle   A boring role for testing
 #        admin    A barely less-boring role for testing
 # 
@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: null.rb,v 1.6 2002/07/09 15:15:06 deveiant Exp $
+# $Id: null.rb,v 1.7 2002/09/15 07:43:47 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,34 +48,51 @@
 require "sync"
 
 require "mues"
+require "mues/Mixins"
 require "mues/Exceptions"
 require "mues/Events"
 require "mues/Environment"
 require "mues/Role"
+require "mues/ObjectStore"
 require "mues/IOEventFilters"
+require "mues/ObjectSpaceVisitor"
 
 module MUES
 
 	### A simple testing MUES::Environment class.
-	class NullEnv < MUES::Environment
+	class NullEnvironment < MUES::Environment
+
+		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: null.rb,v 1.6 2002/07/09 15:15:06 deveiant Exp $
-		DefaultDescription = <<-"EOF"
-		This is a barebones environment used in testing. It doesn^t really contain any
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: null.rb,v 1.7 2002/09/15 07:43:47 deveiant Exp $
+
+		DefaultDescription = %Q{
+		This is a barebones environment used in testing. It doesn't really contain any
 		interesting functionality other than the ability to return roles and allow
 		connections.
+			
+		Well, maybe there's a few other things you can do...
+		}.gsub( /^[ \t]*/, '' )
 
-		Well, maybe there^s a few other things you can do...
-		EOF
+		ObjectStoreParams = {
+			:backend	=> 'Flatfile',
+			:memmgr		=> 'Null',
+			:indexes	=> [:class],
+			:visitor	=> MUES::ObjectSpaceVisitor,
+		}
 
-		### Instantiate and return a new MUES::NullEnv object.
-		def initialize( instanceName )
-			super( instanceName, DefaultDescription )
+		### Instantiate and return a new MUES::NullEnvironment object.
+		def initialize( instanceName, description=DefaultDescription, params={} )
+			super( instanceName, description, params )
 
 			@participants		= []
 			@participantsMutex	= Sync.new
+
+			ostoreParams = ObjectStoreParams.dup
+			ostoreParams['name'] = instanceName
+			@ostore = MUES::ObjectStore::create( ostoreParams )
 		end
 
 
@@ -93,13 +110,15 @@ module MUES
 
 		### Start the world instance
 		def start
-			return MUES::LogEvent.new( "notice", "Starting Null environment #{self.muesid}" )
+			self.log.notice( "Starting Null environment #{self.muesid}" )
+			return []
 		end
 
 		### Stop the world instance
 		def stop
 			# Stop participants
-			return MUES::LogEvent.new( "notice", "Stopping Null environment #{self.muesid}" )
+			self.log.notice( "Stopping Null environment #{self.muesid}" )
+			return []
 		end
 
 
@@ -109,7 +128,7 @@ module MUES
 			checkType( user, MUES::User )
 			checkType( role, MUES::Role )
 
-			proxy = MUES::NullEnv::Controller.new( user, MUES::NullEnv::Character.new(role), role, self )
+			proxy = Controller.new( user, Character.new(role), role, self )
 			@participantsMutex.synchronize( Sync::EX ) {
 				@participants << proxy
 			}
@@ -124,7 +143,7 @@ module MUES
 		### false if the specified proxy was not listed as a participant in this
 		### environment.
 		def removeParticipantProxy( aProxy )
-			return nil unless aProxy.kind_of? MUES::NullEnv::Controller
+			return nil unless aProxy.kind_of? MUES::NullEnvironment::Controller
 
 			return false unless @participants & [ aProxy ]
 			@participants -= [ aProxy ]
@@ -150,10 +169,10 @@ module MUES
 
 		### Broadcast the specified +message+ to all participants. If
 		### <tt>except</tt> is specified, do not send the message to the
-		### MUES::NullEnv::Controller specified.
+		### MUES::NullEnvironment::Controller specified.
 		def broadcast( message, except=nil )
 			checkType( message, ::String, MUES::OutputEvent )
-			checkType( except, MUES::NullEnv::Controller )
+			checkType( except, MUES::NullEnvironment::Controller )
 
 			# Convert a string to output event
 			if message.kind_of?( String )
@@ -175,7 +194,8 @@ module MUES
 		end
 
 
-		### Return a string listing the connected users, suitable for the 'who' command.
+		### Return a string listing the connected users, suitable for the 'who'
+		### command.
 		def getUserlist
 
 			# Iterate over the list of connected users, adding a line for each
@@ -200,15 +220,16 @@ module MUES
 		#############################################################
 
 		### The MUES::ParticipantProxy derivative (ie., controller) class for
-		### the MUES::NullEnv testing Environment.
+		### the MUES::NullEnvironment testing Environment.
 		class Controller < MUES::ParticipantProxy
+
+			include MUES::TypeCheckFunctions
 
 			DefaultSortPosition = 750
 
-
 			### Create and return a new Controller object with the specified
-			### MUES::User, MUES::NullEnv::Character, MUES::Role, and
-			### MUES::NullEnv objects.
+			### MUES::User, MUES::NullEnvironment::Character, MUES::Role, and
+			### MUES::NullEnvironment objects.
 			def initialize( user, character, role, env )
 				super( user, role, env )
 				@character = character
@@ -254,10 +275,12 @@ module MUES
 
 
 
-		### Rudimentary character object class for MUES::NullEnv
+		### Rudimentary character object class for MUES::NullEnvironment
 		### environments. It doesn't really do much but hold a role object and
 		### take up memory currently.
 		class Character < MUES::Object
+
+			include MUES::TypeCheckFunctions
 
 			### Create and return a new character object with the specified role
 			### (a MUES::Role object).
@@ -279,7 +302,7 @@ module MUES
 		end
 					
 
-	end # class NullEnv
+	end # class NullEnvironment
 end # module MUES
 
 
