@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: BaseClass.rb,v 1.7 2002/06/04 07:07:18 deveiant Exp $
+# $Id: BaseClass.rb,v 1.8 2002/07/09 15:02:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -114,7 +114,7 @@ module MUES
 			### Register the specified objects as interested in events of the
 			### receiver class
 			def RegisterHandlers( *handlers )
-				checkEachResponse( handlers, "handleEvent" )
+				TypeCheckFunctions::checkEachResponse( handlers, "handleEvent" )
 
 				### Add the handlers to the handlers for this class
 				@@Handlers[ self ] |= handlers

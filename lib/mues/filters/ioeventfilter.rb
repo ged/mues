@@ -22,7 +22,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.10 2002/04/01 16:27:29 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.11 2002/07/09 15:02:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,9 +48,11 @@ module MUES
 	# implements the Comparable, Observable, and MUES::Debuggable interfaces.
 	class IOEventFilter < Object ; implements Observable, Comparable, MUES::Debuggable, MUES::AbstractClass
 
+		include MUES::TypeCheckFunctions
+
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.10 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.11 2002/07/09 15:02:38 deveiant Exp $
 		DefaultSortPosition = 500
 
 
