@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-###########################################################################
+#################################################################
 =begin
 
 =CommandShell.rb
@@ -19,22 +19,23 @@ interacting with the MUES Engine after logging in.
 
 This module provides (({MUES::CommandShell})) -- a subclass of
 (({MUES::IOEventFilter})), base command classes
-((({MUES::ShellCommand::Command})), (({MUES::ShellCommand::PlayerCommand})),
+((({MUES::ShellCommand::Command})), (({MUES::ShellCommand::UserCommand})),
 (({MUES::ShellCommand::CreatorCommand})),
 (({MUES::ShellCommand::ImplementorCommand})), and
 (({MUES::ShellCommand::AdminCommand}))), as well as several concrete barebones
 shell command classes.
 
 == Classes
-
 === (({MUES::CommandShell}))
+
+This an IOEventFilter class that provides connected users with the ability to
+execute commands in the context of the Engine.
 
 === (({MUES::ShellCommand::Command}))
 
 This is an abstract base class for shell commands, which are functions triggered
 by user input. They are loaded the first time a shell is created, and are kept
 up to date by occasionally checking for updated files.
-
 
 == Author
 
@@ -51,7 +52,7 @@ http://language.perl.com/misc/Artistic.html)
 * Perhaps add soundex matching if there are no abbrev matches for a command?
 
 =end
-###########################################################################
+#################################################################
 
 require "sync"
 require "singleton"
@@ -72,8 +73,8 @@ module MUES
 	class CommandShell < IOEventFilter ; implements Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.5 2001/07/18 02:23:03 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.6 2001/07/27 04:12:46 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -88,42 +89,55 @@ module MUES
 		}
 
 
-		#######################################################################
+		#############################################################
 		###	P R O T E C T E D   M E T H O D S
-		#######################################################################
+		#############################################################
 
-		### (PROTECTED) METHOD: initialize( aPlayer )
-		### Initialize a new shell input filter for the specified player
+		### (PROTECTED) METHOD: initialize( aUser )
+		### Initialize a new shell input filter for the specified user
 		protected
-		def initialize( aPlayer )
+		def initialize( aUser )
 			super()
-			@player = aPlayer
+			@user = aUser
 			@commandString = @@DefaultCommandString
-			@context = Context.new( self, aPlayer, nil )
+			@context = nil
 			@vars = { 'prompt' => @@DefaultPrompt }
 
-			@commandTable = CommandTable.new( Command.getPermissableCommands(aPlayer) )
+			@commandTable = CommandTable.new( Command.getPermissableCommands(aUser) )
+
+			@stream = nil
 
 			@@Instances += 1
 			ObjectSpace.define_finalizer( self, @@Finalizer )
 		end
 
 
-		#######################################################################
+		#############################################################
 		###	P U B L I C   M E T H O D S
-		#######################################################################
+		#############################################################
 		public
 
 		### Accessors
 		attr_accessor	:vars, :commandString
-		attr_reader		:player, :commandTable
+		attr_reader		:user, :commandTable
 
 
-		### METHOD: start( stream )
-		### Start the filter 
+		### METHOD: start( aStream=MUES::IOEventStream )
+		### Start the filter .
 		def start( stream )
-			super( stream )
+			@stream = stream
+			@context = Context.new( self, @user, stream, nil )
 			queueOutputEvents( OutputEvent.new(@vars['prompt']) )
+			super( stream )
+		end
+
+
+		### METHOD: stop( aStream=MUES::IOEventStream )
+		### Stop the filter.
+		def stop( stream )
+			@stream = nil
+			@context = nil
+			super( stream )
 		end
 
 
@@ -190,17 +204,18 @@ module MUES
 		end
 
 
-		#######################################################################
+		#############################################################
 		###	A S S O C I A T E D   O B J E C T   C L A S S E S
-		#######################################################################
+		#############################################################
 
 		### CommandShell Context object class
 		class Context < MUES::Object
-			attr_reader :shell, :player
+			attr_reader :shell, :user, :stream
 			attr_accessor :evalContext
-			def initialize( shell, player, evalContext )
+			def initialize( shell, user, stream, evalContext )
 				@shell = shell
-				@player = player
+				@user = user
+				@stream = stream
 				@evalContext = evalContext
 			end
 		end # class Context
@@ -274,8 +289,8 @@ module MUES
 		class Command < MUES::Object ; implements AbstractClass, Debuggable, Notifiable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.5 2001/07/18 02:23:03 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.6 2001/07/27 04:12:46 deveiant Exp $
 
 			### Class values
 			@@CommandRegistry	= {}
@@ -414,23 +429,16 @@ module MUES
 				end
 
 
-				### (CLASS) METHOD: getPermissableCommands( aPlayer )
+				### (CLASS) METHOD: getPermissableCommands( aUser )
 				### Returns the command objects that are permitted to the given
-				### player.
-				def getPermissableCommands( aPlayer )
-					getCommands().find_all {|c| c.canBeUsedBy?(aPlayer)}
+				### user.
+				def getPermissableCommands( aUser )
+					getCommands().find_all {|c| c.canBeUsedBy?(aUser)}
 				end
 
 			end # class << self
 
 			
-			### (PROTECTED) METHOD: initialize()
-			### Initialize the command object
-			protected
-			def initialize
-				super()
-			end
-
 			### Public methods
 			public
 
@@ -438,51 +446,62 @@ module MUES
 			abstract	:invoke
 			attr_reader	:name, :synonyms, :description
 
-			### METHOD: canBeUsedBy?( aPlayer=MUES::Player )
-			### Returns true if the command can be used by the player
+			### METHOD: canBeUsedBy?( aUser=MUES::User )
+			### Returns true if the command can be used by the user
 			### specified. Returns false by default, so subclasses must supply
 			### an explicit override for this method if it is to be usable.
-			def canBeUsedBy?( aPlayer )
-				checkType( aPlayer, MUES::Player )
+			def canBeUsedBy?( aUser )
+				checkType( aUser, MUES::User )
 				return false
+			end
+
+			### METHOD: usage()
+			### Return a usage string for the command
+			def usage
+				if @usage
+					return "Usage: @usage"
+				else
+					return "Usage: @name <args>"
+				end
 			end
 
 		end # class Command
 
 
-		#######################################################################
+
+		#############################################################
 		###	A B S T R A C T   C O M M A N D   S U B C L A S S E S
-		#######################################################################
+		#############################################################
 
-		### Player command base class
-		class PlayerCommand < Command
+		### User command base class
+		class UserCommand < Command
 
-			### METHOD: canBeUsedBy?( aPlayer=MUES::Player )
-			### Player commands can always be used, so this method just returns
+			### METHOD: canBeUsedBy?( aUser=MUES::User )
+			### User commands can always be used, so this method just returns
 			### true unconditionally.
-			def canBeUsedBy?( aPlayer )
-				checkType( aPlayer, MUES::Player )
+			def canBeUsedBy?( aUser )
+				checkType( aUser, MUES::User )
 				return true
 			end
 		
 			### (CLASS) METHOD: inherited( aSubClass )
 			### Register the specified class with the list of child classes
-			def PlayerCommand.inherited( aSubClass )
+			def UserCommand.inherited( aSubClass )
 				@@ChildClasses |= [ aSubClass ]
 			end
 
-		end # class PlayerCommand
+		end # class UserCommand
 
 
 		### Creator command base class
 		class CreatorCommand < Command
 
-			### METHOD: canBeUsedBy?( aPlayer=MUES::Player )
-			### Returns true if the specified player has 'creator' or higher
+			### METHOD: canBeUsedBy?( aUser=MUES::User )
+			### Returns true if the specified user has 'creator' or higher
 			### permissions.
-			def canBeUsedBy?( aPlayer )
-				checkType( aPlayer, MUES::Player )
-				return aPlayer.isCreator?
+			def canBeUsedBy?( aUser )
+				checkType( aUser, MUES::User )
+				return aUser.isCreator?
 			end
 		
 			### (CLASS) METHOD: inherited( aSubClass )
@@ -497,12 +516,12 @@ module MUES
 		### Implementor command base class
 		class ImplementorCommand < Command
 
-			### METHOD: canBeUsedBy?( aPlayer=MUES::Player )
-			### Returns true if the specified player has 'implementor' or higher
+			### METHOD: canBeUsedBy?( aUser=MUES::User )
+			### Returns true if the specified user has 'implementor' or higher
 			### permissions.
-			def canBeUsedBy?( aPlayer )
-				checkType( aPlayer, MUES::Player )
-				return aPlayer.isImplementor?
+			def canBeUsedBy?( aUser )
+				checkType( aUser, MUES::User )
+				return aUser.isImplementor?
 			end
 		
 			### (CLASS) METHOD: inherited( aSubClass )
@@ -517,12 +536,12 @@ module MUES
 		### Admin command base class 
 		class AdminCommand < Command
 
-			### METHOD: canBeUsedBy?( aPlayer=MUES::Player )
-			### Returns true if the specified player has 'admin' or higher
+			### METHOD: canBeUsedBy?( aUser=MUES::User )
+			### Returns true if the specified user has 'admin' or higher
 			### permissions.
-			def canBeUsedBy?( aPlayer )
-				checkType( aPlayer, MUES::Player )
-				return aPlayer.isAdmin?
+			def canBeUsedBy?( aUser )
+				checkType( aUser, MUES::User )
+				return aUser.isAdmin?
 			end
 
 			### (CLASS) METHOD: inherited( aSubClass )
@@ -534,12 +553,12 @@ module MUES
 		end # class AdminCommand
 
 
-		#######################################################################
+		#############################################################
 		###	D E F A U L T   B A R E B O N E S   C O M M A N D S  
-		#######################################################################
+		#############################################################
 
 		### Quit command
-		class QuitCommand < PlayerCommand
+		class QuitCommand < UserCommand
 
 			### METHOD: initialize()
 			### Initialize a new QuitCommand object
@@ -547,20 +566,21 @@ module MUES
 				@name				= 'quit'
 				@synonyms			= %w{logout}
 				@description		= 'Disconnect from the server.'
+				@usage				= 'quit'
 
 				super
 			end
 
 			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
-			### Invoke the quit command, which generates a new PlayerLogoutEvent.
+			### Invoke the quit command, which generates a new UserLogoutEvent.
 			def invoke( context, args )
-				return MUES::PlayerLogoutEvent.new( context.player )
+				return MUES::UserLogoutEvent.new( context.user )
 			end
 		end # class QuitCommand
 
 
 		### Quit command
-		class HelpCommand < PlayerCommand
+		class HelpCommand < UserCommand
 
 			### METHOD: initialize()
 			### Initialize a new QuitCommand object
@@ -568,12 +588,13 @@ module MUES
 				@name				= 'help'
 				@synonyms			= %w{}
 				@description		= 'Fetch help about a command or all commands.'
+				@usage				= 'help [<command>]'
 
 				super
 			end
 
 			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
-			### Invoke the quit command, which generates a new PlayerLogoutEvent.
+			### Invoke the quit command, which generates a new UserLogoutEvent.
 			def invoke( context, args )
 
 				helpTable = nil
@@ -607,25 +628,51 @@ module MUES
 
 
 		### 'Play' command
-		class PlayCommand < PlayerCommand
+		class PlayCommand < UserCommand
 
 			### METHOD: initialize()
 			### Initialize a new PlayCommand object
 			def initialize
 				@name				= 'play'
 				@synonyms			= %w{}
-				@description		= 'Play the specified character.'
+				@description		= 'Connect to the specified environment in the specified role.'
+				@usage				= 'play <environment> <role>'
 
 				super
 			end
 
 			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
-			### Generate an event to attempt to connect the current player with
-			### the character requested.
+			### Attempt to connect the user to the environment and role
+			### specified by the arguments.
 			def invoke( context, args )
-				return MUES::CharacterConnectEvent.new( args['characterName'], context.player )
+				results = []
+				if args =~ %r{(\w+)\s+(\w+)}
+					envName, roleName = $1, $2
+
+					### Look for the requested role in the requested
+					### environment, returning the new filter object if we find
+					### it. Catch any problems as exceptions, and turn them into
+					### error messages for output.
+					begin
+						env = engine().getEnvironment( envName ) or
+							raise CommandError "No such environment '#{envName}'."
+						role = env.getAvailableRoles( context.user ).find {|role|
+							role.name == roleName
+						}
+						raise CommandError "Role '#{roleName}' is not currently available to you." unless
+							role.is_a?( MUES::Role )
+
+						results << env.getParticipantProxy( context.user, role )
+					rescue CommandError, SecurityViolation => e
+						results << OutputEvent.new( e.message )
+					end
+				else
+					results << OutputEvent.new( usage() )
+				end
+
+				return results.flatten
 			end
-		end # PlayCommand
+		end # class PlayCommand
 
 
 		### 'Debug' command
@@ -637,6 +684,7 @@ module MUES
 				@name				= 'debug'
 				@synonyms			= %w{}
 				@description		= 'Set command shell debug level.'
+				@usage				= 'debug [<level>]'
 
 				super
 			end
@@ -666,6 +714,7 @@ module MUES
 				@name				= 'eval'
 				@synonyms			= %w{}
 				@description		= 'Evaluate the specified ruby code in the current object context.'
+				@usage				= 'eval <code>'
 
 				super
 			end
@@ -690,7 +739,7 @@ module MUES
 
 
 		### 'Set' command
-		class SetCommand < PlayerCommand
+		class SetCommand < UserCommand
 
 			### METHOD: initialize()
 			### Initialize a new SetCommand object
@@ -698,6 +747,7 @@ module MUES
 				@name				= 'set'
 				@synonyms			= %w{}
 				@description		= 'Set shell parameters.'
+				@usage				= 'set [<param> [= <value>]]'
 
 				super
 			end
@@ -753,7 +803,7 @@ module MUES
 				end
 
 				return *results
-			end # invoke method
+			end # method invoke
 		end # class SetCommand
 
 	end # class CommandShell
