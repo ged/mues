@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: berkeleydbbackend.rb,v 1.5 2002/08/29 07:31:06 deveiant Exp $
+# $Id: berkeleydbbackend.rb,v 1.6 2002/09/27 16:22:07 deveiant Exp $
 # 
 # == Authors
 # 
@@ -44,8 +44,8 @@ module MUES
 			include MUES::TypeCheckFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.5 2002/08/29 07:31:06 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+			Rcsid = %q$Id: berkeleydbbackend.rb,v 1.6 2002/09/27 16:22:07 deveiant Exp $
 
 			EnvOptions = {
 				:set_timeout	=> 50,
@@ -279,8 +279,6 @@ module MUES
 				@db.clear
 			end
 
-			### End of Backend Interface
-
 
 			### Add the specified <tt>indexes</tt>, which are Strings or Symbols
 			### that represent methods to call on stored objects.
@@ -316,6 +314,25 @@ module MUES
 				}
 			end
 
+
+			### Return an Array of keys for the specified <tt>index</tt>.
+			def indexKeys( index )
+				raise MUES::IndexError, "No such index #{index}" unless @indexes.key?( index )
+				@indexes[index].keys
+			end
+
+			### Returns <tt>true</tt> if the backing store has the specified
+			### <tt>index</tt>, which can be either a String or a Symbol.
+			def hasIndex?( index )
+				@indexes.key?( index.to_s.intern )
+			end
+			
+
+
+			### End of Backend Interface
+
+
+
 			#########
 			protected
 			#########
@@ -323,7 +340,7 @@ module MUES
 			### Check to make sure the datastore for the backend is open,
 			### raising an exception if not.
 			def checkOpened
-				raise ObjectStore::BackendError, "Operation attempted on closed backend" unless
+				raise MUES::BackendError, "Operation attempted on closed backend" unless
 					self.open?
 			end
 
