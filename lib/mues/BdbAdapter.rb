@@ -10,7 +10,10 @@ BdbAdapter - A Berkeley DB ObjectStore adapter class
 
 == Synopsis
 
-  
+  require "mues/ObjectStore"
+  oStore = ObjectStore.new( "Bdb", "faeriemud", "localhost", "fmuser", "fmpass" )
+
+  objectId = oStore.storeObjects( obj )
 
 == Description
 
@@ -45,12 +48,13 @@ module MUES
 
 			include Debuggable
 
-			Version = %q$Revision: 1.1 $
-			Rcsid = %q$Id: BdbAdapter.rb,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+			Version = %q$Revision: 1.2 $
+			Rcsid = %q$Id: BdbAdapter.rb,v 1.2 2001/03/20 07:54:08 deveiant Exp $
 
-			DirectoryName = 'objectstore-db'
+			DirectoryName = 'objectstore-bdb'
 
 			### METHOD: initialize( db, host, user, password )
+			### Initialize the adapter. Only the 'db' argument is used.
 			def initialize( db, *ignored )
 				unless File.directory?( DirectoryName )
 					Dir.mkdir( DirectoryName )
@@ -65,26 +69,53 @@ module MUES
 				true
 			end
 
-			### METHOD: storeObject( obj, oid )
-			def storeObject( obj, oid )
-				rawObj = Marshal.dump(obj)
+			### METHOD: storeObject( *objects )
+			def storeObjects( *objects )
+				oids = []
 
-				@lock.synchronize {
-					@dbh.store( oid, rawObj )
+				### Iterate over the objects, getting an id and marshalling each
+				### one, and then doing a synchronized store into the database
+				objects.each {|obj|
+					raise AdapterError, "Cannot store a non-MUES object" unless
+						obj.is_a?( MUES::Object )
+
+					### Fetch the object's unique id, and check for sane values
+					oid = '%s:%s' % [ obj.class.name, obj.muesid ]
+					if oid !~ /\S+/
+						raise AdapterError, "Object has no muesid. Perhaps it needs super() in its initialize()?"
+					end
+
+					### Dump the object and store it
+					rawObj = Marshal.dump(obj)
+					@lock.synchronize {
+						@dbh.store( oid, rawObj )
+					}
+
+					oids.push oid
 				}
 
-				return oid
+				return oids
 			end
 
-			### METHOD: fetchObject( oid )
-			def fetchObject( oid )
-				rawObj = nil
-				@lock.synchronize {
-					rawObj = @dbh.fetch( oid, BDB::RMW )
+			### METHOD: fetchObjects( *oids )
+			def fetchObjects( *oids )
+				objects = []
+
+				### Iterate over each id, re-instantiating each corresponding
+				### object
+				oids.each {|oid|
+					rawObj = nil
+					@lock.synchronize {
+						rawObj = @dbh.fetch( oid, BDB::RMW )
+					}
+
+					obj = Marshal.restore(rawObj)
+					objects.push obj
 				}
 
-				return Marshal.restore( rawObj )
+				return objects
 			end
-		end
-	end
-end
+
+		end # Class BdbAdapter
+	end # Class ObjectStore
+end # Module MUES
