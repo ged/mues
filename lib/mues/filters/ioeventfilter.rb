@@ -52,8 +52,8 @@ module MUES
 	class IOEventFilter < Object ; implements Observable, Comparable, Debuggable, AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.7 2001/07/27 04:15:12 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.8 2001/09/26 13:24:31 deveiant Exp $
 		DefaultSortPosition = 500
 
 		### Initializer
@@ -97,6 +97,7 @@ module MUES
 		### Accessors
 		attr_accessor	:sortPosition
 		attr_reader		:queuedInputEvents, :queuedOutputEvents, :isFinished
+		alias :isFinished? :isFinished
 
 		### METHOD: shutdown
 		### Shut the filter down, returning any events which should be
@@ -187,6 +188,12 @@ module MUES
 				@queuedOutputEvents.clear
 			}
 			return events.flatten
+		end
+
+		### METHOD: to_s
+		### Return a stringified description of the filter
+		def to_s
+			"%s filter [%d]" % [ self.class.name, @sortPosition ]
 		end
 
 	end # class IOEventFilter
