@@ -1,7 +1,7 @@
 # -*- default-generic -*-
 # User-related MUES::CommandShell commands.
-# Time-stamp: <14-Oct-2002 03:50:09 deveiant>
-# $Id: users.cmd,v 1.5 2002/10/14 09:50:56 deveiant Exp $
+# Time-stamp: <15-Oct-2002 06:36:24 deveiant>
+# $Id: users.cmd,v 1.6 2002/10/15 12:37:14 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -168,6 +168,9 @@ if the invoking user has admin privileges.
 
   password [<username>]
 
+== Synonyms
+passwd
+
 == Code
 
 	user = nil
@@ -193,13 +196,14 @@ if the invoking user has admin privileges.
 
 
 ### Change a user's attributes
-= usermod
+= setuser
 
 == Abstract
 Change an attribute of a user.
 
 == Synonyms
 moduser
+usermod
 
 == Description
 Allows a user to change their account information, or the account information of
@@ -207,7 +211,7 @@ another user if the invoking user has admin priviledges.
 
 == Usage
 
-	usermod <attribute> [<username>]
+	setuser <attribute> [<username>]
 
 == Code
 
