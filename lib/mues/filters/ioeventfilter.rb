@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.15 2002/09/27 16:18:26 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.16 2002/09/28 10:42:51 deveiant Exp $
 # 
 # == Authors
 # 
@@ -75,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.15 2002/09/27 16:18:26 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.16 2002/09/28 10:42:51 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -220,8 +220,6 @@ module MUES
 		### the stream. Filter subclasses should override this method if they
 		### wish to process output events.
 		def handleOutputEvents( *events )
-			events.flatten!
-
 			@queuedOutputEventsMutex.synchronize {
 				events += @queuedOutputEvents
 				@queuedOutputEvents.clear
