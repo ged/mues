@@ -1,88 +1,65 @@
-#!/usr/bin/ruby
-###########################################################################
-=begin
-
-=MysqlTableAdapter.rb
-
-== Name
-
-MysqlTableAdapter - An adapter class for MySQL tables
-
-== Synopsis
-
-  require "MysqlTableAdapter"
-
-  class MyAdapter < AdapterClass( host, db, tableName, username, password )
-	  @@relations = {
-		  
-	  }
-  end
-
-  a = MyAdapter.new
-  puts a.columnName
-  a.columnName = value
-  a.store
-
-  a = MyAdapter.lookup( 5 )
-
-  names = MyAdapter.lookup( 5, 10, 15, 21 ) { |a|
-	  a.collect {|r| r.name}
-  }
-
-== Description
-
-This is an adapter class for abstracting rows from a MySQL table behind an
-object interface. Columns of the row can be manipulated by calling methods of
-the same name as the column, and rows can be fetched, stored, created, and
-deleted via method calls as well.
-
-((*More documentation to come*))
-
-== Author
-
-Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
-
-Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
-
-This module is free software. You may use, modify, and/or redistribute this
-software under the terms of the Perl Artistic License. (See
-http://language.perl.com/misc/Artistic.html)
-
-=end
-###########################################################################
+#!/usr/bin/ruby -w
+#
+# See the file 'tableadapter.rd' for documentation on how to use this class
+#
+# Author: Michael Granger <ged@FaerieMUD.org>
+#
+# Copyright (c) 2001 The FaerieMUD Consortium. All rights reserved.
+#
+# This module is free software. You may use, modify, and/or redistribute this
+# software under the terms of the Perl Artistic License. (See
+# http://language.perl.com/misc/Artistic.html)
+#
 
 require "mysql"
 require "weakref"
+require "rmutex"
 require "md5"
 
+require "tableadapter/Search"
+
 class TableAdapterError < StandardError; end
-class MysqlTableAdapter
+class TableAdapter
 
 	### Inner class -- reference-counted object cache
 	class ObjectCache < Hash
+
+		### (OVERRIDDEN) METHOD: initialize( *args )
+		### Initialize the ObjectCache object
+		def initialize( *args )
+			super( *args )
+			@mutex = RMutex.new
+		end
 
 		### (OVERRIDDEN) METHOD: []( key )
 		### Key lookup
 		def []( key )
 			return nil unless self.key?( key )
 
-			# Disable garbage collection while we fetch the object behind the
-			# weak reference
-			gcWasDisabled = GC.disable
+			### Synchronize to avoid screwing up the GC setting with multiple
+			### threads
+			@mutex.synchronize {
 
-			# Attempt to fetch the object and then turn garbage-collection back
-			# on
-			rval = nil
-			begin
-				if super(key).weakref_alive?
-					rval = super(key).__getobj__
-				end
-			rescue RefError
+				# Disable garbage collection while we fetch the object behind
+				# the weak reference
+				gcWasDisabled = GC.disable
+
+				# Attempt to fetch the object and then turn garbage-collection
+				# back on
 				rval = nil
-			ensure
-				GC.enable unless gcWasDisabled
-			end
+				begin
+					if super(key).weakref_alive?
+						rval = super(key).__getobj__
+					end
 
+				rescue RefError
+					rval = nil
+
+				ensure
+					GC.enable unless gcWasDisabled
+				end
+			}
+			
 			return rval
 		end
 
@@ -93,7 +70,8 @@ class MysqlTableAdapter
 		end
 	end
 
-	### Innert class -- checksumming row data hash
+
+	### Inner class -- checksumming row data hash
 	class RowState < Hash
 
 		### METHOD: initialize( default=nil )
@@ -103,22 +81,27 @@ class MysqlTableAdapter
 
 			@savedChecksum = checksum()
 			@modifiedFields = {}
+			@mutex = RMutex.new
 		end
 
 		### (OVERRIDDEN) METHOD: [ column ]= value
 		### Set the value of the specified column to the specified value
 		def []=( col, val )
-			super( col, val )
-			@modifiedFields[ col ] = 1
+			@mutex.synchronize {
+				super( col, val )
+				@modifiedFields[ col ] = 1
+			}
 		end
 
 		### METHOD: setState( hash )
 		### Set the hash values and checksum of the row data to those of the
 		### specified hash
 		def setState( hash )
-			replace( hash )
-			@savedChecksum = checksum()
-			@modifiedFields = {}
+			@mutex.synchronize {
+				replace( hash )
+				@savedChecksum = checksum()
+				@modifiedFields = {}
+			}
 		end
 
 		### METHOD: modifiedFields()
@@ -150,6 +133,7 @@ class MysqlTableAdapter
 		
 	end
 
+	### :GENERICIZE: Constants are, obviously, Mysql-specific
 	### Class constants
 	TypeMap = {
 		"TINY"		=> MysqlField::TYPE_TINY,
@@ -187,8 +171,9 @@ class MysqlTableAdapter
 		"BINARY"		=> MysqlField::BINARY_FLAG
 	}
 
-	Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-	Rcsid = %q$Id: Mysql.rb,v 1.1 2001/04/06 07:34:08 deveiant Exp $
+	Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+	Rcsid = %q$Id: Mysql.rb,v 1.2 2001/04/08 08:23:08 deveiant Exp $
+
 
 	###########################################################################
 	###	C L A S S   V A R I A B L E S
@@ -215,6 +200,11 @@ class MysqlTableAdapter
 	class << self
 
 		### (CLASS) METHOD: dbKey()
+		### Returns a string which uniquely identifies the particular database
+		### this class's table lives in. The returned string is of the form:
+		###
+		###	'host:database:username'
+		###
 		def dbKey
 			unless @@database && @@database.is_a?( String ) && @@database.length > 0
 				raise TableAdapterError, "No database defined for the \"#{self.name}\" class"
@@ -223,7 +213,13 @@ class MysqlTableAdapter
 			return [ @@host, @@database, @@username ].join(":")
 		end
 
+
 		### (CLASS) METHOD: tableKey()
+		### Returns a string which can be used to uniquely identify the table
+		### this class abstracts. The string is of the form:
+		###
+		###	"#{dbKey()}:table"
+		###
 		def tableKey
 			unless @@table && @@table.is_a?( String ) && @@table.length > 0
 				raise TableAdapterError, "No table defined for the \"#{self.name}\" class"
@@ -232,12 +228,18 @@ class MysqlTableAdapter
 			return [ dbKey(), @@table ].join(':')
 		end
 
+
 		### (CLASS) METHOD: tableInfo()
+		### Returns a (possible cached) hash of table information like that
+		### returned by (({fetchTableInfoHash()}))
 		def tableInfo
 			@@tableInfo ||= fetchTableInfoHash( @@table )
 		end
 
-		### (CLASS) METHOD: lookup( idArray )
+
+		### (CLASS) METHOD: lookup( idArray ) {|obj| block }
+		### Returns an array of objects which match the rows of the abstracted
+		### table whose rowids are in the idArray specified.
 		def lookup( *ids )
 			ids.collect! {|elem| elem.to_a}.flatten!.compact!
 			raise ArgumentError, "No ids specified." unless ids.length > 0
@@ -245,7 +247,7 @@ class MysqlTableAdapter
 			### Prepare to check pre-emptive caching
 			tkey = tableKey()
 			preCached = {}
-			@@oCache[ tkey ] ||= MysqlTableAdapter::ObjectCache.new
+			@@oCache[ tkey ] ||= TableAdapter::ObjectCache.new
 
 			### See if any of the ids we've requested are already cached
 			splicedIds = ids.dup
@@ -267,6 +269,8 @@ class MysqlTableAdapter
 						quoteValuesForField( primaryKey(), splicedIds[0] )[0]
 					]
 				else
+
+					### :GENERICIZE: IN( <set> ) is probably not portable
 					query = "SELECT * FROM %s WHERE %s IN ( %s )" % [
 						@@table,
 						primaryKey(),
@@ -295,16 +299,25 @@ class MysqlTableAdapter
 				rval[ key, 0 ] = preCached[ key ]
 			}
 
-			return ids.length == 1 ? rval[0] : rval
+			if block_given?
+				rval.each {|obj| yield(obj)}
+			else
+				return *rval
+			end
 		end
 		alias :find :lookup
 
+
+		### :GENERICIZE: Abstract this to the db-specific module
 		### (CLASS) METHOD: primaryKey()
+		### Returns the name of the primary key of the abstracted table.
 		def primaryKey
 			### :FIXME: Doesn't handle multiple-column primary keys yet
 			(self.tableInfo.values.find {|f| (f.flags & MysqlField::PRI_KEY_FLAG) != 0}).name
 		end
 
+
+		### :GENERICIZE: Abstract this (if it's kept at all)
 		### (CLASS) METHOD: columnInfoTable()
 		### Returns a String with a human-readable table of fields information
 		### for this class
@@ -320,18 +333,28 @@ class MysqlTableAdapter
 					TypeNameMap[ f.type ],
 					f.length, 
 					f.max_length, 
-					_flagList(f.flags).join("|") 
+					flagList(f.flags).join("|") 
 				] << "\n"
 			}
 			infoTable
 		end
 
-		### (PROTECTED CLASS) METHOD: dbHandle()
+
+		### :GENERICIZE: Abstract this (if it's kept at all)
+		### (CLASS) METHOD: dbHandle()
+		### Open, cache, and return a database connection to the database this
+		### class's table is in
 		def dbHandle
 			@@handles[ dbKey() ] ||= Mysql.connect( @@host, @@username, @@password, @@database )
 		end
 
-		### (PROTECTED CLASS) METHOD: fetchTableInfoHash( tableName )
+
+		### (CLASS) METHOD: fetchTableInfoHash( tableName )
+		### Returns a hash of field information about the table this class
+		### abstracts. The hash is of the form:
+		###
+		###	{ String(columnName) => MysqlField(ColumnInfo) }
+		###
 		def fetchTableInfoHash( table )
 			dbh = dbHandle()
 			fields = Hash.new
@@ -358,7 +381,10 @@ class MysqlTableAdapter
 			return fields
 		end
 
-		### (PROTECTED CLASS) METHOD: quoteValuesForField( fieldName, *values )
+
+		### (CLASS) METHOD: quoteValuesForField( fieldName, *values )
+		### Returns the specified array of values properly quoted for the field
+		### specified.
 		def quoteValuesForField( field, *values )
 			fieldType = self.tableInfo[field].type
 			raise ArgumentError, "No such column '#{field}' in the '#{@table}' table." unless fieldType
@@ -396,34 +422,75 @@ class MysqlTableAdapter
 		end
 
 
-		### (PROTECTED CLASS) METHOD: _flagList( flags )
+		### (CLASS) METHOD: flagList( flags )
 		### Return an Array of flag names for the flags given
-		def _flagList( flags )
+		def flagList( flags )
 			FlagMap.keys.find_all {|key|
 				FlagMap[ key ] & flags != 0
 			}
 		end
 
+
+		### (CLASS) METHOD: table
+		### Return the table associated with this class
+		def table
+			@@table
+		end
+
+		### (CLASS) METHOD: database
+		### Return the database associated with this class
+		def database
+			@@database
+		end
+
+		### (CLASS) METHOD: host
+		### Return the host associated with this class
+		def host
+			@@host
+		end
+
+		### (CLASS) METHOD: username
+		### Return the username associated with this class
+		def username
+			@@username
+		end
+
+		### (PROTECTED CLASS) METHOD: password
+		### Return the password associated with this class
+		protected
+		def password
+			@@password
+		end
+
+
 	end # class << self
 
 
 	###########################################################################
-	###	I N S T A N C E   M E T H O D S
+	###	P R O T E C T E D   I N S T A N C E   M E T H O D S
 	###########################################################################
+	protected
 
 	### METHOD: initialize( row=nil )
+	### Initialize an adapter object, optionally setting the state of the
+	### abstracted row to the values in the row hash specified.
 	def initialize( row=nil )
 		@row = RowState.new
 
 		if row.nil?
 			@@oCache[ self.class.tableKey() ] ||= ObjectCache.new
-			self.class.tableInfo.each {|name,field| @row[name] = nil}
 		elsif row.is_a?( Hash )
 			@row.setState( row )
 		else
 			raise ArgumentError, "Row must be a hash"
 		end
 	end
+
+
+	###########################################################################
+	###	P U B L I C   I N S T A N C E   M E T H O D S
+	###########################################################################
+	public
 
 	### METHOD: store()
 	### Store the row in the database
@@ -436,18 +503,18 @@ class MysqlTableAdapter
 
 		dbh = self.class.dbHandle()
 
-		if _rowid().nil? || _rowid() == "0"
+		if rowid.nil? || rowid == "0"
 			query = 'INSERT INTO %s SET %s' %
 				[ @@table, setPhrase ]
 			$stderr.puts( "Running query: #{query}" ) if $DEBUG
 			res = dbh.query( query )
 			insertId = dbh.insert_id
-			_rowid( insertId )
+			rowid = insertId
 			@@oCache[ self.class.tableKey() ] ||= ObjectCache.new
 			@@oCache[ self.class.tableKey() ][ insertId ] = self
 		else
 			query = 'UPDATE %s SET %s WHERE %s = %s' %
-				[ @@table, setPhrase, self.class.primaryKey(), _rowid() ]
+				[ @@table, setPhrase, self.class.primaryKey(), rowid ]
 			$stderr.puts( "Running query: #{query}" ) if $DEBUG
 			res = dbh.query( query )
 		end
@@ -455,12 +522,25 @@ class MysqlTableAdapter
 		return true
 	end
 
+
+	### METHOD: delete( cascade=false )
+	### Delete the row this object abstracts. Note that this doesn't affect the
+	### object's state except to delete its rowid (primary key). The
+	### ((|cascade|)) parameter isn't used yet, but will eventually when the
+	### object-relational stuff works.
+	def delete( cascade=false )
+		res = dbh.query("DELETE FROM %s WHERE %s = %s" % [ @@table, self.class.primaryKey, rowid ])
+		rowid = nil
+		return true
+	end
+
+
 	### METHOD: method_missing( aSymbol, *args )
 	### Create and call methods that are the same as column names
 	def method_missing( aSymbol, *args )
 		origMethName = aSymbol.id2name
 		methName = origMethName.sub( /=$/, '' )
-		super unless @row.has_key?( methName )
+		super unless self.class.tableInfo.has_key?( methName )
 
 		oldVerbose = $VERBOSE
 		$VERBOSE = false
@@ -484,21 +564,26 @@ class MysqlTableAdapter
 	end
 
 
-	###########################################################################
-	###	P R O T E C T E D   M E T H O D S
-	###########################################################################
-	protected
+	### METHOD: rowid
+	### Fetch the value of the primary key column for this row
+	def rowid
+		send( self.class.primaryKey() )
+	end
 
-	### (PROTECTED) METHOD: _rowid()
-	def _rowid( arg=nil )
+	
+	### METHOD: rowid=( arg )
+	### Set the value of the primary key column for this row
+	def rowid=( arg )
 		send( self.class.primaryKey(), arg )
 	end
 
+	
 end
 
 
+### Global function to facilitate the creation of an adapter class.
 def TableAdapterClass( db, table, user, password, host = nil )
-	klass = Class.new( MysqlTableAdapter )
+	klass = Class.new( TableAdapter )
 
 	klass.class_eval {
 		@@database = db
