@@ -2,7 +2,7 @@
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/27 18:14:24 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/27 18:16:27 $">
 
   <!--
 
@@ -11,7 +11,7 @@
   without any argument. For the actual defaults, see the end of
   lib/mues/Config.rb.
 
-  $Id: minimal-config.xml,v 1.4 2002/10/27 18:14:24 deveiant Exp $
+  $Id: minimal-config.xml,v 1.5 2002/10/27 18:16:27 deveiant Exp $
 
   -->
 
@@ -167,6 +167,9 @@
 				in the server.
   -->
   <environments>
+	<envpath>
+	  <directory>server/environments</directory>
+	</envpath>
 	<environment name="null" class="Null">
 	  <description>A testing environment without any surroundings.</description>
 	</environment>
