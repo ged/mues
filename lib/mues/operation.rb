@@ -27,11 +27,12 @@
 # 
 # == Rcsid
 # 
-# $Id: operation.rb,v 1.3 2002/03/30 19:43:23 deveiant Exp $
+# $Id: operation.rb,v 1.4 2002/04/11 15:55:23 deveiant Exp $
 # 
 # == Authors
 # 
 # * Michael Granger <ged@FaerieMUD.org>
+# * Alexis Lee <red@FaerieMUD.org>
 # 
 #:include: COPYRIGHT
 #
@@ -80,8 +81,8 @@ module Metaclass
 
 		COMMENT_WRAP_WIDTH		= 77
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: operation.rb,v 1.3 2002/03/30 19:43:23 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: operation.rb,v 1.4 2002/04/11 15:55:23 deveiant Exp $
 
 		
 		### Return a new Operation with the specified name. If the code argument
@@ -217,13 +218,23 @@ module Metaclass
 			# Add scope and visibility code
 			if @scope == Scope::CLASS
 				definition.unshift "class <<self"
-				definition.push "end"
-			else
+
 				case @visibility
 				when Visibility::PROTECTED
 					definition << "protected :#{methodName}"
+				else
+					definition << "public :#{methodName}"
+				end
+
+				definition.push "end"
+			else
+ 				case @visibility
+ 				when Visibility::PROTECTED
+					definition << "protected :#{methodName}"
 				when Visibility::PRIVATE
 					definition << "private :#{methodName}"
+				else
+					definition << "public :#{methodName}"
 				end
 			end
 
