@@ -1,7 +1,7 @@
 #
 # MUES::CommandShell environment manipulation commands.
-# Time-stamp: <12-Oct-2002 06:18:17 deveiant>
-# $Id: environments.cmd,v 1.4 2002/10/12 15:37:01 deveiant Exp $
+# Time-stamp: <26-Oct-2002 23:45:29 deveiant>
+# $Id: environments.cmd,v 1.5 2002/10/28 00:13:17 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -180,7 +180,7 @@ Disconnect from the specified role in the specified environment.
 
   results << OutputEvent.new( "Disconnecting from #{envName}..." )
   targetEnv.removeParticipantProxy( targetProxy )
-  context.stream.removeFilters( targetProxy )
+  results << context.stream.stopFilters( targetProxy )
   results << OutputEvent.new( " disconnected.\n\n" )
 
   return results.flatten
