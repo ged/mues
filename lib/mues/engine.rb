@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.40 2003/04/19 08:15:26 deveiant Exp $
+# $Id: engine.rb,v 1.41 2003/08/03 18:54:02 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.40 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.40 2003/04/19 08:15:26 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.41 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.41 2003/08/03 18:54:02 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -798,7 +798,11 @@ module MUES
 			@eventQueue = config.createEventQueue
 
 			@eventQueue.debugLevel = 0
-			@eventQueue.start( self )
+			@eventQueue.start {|*events|
+				self.log.debug "Propagating %d consequence events." %
+					events.length
+				self.dispatchEvents( *events )
+			}
 
 			return []
 		end
@@ -813,7 +817,11 @@ module MUES
 			@privilegedEventQueue = config.createPrivilegedEventQueue
 
 			@privilegedEventQueue.debugLevel = 0
-			@privilegedEventQueue.start( self )
+			@privilegedEventQueue.start {|*events|
+				self.log.debug "Propagating %d consequence events." %
+					events.length
+				self.dispatchEvents( *events )
+			}
 
 			return []
 		end
