@@ -26,6 +26,8 @@ http://language.perl.com/misc/Artistic.html)
 =end
 #################################################################
 
+require "pp"
+
 require "mues/Namespace"
 require "mues/Exceptions"
 require "mues/Events"
@@ -130,6 +132,48 @@ module MUES
 			end
 
 		end # class ObjectsCommand
+
+
+ 		### 'printobject' command
+		class PrintObjectCommand < ImplementorCommand
+
+			### METHOD: initialize()
+			### Initialize a new ObjectsCommand object
+			def initialize
+				@name				= 'printobject'
+				@synonyms			= %w{pp}
+				@description		= 'Prettyprint an object.'
+				@usage				= 'printobject <objectId>'
+
+				super
+			end
+
+			### METHOD: invoke( context=MUES::CommandShell::Context, args=Hash )
+			### Invoke the objects command
+			def invoke( context, args )
+				unless args =~ /^\s*(\d+)\s*$/
+					return OutputEvent.new( usage() )
+				end
+
+				targetId = $1.to_i
+				targetObject = nil
+				prettyPrinted = []
+
+				ObjectSpace.each_object( MUES::Object ) {|obj|
+					next unless obj.id == targetId
+					targetObject = obj
+					break 
+				}
+				return OutputEvent.new( "No object found with id '#{targetId}'.\n\n" ) if
+					targetObject.nil?
+
+				PP.pp( targetObject, 79, prettyPrinted )
+
+				return OutputEvent.new(prettyPrinted.join('') + "\n\n")
+			end
+
+		end # class PrintObjectCommand
+
 
  		### 'Filters' command
 		class FiltersCommand < ImplementorCommand
