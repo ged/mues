@@ -68,9 +68,6 @@ module MUES
 
 		### Initialize the console output filter.
 		def initialize( reactorProxy, originListener=MUES::Listener, sortOrder=DefaultSortPosition )
-			checkType( reactorProxy, MUES::ReactorProxy )
-			checkType( originListener, MUES::Listener )
-
 			@reactorProxy	= reactorProxy
 
 			@readBuffer		= ''
