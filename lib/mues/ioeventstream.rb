@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.22 2002/10/25 00:24:06 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.23 2002/10/25 05:02:03 deveiant Exp $
 # 
 # == Authors
 # 
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.22 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.22 2002/10/25 00:24:06 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.23 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.23 2002/10/25 05:02:03 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
@@ -129,6 +129,7 @@ module MUES
 			@idle = false
 			@paused = false
 			@streamThread = Thread.new { streamThreadRoutine() }
+			@streamThread.abort_on_exception = true
 			@streamThread.desc = "IOEventStream thread [Stream #{self.id}]"
 		end
 
