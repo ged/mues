@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.7 2002/10/06 01:58:21 deveiant Exp $
+# $Id: mixins.rb,v 1.8 2002/10/12 11:24:24 deveiant Exp $
 # 
 # == Authors
 # 
@@ -421,9 +421,9 @@ module MUES
 		end
 
 		### Get the loaded environment with the specified +name+.
-		def getEnvironment( name )
+		def getEnvironmentByName( name )
 			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
-			return MUES::Engine::instance.getEnvironment( name )
+			return MUES::Engine::instance.getEnvironmentByName( name )
 		end
 
 		### Fetch a connected user object by +name+. Returns +nil+ if no such
