@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.24 2002/10/14 09:40:06 deveiant Exp $
+# $Id: commandshell.rb,v 1.25 2002/10/17 14:50:24 deveiant Exp $
 # 
 # == Authors
 # 
@@ -54,6 +54,7 @@
 require "sync"
 require "singleton"
 require "find"
+require "observer"
 #require "Soundex"
 
 require "mues/Object"
@@ -72,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.24 2002/10/14 09:40:06 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.25 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.25 2002/10/17 14:50:24 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -96,11 +97,12 @@ module MUES
 
 			super()
 
-			@user			= user
-			@commandTable	= commandTable
+			@user				= user
+			@commandTable		= commandTable
+			@commandTableMutex	= Sync::new
 
-			@commandPrefix	= parameters["command-prefix"]
-			@vars			= {}
+			@commandPrefix		= parameters["command-prefix"]
+			@vars				= {}
 
 			if user.preferences.has_key?( 'prompt' )
 				@vars['prompt'] = user.preferences['prompt']
@@ -108,9 +110,15 @@ module MUES
 				@vars['prompt'] = parameters["default-prompt"]
 			end
 
+			# When the CommandShell::Factory updates its command registry, this
+			# flag is set to the factory instance in all shells created from
+			# it. On the next input event, the shell should ask the factory for
+			# a new table via #createCommandTableForUser().
+			@needNewTable		= false
+
 			# These are passed as arguments to #activate
-			@stream			= nil
-			@context		= nil
+			@stream				= nil
+			@context			= nil
 
 			self.log.info( "Initialized command shell for %s. Prefix = '%s'" % [ user.to_s, @commandPrefix ] )
 		end
@@ -158,6 +166,13 @@ module MUES
 		end
 
 
+		### Notify the shell that its command table is out of date, and should
+		### be replaced with the specified one.
+		def update( factory )
+			@needNewTable = factory
+		end
+
+
 		### Handle the specified input events by comparing them to the list of
 		### valid shell commands and creating the appropriate events for any
 		### that match.
@@ -166,13 +181,17 @@ module MUES
 
 			debugMsg( 5, "Got #{events.size} input events to filter." )
 
-			### Extract commands from each event, run them if they match a
-			### command we know about, and then dispatch the resultant events.
+			# If the factory has notified the shell of an updated command
+			# registry, reload the table
+			self.reloadCommandTable( @needNewTable ) if @needNewTable
+
+			# Extract commands from each event, run them if they match a
+			# command we know about, and then dispatch the resultant events.
 			events.flatten.each do |e|
 
-				### If the input looks like a command for the shell, look for
-				### commands we know about and take appropriate action when
-				### one is found
+				# If the input looks like a command for the shell, look for
+				# commands we know about and take appropriate action when
+				# one is found
 				if e.data =~ /^#{@commandPrefix}(\w+)\b(.*)/
 					command = $1
 					argString = $2.strip
@@ -180,24 +199,25 @@ module MUES
 					debugMsg( 4, "Got command '#{command}' with args: '#{argString}'" )
 					results = []
 
-					### Look up the command in the command table, trying to get
-					### the specific one first
-					if (( commandObj = @commandTable[command] ))
-						debugMsg( 4, "Found command '%s'." % commandObj.to_s )
-						results << commandObj.invoke( @context, argString )
-					elsif ( ! (objects = @commandTable.approxSearch(command)).empty? )
-						debugMsg( 4, "Ambiguous command." )
-						results << OutputEvent.new( "Ambiguous command '#{command}': Matches [",
-												    objects.collect {|o| o.name}.join(', '), "]\n" )
-					else
-						debugMsg( 2, "Command '#{command}' not found." )
-						results << OutputEvent.new( "No such command '#{command}'.\n" )
-					end
-
+					# Look up the command in the command table, trying to get
+					# the specific one first
+					@commandTableMutex.synchronize( Sync::SH ) {
+						if (( commandObj = @commandTable[command] ))
+							debugMsg( 4, "Found command '%s'." % commandObj.to_s )
+							results << commandObj.invoke( @context, argString )
+						elsif ( ! (objects = @commandTable.approxSearch(command)).empty? )
+							debugMsg( 4, "Ambiguous command." )
+							results << OutputEvent.new( "Ambiguous command '#{command}': Matches [",
+													   objects.collect {|o| o.name}.join(', '), "]\n" )
+						else
+							debugMsg( 2, "Command '#{command}' not found." )
+							results << OutputEvent.new( "No such command '#{command}'.\n" )
+						end
+					}
 					results.flatten!
 
-					### Separate out all the different kinds of events for
-					### proper dispatch
+					# Separate out all the different kinds of events for
+					# proper dispatch
 					output = results.find_all {|e| e.kind_of?( MUES::OutputEvent )}
 					results -= output
 					input = results.find_all {|e| e.kind_of?( MUES::InputEvent )}
@@ -205,24 +225,24 @@ module MUES
 					newFilters = results.find_all {|e| e.kind_of?( MUES::IOEventFilter )}
 					results -= newFilters
 
-					### Add any new filters to our parent event stream
+					# Add any new filters to our parent event stream
 					@stream.addFilters( *newFilters ) unless newFilters.empty?
 
-					### Dispatch events
+					# Dispatch events
 					unhandledInputEvents << input unless input.empty?
 					queueOutputEvents( *output ) unless output.empty?
 					dispatchEvents( *results ) unless results.empty?
 
-				### If the input doesn't look like a command for the shell, add
-				### it to the list of input that we'll pass along to the next
-				### filter.
+				# If the input doesn't look like a command for the shell, add
+				# it to the list of input that we'll pass along to the next
+				# filter.
 				else
 					debugMsg( 4, "'#{e.data}' Doesn't look like a commandshell command. Skipping." )
 					unhandledInputEvents << e
 				end
 
-				### No matter what the input, we're responsible for the prompt,
-				### so send it for each input event.
+				# No matter what the input, we're responsible for the prompt,
+				# so send it for each input event.
 				queueOutputEvents( PromptEvent::new(self.vars['prompt']) )
 			end
 
@@ -230,18 +250,40 @@ module MUES
 		end
 
 
+		#########
+		protected
+		#########
+
+		### Reload the shell's command table from the specified factory (a
+		### MUES::CommandShell::Factory).
+		def reloadCommandTable( factory )
+			@commandTableMutex.synchronize( Sync::EX ) {
+				oldTable = @commandTable
+				begin
+					@commandTable = factory.createCommandTableForUser( @user )
+				rescue => e
+					self.log.error "Error while loading updated command table: #{e.message}"
+					@commandTable = oldTable
+				ensure
+					@needNewTable = false
+				end
+			}
+		end
+
+
+
 		#############################################################
 		###	A S S O C I A T E D   O B J E C T   C L A S S E S
 		#############################################################
 
-		# The shell command object class. Commands objects are wrappers around
-		# event-generating functions triggered by user input. They are loaded by
-		# a MUES::CommandShell::Factory via a MUES::CommandShell::CommandParser,
-		# and references to the ones which are executable by a particular
-		# MUES::User are given to her MUES::CommandShell at creation. The
-		# registry of commands is kept up to date by occasionally checking for
-		# updated files.
-		class Command < MUES::Object ; implements MUES::Debuggable
+		### The shell command object class. Commands objects are wrappers around
+		### event-generating functions triggered by user input. They are loaded by
+		### a MUES::CommandShell::Factory via a MUES::CommandShell::CommandParser,
+		### and references to the ones which are executable by a particular
+		### MUES::User are given to her MUES::CommandShell at creation. The
+		### registry of commands is kept up to date by occasionally checking for
+		### updated files.
+		class Command < MUES::PolymorphicObject ; implements MUES::Debuggable
 
 			include MUES::User::AccountType, MUES::TypeCheckFunctions
 
@@ -524,9 +566,9 @@ module MUES
 				# @soundexTable = {}
 				occurrenceTable = {}
 
-				### Build the abbrevtable (concept borrowed from the
-				### Text::Abbrev Perl module by Gurusamy Sarathy
-				### <gsar@ActiveState.com>)
+				# Build the abbrevtable (concept borrowed from the
+				# Text::Abbrev Perl module by Gurusamy Sarathy
+				# <gsar@ActiveState.com>)
 				commands.flatten.uniq.each {|comm|
 
 					( [ comm.name ] | comm.synonyms ).each {|word|
@@ -827,13 +869,13 @@ module MUES
 		### specified by the configuration, and then maintain a list of commands
 		### loaded from a configured list of directories, reloading any that
 		### change via a scheduled event in the Engine to which it belongs.
-		class Factory < MUES::Object ; implements MUES::Debuggable
+		class Factory < MUES::Object ; implements MUES::Debuggable, Observable
 
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.24 2002/10/14 09:40:06 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.25 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.25 2002/10/17 14:50:24 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
@@ -928,7 +970,10 @@ module MUES
 			### factory) tailored for the specified user (a MUES::User object).
 			def createShellForUser( user )
 				table = createCommandTableForUser( user )
-				return CommandShell::create( @shellClass, user, table, @shellParameters )
+				shell = CommandShell::create( @shellClass, user, table, @shellParameters )
+				add_observer( shell )
+
+				return shell
 			end
 
 
@@ -949,30 +994,25 @@ module MUES
 			end
 
 
-			### Build the command registry for this factory
+			### Build the command registry for this factory.
 			def buildCommandRegistry
 				@mutex.synchronize( Sync::EX ) {
-					return [] if @registryIsBuilt
-					self.log.notice( "Building command registry" )
+
+					# If the registry's already been built, unset the
+					# appropriate flag. Only log if it's being built for the
+					# first time to avoid spamming the log if the update cycle
+					# is small.
+					if @registryIsBuilt
+						@registryIsBuilt = false
+					else
+						self.log.notice( "Building command registry" )
+					end
 					loadCommandsIntoRegistry()
 				}
 
 				return []
 			end
-
-
-			### Rebuild the command registry after checking for
-			### updates. Uses the specified <tt>config</tt> object to
-			### determine what directories to load commands from.
-			def rebuildCommandRegistry
-				debugMsg 1, "Flushing command registry for rebuild"
-				@mutex.synchronize( Sync::EX ) {
-					@registryIsBuilt = false
-					loadCommandsIntoRegistry()
-				}
-
-				return []
-			end
+			alias_method :rebuildCommandRegistry, :buildCommandRegistry
 
 
 			#########
@@ -1022,11 +1062,14 @@ module MUES
 								@registry[ name ] = command
 							}
 						}
+
+						self.changed( true )
 					end
 
 					@registryIsBuilt = true
 				}
 
+				self.notify_observers( self )
 				return commands.length
 			end
 
@@ -1038,8 +1081,8 @@ module MUES
 			def loadNewCommands
 				commands = nil
 
-				### Parse all command files in the configured directories newer
-				### than our last load time.
+				# Parse all command files in the configured directories newer
+				# than our last load time.
 				@mutex.synchronize( Sync::EX ) {
 
 					# Get the old load time for comparison and set it to the
