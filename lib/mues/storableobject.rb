@@ -45,9 +45,15 @@ require "MD5"
 
 class StorableObject < PolymorphicObject; implements AbstractClass
 
+  attr_reader :objectStoreID
+  ### This is the method for providing an id suitable for storing into the 
+  ###   ObjectStore of your choice.  Please redefine this for situations in
+  ###   which you desire different behavior - but be sure to attach it to the
+  ###   attribute and give the same value if asked twice of the same object.
   def objectStoreID
+    return @objectStoreID if @objectStoreID
     raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
-    return MD5.new( raw ).hexdigest
+    @objectStoreID = MD5.new( raw ).hexdigest
   end
 
 end
