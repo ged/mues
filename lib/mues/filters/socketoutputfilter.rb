@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.14 2002/09/12 12:39:38 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.15 2002/10/23 03:02:01 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,8 +51,8 @@ module MUES
 		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN|Poll::OUT
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.14 2002/09/12 12:39:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.15 2002/10/23 03:02:01 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
@@ -285,7 +285,7 @@ module MUES
 		### from the client socket.
 		def handleRawInput( data )
 			@readBuffer += data
-			debugMsg( 5, "Handling raw input (@readBuffer = '#{@readBuffer}', " +
+			debugMsg( 5, "Handling raw input (@readBuffer = #{@readBuffer.inspect}, " +
 					  "length = #{@readBuffer.length})." )
 
 			unless @readBuffer.empty?
