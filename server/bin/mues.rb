@@ -12,7 +12,7 @@ mues.rb - Server startup script
 
 =Description
 
-A basic non-forking server startup script.
+A basic non-forking MUES server.
 
 =Author
 
