@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.19 2002/10/23 02:12:08 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.20 2003/08/04 02:41:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -75,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.19 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.19 2002/10/23 02:12:08 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.20 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.20 2003/08/04 02:41:16 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -219,7 +219,7 @@ module MUES
 				events += @queuedInputEvents
 				@queuedInputEvents.clear
 			}
-			return events.flatten
+			return events.flatten.compact
 		end
 
 
@@ -232,7 +232,7 @@ module MUES
 				events += @queuedOutputEvents
 				@queuedOutputEvents.clear
 			}
-			return events.flatten
+			return events.flatten.compact
 		end
 
 
