@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.7 2002/10/14 09:45:10 deveiant Exp $
+# $Id: memorymanager.rb,v 1.8 2002/10/29 20:00:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,6 +43,11 @@ module MUES
 		class MemoryManager < MUES::Object ; implements MUES::AbstractClass
 
 			include MUES::TypeCheckFunctions, MUES::FactoryMethods
+
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
+			Rcsid = %q$Id: memorymanager.rb,v 1.8 2002/10/29 20:00:26 deveiant Exp $
+
 
 			### Class methods
 
