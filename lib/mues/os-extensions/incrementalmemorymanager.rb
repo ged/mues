@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: incrementalmemorymanager.rb,v 1.1 2002/07/15 18:49:52 stillflame Exp $
+# $Id: incrementalmemorymanager.rb,v 1.2 2002/07/15 18:59:11 stillflame Exp $
 # 
 # == Authors
 # 
@@ -51,17 +51,17 @@ module MUES
 		class IncrementalMemoryManager < MUES::ObjectStore::MemoryManager
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.1 2002/07/15 18:49:52 stillflame Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+			Rcsid = %q$Id: incrementalmemorymanager.rb,v 1.2 2002/07/15 18:59:11 stillflame Exp $
 
 			### Create a new IncrementalMemoryManager object.
 			def initialize( *args )
 				super( *args )
 				@maturationThread = nil
 				@collectorThread = nil
+				@matureObjects = {}
 				@interval		= @config['interval']		|| 50
 				@cycleLength	= @config['cycleLength']	|| 10
-				@matureObjects = []
 			end
 
 			# the number of seconds between each manager thread interval
@@ -148,7 +148,7 @@ module MUES
 				while true
 					@mutex.synchronize( Sync::SH ) {
 						@matureObjectSpace.each {|o|
-							reclaim(o) unless o.shallow?
+							reclaim(o)
 							@mutex.synchronize( Sync::EX ) {
 								@matureObjectSpace.delete(o)
 							}
@@ -161,14 +161,13 @@ module MUES
 			# that reponds true to the visitor.
 			def maturationThreadRoutine( visitor )
 				while true
-					@mutex.synchronize( Sync::SH ) {
-						@active_objects.each {|o|
-							if (! o.shallow?) && o.accept(visitor) && (! @matureObjectSpace.include?(o))
-								@mutex.synchronize( Sync::EX ) {
-									@matureObjectSpace << o
-								}
-							end
-						}
+					@active_objects.each {|o|
+						if (! o.shallow?) && o.accept(visitor)
+							@mutex.synchronize( Sync::EX ) {
+								# use of a hash automatically takes care of duplicates.
+								@matureObjectSpace[o] = nil
+							}
+						end
 					}
 				end
 			end
