@@ -73,8 +73,8 @@ module MUES
 	class CommandShell < IOEventFilter ; implements Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.6 2001/07/27 04:12:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.7 2001/07/30 12:22:00 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -85,7 +85,8 @@ module MUES
 		# A finalizer proc to unschedule the ReloadCommandsEvent if there aren't
 		# any more instances.
 		@@Finalizer = Proc.new {
-			@@InstanceCount -= 1
+			@@Instances -= 1
+			_debugMsg( 2, "Decremeted command shell instance count: #{@@Instances}" )
 		}
 
 
@@ -98,6 +99,7 @@ module MUES
 		protected
 		def initialize( aUser )
 			super()
+			_debugMsg( 1, "Initializing command shell for #{aUser.to_s}." )
 			@user = aUser
 			@commandString = @@DefaultCommandString
 			@context = nil
@@ -108,6 +110,7 @@ module MUES
 			@stream = nil
 
 			@@Instances += 1
+			_debugMsg( 2, "Incremented command shell instance count: #{@@Instances}" )
 			ObjectSpace.define_finalizer( self, @@Finalizer )
 		end
 
@@ -125,10 +128,11 @@ module MUES
 		### METHOD: start( aStream=MUES::IOEventStream )
 		### Start the filter .
 		def start( stream )
+			super( stream )
 			@stream = stream
 			@context = Context.new( self, @user, stream, nil )
 			queueOutputEvents( OutputEvent.new(@vars['prompt']) )
-			super( stream )
+			_debugMsg( 2, "Starting command shell for #{@user.to_s}" )
 		end
 
 
@@ -137,6 +141,7 @@ module MUES
 		def stop( stream )
 			@stream = nil
 			@context = nil
+			_debugMsg( 2, "Stopping command shell for #{@user.to_s}" )
 			super( stream )
 		end
 
@@ -147,7 +152,7 @@ module MUES
 		def handleInputEvents( *events )
 			unhandledInputEvents = []
 
-			_debugMsg( 5, "Got #{events.size} input events to filter." )
+			_debugMsg( 5, "CommandShell: Got #{events.size} input events to filter." )
 
 			### :TODO: This is probably only good for a few commands. Eventually,
 			### this will probably become a dispatch table which gets shell commands
@@ -209,7 +214,7 @@ module MUES
 		#############################################################
 
 		### CommandShell Context object class
-		class Context < MUES::Object
+		class Context < MUES::Object ; implements Debuggable
 			attr_reader :shell, :user, :stream
 			attr_accessor :evalContext
 			def initialize( shell, user, stream, evalContext )
@@ -217,21 +222,26 @@ module MUES
 				@user = user
 				@stream = stream
 				@evalContext = evalContext
+				_debugMsg( 2, "Initializing context object for #{@user.to_s}" )
+				super()
 			end
 		end # class Context
 
 		### CommandTable class
-		class CommandTable < MUES::Object
+		class CommandTable < MUES::Object ; implements Debuggable
 
-			### METHOD: new( commandObjects )
+			### METHOD: new( commandObjects=Array(MUES::CommandShell::Command) )
 			def initialize( commands )
 				checkType( commands, Array )
+
+				_debugMsg( 2, "Initializing command table with #{commands.length} commands" )
 				@abbrevTable = {}
 				# @soundexTable = {}
 				occurrenceTable = {}
 
-				### Build the abbrevtable (concept borrowed from Text::Abbrev by
-				### Gurusamy Sarathy <gsar@ActiveState.com>)
+				### Build the abbrevtable (concept borrowed from the
+				### Text::Abbrev Perl module by Gurusamy Sarathy
+				### <gsar@ActiveState.com>)
 				commands.flatten.uniq.each {|comm|
 
 					( [ comm.name ] | comm.synonyms ).each {|word|
@@ -253,6 +263,9 @@ module MUES
 						}
 					}
 				}
+
+				_debugMsg( 3, "CommandTable: Abbrev table has #{@abbrevTable.keys.length} unique keys." )
+				super()
 			end
 
 			### METHOD: [ name ]
@@ -289,8 +302,8 @@ module MUES
 		class Command < MUES::Object ; implements AbstractClass, Debuggable, Notifiable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.6 2001/07/27 04:12:46 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.7 2001/07/30 12:22:00 deveiant Exp $
 
 			### Class values
 			@@CommandRegistry	= {}
@@ -320,8 +333,8 @@ module MUES
 				### update callback event after the engine is started.
 				def atEngineStartup( theEngine )
 					buildCommandRegistry( theEngine.config )
-					@@ReloadCommandsEvent = CallbackEvent.new( self.method('rebuildCommandRegistry'), theEngine.config )
-					theEngine.scheduleEvents( @@ReloadInterval, @@ReloadCommandsEvent )
+					@@ReloadEvent = CallbackEvent.new( self.method('rebuildCommandRegistry'), theEngine.config )
+					theEngine.scheduleEvents( @@ReloadInterval, @@ReloadEvent )
 					LogEvent.new( "notice", "Command registry built and rebuild event scheduled" );
 				end
 
@@ -330,8 +343,8 @@ module MUES
 				### Notification method (Notifiable interface) to un-register
 				### update callback event when the engine is about to shut down.
 				def atEngineShutdown( theEngine )
-					theEngine.cancelScheduledEvents( @@ReloadCommandsEvent )
-					LogEvent.new( "notice", "Command registry rebuild event cancelled" );
+					theEngine.cancelScheduledEvents( @@ReloadEvent )
+					LogEvent.new( "notice", "Command registry rebuild event unscheduled" );
 				end
 
 
@@ -415,6 +428,7 @@ module MUES
 				### (CLASS) METHOD: rebuildCommandRegistry( config=MUES::Config )
 				### Rebuild the command registry after checking for updates
 				def rebuildCommandRegistry( config )
+					_debugMsg( 2, "Rebuilding command registry at #{Time.now}" )
 					@@CommandMutex.synchronize( Sync::EX ) {
 						@@RegistryIsBuilt = false
 						buildCommandRegistry( config )
@@ -434,6 +448,12 @@ module MUES
 				### user.
 				def getPermissableCommands( aUser )
 					getCommands().find_all {|c| c.canBeUsedBy?(aUser)}
+				end
+
+				### (CLASS) METHOD: inherited( aSubClass )
+				### Register the specified class with the list of child classes
+				def inherited( aSubClass )
+					@@ChildClasses |= [ aSubClass ]
 				end
 
 			end # class << self
@@ -459,9 +479,9 @@ module MUES
 			### Return a usage string for the command
 			def usage
 				if @usage
-					return "Usage: @usage"
+					return "Usage: #{@usage}\n"
 				else
-					return "Usage: @name <args>"
+					return "Usage: #{@name} <args>\n"
 				end
 			end
 
@@ -476,6 +496,9 @@ module MUES
 		### User command base class
 		class UserCommand < Command
 
+			# Remove ourselves from the concrete classes list
+			@@ChildClasses -= [ self ]
+
 			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### User commands can always be used, so this method just returns
 			### true unconditionally.
@@ -484,17 +507,14 @@ module MUES
 				return true
 			end
 		
-			### (CLASS) METHOD: inherited( aSubClass )
-			### Register the specified class with the list of child classes
-			def UserCommand.inherited( aSubClass )
-				@@ChildClasses |= [ aSubClass ]
-			end
-
 		end # class UserCommand
 
 
 		### Creator command base class
 		class CreatorCommand < Command
+
+			# Remove ourselves from the concrete classes list
+			@@ChildClasses -= [ self ]
 
 			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### Returns true if the specified user has 'creator' or higher
@@ -504,17 +524,14 @@ module MUES
 				return aUser.isCreator?
 			end
 		
-			### (CLASS) METHOD: inherited( aSubClass )
-			### Register the specified class with the list of child classes
-			def CreatorCommand.inherited( aSubClass )
-				@@ChildClasses |= [ aSubClass ]
-			end
-
 		end # class CreatorCommand
 
 
 		### Implementor command base class
 		class ImplementorCommand < Command
+
+			# Remove ourselves from the concrete classes list
+			@@ChildClasses -= [ self ]
 
 			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### Returns true if the specified user has 'implementor' or higher
@@ -524,17 +541,14 @@ module MUES
 				return aUser.isImplementor?
 			end
 		
-			### (CLASS) METHOD: inherited( aSubClass )
-			### Register the specified class with the list of child classes
-			def ImplementorCommand.inherited( aSubClass )
-				@@ChildClasses |= [ aSubClass ]
-			end
-
 		end # class ImplementorCommand
 
 
 		### Admin command base class 
 		class AdminCommand < Command
+
+			# Remove ourselves from the concrete classes list
+			@@ChildClasses -= [ self ]
 
 			### METHOD: canBeUsedBy?( aUser=MUES::User )
 			### Returns true if the specified user has 'admin' or higher
@@ -542,12 +556,6 @@ module MUES
 			def canBeUsedBy?( aUser )
 				checkType( aUser, MUES::User )
 				return aUser.isAdmin?
-			end
-
-			### (CLASS) METHOD: inherited( aSubClass )
-			### Register the specified class with the list of child classes
-			def AdminCommand.inherited( aSubClass )
-				@@ChildClasses |= [ aSubClass ]
 			end
 
 		end # class AdminCommand
@@ -606,7 +614,7 @@ module MUES
 
 					# If there was no help available, just output a message to
 					# that effect
-					return OutputEvent.new( "No help found for '$1'" ) if helpTable.nil?
+					return OutputEvent.new( "No help found for '#{$1}'\n" ) if helpTable.nil?
 
 					rows << "Help for '#{$1}':\n"
 				else
