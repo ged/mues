@@ -75,7 +75,6 @@ require "timeout"
 require "mues/Namespace"
 require "mues/IOEventFilters"
 require "mues/Events"
-require "mues/Debugging"
 
 module MUES
 
@@ -128,6 +127,7 @@ module MUES
 			@sleepTime = 0.0
 			@streamThread = Thread.new { _streamThreadRoutine }
 			@streamThread.abort_on_exception = true
+			@streamThread.desc = "IOEventStream thread [Stream #{self.id}]"
 		end
 
 
