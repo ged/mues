@@ -304,7 +304,9 @@ module MUES
 
 					logMessage = messages.collect {|m| m.to_s}.join('')
 					frame = caller(1)[0]
-					if Thread.current != Thread.main then
+					if Thread.current != Thread.main && Thread.current.method_defined?( "desc" )
+						$stderr.puts "[Thread: #{Thread.current.desc}] #{frame}: #{logMessage}"
+					elsif Thread.current != Thread.main
 						$stderr.puts "[Thread #{Thread.current.id}] #{frame}: #{logMessage}"
 					else
 						$stderr.puts "#{frame}: #{logMessage}"
@@ -422,14 +424,28 @@ module MUES
 		autoload "MUES::Engine", "mues/Engine.rb"
 
 		### Class constants
-		Version	= %q$Revision: 1.10 $
-		RcsId	= %q$Id: mues.rb,v 1.10 2001/07/30 11:43:46 deveiant Exp $
+		Version	= %q$Revision: 1.11 $
+		RcsId	= %q$Id: mues.rb,v 1.11 2001/09/26 12:54:45 deveiant Exp $
+
+		class << self
+			def finalizer( objDesc )
+				return Proc.new {
+					if Thread.current != Thread.main
+						$stderr.puts "[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."
+					else
+						$stderr.puts "[Main Thread]: " + objDesc + " destroyed."
+					end
+				}
+			end
+		end
 
 		### (PROTECTED) METHOD: initialize( *ignored )
 		protected
 		def initialize( *ignored )
 			@muesid = __GenerateMuesId()
 			@objectStoreData = nil
+			objRef = "%s [%d]" % [ self.class.name, self.id ]
+			ObjectSpace.define_finalizer( self, MUES::Object.finalizer(objRef) )
 		end
 
 		###################################################
