@@ -25,7 +25,7 @@ a bug, and we'd appreciate it if you'd bring it to our attention.
  docs/				- RDoc documentation utilities and libraries
  experiments/		- Miscellaneous experimental bits of code
  ext/				- MUES C extensions
- lib/				- MUES Ruby extensions
+ lib/mues/			- MUES Ruby extensions
    events/			- Event classes
    filters/			- Filters for the MUES::IOEventStream
    listeners/		- Connection listener classes
@@ -82,7 +82,7 @@ follow the coding standards posted on the MUES project page:
 You can check out the MUES CVS tree anonymously by following the instructions
 posted to: http://cvs.faeriemud.org/cgi/viewcvs.cgi/
 
-Currently that consist of the following commands:
+Currently that consists of the following commands:
 
   $ cvs -d ':pserver:anonymous@cvs.FaerieMUD.org:/usr/src/master' login
   (Empty password0
@@ -93,4 +93,4 @@ Currently that consist of the following commands:
 Thanks for your interest!
 
 
- $Id: HACKING,v 1.1 2002/10/31 07:21:32 deveiant Exp $
+ $Id: HACKING,v 1.2 2002/10/31 07:27:49 deveiant Exp $
