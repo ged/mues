@@ -11,7 +11,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consolelistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
+# $Id: consolelistener.rb,v 1.3 2002/09/12 12:40:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -34,8 +34,8 @@ module MUES
 	class ConsoleListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: consolelistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: consolelistener.rb,v 1.3 2002/09/12 12:40:44 deveiant Exp $
 
 		### Create a new ConsoleListener object.
 		def initialize( name, parameters )
@@ -59,6 +59,7 @@ module MUES
 			# have it to reinstall when the filter gets cleaned up.
 			@myCallback = pollObj.callback( @io )
 			pollObj.unregister( @io )
+
 			pollProxy = MUES::PollProxy::new( pollObj )
 			return MUES::ConsoleOutputFilter::new( pollProxy )
 		end
@@ -66,7 +67,8 @@ module MUES
 		### Destroy the console filter and re-install the listener's callback
 		### for incoming data.
 		def releaseOutputFilter( pollObj, filter )
-			pollObj.register( $stdin
+			pollObj.register( $stdin, @myCallback )
+			
 		end
 	
 
