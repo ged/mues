@@ -14,7 +14,7 @@
 #
 # == Rcsid
 # 
-# $Id: classlibrary.rb,v 1.10 2003/08/04 02:36:15 deveiant Exp $
+# $Id: classlibrary.rb,v 1.11 2003/08/10 14:36:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -40,9 +40,10 @@ module MUES
 
 	### An AbstractFactory class for environment metaclass libraries
 	class ClassLibrary < Object
+		include MUES::TypeCheckFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-		Rcsid = %q$Id: classlibrary.rb,v 1.10 2003/08/04 02:36:15 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
+		Rcsid = %q$Id: classlibrary.rb,v 1.11 2003/08/10 14:36:54 deveiant Exp $
 
 		### Return a new ClassLibrary object with the specified name.
 		def initialize( libraryName="unnamed" )
@@ -61,6 +62,16 @@ module MUES
 		### Returns the name of the class library.
 		attr_reader :name
 
+
+		### Create a new class object with the given name and insert it into the
+		### library.
+		def createClass( className, superclass=nil )
+			raise ArgumentError,
+				"Name collision -- class '#{className}' already exists" if
+				@classes.key?( className )
+
+			@classes[ className ] = Metaclass::Class::new( className )
+		end
 		
 	end
 end
