@@ -56,9 +56,12 @@ module MUES
 	class MacroFilter < IOEventFilter ; implements Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: macrofilter.rb,v 1.3 2001/07/30 12:26:44 deveiant Exp $
-		DefaultSortPosition = 200
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: macrofilter.rb,v 1.4 2001/09/26 13:25:42 deveiant Exp $
+		DefaultSortPosition = 650
+
+		### Class variables
+		@@MacroPrefix = ':'
 
 		### Initializer
 
