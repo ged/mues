@@ -1,21 +1,18 @@
 #!/usr/bin/ruby
 # 
-# This file contains the MUES::PollProxy class, instances of which allow limited
-# and simplified access to a Poll object. This has the benefit of consolidating
-# file-descriptor-based IO into a single poll loop which can be maintained by a
-# single thread, instead of having a select loop per descriptor, each with its
-# own thread.
+# This file contains the MUES::ReactorProxy class, instances of which allow
+# limited and simplified access to an IO::Reactor object.
 # 
 # == Synopsis
 # 
-#   require 'mues/PollProxy'
+#   require 'mues/ReactorProxy'
 #
-#	proxy = MUES::PollProxy::new( poll, ioObject )
-#	proxy.register( Poll::WRNORM|Poll::RDNORM, method(:pollEventHandler) )
+#	proxy = MUES::ReactorProxy::new( reactor, ioObject )
+#	proxy.register( :read, :write, &method(:reactorEventHandler) )
 # 
 # == Rcsid
 # 
-# $Id: reactorproxy.rb,v 1.4 2002/10/29 19:28:14 deveiant Exp $
+# $Id: reactorproxy.rb,v 1.5 2003/09/12 02:21:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -33,23 +30,23 @@ require 'mues/Object'
 
 module MUES
 
-	### Proxy class to allow limited access to a Poll object.
-	class PollProxy < MUES::Object
+	### Proxy class to allow limited access to an IO::Reactor object.
+	class ReactorProxy < MUES::Object
 
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
-		Rcsid = %q$Id: reactorproxy.rb,v 1.4 2002/10/29 19:28:14 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
+		Rcsid = %q$Id: reactorproxy.rb,v 1.5 2003/09/12 02:21:12 deveiant Exp $
 
 
-		### Instantiate and return a new PollProxy for the specified
-		### <tt>poll</tt> (a Poll object) and ioObject (an IO object).
-		def initialize( poll, ioObject )
-			checkType( poll, Poll )
+		### Instantiate and return a new ReactorProxy for the specified
+		### <tt>reactor</tt> (a Reactor object) and ioObject (an IO object).
+		def initialize( reactor, ioObject )
+			checkType( reactor, IO::Reactor )
 			checkType( ioObject, IO )
 
-			@poll = poll
+			@reactor = reactor
 			@ioObject = ioObject
 		end
 
@@ -60,46 +57,40 @@ module MUES
 
 		### Register the specified <tt>callback</tt> (a Method or Proc
 		### object) or <tt>block</tt> for the specified <tt>eventMask</tt>
-		### (see the Poll#register method for details)
-		def register( eventMask, callback=nil, *args, &block )
-			return @poll.register( @ioObject, eventMask, callback||block, *args )
+		### (see the Reactor#register method for details)
+		def register( *args, &block )
+			return @reactor.register( @ioObject, *args, &block )
 		end
 
 
 		### Unregister any callbacks for the IO associated with the proxy.
 		def unregister
-			return @poll.unregister( @ioObject )
+			return @reactor.unregister( @ioObject )
 		end
 
 
 		### Returns true if the IO associated with the proxy is registered
-		### with the Poll object.
+		### with the Reactor object.
 		def registered?
-			return @poll.registered?( @ioObject )
+			return @reactor.handles.key?( @ioObject )
 		end
 
 
-		### Returns the event mask for the IO associated with the proxy.
-		def mask
-			return @poll.mask( @ioObject )
+		### Add the specified <tt>events</tt> to the proxied IO::Reactor
+		### object's current event list for the IO associated with the
+		### proxy.
+		def enableEvents( *events )
+			return @reactor.enableEvents( @ioObject, *events )
 		end
 
 
-		### Add (bitwise OR) the specified <tt>eventMask</tt> with the
-		### proxied poll object's current mask for the IO associated with
-		### the proxy. Returns the new mask.
-		def addMask( eventMask )
-			return @poll.addMask( @ioObject, eventMask )
+		### Remove the specified <tt>events</tt> from the proxied reactor
+		### object's current list of events to respond to for the IO associated
+		### with the proxy.
+		def disableEvents( *events )
+			return @reactor.disableEvents( @ioObject, *events )
 		end
 
-
-		### Remove (bitwise XOR) the specified <tt>eventMask</tt> from the
-		### proxied poll object's current mask for the IO associated with
-		### the proxy. Returns the new mask.
-		def removeMask( eventMask )
-			return @poll.removeMask( @ioObject, eventMask )
-		end
-
-	end # class PollProxy
+	end # class ReactorProxy
 end # module MUES
 
