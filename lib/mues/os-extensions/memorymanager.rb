@@ -1,18 +1,19 @@
 #!/usr/bin/ruby
 # 
-# This file contains the GarbageCollector class: an abstract base class for ObjectStore garbage-collection strategy object classes..
-# 
+# This file contains the MUES::ObjectStore::MemoryManager class: an abstract
+# base class for MUES::ObjectStore memory-management Strategy object classes.
+#
 # == Synopsis
 # 
-#   require 'mues/os-extensions/GarbageCollector'
+#   require 'mues/os-extensions/MemoryManager'
 #
-#   class MyGarbageCollector < MUES::ObjectStore::GarbageCollector
+#   class MyMemoryManager < MUES::ObjectStore::MemoryManager
 #       ...
 #   end
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.1 2002/05/28 21:15:47 deveiant Exp $
+# $Id: memorymanager.rb,v 1.2 2002/07/09 15:09:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,176 +26,121 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
+require 'hashslice'
+require 'sync'
+
 require 'mues'
 require 'mues/Exceptions'
+require 'mues/ObjectSpaceVisitor'
 
 module MUES
 	class ObjectStore < MUES::Object
 
 		### This class is the abstract base class for MUES::ObjectStore
-		### garbage-collectors. Derivatives of this class should provide at least
-		### a protected method called #_gc_routine, which should run whatever
-		### collection algorithm it implements periodically over the hash of
-		### <tt>@active_objects</tt> until <tt>@shutting_down</tt> becomes
-		### <tt>true</tt>.
-		class GarbageCollector < MUES::Object ; implements MUES::AbstractClass
+		### memory-management Strategy classes. Derivatives of this class should
+		### provide at least a protected method called #managerThreadRoutine,
+		### which should take a MUES::ObjectSpaceVisitor object as its argument
+		class MemoryManager < MUES::Object ; implements MUES::AbstractClass
 
-			extend Forwardable
-			include Sync_m
-
-			### Registry of derived GarbageCollector classes
-			@@registeredGarbageCollectors = {}
-
-			### Class methods
-			class << self
-
-				### Register a GarbageCollector as available (callback from
-				### inheritance)
-				def inherit( subClass )
-					truncatedName = subClass.name.sub( /(?:.*::)?(\w+)(?:GarbageCollector)?/, "\1" )
-					@@registeredGarbageCollectors[ subClass.name ] = subClass
-					@@registeredGarbageCollectors[ truncatedName ] = subClass
-				end
-
-				### Factory method: Instantiate and return a new
-				### GarbageCollector of the specified <tt>gcClass</tt>, that
-				### talks to the specified <tt>objectStore</tt>.
-				def create( gcClass, objectStore )
-					raise ObjectStoreError, "No such gc class '#{gcClass}'" unless
-						@@registeredGarbageCollectors.has_key? gcClass
-
-					@@registeredGarbageCollectors[ gcClass ].new( objectStore )
-				end
-
-				### Attempt to guess the name of the file containing the
-				### specified gc class, and look for it. If it exists, and
-				### is not yet loaded, load it.
-				def loadGc( className )
-					modName = File.join( ObjectStore::BackendDir,
-										className.sub(/(?:.*::)?(\w+)(?:GarbageCollector)?/,
-													  "\1GarbageCollector") )
-
-					# Try to require the module that defines the specified
-					# gc, raising an error if the require fails.
-					unless require( modName )
-						raise ObjectStoreError, "No such gc class '#{className}'"
-					end
-
-					# Check to see if the specified gc is now loaded. If it
-					# is not, raise an error to that effect.
-					unless @@registeredGarbageCollectors.has_key? className
-						raise ObjectStoreError,
-							"Loading '#{modName}' didn't define a gc named '#{className}'"
-					end
-
-					return true
-				end
-			end
+			include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 
-			### Create and return a new GarbageCollector:
-			### [objectStore]
-			###   the MUES::ObjectStore to use as the objectstore for 'swapped'
-			###   objects
-			### [visitorClass]
-			###   the class to use for gathering objects to be swapped.
-			def initialize( objectStore )
-				checkType( objectStore, MUES::ObjectStore )
-
+			### Create and return a new MemoryManager with the specified
+			### <tt>backend</tt> (a MUES::ObjectStore::Backend derivative), and
+			### the specified <tt>config</tt> hash.
+			def initialize( backend, config = {} ) # :notnew:
 				super()
 				
-				@objectStore = objectStore
-				@active_objects = Hash.new
-				@mutex = Sync.new
-				@shutting_down = false
-				@running = true
-
+				@backend		= backend
+				@activeObjects	= Hash::new
+				@mutex			= Sync::new
+				@managerThread	= nil
+				@running		= false
+				@config			= config
 			end
+
 
 
 			######
 			public
 			######
 
-			# Deletegate all hash-like methods to the <tt>active_objects</tt> hash
-			def_delegators :@active_objects, *( Hash.instance_methods - ["to_s"] )
-
-
-			# Garbage collector is shutting down
-			attr_reader :shutting_down
-			alias :shutting_down? :shutting_down
-
-			# Garbage collector is running
+			# Running flag -- if true, the memory manager is currently running
 			attr_reader :running
 			alias :running? :running
 
-			# The symbol of the method to call on objects to test for freshness
-			attr_reader :mark
-			alias :markFunction :mark
 
-			# The minimum number of seconds between garbage collection runs.
-			attr_writer :trash_rate
+			### Get the object associated with the specified id from the objects
+			### registered with the MemoryManager.
+			def []( *ids )
+				@mutex.synchronize( Sync::SH ) {
+					@activeObjects[ *ids ]
+				}
+			end
 
-			
-			### Starts the garbage collector using the specified
-			### <tt>visitor</tt> object.
+
+			### Starts the memory manager using the specified <tt>visitor</tt>
+			### object.
 			def start( visitor )
-				checkType( visitor, MUES::ObjectStore::GarbageCollectorVisitor )
+				checkType( visitor, MUES::ObjectSpaceVisitor )
 
-				@shutting_down = false
 				@running = true
-				unless @thread.alive?
-					@thread = Thread.new {
+				unless @managerThread && @managerThread.alive?
+					@managerThread = Thread.new {
 						Thread.current.abort_on_exception = true
 						begin
-							_gc_routine( visitor )
-						rescue Restart
-							# Log?
+							managerThreadRoutine( visitor )
+						rescue Reload
+							# :TODO: Log?
+						rescue Shutdown
+							# :TODO: Log?
 						end
 						@running = false
 					}
 				end
 			end
 
-			### Restart the garbage collector
+
+			# :TODO: This may need a non-interruptive way of reloading to ensure
+			# the memory manager doesn't get squashed in the middle of storing
+			# an object or something.
+
+			### Restart the memory manager
 			def restart( visitor )
-				@running = false
-				@thread.raise Restart
-				@thread.join
+				@managerThread.raise Reload
+				@managerThread.join
 
 				self.start( visitor )
 			end
 			
-			### Kills the garbage collector, first storing all active objects
+
+			### Kills the memory manager after storing all active objects
 			def shutdown
-				@shutting_down = true
-				@thread.join
+				@managerThread.raise Shutdown
+				@managerThread.join
 			end
 
-			### Returns true if the garbage-collection thread is alive
-			def alive?
-				@thread.alive?
-			end
 
-			### Registers the specified <tt>objects</tt> with the GC
+			### Registers the specified <tt>objects</tt> with the memory-manager
 			def register ( *objects )
-				objects.flatten!
-				objects.compact!
+				checkEachType( objects, MUES::StorableObject )
+
 				@mutex.synchronize( Sync::EX ) {
 					objects.each {|o|
-						checkType( o, MUES::StorableObject )
-						@active_objects[o.objectStoreID] = o
+						@activeObjects[o.objectStoreID] = o
 					}
 				}
 			end
+
+
 
 			#########
 			protected
 			#########
 
-			abstract :_gc_routine
+			abstract :managerThreadRoutine
 
-		end # class GarbageCollector
+		end # class MemoryManager
 
 	end # class ObjectStore
 end # module MUES
