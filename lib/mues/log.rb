@@ -41,7 +41,7 @@
 #
 # == Rcsid
 # 
-# $Id: log.rb,v 1.9 2002/09/13 15:25:49 deveiant Exp $
+# $Id: log.rb,v 1.10 2002/10/04 05:16:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -91,8 +91,8 @@ module MUES
 
 		### Class constants
 		# Versioning stuff
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.9 $} )[1]
-		Rcsid = %q$Id: log.rb,v 1.9 2002/09/13 15:25:49 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
+		Rcsid = %q$Id: log.rb,v 1.10 2002/10/04 05:16:54 deveiant Exp $
 
 
 		### Class methods
@@ -152,7 +152,7 @@ module MUES
 
 		### Initializer
 		def initialize( klass )
-			type.mueslogger.debug {"Creating logger for #{klass}"}
+			self.class.mueslogger.debug {"Creating logger for #{klass}"}
 			Thread.critical = true
 			oldv = $VERBOSE
 			$VERBOSE = false

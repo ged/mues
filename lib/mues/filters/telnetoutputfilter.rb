@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.11 2002/09/12 12:39:47 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.12 2002/10/04 05:14:55 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.11 2002/09/12 12:39:47 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.12 2002/10/04 05:14:55 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {
@@ -391,7 +391,7 @@ module MUES
 				debugMsg( 2, "Translating prompt to output event." )
 
 			else
-				debugMsg( 2, "Unhandled control event (#{event.type.name})." )
+				debugMsg( 2, "Unhandled control event (#{event.class.name})." )
 			end
 
 			return res

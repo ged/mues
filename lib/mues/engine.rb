@@ -100,7 +100,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.20 2002/09/27 16:12:33 deveiant Exp $
+# $Id: engine.rb,v 1.21 2002/10/04 05:15:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -170,8 +170,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.20 2002/09/27 16:12:33 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.21 2002/10/04 05:15:12 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -823,7 +823,7 @@ module MUES
 					startupEvents.push res
 				else
 					self.log.notice( "Ignoring unknown return type '%s' from %s.atEngineStartup" % [
-									 res.type.name, klass.name ] )
+									 res.class.name, klass.name ] )
 				end
 			}
 
@@ -1242,7 +1242,7 @@ module MUES
 		def handleListenerConnectEvent( event )
 
 			self.log.notice( "Handling new %s for %s: from %s" %
-							 [event.filter.type.name,
+							 [event.filter.class.name,
 							  event.listener.to_s,
 							  event.filter.peerName] )
 

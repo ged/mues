@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.15 2002/09/12 11:34:02 deveiant Exp $
+# $Id: eventqueue.rb,v 1.16 2002/10/04 05:15:19 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.15 2002/09/12 11:34:02 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.16 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.16 2002/10/04 05:15:19 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -532,7 +532,7 @@ module MUES
 			debugMsg( 2, "Returning #{consequences.length} consequential events." )
 			return consequences
 		rescue => e
-			self.log.error( "#{self.name}: Untrapped exception #{e.type.name}: #{e.message}" )
+			self.log.error( "#{self.name}: Untrapped exception #{e.class.name}: #{e.message}" )
 			return [UntrappedExceptionEvent::new( e )]
 		end
 
