@@ -1,16 +1,16 @@
 #!/usr/bin/ruby
 # :nodoc: all
 #
-#	Extension configuration script for PolymorphicObject
-#	$Id: extconf.rb,v 1.3 2002/02/15 07:33:24 deveiant Exp $
+#	Extension configuration script for StorableObject
+#	$Id: extconf.rb,v 1.4 2002/05/28 15:55:09 stillflame Exp $
 #
 #
 
 require "mkmf"
 
 $CFLAGS << " -Wall "
-dir_config( "PolymorphicObject" )
-create_makefile( "PolymorphicObject" )
+dir_config( "StorableObject" )
+create_makefile( "StorableObject" )
 
 File.open( "Makefile", "a" ) {|makefile|
 
@@ -19,7 +19,7 @@ File.open( "Makefile", "a" ) {|makefile|
 RDOC=/usr/bin/rdoc
 
 rdoc: $(RDOC)
-	$(RDOC) --title "PolymorphicObject"
+	$(RDOC) --title "StorableObject"
 
 test: $(DLLIB)
 	ruby test.rb
