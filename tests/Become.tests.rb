@@ -1,6 +1,7 @@
 #!/usr/bin/ruby -w
+# :nodoc: all
 #
-# This is a rubyunit test suite for the MonadicObject class.
+# This is a rubyunit test suite for the PolymorphicObject class.
 #
 
 # Add the parent directory if we're running inside t/
@@ -10,12 +11,16 @@ end
 
 require "runit/cui/testrunner"
 require "runit/testcase"
-require "MonadicObject"
+require "PolymorphicObject"
 
-### Test class
-class BecomeTestToken < MonadicObject ; end
+### Test classes
 
-class BecomeTestObject < MonadicObject
+# Predeclare token class
+class BecomeTestToken < PolymorphicObject ; end
+
+##
+# Test tokenizable object class for testing
+class BecomeTestObject < PolymorphicObject
 	attr_accessor :value
 
 	def initialize( val )
@@ -30,7 +35,9 @@ class BecomeTestObject < MonadicObject
 	end
 end
 
-class BecomeTestToken < MonadicObject
+##
+# Token object class for testing
+class BecomeTestToken < PolymorphicObject
 
 	def initialize( val )
 		@value = val
@@ -50,19 +57,30 @@ class BecomeTestToken < MonadicObject
 	
 end
 
-### Test case class
-class MonadicObjectBecomeTests < RUNIT::TestCase
+##
+# Container class for testing (un)tokenize across object instances.
+class BecomeTestContainer
+	attr_reader :contents
+	def initialize( *contents )
+		@contents = contents
+	end
+end
+
+
+##
+# Test case class
+class PolymorphicObjectBecomeTests < RUNIT::TestCase
 
 	# Test tokenizing the test object
 	def test_00_tokenize
 		obj = nil
 		rv = nil
 
-		assert_no_exception { obj = BecomeTestObject.new("tokenize") }
+		assert_no_exception { obj = BecomeTestObject.new("Corbin Dallas") }
 		assert_no_exception { obj.tokenize }
 		assert_instance_of BecomeTestToken, obj
 		assert_no_exception { rv = obj.tokenId }
-		assert_equal "token:tokenize", rv
+		assert_equal "token:Corbin Dallas", rv
 	end
 
 	# Test un-tokenizing
@@ -70,16 +88,31 @@ class MonadicObjectBecomeTests < RUNIT::TestCase
 		obj = nil
 		rv = nil
 
-		assert_no_exception { obj = BecomeTestToken.new("untokenize") }
+		assert_no_exception { obj = BecomeTestToken.new("Multipass!") }
 		assert_no_exception { rv = obj.value }
 		assert_instance_of BecomeTestObject, obj
-		assert_equal "untokenize", rv
+		assert_equal "Multipass!", rv
+	end
+
+	# Test tokenizing across multiple references in instance vars of multiple
+	# objects
+	def test_02_tokenize_multiref
+		obj = BecomeTestObject.new( "Big badda boom." )
+		container1 = BecomeTestContainer.new( obj )
+		container2 = BecomeTestContainer.new( obj )
+		container3 = BecomeTestContainer.new( container1, container2 )
+
+		assert_no_exception { obj.tokenize }
+
+		assert_equals BecomeTestToken, container1.contents[0].class
+		assert_equals BecomeTestToken, container2.contents[0].class
+		assert_equals BecomeTestToken, container3.contents[0].contents[0].class
 	end
 
 end
 
 if $0 == __FILE__
-    RUNIT::CUI::TestRunner.run(MonadicObjectBecomeTests.suite)
+    RUNIT::CUI::TestRunner.run(PolymorphicObjectBecomeTests.suite)
 end
 
 

@@ -1,6 +1,7 @@
 #!/usr/bin/ruby -w
+# :nodoc: all
 #
-# This is a rubyunit test suite for the MonadicObject class.
+# This is a rubyunit test suite for the PolymorphicObject class.
 #
 
 # Add the parent directory if we're running inside t/
@@ -10,10 +11,10 @@ end
 
 require "runit/cui/testrunner"
 require "runit/testcase"
-require "MonadicObject"
+require "PolymorphicObject"
 
 ### Test class
-class TestObject < MonadicObject
+class TestObject < PolymorphicObject
 	attr_reader :thing
 
 	def initialize
@@ -26,7 +27,7 @@ class TestObject < MonadicObject
 end
 
 ### Test case class
-class MonadicObjectErrorTests < RUNIT::TestCase
+class PolymorphicObjectErrorTests < RUNIT::TestCase
 
 	def setup
 		@testObj = TestObject.new
@@ -37,7 +38,7 @@ class MonadicObjectErrorTests < RUNIT::TestCase
 	end
 
 	# Make sure loading works
-	def test_00_nonmonadic_become
+	def test_00_nonpolymorphic_become
 		other = "a string"
 		assert_exception( TypeError ) { @testObj.mutate other }
 
@@ -48,7 +49,7 @@ class MonadicObjectErrorTests < RUNIT::TestCase
 end
 
 if $0 == __FILE__
-    RUNIT::CUI::TestRunner.run(MonadicObjectErrorTests.suite)
+    RUNIT::CUI::TestRunner.run(PolymorphicObjectErrorTests.suite)
 end
 
 
