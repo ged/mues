@@ -29,11 +29,12 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.6 2002/04/09 06:59:51 deveiant Exp $
+# $Id: class.rb,v 1.7 2002/04/11 15:51:58 deveiant Exp $
 # 
 # == Authors
 # 
 # * Michael Granger <ged@FaerieMUD.org>
+# * Alexis Lee <red@FaerieMUD.org>
 # 
 #:include: COPYRIGHT
 #
@@ -58,8 +59,8 @@ module Metaclass
 
 		include Comparable
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: class.rb,v 1.6 2002/04/09 06:59:51 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: class.rb,v 1.7 2002/04/11 15:51:58 deveiant Exp $
 
 
 		### Create and return a new Class metaclass object with the specified
@@ -436,6 +437,30 @@ module Metaclass
 					iface.declaration
 				}
 			end
+
+ 			### Red: Add class variable defaults to the declaration
+ 			unless @classAttributes.empty?
+ 				decl << "### Class variables" if includeComments
+ 				decl << @classAttributes.sort {|x,y|
+ 					x[1] <=> y[1]
+ 				}.collect {|varname,var|
+ 					"@@#{varname} = " + var.defaultValue.inspect
+ 				}
+ 
+ 				decl << ""
+ 			end
+ 
+ 			### Red: Add class operations to the declaration
+ 			unless @classOperations.empty?
+ 				decl << "### Class operations" if includeComments
+ 				decl << @classOperations.sort {|x,y|
+ 					x[1] <=> y[1]
+ 				}.collect {|opname,op|
+ 					op.methodDefinition(opname,includeComments)
+ 				}
+ 
+ 				decl << ""
+ 			end
 
 			### Add operations to the declaration
 			unless @operations.empty?
