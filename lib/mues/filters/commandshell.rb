@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.22 2002/10/12 15:35:38 deveiant Exp $
+# $Id: commandshell.rb,v 1.23 2002/10/13 23:22:32 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,8 +72,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.22 2002/10/12 15:35:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.23 2002/10/13 23:22:32 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -344,7 +344,7 @@ module MUES
 				end
 
 				# Create the invocation method for this instance
-				createInvokeMethod( body )
+				createInvokeMethod( body, sourceFile, sourceLine )
 
 				super()
 			end
@@ -414,8 +414,11 @@ module MUES
 			protected
 			#########
 
-			### Method to define a per-instance 'invoke' method for each command.
-			def createInvokeMethod( body )
+			### Define a singleton method for the receiver that encapsulates the
+			### given command <tt>body</tt> into wrapper code for setting up the
+			### necessary variables and environment and error handling. Use the
+			### specified sourceFile and sourceLine for reporting errors.
+			def createInvokeMethod( body, sourceFile, sourceLine )
 				debugMsg( 4, "Adding #invoke method: #{body}" )
 
 				eval %Q{
@@ -449,7 +452,7 @@ module MUES
 
 						return [MUES::OutputEvent::new( errmsg + "\n" )]
 					end
-				}
+				}, nil, sourceFile, sourceLine
 
 				return true
 			end
@@ -828,8 +831,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.22 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.22 2002/10/12 15:35:38 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.23 2002/10/13 23:22:32 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
