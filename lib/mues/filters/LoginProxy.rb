@@ -31,7 +31,6 @@ http://language.perl.com/misc/Artistic.html)
 ###########################################################################
 
 require "mues/Namespace"
-require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
@@ -40,8 +39,8 @@ module MUES
 	class LoginProxy < IOEventFilter ; implements Debuggable
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: LoginProxy.rb,v 1.3 2001/06/25 14:11:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: LoginProxy.rb,v 1.4 2001/07/18 02:23:33 deveiant Exp $
 		DefaultSortPosition = 600
 
 		### (PROTECTED) METHOD: initialize( session )

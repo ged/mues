@@ -33,7 +33,6 @@ require "thread"
 require "sync"
 
 require "mues/Namespace"
-require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
@@ -42,8 +41,8 @@ module MUES
 	class ConsoleOutputFilter < IOEventFilter ; implements Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.3 2001/06/25 14:10:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.4 2001/07/18 02:23:25 deveiant Exp $
 		DefaultSortPosition = 300
 
 		NULL = "\000"

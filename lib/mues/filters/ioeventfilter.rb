@@ -44,7 +44,6 @@ http://language.perl.com/misc/Artistic.html)
 require "observer"
 
 require "mues/Namespace"
-require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
 
@@ -53,8 +52,8 @@ module MUES
 	class IOEventFilter < Object ; implements Observable, Comparable, Debuggable, AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.5 2001/06/25 14:10:55 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.6 2001/07/18 02:23:29 deveiant Exp $
 		DefaultSortPosition = 500
 
 		### Class methods

@@ -33,7 +33,6 @@ require "thread"
 
 require "mues/Namespace"
 require "mues/Exceptions"
-require "mues/Debugging"
 
 module MUES
 	module TelnetConstants
@@ -117,8 +116,8 @@ module MUES
 		include TelnetConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.2 2001/06/25 14:11:12 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.3 2001/07/18 02:24:11 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( aSocket )
 		### Initialize the output filter
