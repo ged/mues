@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.15 2002/10/23 03:02:01 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.16 2002/10/25 03:14:22 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,8 +51,8 @@ module MUES
 		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN|Poll::OUT
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.15 2002/10/23 03:02:01 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.16 2002/10/25 03:14:22 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
@@ -83,12 +83,13 @@ module MUES
 			@pollProxy = pollProxy
 			super( socket.peeraddr[2], originListener, sortOrder )
 
-			@readBuffer = ''
-			@writeBuffer = ''
-			@writeMutex = Sync.new
-			@state = State::DISCONNECTED
-			@remoteHost = socket.peeraddr[2]
-			@windowSize = DefaultWindowSize.dup
+			@readBuffer		= ''
+			@writeBuffer	= ''
+			@writeMutex		= Sync.new
+			@state			= State::DISCONNECTED
+			@remoteHost		= socket.peeraddr[2]
+			@remoteIp		= socket.peeraddr[3]
+			@windowSize		= DefaultWindowSize.dup
 		end
 
 
@@ -105,9 +106,18 @@ module MUES
 		# The name or IP of the remote host
 		attr_reader :remoteHost
 
+		# The IP of the remote host
+		attr_reader :remoteIp
+
 		# A hash describing the client's window size (<tt>'height'</tt> and
 		# <tt>'width'</tt> keys, Fixnum values).
 		attr_reader :windowSize
+
+
+		### Returns <tt>true</tt> if the socket peer is from IP '127.0.0.1'.
+		def isLocal?
+			return @remoteIp == "127.0.0.1"
+		end
 
 
 		### Handle the specified input <tt>events</tt> (MUES::InputEvent objects).
