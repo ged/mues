@@ -30,7 +30,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.14 2002/10/04 11:00:41 deveiant Exp $
+# $Id: class.rb,v 1.15 2002/10/04 11:04:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,6 +43,8 @@
 #
 # Please see the file COPYRIGHT for licensing details.
 #
+
+require 'mues/Mixins'
 
 require 'mues/metaclass/Constants'
 require 'mues/metaclass/Attribute'
@@ -61,11 +63,14 @@ module MUES
 		### to build other classes.
 		class Class
 
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
-			Rcsid = %q$Id: class.rb,v 1.14 2002/10/04 11:00:41 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
+			Rcsid = %q$Id: class.rb,v 1.15 2002/10/04 11:04:10 deveiant Exp $
 
 			# Mix in comparison methods
 			include Comparable
+
+			# Mix in type-checking functions
+			include MUES::TypeCheckFunctions
 
 			# Mix in instance vars, accessors, and methods for associated classes
 			include MUES::Metaclass::Attribute::Methods
@@ -76,10 +81,7 @@ module MUES
 			### Create and return a new Class metaclass object with the specified
 			### +name+, and optional +superclass+.
 			def initialize( name, superclass=nil )
-				raise ArgumentError,
-					"Superclass must be a Class or a Metaclass::Class." unless
-					superclass.nil? || superclass.kind_of?( ::Class ) ||
-					superclass.kind_of?( Metaclass::Class )
+				checkType( superclass, NilClass, ::Class, Metaclass::Class )
 
 				# If the BaseClass class isn't loaded yet, load it
 				unless Metaclass.const_defined? :BaseClass
