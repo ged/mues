@@ -128,16 +128,19 @@ module MUES
 
 					case cfg[:outputters]
 					when String
+						debugMsg( "Creating new outputter '%p'" % cfg[:outputters] )
 						op << Outputter::create( cfg[:outputters] )
 
 					when Hash
-						op.replace cfg[:outputters].collect do |kind,args|
-							Outputter::create( kind, *args )
+						op = cfg[:outputters].collect do |kind,args|
+							debugMsg( "Creating new outputter '%p:%p'" % [kind,args]  )
+							Outputter::create( kind.to_s, *args )
 						end
 
 					when Array
-						op.replace cfg[:outputters].collect do |kind,args|
-							Outputter::create( kind, *args )
+						op = cfg[:outputters].collect do |kind,args|
+							debugMsg( "Creating new outputter '%p:%p'" % [kind,args]  )
+							Outputter::create( kind.to_s, *args )
 						end
 
 					else
@@ -146,6 +149,9 @@ module MUES
 							cfg[:outputters]
 					end
 				end
+
+				debugMsg( "Created %d outputters for %p" % [op.length, logger] )
+				self[ logger ].outputters += op
 			}
 		end
 

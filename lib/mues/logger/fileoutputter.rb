@@ -20,6 +20,7 @@
 #
 
 require 'mues/logger'
+require 'stringio'
 
 module MUES
 class Logger
@@ -58,7 +59,7 @@ class Logger
 			when IO, StringIO
 				@io = io
 			when String
-				@io = File::open( io, File::WRONLY )
+				@io = File::open( io, File::WRONLY|File::CREAT )
 			when Integer
 				@io = IO::new( io, 'a' )
 			else
