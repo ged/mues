@@ -8,7 +8,7 @@ This is an informal list of tasks yet to be done for the MUES.
 * Change the 'pp' command to use YAML if it's loaded, and fall back to 'pp' if
   not.
 
-# User objects aren't being stored into the database every time they log out.
+* User objects aren't being stored into the database every time they log out.
 
 * Fix the PI-parsing part of MUES::Config::Element.
 
@@ -27,4 +27,7 @@ This is an informal list of tasks yet to be done for the MUES.
 
 * Make a list of CommandShell commands to implement, and start implementing
   them.
+
+* Add 'bans' code to Engine.
+
 
