@@ -1,9 +1,9 @@
 /*
- *	monadic.c - A monadic object class for Ruby
- *	$Id: polymorphic.c,v 1.4 2002/02/12 00:56:33 deveiant Exp $
+ *	polymorphic.c - A polymorphic object class for Ruby
+ *	$Id: polymorphic.c,v 1.5 2002/02/15 07:34:10 deveiant Exp $
  *
- *	This module defines a MonadicObject class which is capable of exchanging its
- *	identity with another MonadicObject by calling its #become() method. It is
+ *	This module defines a PolymorphicObject class which is capable of exchanging its
+ *	identity with another PolymorphicObject by calling its #become() method. It is
  *	based on code by Mathieu Bouchard <matju@cam.org>.
  *
  *	Authors:
@@ -32,15 +32,21 @@
 #include <ruby.h>
 
 // Global class object
-VALUE cMonadicObject;
+VALUE cPolymorphicObject;
 
-// MonadicObject#become( otherObj )
-VALUE mo_become( VALUE self, VALUE other ) {
+/*
+ * Cause the receiver to switch itself with the specified +other+
+ * object. The +other+ object must also be a PolymorphicObject.
+ */
+VALUE
+mo_become( self, other ) 
+	 VALUE self, other;
+{
   long t[5];
 
-  // Check to make sure the other object is also monadic
-  if (!rb_obj_is_kind_of( other, cMonadicObject ))
-	rb_raise(rb_eTypeError, "%s is not a monadic object class",
+  // Check to make sure the other object is also polymorphic
+  if (!rb_obj_is_kind_of( other, cPolymorphicObject ))
+	rb_raise(rb_eTypeError, "%s is not a polymorphic object class",
 			 rb_class2name(CLASS_OF(other)));
 
   // ?
@@ -58,9 +64,10 @@ VALUE mo_become( VALUE self, VALUE other ) {
   return self;
 }
 
+
 // Initializer
-void Init_MonadicObject() {
-  cMonadicObject = rb_define_class( "MonadicObject", rb_cObject );
-  rb_define_protected_method( cMonadicObject, "become", mo_become, 1 );
+void Init_PolymorphicObject() {
+  cPolymorphicObject = rb_define_class( "PolymorphicObject", rb_cObject );
+  rb_define_method( cPolymorphicObject, "become", mo_become, 1 );
 }
 
