@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.30 2003/10/13 05:16:43 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.31 2004/02/29 04:45:01 deveiant Exp $
 # 
 # == Authors
 # 
@@ -95,8 +95,8 @@ module MUES
 
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.30 $ )[1]
-		Rcsid			= %q$Id: ioeventstream.rb,v 1.30 2003/10/13 05:16:43 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.31 $ )[1]
+		Rcsid			= %q$Id: ioeventstream.rb,v 1.31 2004/02/29 04:45:01 deveiant Exp $
 
 		### Instantiate and return a stream object with the specified +filters+,
 		### if any. Default filters (MUES::DefaultInputFilter and
@@ -211,6 +211,14 @@ module MUES
 
 			debugMsg( 2, "Stream now has #{@filters.size} filters." )
 			return @filters.length
+		end
+
+
+		### Add the specified filter to the stream using addFilters, returning
+		### the receiver so filters can be chained together.
+		def <<( filter )
+			self.addFilters( filter )
+			return self
 		end
 
 
