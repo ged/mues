@@ -1,26 +1,26 @@
 #!/usr/bin/ruby -w
 # :nodoc: all
 #
-# This is a rubyunit test suite for the PolymorphicObject class.
+# This is a Test::Unit test suite for the PolymorphicObject class.
 #
 
-# Add the parent directory if we're running inside t/
-if $0 == __FILE__
-	$LOAD_PATH.unshift( ".." ) if File.directory?( "../extconf.rb" )
+begin
+	require 'tests/muesunittest'
+rescue
+	require '../muesunittest'
 end
 
-require "runit/cui/testrunner"
-require "runit/testcase"
-require "PolymorphicObject"
+require "mues"
+
 
 ### Test classes
 
 # Predeclare token class
-class BecomeTestToken < PolymorphicObject ; end
+class BecomeTestToken < MUES::PolymorphicObject ; end
 
 ##
 # Test tokenizable object class for testing
-class BecomeTestObject < PolymorphicObject
+class BecomeTestObject < MUES::PolymorphicObject
 	attr_accessor :value
 
 	def initialize( val )
@@ -37,7 +37,7 @@ end
 
 ##
 # Token object class for testing
-class BecomeTestToken < PolymorphicObject
+class BecomeTestToken < MUES::PolymorphicObject
 
 	def initialize( val )
 		@value = val
@@ -67,67 +67,66 @@ class BecomeTestContainer
 end
 
 
-##
-# Test case class
-class PolymorphicObjectBecomeTests < RUNIT::TestCase
+module MUES
 
-	# Test tokenizing the test object
-	def test_00_tokenize
-		obj = nil
-		rv = nil
+	# Test case class
+	class PolymorphicObjectBecomeTestCase < MUES::TestCase
 
-		assert_no_exception { obj = BecomeTestObject.new("Corbin Dallas") }
-		assert_no_exception { obj.tokenize }
-		assert_instance_of BecomeTestToken, obj
-		assert_no_exception { rv = obj.tokenId }
-		assert_equal "token:Corbin Dallas", rv
-	end
+		# Test tokenizing the test object
+		def test_00_tokenize
+			obj = nil
+			rv = nil
 
-	# Test un-tokenizing
-	def test_01_untokenize
-		obj = nil
-		rv = nil
+			assert_nothing_raised { obj = BecomeTestObject.new("Corbin Dallas") }
+			assert_nothing_raised { obj.tokenize }
+			assert_instance_of BecomeTestToken, obj
+			assert_nothing_raised { rv = obj.tokenId }
+			assert_equal "token:Corbin Dallas", rv
+		end
 
-		assert_no_exception { obj = BecomeTestToken.new("Multipass!") }
-		assert_no_exception { rv = obj.value }
-		assert_instance_of BecomeTestObject, obj
-		assert_equal "Multipass!", rv
-	end
+		# Test un-tokenizing
+		def test_01_untokenize
+			obj = nil
+			rv = nil
 
-	# Test tokenizing across multiple references in instance vars of multiple
-	# objects
-	def test_02_tokenize_multiref
-		obj = BecomeTestObject.new( "Big badda boom." )
-		container1 = BecomeTestContainer.new( obj )
-		container2 = BecomeTestContainer.new( obj )
-		container3 = BecomeTestContainer.new( container1, container2 )
+			assert_nothing_raised { obj = BecomeTestToken.new("Multipass!") }
+			assert_nothing_raised { rv = obj.value }
+			assert_instance_of BecomeTestObject, obj
+			assert_equal "Multipass!", rv
+		end
 
-		assert_no_exception { obj.tokenize }
+		# Test tokenizing across multiple references in instance vars of multiple
+		# objects
+		def test_02_tokenize_multiref
+			obj = BecomeTestObject.new( "Big badda boom." )
+			container1 = BecomeTestContainer.new( obj )
+			container2 = BecomeTestContainer.new( obj )
+			container3 = BecomeTestContainer.new( container1, container2 )
 
-		assert_equals BecomeTestToken, container1.contents[0].class
-		assert_equals BecomeTestToken, container2.contents[0].class
-		assert_equals BecomeTestToken, container3.contents[0].contents[0].class
-	end
+			assert_nothing_raised { obj.tokenize }
 
-	# Test tokenizing across multiple references in instance vars of multiple
-	# objects
-	def test_03_untokenize_multiref
-		obj = BecomeTestToken.new( "Mmmmm chicken... more chicken." )
-		container1 = BecomeTestContainer.new( obj )
-		container2 = BecomeTestContainer.new( obj )
-		container3 = BecomeTestContainer.new( container1, container2 )
+			assert_equal BecomeTestToken, container1.contents[0].class
+			assert_equal BecomeTestToken, container2.contents[0].class
+			assert_equal BecomeTestToken, container3.contents[0].contents[0].class
+		end
 
-		assert_no_exception { obj.value }
+		# Test tokenizing across multiple references in instance vars of multiple
+		# objects
+		def test_03_untokenize_multiref
+			obj = BecomeTestToken.new( "Mmmmm chicken... more chicken." )
+			container1 = BecomeTestContainer.new( obj )
+			container2 = BecomeTestContainer.new( obj )
+			container3 = BecomeTestContainer.new( container1, container2 )
 
-		assert_equals BecomeTestObject, container1.contents[0].class
-		assert_equals BecomeTestObject, container2.contents[0].class
-		assert_equals BecomeTestObject, container3.contents[0].contents[0].class
-	end
+			assert_nothing_raised { obj.value }
 
-end
+			assert_equal BecomeTestObject, container1.contents[0].class
+			assert_equal BecomeTestObject, container2.contents[0].class
+			assert_equal BecomeTestObject, container3.contents[0].contents[0].class
+		end
 
-if $0 == __FILE__
-    RUNIT::CUI::TestRunner.run(PolymorphicObjectBecomeTests.suite)
-end
+	end # class PolymorphicObjectBecomeTestCase
+end # module MUES
+
 
 

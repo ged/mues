@@ -1,30 +1,27 @@
 #!/usr/bin/ruby -w
 # :nodoc: all
 #
-# This is a rubyunit test suite for the PolymorphicObject class.
+# This is a Test::Unit test suite for the PolymorphicObject class.
 #
 
-# Add the parent directory if we're running inside t/
-if $0 == __FILE__
-	$LOAD_PATH.unshift( ".." ) if File.directory?( "../extconf.rb" )
+begin
+	require 'tests/muesunittest'
+rescue
+	require '../muesunittest'
 end
 
-require "runit/cui/testrunner"
-require "runit/testcase"
-require "PolymorphicObject"
+require "mues"
 
-class PolymorphicObjectLoadTests < RUNIT::TestCase
+module MUES
+	class PolymorphicObjectLoadTests < MUES::TestCase
 
-	# Make sure loading works
-	def test_00_require
-		assert_not_nil $".detect {|lib| lib =~ /PolymorphicObject\.so/ }
-		assert_instance_of( Class, PolymorphicObject )
+		# Make sure loading works
+		def test_00_require
+			assert_not_nil $".detect {|lib| lib =~ /mues\.so/ }
+			assert_instance_of( Class, MUES::PolymorphicObject )
+		end
+
 	end
-
-end
-
-if $0 == __FILE__
-    RUNIT::CUI::TestRunner.run(PolymorphicObjectLoadTests.suite)
 end
 
 
