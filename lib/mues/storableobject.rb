@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -w
 #
 # == Copyright
 #
@@ -69,16 +69,6 @@ end
 
 class StorableObject < PolymorphicObject; include AbstractClass
 
-# :!: no loading silly, this is an abstract class
-#    def StorableObject._load (aString)
-#      o = self.new
-#      o.objectStoreID = aString
-#    end
-#
-#    def _dump (depth)
-#      @objectStoreID
-#    end
-
   ### This is the method for providing an id suitable for storing into the 
   ###   ObjectStore of your choice.  Please redefine this for situations in
   ###   which you desire different behavior - but be sure to attach it to the
@@ -112,12 +102,6 @@ class StorableObject < PolymorphicObject; include AbstractClass
     objectStoreID == an_other.objectStoreID
   end
 
-  ### This is a place holder for the method that will return the number of references
-  ### to an object (will be in C).
-  def refCount
-    return 2
-  end
-
 end
 
 class ShallowReference < PolymorphicObject
@@ -147,7 +131,7 @@ class ShallowReference < PolymorphicObject
       ! an_obj_store.kind_of?(ObjectStore)
     @id = an_id
     @obj_store = an_obj_store
-    @index = @an_index
+    @oss_index = an_index
     @val = a_val
   end
 
@@ -170,8 +154,8 @@ class ShallowReference < PolymorphicObject
   ###   written to the database.
   def read_only(&block)
     unless (@obj_store.gc.shutting_down)
-      if @index
-	obj = eval "@obj)store._retrieve_by_#{@index}(@id, @val)"
+      if @oss_index
+	obj = eval "@obj)store._retrieve_by_#{@oss_index}(@id, @val)"
       else
 	obj = @obj_store._retrieve( @id )
       end
@@ -187,8 +171,13 @@ class ShallowReference < PolymorphicObject
   ### When any other method is sent, become the object returned by the database,
   ###   and send again.
   def method_missing (*args)
-    $stderr.puts "Method lookup for '#{args[0]}'"
-    thingy = @obj_store._retrieve( @id )
+#    $stderr.puts "Method lookup for '#{args[0]}'"
+    if (@oss_index)
+      thingy = @obj_store.call(@oss_index, @id, @val)
+    else
+      thingy = @obj_store._retrieve( @id )
+    end
+    
     if( thingy.shallow? or ! thingy.respond_to?(args[0]) )
       super
     else

@@ -147,7 +147,6 @@ class ObjectStoreGC
   def _gc_routine(aHash)
     delay = aHash['trash_rate'] || 50
 
-#	$stderr.puts "shutting down? #{@shutting_down}"
     until(@shutting_down)
       loop_time = Time.now
       _collect(aHash)
@@ -172,7 +171,7 @@ class ObjectStoreGC
     @mutex.synchronize( Sync::SH ) {
       @active_objects.each_value {|o|
 		if( !o.shallow? )
-		  if( (o.refCount <= 1 or o.send(@mark)) )
+		  if( o.send(@mark) )
 			@mutex.synchronize( Sync::EX ) {
 			  @objectStore.store(o)
 			  o.become(ShallowReference.new( o.objectStoreID, @objectStore ))
