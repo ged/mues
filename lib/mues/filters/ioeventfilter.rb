@@ -19,7 +19,14 @@ IOEventFilter - An abstract base I/O event filter class
 
 == Description
 
+IOEventFilter is an abstract base class for filter objects in an
+((<IOEventStream>)). The filters act on the contents of IOEvents, modifying
+them, creating events based on them, changing their own internal state or the
+state of an associated object based on them, or ignoring them, depending on the
+task which the filter is supposed to accomplish.
 
+The IOEventFilter class implements the Subject role of the Observer pattern, and
+objects which observe it are notified when it has pending IOEvents.
 
 == Author
 
@@ -34,6 +41,8 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
+require "observer"
+
 require "mues/Namespace"
 require "mues/Debugging"
 require "mues/Events"
@@ -42,13 +51,14 @@ require "mues/Exceptions"
 
 module MUES
 	class IOEventFilter < Object
+		include Observable
 		include Comparable
 		include Debuggable
 		include AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.2 2001/05/14 12:26:47 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.3 2001/05/15 02:13:01 deveiant Exp $
 		DefaultSortPosition = 500
 
 		### Class methods
@@ -65,8 +75,8 @@ module MUES
 
 		### Initializer
 
-		### (PROTECTED) METHOD: initialize( sort=nil )
-		### Initialize the filter, optionally setting the sort position to
+		### METHOD: new( sort=nil )
+		### Create a new filter, optionally setting the sort position to
 		### the value specified.
 		protected
 		def initialize( order=nil )
@@ -109,12 +119,21 @@ module MUES
 		def shutdown
 			_debugMsg( 1, "In shutdown." )
 			@isFinished = true
+			delete_observers()
 			return @queuedInputEvents + @queuedOutputEvents
 		end
 
-		### METHOD: start
-		### Start up the filter
-		def start
+		### METHOD: start( streamObject )
+		### Start up the filter for the specified stream
+		def start( streamObject )
+			add_observer( streamObject )
+			true
+		end
+
+		### METHOD: stop( streamObject )
+		### Stop the filter for the specified stream
+		def stop( streamObject )
+			delete_observer( streamObject )
 			true
 		end
 
@@ -128,9 +147,11 @@ module MUES
 			_debugMsg( 1, "Queueing #{events.size} input events." )
 			@queuedInputEventsMutex.synchronize {
 				@queuedInputEvents += events
+				changed( true ) unless @queuedInputEvents.empty?
 			}
 			_debugMsg( 2, "#{@queuedInputEvents.size} input events now queued." )
 
+			notify_observers( self, 'input' )
 			return @queuedInputEvents.size
 		end
 
@@ -144,9 +165,11 @@ module MUES
 			_debugMsg( 1, "Queueing #{events.size} output events." )
 			@queuedOutputEventsMutex.synchronize {
 				@queuedOutputEvents += events
+				changed( true ) unless @queuedOutputEvents.empty?
 			}
 			_debugMsg( 2, "#{@queuedOutputEvents.size} output events now queued." )
 
+			notify_observers( self, 'output' )
 			return @queuedOutputEvents.size
 		end
 
