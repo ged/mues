@@ -3,15 +3,15 @@
 
 =begin
 
-= MUES
+=Namespace.rb
 
-== NAME
+== Name
 
-MUES.rb - MUES classes, functions, and global constants
+Namespace.rb - provide base class definitions and namespace
 
-== SYNOPSIS
+== Synopsis
 
-  require "mues/MUES"
+  require "mues/Namespace"
 
   module MUES
 	class MyBaseClass < Object
@@ -23,16 +23,16 @@ MUES.rb - MUES classes, functions, and global constants
     end
   end
 
-== DESCRIPTION
+== Description
 
-A collection of constants, functions, and base classes for the Multi-User
+A collection of modules, functions, and base classes for the Multi-User
 Environment Server. Requiring it adds four type-checking functions
 ((({checkType()})), (({checkEachType()})), (({checkResponse()})), and
-(({checkEachResponse()}))) to the Ruby Object class, and defines the base object
-class ((({MUES::Object}))) and a mixin for abstract classes
-((({MUES::AbstractClass}))).
+(({checkEachResponse()}))) to the Ruby (({Object})) class, defines the
+(({MUES::})) namespace, the base object class ((({MUES::Object}))), and a mixin
+for abstract classes ((({MUES::AbstractClass}))).
 
-== AUTHOR
+== Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
@@ -93,7 +93,7 @@ class Object
 					typeList = vTypes.collect {|type| type.name}.join(" or ")
 					raise TypeError, 
 						"Argument must be of type #{typeList}, not a #{obj.class.name}",
-						caller(1).reject {|frame| frame =~ /MUES.rb/}
+						caller(1).reject {|frame| frame =~ /Namespace.rb/}
 				}
 			end
 		end
@@ -127,52 +127,18 @@ class Object
 				checkResponse( anObject, *requiredMethods ) {|method, object|
 					raise TypeError,
 						"Argument #{anObject.to_s} does not answer the '#{method}()' method",
-						caller(1).reject {|frame| frame =~ /MUES.rb/}
+						caller(1).reject {|frame| frame =~ /Namespace.rb/}
 				}
 			end
 		end
 	end
-end
+
+end # class Object
 
 
 module MUES
-	class Object < ::Object
 
-		attr_reader :muesid
-
-		### METHOD: initialize( *ignored )
-		def initialize( *ignored )
-			@muesid = __GenerateMuesId()
-		end
-
-		### METHOD: lull
-		def lull
-		end
-
-		### METHOD: awaken
-		def awaken
-		end
-
-		private
-
-		### (PRIVATE GLOBAL) FUNCTION: engine()
-		### Can be used to get a reference to the running server object. Restricted 
-		def engine
-			raise SecurityError, "Unauthorized request for engine instance." if self.tainted? || $SAFE >= 3
-			
-			unless ( Module.constants.detect {|const| const == "Engine"} )
-				raise EngineException, "Engine class is not yet loaded" 
-			end
-			
-			return Engine.instance
-		end
-
-		def __GenerateMuesId
-			raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
-			return MD5.new( raw ).hexdigest
-		end
-	end
-
+	### MODULE: MUES::AbstractClass
 	module AbstractClass
 		def AbstractClass.append_features( klass )
 			klass.class_eval <<-"END"
@@ -183,6 +149,61 @@ module MUES
 				end
 			end
 			END
+		end
+	end
+
+	### (ABSTRACT) CLASS: MUES::Object
+	class Object < ::Object
+		include AbstractClass
+
+		### Class constants
+		Version	= %q$Revision: 1.3 $
+		RcsId	= %q$Id: mues.rb,v 1.3 2001/03/29 02:25:33 deveiant Exp $
+
+		### (PROTECTED) METHOD: initialize( *ignored )
+		protected
+		def initialize( *ignored )
+			@muesid = __GenerateMuesId()
+		end
+
+		#######################################################################
+		###	P U B L I C   M E T H O D S
+		#######################################################################
+		attr_reader :muesid
+
+		### METHOD: lull
+		def lull
+			# No-op
+		end
+
+		### METHOD: awaken
+		def awaken
+			# No-op
+		end
+
+		#######################################################################
+		###	P R I V A T E   M E T H O D S
+		#######################################################################
+
+		### (PRIVATE GLOBAL) FUNCTION: engine()
+		### Can be used to get a reference to the running server object. Restricted 
+		private
+		def engine
+			raise SecurityError, "Unauthorized request for engine instance." if self.tainted? || $SAFE >= 3
+			
+			unless ( Module.constants.detect {|const| const == "Engine"} )
+				raise EngineException, "Engine class is not yet loaded" 
+			end
+			
+			return Engine.instance
+		end
+
+		### (PRIVATE GLOBAL) METHOD: __GenerateMuesId
+		### Returns a unique id for an object
+		private
+		def __GenerateMuesId
+			raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
+			return MD5.new( raw ).hexdigest
 		end
 	end
 
