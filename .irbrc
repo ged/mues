@@ -11,14 +11,16 @@ def colored( prompt, *args )
 end
 
 
-# Modify prompt to do highlighting
-IRB.conf[:PROMPT][:MUES] = { # name of prompt mode
- 	:PROMPT_I => colored( "%N(%m):%03n:%i>", %w{bold white on_blue} ) + " ",
- 	:PROMPT_S => colored( "%N(%m):%03n:%i%l", %w{white on_blue} ) + " ",
- 	:PROMPT_C => colored( "%N(%m):%03n:%i*", %w{white on_blue} ) + " ",
-    :RETURN => "    ==> %s\n\n"      # format to return value
-}
-IRB.conf[:PROMPT_MODE] = :MUES
+# Modify prompt to do highlighting unless we're running in an inferior shell.
+unless ENV['EMACS']
+	IRB.conf[:PROMPT][:MUES] = { # name of prompt mode
+		:PROMPT_I => colored( "%N(%m):%03n:%i>", %w{bold white on_blue} ) + " ",
+		:PROMPT_S => colored( "%N(%m):%03n:%i%l", %w{white on_blue} ) + " ",
+		:PROMPT_C => colored( "%N(%m):%03n:%i*", %w{white on_blue} ) + " ",
+		:RETURN => "    ==> %s\n\n"      # format to return value
+	}
+	IRB.conf[:PROMPT_MODE] = :MUES
+end
 
 # Try to require the 'mues' library
 begin
