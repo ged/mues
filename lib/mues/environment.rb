@@ -64,22 +64,91 @@ module MUES
 	class Environment < Object ; implements AbstractClass, Notifiable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: environment.rb,v 1.6 2001/08/05 05:44:49 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: environment.rb,v 1.7 2001/09/26 12:41:22 deveiant Exp $
+
+		### Class variables
+		@@ChildClasses = {}
+		@@EnvMutex = Sync.new
+		@@EnvLoadTime = Time.at(0) # Set initial load time to epoch
 
 		### Class methods
 		class << self
 
-			### METHOD: atEngineStartup( theEngine )
+			### (CLASS) METHOD: loadEnvClasses( config=MUES::Config )
+			### Iterate over each file in the environments directory, loading
+			### each one if it's changed since last we loaded
+			def loadEnvClasses( config )
+				checkType( config, MUES::Config )
+				envdir = config["Environments"]["EnvironmentsDir"] or
+					raise Exception "No environments directory configured!"
+
+				### Load all ruby source in the configured directory newer
+				### than our last load time. Each child will be registered
+				### in the @@ChildClasses array as it's loaded (assuming
+				### it's implemented correctly -- if it isn't, we don't much
+				### care).
+				@@EnvMutex.synchronize( Sync::EX ) {
+
+					# Get the old load time for comparison and set it to the
+					# current time
+					oldLoadTime = @@EnvLoadTime
+					@@EnvLoadTime = Time.now
+					
+					### Search top-down for ruby files newer than our last
+					### load time, loading any we find.
+					Find.find( envdir ) {|f|
+						Find.prune if f =~ %r{^\.} # Ignore hidden stuff
+
+						if f =~ %r{\.rb$} && File.stat( f ).file? && File.stat( f ).mtime > oldLoadTime
+							load( f ) 
+						end
+					}
+				}
+			end
+
+			### (CLASS) METHOD: listEnvClasses()
+			### Return an array of environment classes which have been loaded
+			def listEnvClasses
+				return @@ChildClasses.keys.sort
+			end
+
+			### (CLASS) METHOD: create( concreteClassName )
+			### Load and instantiate the class specified by concreteClassName
+			### and return it
+			def create( className )
+				checkType( className, ::String )
+
+				env = nil
+				@@EnvMutex.synchronize( Sync::SH ) {
+					if @@ChildClasses.has_key?( className )
+						env = @@ChildClasses[ className ].new
+					elsif @@ChildClasses.has_key?( "MUES::#{className}" )
+						env = @@ChildClasses[ "MUES::#{className}" ].new
+					else
+						raise EnvironmentLoadError, "The '#{className}' environment class is not loaded."
+					end
+				}
+
+				return env
+			end
+
+			### (CLASS) METHOD: atEngineStartup( theEngine )
 			### Initialize subsystems after engine startup
 			def atEngineStartup( theEngine )
 			end
 
-			### METHOD: atEngineShutdown( theEngine )
+			### (CLASS) METHOD: atEngineShutdown( theEngine )
 			### Clean up subsystems before engine shutdown
 			def atEngineShutdown( theEngine )
 			end
 
+			### (CLASS) METHOD: inherited( aSubClass )
+			### Register the specified class with the list of child classes
+			def inherited( aSubClass )
+				checkType( aSubClass, ::Class )
+				@@ChildClasses[ aSubClass.name ] = aSubClass
+			end
 		end
 
 
