@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.4 2002/04/04 17:08:26 deveiant Exp $
+# $Id: class.rb,v 1.5 2002/04/04 17:11:42 deveiant Exp $
 # 
 # == Authors
 # 
@@ -65,8 +65,8 @@ module Metaclass
 
 		include Comparable
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
-		Rcsid = %q$Id: class.rb,v 1.4 2002/04/04 17:08:26 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid = %q$Id: class.rb,v 1.5 2002/04/04 17:11:42 deveiant Exp $
 
 
 		### Create and return a new Class metaclass object with the specified
@@ -255,8 +255,8 @@ module Metaclass
 			if @interfaces.length.nonzero?
 				decl << "### Interfaces"
 				decl << @interfaces.collect {|iface|
-					
-					
+					iface.declaration
+				}
 			end
 
 			### Add operations to the declaration
