@@ -19,9 +19,16 @@ This is an informal list of tasks yet to be done for the MUES.
 
 * ObjectStore
 
+  - Fix flatfile backend to keep the store locked and open (as opposed to
+    re-opening the file every time) while it is in existance. This may require
+    ripping some code out of PStore, or perhaps using an alternative similar
+    library like HStore (http://www.sevasoftware.com/hstore) or 
+
   - Finish the DBI ObjectStore backend.
 
   - Add other backends for other kinds of storage.
+
+  - Integrate Ryan Pavlik's Criteria module (http://mephle.org/Criteria/)?
 
 * IO Subsystem:
 
