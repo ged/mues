@@ -47,7 +47,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.13 2004/03/03 16:06:50 aidan Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -61,6 +61,7 @@
 #
 
 require 'rbconfig'
+require 'pluginfactory'
 
 require 'mues/object'
 require 'mues/reactorproxy'
@@ -71,18 +72,23 @@ module MUES
 	### An abstract base class for listener objects.
 	class Listener < MUES::Object; implements MUES::AbstractClass
 
-		include MUES::Factory
+		include PluginFactory
 
-		# CVS version tag
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
+		# SVN Revision
+		SVNRev = %q$Rev$
 
-		# CVS id tag 
-		Rcsid = %q$Id: listener.rb,v 1.13 2004/03/03 16:06:50 aidan Exp $
+		# SVN Id
+		SVNId = %q$Id$
+
+		# SVN URL
+		SVNURL = %q$URL$
 
 		# The default parameter hash for listeners
 		DefaultParameters = {
 			:filterDebug	=> 1,
-			:questionnaire	=> 'login',
+			:questionnaire	=> {
+				:name => 'login',
+			}
 		}
 
 		#############################################################
@@ -101,15 +107,16 @@ module MUES
 		#############################################################
 
 		### Create a new Listener object with the specified <tt>name</tt>,
-		### optional <tt>parameters</tt> (a Hash), and <tt>io</tt> (an IO
-		### object).
-		def initialize( name, parameters={}, io=nil )
-			@name		= name
-			@parameters	= MUES::Config::Defaults.merge( parameters, &MUES::HashMergeFunction )
-			@io			= io
+		### optional <tt>params</tt> (a Hash), and <tt>io</tt> (an IO object).
+		def initialize( name, params={}, io=nil )
+			@name	= name
+			@params	= DefaultParameters.merge( params, &MUES::HashMergeFunction )
+			@io		= io
 
-			@filterDebugLevel 	= parameters[:filterDebug].to_i
-			@loginQuestionnaire = parameters[:questionnaire]
+			@filterDebugLevel	= params[:filterDebug].to_i
+
+		#	raise ArgumentError, "No questionnaire config given for %s" % self unless
+		#		params.key?(:questionnaire)
 
 			super()
 		end
@@ -125,7 +132,8 @@ module MUES
 
 		# The Hash of parameters the listener was given at instantiation for
 		# listener-specific configuration
-		attr_reader :parameters
+		attr_reader :params
+		alias_method :parameters, :params
 
 		# The IO object associated with this listener.
 		attr_reader :io
@@ -133,11 +141,6 @@ module MUES
 		# The debugging level that will be set on new filter created by this
 		# listener
 		attr_accessor :filterDebugLevel
-
-		# The name or instance of the MUES::Questionnaire to use for loading the
-		# user for connections from this Listener.
-		attr_accessor :loginQuestionnaire
-
 
 		# Virtual methods required in derivatives
 		abstract :createOutputFilter, :releaseOutputFilter
@@ -149,6 +152,36 @@ module MUES
 		end
 
 
+		### Create the initial set of filters for connections to this listener
+		### and return them as an Array. This should consist of anything needed
+		### for setup/login. By default, the MUES::Questionnaire specified in
+		### the +questionnaire+ item of the config is loaded and returned as the
+		### only initial filter, but this can be overridden by subclasses if you
+		### don't want an interactive login for some reason.
+		def getInitialFilters( filter )
+			filters = []
+
+			# Load the configured questionnaire
+			unless !@params.key?( :questionnaire ) ||
+				@params[:questionnaire].nil? ||
+				@params[:questionnaire].empty? ||
+				@params[:questionnaire][:name].nil? ||
+				@params[:questionnaire][:name].empty? ||
+
+				qconfig = @params[:questionnaire]
+
+				qnaire = MUES::Questionnaire::load( qconfig[:name], self.name )
+				qconfig[:params].each {|k,v| qnaire.data[k] = v }
+				qnaire.data[:filter] = filter
+				qnaire.debugLevel = @filterDebugLevel
+
+				filters << qnaire
+			end
+
+			return filters
+		end
+
+
 		### Return a human-readable version of the listener suitable for log
 		### messages, etc.
 		def to_s
@@ -156,10 +189,6 @@ module MUES
 		end
 
 
-		#########
-		protected
-		#########
-		
 	end # class Listener
 end # module MUES
 
