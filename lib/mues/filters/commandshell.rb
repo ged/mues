@@ -65,7 +65,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.12 2002/06/04 07:08:54 deveiant Exp $
+# $Id: commandshell.rb,v 1.13 2002/07/09 15:20:57 deveiant Exp $
 # 
 # == Authors
 # 
@@ -101,8 +101,8 @@ module MUES
 		include MUES::ServerFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.12 2002/06/04 07:08:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.13 2002/07/09 15:20:57 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -385,8 +385,8 @@ module MUES
 		class Command < MUES::Object ; implements MUES::AbstractClass, MUES::Debuggable, Notifiable
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.12 2002/06/04 07:08:54 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.13 2002/07/09 15:20:57 deveiant Exp $
 
 			### Class values
 			@@CommandRegistry	= {}
@@ -436,7 +436,7 @@ module MUES
 				def loadCommands( config )
 					checkType( config, MUES::Config )
 					cmdsdir = config["CommandShell"]["CommandsDir"] or
-						raise Exception "No commands directory configured!"
+						raise MUES::Exception "No commands directory configured!"
 					if cmdsdir !~ %r{^/}
 						debugMsg( 2, "Prepending rootdir '#{config['rootdir']}' to commands directory." )
 						cmdsdir = File.join( config['rootdir'], cmdsdir )
