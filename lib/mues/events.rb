@@ -19,10 +19,10 @@
 #   A default event handler mixin. Including this module mixes in a
 #   <tt>handleEvent</tt> method that does dynamic dispatch to methods in the
 #   class that mixes it in. It will look for a method called
-#   <tt>_handle</tt><em>EventClass</em><tt>()</tt>, where <tt>eventClass</tt> is
+#   <tt>handle</tt><em>EventClass</em><tt>()</tt>, where <tt>eventClass</tt> is
 #   the class of the event to handle. If no explicit handler is found, each of
 #   the event^s superclasses is tried as well. If no handler is defined for any
-#   of the events, it tries to call <tt>_handleEvent()</tt>. If no handler is
+#   of the events, it tries to call <tt>handleEvent()</tt>. If no handler is
 #   found, a MUES::UnhandledEventError is raised.
 # 
 # == To Do
@@ -32,7 +32,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.10 2002/06/04 06:58:52 deveiant Exp $
+# $Id: events.rb,v 1.11 2002/08/01 01:08:52 deveiant Exp $
 # 
 # == Authors
 # 
@@ -68,16 +68,16 @@ module MUES
 			### Event dispatcher method. This method does dynamic dispatch to
 			### class-specific event handler methods in the class that mixes it
 			### in. It will look for a method called
-			### <tt>_handle<<em>eventClass</em>>()</tt>, where
+			### <tt>handle<<em>eventClass</em>>()</tt>, where
 			### <tt><em>eventClass</em></tt> is the class of the event to
 			### handle. If no explicit handler is found, each of the event's
 			### superclasses is tried as well. If no handler is defined for any
-			### of the events, it tries to call <tt>_handleEvent()</tt>. If no
+			### of the events, it tries to call <tt>handleEvent()</tt>. If no
 			### handler is found, a MUES::UnhandledEventError is raised.
 			def handleEvent( event )
 				raise TypeError, "argument (#{event.to_s}) is not an event"	unless
 					event.is_a?( Event )
-				_debugMsg( 1, "Handling a #{event.class.name} event." )
+				debugMsg( 1, "Handling a #{event.class.name} event." )
 
 				methodName = ''
 
@@ -87,18 +87,18 @@ module MUES
 					klass <= Event
 				}.each {|klass|
 					eventType = klass.name.sub( /MUES::/, '' )
-					_debugMsg( 2, "Checking for a _handle#{eventType} method..." )
-					methodName = '_handle%s' % eventType
+					debugMsg( 2, "Checking for a handle#{eventType} method..." )
+					methodName = 'handle%s' % eventType
 					if self.class.method_defined?( methodName )
-						_debugMsg( 2, "   found #{methodName}." )
+						debugMsg( 2, "   found #{methodName}." )
 						return send( methodName, event )
 					end
 				}
 
 				### Now call the default handler if it defines one
-				_debugMsg( 1, "Unable to handle the #{event.class.name}. Invoking the _handleEvent method." )
+				debugMsg( 1, "Unable to handle the #{event.class.name}. Invoking the handleEvent method." )
 				return self._handleEvent( event ) if
-					self.class.method_defined?( :_handleEvent )
+					self.class.method_defined?( :handleEvent )
 
 				raise UnhandledEventError, "No handler defined for #{event.class.name}s"
 			end
