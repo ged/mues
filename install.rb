@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.2 2002/05/16 03:57:36 deveiant Exp $
+#	$Id: install.rb,v 1.3 2002/06/04 06:39:10 deveiant Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
@@ -25,8 +25,8 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.2 $
-$rcsId		= %q$Id: install.rb,v 1.2 2002/05/16 03:57:36 deveiant Exp $
+$version	= %q$Revision: 1.3 $
+$rcsId		= %q$Id: install.rb,v 1.3 2002/06/04 06:39:10 deveiant Exp $
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
@@ -132,7 +132,7 @@ if $0 == __FILE__
 
 	message "Compiling C extensions\n"
 	Dir.chdir( "ext" ) {
-		system( CONFIG['ruby_install_name'], "extconf.rb" ) or
+		Kernel::load( "extconf.rb", true ) or
 			raise "Extension configuration failed."
 		system( 'make' ) or
 			raise "Make failed."
