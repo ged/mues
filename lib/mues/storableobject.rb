@@ -46,8 +46,8 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.28 2002/10/30 00:38:28 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.29 2003/04/19 06:59:11 deveiant Exp $
 
 
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -94,13 +94,20 @@ module MUES #:nodoc:
 		def copy
 			duplicate = self.dup
 
-			# Now eval each instance variable into the copy
-			self.instance_variables.each {|ivar|
-				val = eval(ivar)
-				debugMsg 5, "Copying ivar %s = %s" %
-					[ ivar, val.inspect ]
-				duplicate.instance_eval("#{ivar} = val")
-			}
+			# Use built-in copy_object, if available, as it's much less
+			# expensive (and much prettier).
+			if self.respond_to?( :copy_object )
+				duplicate.copy_object( self )
+
+			else
+				# Now eval each instance variable into the copy
+				self.instance_variables.each {|ivar|
+					val = eval(ivar)
+					debugMsg 5, "Copying ivar %s = %s" %
+						[ ivar, val.inspect ]
+					duplicate.instance_eval("#{ivar} = val")
+				}
+			end
 
 			return duplicate
 		end
@@ -155,8 +162,8 @@ module MUES #:nodoc:
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
-		Rcsid = %q$Id: storableobject.rb,v 1.28 2002/10/30 00:38:28 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
+		Rcsid = %q$Id: storableobject.rb,v 1.29 2003/04/19 06:59:11 deveiant Exp $
 
 
 		# Methods to not remove from the instances of this class
