@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.6 2002/10/23 18:26:27 deveiant Exp $
+#	$Id: install.rb,v 1.7 2003/04/21 04:30:00 deveiant Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
@@ -23,8 +23,8 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.6 $
-$rcsId		= %q$Id: install.rb,v 1.6 2002/10/23 18:26:27 deveiant Exp $
+$version	= %q$Revision: 1.7 $
+$rcsId		= %q$Id: install.rb,v 1.7 2003/04/21 04:30:00 deveiant Exp $
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
@@ -163,7 +163,7 @@ if $0 == __FILE__
 	debugMsg "Sitearchdir = '#{CONFIG['sitearchdir']}'"
 	sitearchdir = CONFIG['sitearchdir']
 
-	unless File.exists?( "ext/mues.so" )
+	unless File.exists?( "ext/mues.#{Config::CONFIG['DLEXT']}" )
 		message "Compiling C extensions\n"
 		Dir.chdir( "ext" ) {
 			Kernel::load( "extconf.rb", true ) or
@@ -178,7 +178,7 @@ if $0 == __FILE__
 	message "Installing\n"
 	i = Installer.new( viewOnly )
 	i.installFiles( "lib", sitelibdir, 0444, verbose )
-	i.installFiles( "ext/mues.so", sitearchdir, 0755, verbose )
+	i.installFiles( "ext/mues.#{Config::CONFIG['DLEXT']}", sitearchdir, 0755, verbose )
 	i.installFiles( "server/bin", "#{serverDir}/bin", 0755, verbose )
 	i.installFiles( "server/shellCommands", "#{serverDir}/shellCommands", 0644, verbose )
 	i.installFiles( "server/environments", "#{serverDir}/environments", 0644, verbose )
