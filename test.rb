@@ -36,6 +36,9 @@ verboseOff {
 	require 'optparse'
 }
 
+# Turn off output buffering
+$stderr.sync = $stdout.sync = true
+
 # Initialize variables
 safelevel = 0
 patterns = []
@@ -48,6 +51,11 @@ ARGV.options {|oparser|
 	oparser.on( "--debug", "-d", TrueClass, "Turn debugging on" ) {
 		$DEBUG = true
 		debugMsg "Turned debugging on."
+	}
+
+	oparser.on( "--verbose", "-v", TrueClass, "Make progress verbose" ) {
+		$VERBOSE = true
+		debugMsg "Turned verbose on."
 	}
 
 	# Handle the 'help' option
@@ -111,6 +119,5 @@ $SAFE = safelevel
 MUES::Log.mueslogger.level = 0 if $DEBUG
 Test::Unit::UI::Console::TestRunner.new( MUESTests ).start
 
-
-
+$stderr.puts "Done with tests" if $VERBOSE
 
