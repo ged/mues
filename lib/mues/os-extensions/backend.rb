@@ -19,7 +19,7 @@
 # 
 # == Rcsid
 # 
-# $Id: backend.rb,v 1.6 2002/09/27 16:21:37 deveiant Exp $
+# $Id: backend.rb,v 1.7 2002/10/14 09:43:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -51,8 +51,8 @@ module MUES
 			include MUES::FactoryMethods
 
 			### Class constants
-			Version	= %q$Revision: 1.6 $
-			RcsId	= %q$Id: backend.rb,v 1.6 2002/09/27 16:21:37 deveiant Exp $
+			Version	= %q$Revision: 1.7 $
+			RcsId	= %q$Id: backend.rb,v 1.7 2002/10/14 09:43:31 deveiant Exp $
 
 			# The directory in which file-based objectstores will be kept,
 			# relative to the base dir.
@@ -106,6 +106,7 @@ module MUES
 				:retrieve_by_index,
 				:retrieve_all,
 				:lookup,
+				:remove,
 				:close,
 				:exists?,
 				:open?,
