@@ -53,8 +53,6 @@ cf = MUES::ConsoleOutputFilter::new( rp, nil )
 qn = MUES::Questionnaire::load( qname ) {|qnaire|
 	$stderr.puts "Questionnaire finished, answers are:\n" +
 		qnaire.answers.inspect
-	#rp.unregister
-	#ios.shutdown
 }
 
 begin
