@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Distribution Maker Script
-#	$Id: makedist.rb,v 1.3 2001/11/01 21:25:09 deveiant Exp $
+#	$Id: makedist.rb,v 1.4 2001/11/01 22:17:11 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -16,8 +16,8 @@ require "./utils.rb"
 include UtilityFunctions
 
 # Version information
-Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-Rcsid = %q$Id: makedist.rb,v 1.3 2001/11/01 21:25:09 deveiant Exp $
+Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+Rcsid = %q$Id: makedist.rb,v 1.4 2001/11/01 22:17:11 deveiant Exp $
 ReleaseVersion = 0.01
 
 # Set interrupt handler to restore tty before exiting
@@ -90,11 +90,17 @@ def main
 	version = promptWithDefault( "Distribution version [#{ReleaseVersion}]", ReleaseVersion )
 
 	distName = "MUES-%s" % version
-	archiveName = "%s.tar.gz" % distName
+	gzArchiveName = "%s.tar.gz" % distName
+	bzArchiveName = "%s.tar.bz2" % distName
 	
-	if FileTest.exists?( archiveName )
-		message "Removing old archive #{archiveName}..."
-		File.delete( archiveName )
+	if FileTest.exists?( gzArchiveName )
+		message "Removing old archive #{gzArchiveName}..."
+		File.delete( gzArchiveName )
+		message "done.\n"
+	end
+	if FileTest.exists?( bzArchiveName )
+		message "Removing old archive #{bzArchiveName}..."
+		File.delete( bzArchiveName )
 		message "done.\n"
 	end
 
@@ -104,8 +110,10 @@ def main
 		File.makedirs( File.dirname(File.join(distName,file)) )
 		File.link( file, File.join(distName,file) )
 	end
-	message "Making tarball #{archiveName}..."
-	system( tarProg, '-czf', archiveName, distName ) or abort( "tar failed: #{$?}" )
+	message "Making tarball #{gzArchiveName}..."
+	system( tarProg, '-czf', gzArchiveName, distName ) or abort( "tar failed: #{$?}" )
+	message "Making tarball #{bzArchiveName}..."
+	system( tarProg, '-cjf', bzArchiveName, distName ) or abort( "tar failed: #{$?}" )
 	message "removing dist build directory..."
 	system( rmProg, '-rf', distName )
 	message "done.\n\n"
