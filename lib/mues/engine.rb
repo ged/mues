@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.28 2002/10/23 05:14:24 deveiant Exp $
+# $Id: engine.rb,v 1.29 2002/10/23 18:29:19 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.28 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.28 2002/10/23 05:14:24 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.29 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.29 2002/10/23 18:29:19 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1528,9 +1528,9 @@ module MUES
 
 			### :TODO: Check user bans
 
-			# If we're running in init mode, and the user is logging in as
-			# 'admin' create a dummy admin user.
-			if self.initMode? && username == 'admin'
+			# If we're running in init mode, the user is logging in as 'admin',
+			# and they're coming from the localhost, create a dummy admin user.
+			if self.initMode? && username == 'admin' && remoteHost =~ /^(?:localhost|127\.0\.0\.1)$/
 				self.log.notice( "ADMIN connection (init mode) from %s" % remoteHost )
 				user = MUES::User::new( :accountType => 'admin',
 									    :username => 'admin',
