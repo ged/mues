@@ -8,13 +8,13 @@
 #
 # == CVSID
 #
-#   $Id: mues.rb,v 1.5 2002/08/29 07:15:59 deveiant Exp $
+#   $Id: mues.rb,v 1.6 2003/05/12 18:42:27 deveiant Exp $
 #
 # == Authors
 #
 # * Michael Granger <ged@FaerieMUD.org>
 #
-# Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
+# Copyright (c) 2002, 2003 The FaerieMUD Consortium. All rights reserved.
 #
 # This document is Open Content. You may use, modify, and/or redistribute this
 # document under the terms of the Open Content License. (See
@@ -50,7 +50,7 @@ HEADER = XHTML_PREAMBLE + %{
     The FaerieMUD Consortium: %title%
 
     Author:     Michael Granger
-    Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
+    Copyright (c) 1999-2003 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
     document under the terms of the Open Content License. (See
@@ -187,7 +187,7 @@ FOOTER = %{
 </div>
 
 <div id="copyright">
-	<p>Copyright &copy; 1999-2002, <a href="http://www.FaerieMUD.org/">The FaerieMUD
+	<p>Copyright &copy; 1999-2003, <a href="http://www.FaerieMUD.org/">The FaerieMUD
 	Consortium</a>. This material may be distributed only subject to the terms and
 	conditions set forth in the Open Publication License, v1.0 or later (the latest
 	version is presently available at &lt;<a
@@ -242,7 +242,7 @@ END:infiles
 
 IF:parent
         <tr valign="top">
-            <td><strong>Parent:</strong>
+            <td><strong>Parent:</strong></td>
             <td>
 IF:par_url
                 <a href="%par_url%">
@@ -253,7 +253,6 @@ IF:par_url
 ENDIF:par_url
             </td>
         </tr>
-
 ENDIF:parent
         </table>
     </div>
@@ -361,7 +360,7 @@ SRC_PAGE = XHTML_PREAMBLE + %{
     The FaerieMUD Consortium: %title%
 
     Author:     Michael Granger
-    Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
+    Copyright (c) 1999-2003 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
     document under the terms of the Open Content License. (See
@@ -404,7 +403,7 @@ FILE_INDEX = XHTML_PREAMBLE + %{
     The FaerieMUD Consortium: %list_title%
 
     Author:     Michael Granger
-    Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
+    Copyright (c) 1999-2003 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
     document under the terms of the Open Content License. (See
@@ -444,7 +443,7 @@ INDEX = %{<?xml version="1.0" encoding="%charset%"?>
     The FaerieMUD Consortium: %title%
 
     Author:     Michael Granger
-    Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
+    Copyright (c) 1999-2003 The FaerieMUD Consortium. All rights reserved.
 
     This document is Open Content. You may use, modify, and/or redistribute this
     document under the terms of the Open Content License. (See
