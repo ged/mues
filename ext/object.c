@@ -1,6 +1,6 @@
 /*
  *	object.c - C extensions for the MUES::Object class
- *	$Id: object.c,v 1.2 2002/08/01 00:25:27 deveiant Exp $
+ *	$Id: object.c,v 1.3 2002/08/02 20:06:00 deveiant Exp $
  *
  *	This file contains extensions for the MUES::Object base class.
  *
@@ -218,6 +218,11 @@ mues_check_virtual_methods(self)
 void
 Init_Mues_Object()
 {
+#if FOR_RDOC_PARSER
+  mues_mMUES = rb_define_module( "MUES" );
+  mues_cMuesObject = rb_define_class_under( mues_mMUES, "Object", rb_cObject );
+#endif
+
   mues_debug( "Initializing MUES::Object C extensions." );
   mues_cMuesObject = rb_const_get( mues_mMUES, rb_intern("Object") );
 

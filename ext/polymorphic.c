@@ -1,6 +1,6 @@
 /*
  *	polymorphic.c - Polymorphic backend for MUES::StorableObject
- *	$Id: polymorphic.c,v 1.10 2002/06/05 15:33:20 deveiant Exp $
+ *	$Id: polymorphic.c,v 1.11 2002/08/02 20:06:00 deveiant Exp $
  *
  *	This module defines the MUES::PolymorphicObject class which is a derivative
  *	of MUES::Object that allows it to exchange its identity with another
@@ -84,6 +84,10 @@ void
 Init_Mues_PolymorphicObject()
 {
   mues_debug( "Initializing MUES::PolymorphicObject C extension." );
+
+#if FOR_RDOC_PARSER
+  mues_mMUES = rb_define_module( "MUES" );
+#endif
 
   // Define the new class and the #become method
   mues_cMuesPolymorphicObject = rb_define_class_under( mues_mMUES, "PolymorphicObject", mues_cMuesObject );
