@@ -32,8 +32,8 @@ This class is the main server class for the Multi-User Environment Server
 (MUES). The server encapsulates and provides a simple front end/API for the
 following tasks:
 
-* Load, configure, and maintain one or more World objects, which contain a
-  class library made up of metaclasses stored in a database
+* Load, configure, and maintain one or more World objects, each of which
+  contains a class library made up of metaclasses stored in a database
 
 * Handle player connection, login, and player object maintenance through a
   client protocol or simple telnet/HTTP connection
@@ -265,7 +265,7 @@ require "mues/Debugging"
 module MUES
 
 	### MUES Engine (server) class
-	class Engine < Object
+	class Engine < Object ; implements Debuggable
 
 		### State constants
 		module State
@@ -275,12 +275,12 @@ module MUES
 			SHUTDOWN	= 3
 		end
 
+		# Import the default event handler dispatch method
 		include Event::Handler
-		include Debuggable
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.7 2001/05/22 04:27:57 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.8 2001/06/25 14:03:14 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -334,7 +334,7 @@ module MUES
 		public
 
 		### Read-only accessors for instance variables
-		attr_reader :hostname, :port, :name, :log, :players, :connections, :state
+		attr_reader :hostname, :port, :name, :log, :players, :connections, :state, :config
 
 		### (STATIC) METHOD: instance( )
 		def Engine.instance
@@ -892,9 +892,15 @@ module MUES
 		### (PROTECTED) METHOD: _handleUntrappedExceptionEvent( event )
 		### Handle untrapped exceptions.
 		def _handleUntrappedExceptionEvent( event )
+			maxSize = @config["engine"]["exceptionStackSize"]
+			
 			@exceptionStackMutex.synchronize(Sync::EX) {
 				@exceptionStack.push event.exception
+				while @exceptionStack.length > maxSize
+					@exceptionStack.delete_at( maxSize )
+				end
 			}
+			
 			[ LogEvent.new( "error", "Untrapped exception: ",
 						   event.exception.to_s, "\n\t", 
 						   event.exception.backtrace.join("\n\t") ) ]
@@ -907,12 +913,7 @@ module MUES
 			if event.exception.is_a?( Interrupt ) then
 				stop()
 			else
-				@exceptionStackMutex.synchronize(Sync::EX) {
-					@exceptionStack.push event.exception
-				}
-				[ LogEvent.new( "error", "Untrapped signal: ",
-							   event.exception.to_s, "\n\t", 
-							   event.exception.backtrace.join("\n\t") ) ]
+				_handleUntrappedExceptionEvent( event )
 			end
 		end
 
