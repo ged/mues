@@ -87,23 +87,14 @@ module MUES #:nodoc:
 		### Create and return a copy of the receiving object with its instance
 		### variables preserved.
 		def copy
-			ivarHash = {}
-
-			# Make a hash of the ivars => values since they're magically
-			# destroyed for us after the .dup.
-			self.instance_variables.each {|ivarName|
-				ivarHash[ivarName] = eval(ivarName)
-			}
-			
 			duplicate = self.dup
 
-			# Now eval each instance variable into the copy and back into
-			# ourselves.
-			ivarHash.each {|name,val|
-				$stderr.puts "Copying ivar %s = %s" %
-					[ name, val.inspect ]
-				duplicate.instance_eval("#{name} = val")
-				eval("#{name} = val")
+			# Now eval each instance variable into the copy
+			self.instance_variables.each {|ivar|
+				val = eval(ivar)
+				debugMsg 5, "Copying ivar %s = %s" %
+					[ ivar, val.inspect ]
+				duplicate.instance_eval("#{ivar} = val")
 			}
 
 			return duplicate
@@ -158,7 +149,7 @@ module MUES #:nodoc:
 
 		include MUES::TypeCheckFunctions
 
-		@@PreservedMethods = %w{become muesid __send__ __id__}
+		@@PreservedMethods = %w{become polymorph muesid __send__ __id__}
 
 		### This undefines all instance methods for this class so that any call
 		### to an object will invoke #method_missing.
@@ -253,7 +244,7 @@ module MUES #:nodoc:
 
 			raise RuntimeError, "Cannot use a dangling ShallowReference" unless @objectStore
 			realObject = @objectStore.retrieve( @muesid )
-			self.become( realObject )
+			self.polymorph( realObject )
 
 			# Now 'self' is realObject, realObject is the shallow ref...
 			self.send( sym, *args )
