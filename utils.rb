@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.13 2002/10/31 07:45:44 deveiant Exp $
+#	$Id: utils.rb,v 1.14 2002/11/04 15:10:32 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -271,7 +271,7 @@ module UtilityFunctions
 	### file is used instead.
 	def findRdocableFiles( catalogFile="docs/CATALOG" )
 		startlist = []
-		if File.exists? catalogFIle
+		if File.exists? catalogFile
 			message "Using CATALOG file (%s).\n" % catalogFile
 			startlist = getVettedManifest( catalogFile )
 		else
