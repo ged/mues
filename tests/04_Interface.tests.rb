@@ -155,7 +155,7 @@ class InterfaceTestCase < MUES::TestCase
 		}
 
 		### Now test out the interface through the class
-		# $stderr.puts iface.moduleDefinition
+		$stderr.puts iface.moduleDefinition if $DEBUG
 
 		# Make sure the object's a Module
 		assert_nothing_raised { rval = iface.moduleObj }
@@ -176,7 +176,7 @@ class InterfaceTestCase < MUES::TestCase
 		assert_equal "[test object someName #{instance.id}]", rval
 
 		# And the class object should support the 'count' method
-		# assert_respond_to testClass.classObj, :count # <- Doesn't work yet.
+		assert_respond_to testClass.classObj, :count # <- Doesn't work yet.
 	end
 
 
