@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
+# $Id: socketlistener.rb,v 1.3 2002/08/09 11:11:54 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,16 +72,17 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.2 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.3 2002/08/09 11:11:54 deveiant Exp $
 
 		### Create a new SocketListener object.
 		def initialize( name, parameters={} )
-			@io = nil
+			@io					= nil
+			@name				= name
 			@bindAddr			= parameters['bindAddr'] || '0.0.0.0'
 			@bindPort			= parameters['bindPort'] || 4848
 			@wrappered			= false
-			@wrapName			= parameters['wrapName'] || @name
+			@wrapName			= parameters['wrapName'] || name
 			@wrapIdent			= parameters['wrapIdent'] || false
 			@wrapIdentTimeout	= parameters['wrapIdentTimeout'] || 30
 
@@ -98,11 +99,16 @@ module MUES
 
 			# Create the listener socket, as pass it to the parent constructor
 			# as the IO for this object.
+			self.log.debug {"Creating socket..."}
 			socket = TCPServer::new( @bindAddr, @bindPort )
+			self.log.debug {"...done."}
 			if self.wrappered?
+				self.log.debug {"Wrapping socket..."}
 				socket = TCPWrapper::new( @wrapName, socket, @wrapIdent, @wrapIdentTimeout )
+				self.log.debug {"...done."}
 			end
 
+			self.log.debug {"Calling superclass constructor."}
 			super( name, parameters, socket )
 		end
 
