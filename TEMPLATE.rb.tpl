@@ -8,7 +8,7 @@
 # 
 # == Rcsid
 # 
-# $Id: TEMPLATE.rb.tpl,v 1.3 2002/05/26 00:17:16 deveiant Exp $
+# $Id: TEMPLATE.rb.tpl,v 1.4 2002/05/26 00:29:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -30,8 +30,8 @@ module MUES
 	class (>>>FILE_SANS<<<) < (>>>superclass<<<)
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.3 2002/05/26 00:17:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.4 2002/05/26 00:29:49 deveiant Exp $
 
 		### Create a new (>>>FILE_SANS<<<) object.
 		def initialize
@@ -50,4 +50,8 @@ module MUES
 
 	end # class (>>>FILE_SANS<<<)
 end # module MUES
+
+>>>TEMPLATE-DEFINITION-SECTION<<<
+("description" "File/class description: ")
+
 
