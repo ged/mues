@@ -30,7 +30,8 @@
 #
 #  require 'mues/filters/commandshell'
 #
-#  cfactory = MUES::CommandShell::Factory::new( 'server/shellCommands' )
+#  MUES::CommandShell::Factory::configure( config )
+#  cshell = MUES::CommandShell::Factory::getShellForUser( user )
 #
 # == To Do
 # 
@@ -70,7 +71,7 @@ module MUES
 	### ability to execute commands in the context of their MUES::User object.
 	class CommandShell < InputFilter ; implements MUES::Debuggable
 
-		include MUES::ServerFunctions, MUES::Factory
+		include MUES::ServerFunctions, PluginFactory
 
 		### Class constants
 		Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
@@ -80,10 +81,18 @@ module MUES
 		### Class globals
 
 		# The default characters that designate an input line as a command
-		DefaultCommandPrefix	= '/'
+		DefaultCommandPrefix = '/'
 
 		# The default prompt to display when the command shell is forward
-		DefaultPrompt			= 'mues> '
+		DefaultPrompt = 'mues> '
+
+		# Message output to user when shell starts
+		StartupMessage = <<-"...END".gsub(/^\t+/, ''),
+			MUES Server Command Shell:
+			/help for help
+			/quit to disconnect
+			/shutdown to halt the server (admin privileges required)
+		...END
 
 
 		### Return a new shell input filter for the specified user (a MUES::User
@@ -91,8 +100,6 @@ module MUES
 		### MUES::CommandShell::CommandTable or derivative), and the given
 		### <tt>parameters</tt>.
 		def initialize( user, commandTable, parameters={} )
-			checkType( user, MUES::User )
-			checkType( commandTable, MUES::CommandShell::CommandTable )
 			checkResponse( parameters, :[] )
 
 			super()
@@ -120,7 +127,8 @@ module MUES
 			@stream				= nil
 			@context			= nil
 
-			self.log.info( "Initialized command shell for %s. Prefix = '%s'" % [ user.to_s, @commandPrefix ] )
+			self.log.info "Initialized command shell for %s. Prefix = '%s'" %
+				[ user.to_s, @commandPrefix ]
 		end
 
 
@@ -148,7 +156,8 @@ module MUES
 			results = super( stream )
 			@stream = stream
 			@context = Context::new( self, @user, stream, nil )
-			queueOutputEvents( OutputEvent.new(@vars['prompt']) )
+			queueOutputEvents( OutputEvent::new(StartupMessage),
+							   OutputEvent::new(@vars['prompt']) )
 			debugMsg( 2, "Starting command shell for #{@user.to_s}" )
 
 			return results
@@ -167,7 +176,8 @@ module MUES
 
 
 		### Notify the shell that its command table is out of date, and should
-		### be replaced with the specified one.
+		### be replaced with one built by the specified +factory+ (a
+		### MUES::CommandShell::Factory object).
 		def update( factory )
 			@needNewTable = factory
 		end
@@ -285,7 +295,7 @@ module MUES
 		### updated files.
 		class Command < MUES::PolymorphicObject ; implements MUES::Debuggable
 
-			include MUES::User::AccountType, MUES::TypeCheckFunctions
+			include MUES::TypeCheckFunctions
 
 			### Class constants
 			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
@@ -324,13 +334,6 @@ module MUES
 			###     should provide templates for use for each possible
 			###     invocation of the command. Each line should be no longer
 			###     than 70 characters.
-			###   [<tt>:restriction</tt>]
-			###     An Integer or String describing the lowest user account type
-			###     that should be able to invoke this command. The value may be
-			###     any one of the values in MUES::User::AccountType, or a
-			###     case-insensitive string version of any of the types (eg.,
-			###     AccountType::ADMIN can be specified as 'admin' or 'Admin' or
-			###     'ADMIN').
 			###   [<tt>:synonyms</tt>]
 			###     An Array of zero or more names which should be considered
 			###     exactly equivalent to the primary name for the purposes of
@@ -346,18 +349,6 @@ module MUES
 			###   entered, with the command name and any leading/trailing
 			###   whitespace removed.
 			def initialize( name, sourceFile, sourceLine, commandSpec, body )
-				checkType( name, ::String )
-				checkType( sourceFile, ::String )
-				checkType( sourceLine, ::Integer )
-				checkType( commandSpec, ::Hash )
-				checkType( body, ::String )
-
-				checkType( commandSpec[:abstract], ::String )
-				checkType( commandSpec[:description], ::String, ::NilClass )
-				checkType( commandSpec[:usage], ::String, ::NilClass )
-				checkType( commandSpec[:restriction], ::String, ::Integer )
-				checkType( commandSpec[:synonyms], ::Array )
-
 				debugMsg( 3, "Creating a new command '#{name}' from '#{sourceFile}':#{sourceLine}" )
 
 				@name			= name
@@ -369,26 +360,7 @@ module MUES
 				@usage			= commandSpec[:usage] || @name
 				@synonyms		= commandSpec[:synonyms]
 
-				# Normalize the restriction argument, set it, and make sure it's
-				# valid.
-				case commandSpec[:restriction]
-				when String
-					val = MUES::User::AccountType::Map[ commandSpec[:restriction].downcase ] or
-						raise ArgumentError,
-						"No such account type '#{commandSpec[:restriction]}'"
-					@restriction = val
-
-				when Integer
-					val = commandSpec[:restriction].abs
-					raise ArgumentError, "Restriction value out of bounds: %d > %d" % 
-						[ val, MUES::User::AccountType::Map.values.max ] unless
-						val <= MUES::User::AccountType::Map.values.max 
-					@restriction = val
-
-				else
-					raise ArgumentError,
-						"Illegal restriction spec: '#{commandSpec[:restriction].inspect}'"
-				end
+				@restriction	= 4
 
 				# Create the invocation method for this instance
 				createInvokeMethod( body, sourceFile, sourceLine )
@@ -444,7 +416,8 @@ module MUES
 			### MUES::User object).
 			def canBeUsedBy?( user )
 				checkType( user, MUES::User )
-				return user.accountType >= @restriction
+				#return user.accountType >= @restriction
+				return true
 			end
 
 
@@ -456,6 +429,7 @@ module MUES
 					self.sourceLine,
 				]
 			end
+
 
 			#########
 			protected
@@ -568,7 +542,7 @@ module MUES
 		# approximate searches of command names.
 		class CommandTable < MUES::Object ; implements MUES::Debuggable
 
-			include MUES::TypeCheckFunctions, MUES::Factory
+			include MUES::TypeCheckFunctions, PluginFactory
 
 			### Class constants
 			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
@@ -727,7 +701,7 @@ module MUES
 		### place to put new commands to be loaded.
 		class CommandParser < MUES::Object ; implements MUES::Debuggable
 			
-			include MUES::TypeCheckFunctions, MUES::Factory
+			include MUES::TypeCheckFunctions, PluginFactory
 
 			### Class constants
 			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
@@ -910,37 +884,48 @@ module MUES
 		### specified by the configuration, and then maintain a list of commands
 		### loaded from a configured list of directories, reloading any that
 		### change via a scheduled event in the Engine to which it belongs.
-		class Factory < MUES::Object ; implements MUES::Debuggable, Observable
+		class Factory < MUES::Object
+			include MUES::Debuggable, Observable,
+				MUES::TypeCheckFunctions, MUES::ServerFunctions
 
-			include MUES::TypeCheckFunctions, MUES::ServerFunctions
+			#########################################################
+			###	C L A S S   V A R I A B L E S
+			#########################################################
 
-			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.36 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.36 2004/03/03 16:06:50 aidan Exp $
+			# CVS version tag
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.35 $} )[1]
 
-			### Class globals
+			# CVS id tag
+			Rcsid = %q$Id: commandshell.rb,v 1.35 2003/10/13 05:16:43 deveiant Exp $
+
+			# The shell class to use if no alternate is specified
 			DefaultShellClass	= MUES::CommandShell
+
+			# The table class to use if no alternate is specified
 			DefaultTableClass	= MUES::CommandShell::CommandTable
+
+			# The command parser class to use if no alterate is specified
 			DefaultParserClass	= MUES::CommandShell::CommandParser
 
-			### Create and return a new CommandFactory, configured with the
-			### specified <tt>commandPath</tt> and <tt>shellParameters</tt>. The
-			### classes that will be used in construction can be specified with
-			### the <tt>shellClass</tt>, <tt>tableClass</tt>, and
-			### <tt>parserClass</tt> arguments, which can be either the class
-			### object or a name suitable for passing to the appropriate
-			### factory's #create method. They default to MUES::CommandShell,
-			### MUES::CommandShell::CommandTable, and
+
+
+			#########################################################
+			###	I N S T A N C E   M E T H O D S
+			#########################################################
+
+			### Create and return a new CommandShell::Factory, configured with
+			### the specified <tt>commandPath</tt> and
+			### <tt>shellParameters</tt>. The classes that will be used in
+			### construction can be specified with the <tt>shellClass</tt>,
+			### <tt>tableClass</tt>, and <tt>parserClass</tt> arguments, which
+			### can be either the class object or a name suitable for passing to
+			### the appropriate factory's #create method. They default to
+			### MUES::CommandShell, MUES::CommandShell::CommandTable, and
 			### MUES::CommandShell::CommandParser, respectively.
 			def initialize( commandPath=[], shellParameters={},
 						    shellClass=DefaultShellClass,
 						    tableClass=DefaultTableClass,
 						    parserClass=DefaultParserClass )
-				checkType( commandPath, ::Array )
-				checkType( shellParameters, ::Hash, ::NilClass )
-				checkType( shellClass, ::Class, ::String, ::NilClass )
-				checkType( tableClass, ::Class, ::String, ::NilClass )
-				checkType( parserClass, ::Class, ::String, ::NilClass )
 
 				# Classes used to build a shell
 				@shellClass			= shellClass || DefaultShellClass
@@ -1003,7 +988,6 @@ module MUES
 			# The class of object that will be used by the factory to parse
 			# command definitions.
 			attr_accessor	:parserClass
-
 
 
 			### Returns a instance of MUES::CommandShell or one of its
