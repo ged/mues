@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.23 2003/10/13 05:16:43 deveiant Exp $
+# $Id: mixins.rb,v 1.24 2003/10/13 05:19:32 deveiant Exp $
 # 
 # == Authors
 # 
@@ -644,8 +644,8 @@ module MUES
 				end
 
 			[ subclass.name, truncatedName, subclass ].each {|key|
-				MUES::Log.info "Registering %s derivative of %s as %s" %
-					[ key, self.name, truncatedName ]
+				MUES::Log.info "Registering derivative of %s as %p" %
+					[ self.name, key ]
 				self.derivatives[ key ] = subclass
 			}
 			super
