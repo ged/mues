@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.18 2002/10/06 07:46:44 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.19 2002/10/23 02:12:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -75,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.18 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.18 2002/10/06 07:46:44 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.19 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.19 2002/10/23 02:12:08 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -162,12 +162,12 @@ module MUES
 			events.flatten!
 			checkEachType( events, MUES::InputEvent )
 
-			debugMsg( 1, "Queueing #{events.size} input events." )
+			debugMsg( 4, "Queueing #{events.size} input events." )
 			@queuedInputEventsMutex.synchronize {
 				@queuedInputEvents += events
 				changed( true ) unless @queuedInputEvents.empty?
 			}
-			debugMsg( 2, "#{@queuedInputEvents.size} input events now queued." )
+			debugMsg( 5, "#{@queuedInputEvents.size} input events now queued." )
 
 			notify_observers( self, 'input' )
 			return @queuedInputEvents.size
@@ -181,12 +181,12 @@ module MUES
 			events.flatten!
 			checkEachType( events, MUES::OutputEvent )
 
-			debugMsg( 1, "Queueing #{events.size} output events." )
+			debugMsg( 4, "Queueing #{events.size} output events." )
 			@queuedOutputEventsMutex.synchronize {
 				@queuedOutputEvents += events
 				changed( true ) unless @queuedOutputEvents.empty?
 			}
-			debugMsg( 2, "#{@queuedOutputEvents.size} output events now queued." )
+			debugMsg( 5, "#{@queuedOutputEvents.size} output events now queued." )
 
 			notify_observers( self, 'output' )
 			return @queuedOutputEvents.size
