@@ -111,7 +111,7 @@ class ShallowReference < PolymorphicObject
   public_instance_methods(true).each {|method|
     next if method == "become" or method == "__send__" or
       method == "__id__"
-    undef_method( eval ":#{method}" )
+    undef_method( method.intern )
   }
   
   #########
