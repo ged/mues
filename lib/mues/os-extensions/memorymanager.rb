@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
+# $Id$
 # 
 # == Authors
 # 
@@ -28,177 +28,187 @@
 
 require 'hashslice'
 require 'sync'
+require 'pluginfactory'
 
 require 'mues/object'
 require 'mues/exceptions'
 require 'mues/objectspacevisitor'
 
 module MUES
-	class ObjectStore
+class ObjectStore
 
-		### This class is the abstract base class for MUES::ObjectStore
-		### memory-management Strategy classes. Derivatives of this class should
-		### provide at least a protected method called #managerThreadRoutine,
-		### which should take a MUES::ObjectSpaceVisitor object as its argument
-		class MemoryManager < MUES::Object ; implements MUES::AbstractClass
+	### This class is the abstract base class for MUES::ObjectStore
+	### memory-management Strategy classes. Derivatives of this class should
+	### provide at least a protected method called #managerThreadRoutine,
+	### which should take a MUES::ObjectSpaceVisitor object as its argument
+	class MemoryManager < MUES::Object ; implements MUES::AbstractClass
 
-			include MUES::TypeCheckFunctions, MUES::Factory
+		include MUES::TypeCheckFunctions, PluginFactory
 
-			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.10 $} )[1]
-			Rcsid = %q$Id: memorymanager.rb,v 1.10 2003/10/13 05:16:43 deveiant Exp $
+		# SVN Revision
+		SVNRev = %q$Rev$
 
+		# SVN Id
+		SVNId = %q$Id$
 
-			### Class methods
-
-			# Returns the directory objectstore extensions live under (part of
-			# the Factory interface)
-			def self.derivativeDirs
-				return 'mues/os-extensions'
-			end
+		# SVN URL
+		SVNURL = %q$URL$
 
 
-			### Initializer
+		#############################################################
+		###	C L A S S   M E T H O D S
+		#############################################################
 
-			### Create and return a new MemoryManager with the specified
-			### <tt>backend</tt> (a MUES::ObjectStore::Backend derivative), and
-			### the specified <tt>config</tt> hash.
-			def initialize( backend, config = {} ) # :notnew:
-				super()
-				
-				@backend		= backend
-				@activeObjects	= {}
-				@mutex			= Sync::new
-				@managerThread	= nil
-				@running		= false
-				@config			= config
-			end
+		# Returns the directory objectstore extensions live under (part of
+		# the Factory interface)
+		def self.derivativeDirs
+			return 'mues/os-extensions'
+		end
 
 
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
 
-			######
-			public
-			######
+		### Create and return a new MemoryManager with the specified
+		### <tt>backend</tt> (a MUES::ObjectStore::Backend derivative), and
+		### the specified <tt>config</tt> hash.
+		def initialize( backend, config = {} ) # :notnew:
+			super()
 
-			# Running flag -- if true, the memory manager is currently running
-			attr_reader :running
-			alias :running? :running
+			@backend		= backend
+			@activeObjects	= {}
+			@mutex			= Sync::new
+			@managerThread	= nil
+			@running		= false
+			@config			= config
+		end
 
-			# The Hash of objects in active memory, keyed by id.
-			attr_reader :activeObjects
 
 
-			### Get the object associated with the specified id from the objects
-			### registered with the MemoryManager.
-			def []( *ids )
-				@mutex.synchronize( Sync::SH ) {
-					# @activeObjects[ *ids ]
-					ids.collect {|id| @activeObjects[id]}
+		######
+		public
+		######
+
+		# Running flag -- if true, the memory manager is currently running
+		attr_reader :running
+		alias :running? :running
+
+		# The Hash of objects in active memory, keyed by id.
+		attr_reader :activeObjects
+
+
+		### Get the object associated with the specified id from the objects
+		### registered with the MemoryManager.
+		def []( *ids )
+			@mutex.synchronize( Sync::SH ) {
+				# @activeObjects[ *ids ]
+				ids.collect {|id| @activeObjects[id]}
+			}
+		end
+
+
+		### Returns all of the objects currently registered with the memory
+		### manager that are not shallow (ie., haven't been swapped into the
+		### backing store).
+		def unswappedObjects
+			@mutex.synchronize( Sync::SH ) {
+				@activeObjects.values.reject {|o| o.shallow?}
+			}
+		end
+
+
+		### Starts the memory manager using the specified <tt>visitor</tt>
+		### object.
+		def start( visitor )
+			checkType( visitor, MUES::ObjectSpaceVisitor )
+
+			@running = true
+			unless @managerThread && @managerThread.alive?
+				@managerThread = Thread.new {
+					Thread.current.abort_on_exception = true
+					begin
+						managerThreadRoutine( visitor )
+					rescue Reload
+						self.log.info( "Reloading #{self.inspect}" )
+					rescue Shutdown
+						self.log.info( "Shutting down #{self.inspect}" )
+					end
+					@running = false
 				}
 			end
+		end
 
 
-			### Returns all of the objects currently registered with the memory
-			### manager that are not shallow (ie., haven't been swapped into the
-			### backing store).
-			def unswappedObjects
-				@mutex.synchronize( Sync::SH ) {
-					@activeObjects.values.reject {|o| o.shallow?}
+		### Restart the memory manager, clearing the current active objects
+		### and returning them.
+		def restart( visitor )
+			objs = nil
+			@mutex.synchronize( Sync::EX ) {
+				objs = self.shutdown
+				self.start( visitor )
+			}
+
+			return objs
+		end
+
+
+		### Kill the memory manager and return all active, non-shallow
+		### objects.
+		def shutdown
+			@managerThread.raise Shutdown
+			@managerThread.join
+			return self.unswappedObjects
+		end
+
+
+		### Registers the specified <tt>objects</tt> with the
+		### memory-manager.
+		def register( *objects )
+			checkEachType( objects, MUES::StorableObject )
+
+			@mutex.synchronize( Sync::EX ) {
+				objects.each {|o|
+					@activeObjects[o.objectStoreId] = o
 				}
-			end
+			}
 
+			@activeObjects.rehash
+		end
 
-			### Starts the memory manager using the specified <tt>visitor</tt>
-			### object.
-			def start( visitor )
-				checkType( visitor, MUES::ObjectSpaceVisitor )
+		### Unregister the specified <tt>objects</tt> with the
+		### memory-manager.
+		def unregister( *objects )
+			checkEachType( objects, MUES::StorableObject )
 
-				@running = true
-				unless @managerThread && @managerThread.alive?
-					@managerThread = Thread.new {
-						Thread.current.abort_on_exception = true
-						begin
-							managerThreadRoutine( visitor )
-						rescue Reload
-							self.log.info( "Reloading #{self.inspect}" )
-						rescue Shutdown
-							self.log.info( "Shutting down #{self.inspect}" )
-						end
-						@running = false
-					}
-				end
-			end
-
-
-			### Restart the memory manager, clearing the current active objects
-			### and returning them.
-			def restart( visitor )
-				objs = nil
-				@mutex.synchronize( Sync::EX ) {
-					objs = self.shutdown
-					self.start( visitor )
+			@mutex.synchronize( Sync::EX ) {
+				objects.each {|o|
+					@activeObjects.delete( o.objectStoreId )
 				}
+			}
 
-				return objs
-			end
-			
-
-			### Kill the memory manager and return all active, non-shallow
-			### objects.
-			def shutdown
-				@managerThread.raise Shutdown
-				@managerThread.join
-				return self.unswappedObjects
-			end
+			@activeObjects.rehash
+		end				
 
 
-			### Registers the specified <tt>objects</tt> with the
-			### memory-manager.
-			def register( *objects )
-				checkEachType( objects, MUES::StorableObject )
-
-				@mutex.synchronize( Sync::EX ) {
-					objects.each {|o|
-						@activeObjects[o.objectStoreId] = o
-					}
-				}
-
-				@activeObjects.rehash
-			end
-
-			### Unregister the specified <tt>objects</tt> with the
-			### memory-manager.
-			def unregister( *objects )
-				checkEachType( objects, MUES::StorableObject )
-
-				@mutex.synchronize( Sync::EX ) {
-					objects.each {|o|
-						@activeObjects.delete( o.objectStoreId )
-					}
-				}
-
-				@activeObjects.rehash
-			end				
-
-
-			### Clear the objectspace
-			def clear
-				self.log.notice( "Clearing active objectspace." )
-				@mutex.synchronize( Sync::EX ) {
-					@activeObjects.clear
-				}
-			end
+		### Clear the objectspace
+		def clear
+			self.log.notice( "Clearing active objectspace." )
+			@mutex.synchronize( Sync::EX ) {
+				@activeObjects.clear
+			}
+		end
 
 
 
-			#########
-			protected
-			#########
+		#########
+		protected
+		#########
 
-			abstract :managerThreadRoutine
+		abstract :managerThreadRoutine
 
-		end # class MemoryManager
+	end # class MemoryManager
 
-	end # class ObjectStore
+end # class ObjectStore
 end # module MUES
 
