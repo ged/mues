@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: participantproxy.rb,v 1.8 2002/10/28 00:08:34 deveiant Exp $
+# $Id: participantproxy.rb,v 1.9 2002/10/31 02:18:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -43,23 +43,24 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		# Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: participantproxy.rb,v 1.8 2002/10/28 00:08:34 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: participantproxy.rb,v 1.9 2002/10/31 02:18:31 deveiant Exp $
 		DefaultSortPosition = 850
 
 
 		### Initialize a new ParticipantProxy object with the specified
-		### MUES::User, MUES::Role, and MUES::Environment.
-		def initialize( aUser, aRole, anEnv ) # :notnew:
-			checkType( aUser, MUES::User )
-			checkType( aRole, MUES::Role )
-			checkType( anEnv, MUES::Environment )
+		### <tt>user</tt> (a MUES::User object), <tt>role</tt> (a MUES::Role
+		### object), and <tt>environment</tt> (a MUES::Environment).
+		def initialize( user, role, environment ) # :notnew:
+			checkType( user, MUES::User )
+			checkType( role, MUES::Role )
+			checkType( environment, MUES::Environment )
 
 			super()
 
-			@user = aUser
-			@role = aRole
-			@env = anEnv
+			@user			= user
+			@role			= role
+			@environment	= environment
 		end
 
 
@@ -67,15 +68,22 @@ module MUES
 		public
 		######
 
+		# The MUES::User object corresponding to this participant
 		attr_reader :user
+
+		# The MUES::Role object the user expects to participate in.
 		attr_reader :role
-		attr_reader :env
+
+		# The MUES::Environment object the user is a participant in.
+		attr_reader :environment
+		deprecate_method :env, :environment
+
 
 		### Disconnect the proxy from its current role and flag it as finished.
 		def disconnect
-			@env.removeParticipantProxy( self )
+			@environment.removeParticipantProxy( self )
 			msg = ">>> Disconnected from %s in %s <<<\n\n" %
-				[ @role.description, @env.name ]
+				[ @role.description, @environment.name ]
 			queueOutputEvents( MUES::OutputEvent::new(msg) )
 			self.finish
 		end
