@@ -2,6 +2,7 @@
 # :nodoc: all
 #
 #	Extension configuration script for MonadicObject
+#	$Id: extconf.rb,v 1.2 2002/02/12 00:44:02 deveiant Exp $
 #
 #
 
@@ -9,18 +10,6 @@ require "mkmf"
 
 $CFLAGS << " -Wall "
 dir_config( "MonadicObject" )
-
-# Write the Makefile
 create_makefile( "MonadicObject" )
-
-# Add the 'depend' target to the end of the Makefile
-File.open( "Makefile", "a" ) {|make|
-	make.print <<-EOF
-
-depend:
-	$(CC) $(CFLAGS) $(CPPFLAGS) -MM *.c > depend
-
-EOF
-}
 
 
