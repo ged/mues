@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.2 2002/09/12 12:06:12 deveiant Exp $
+# $Id: object.rb,v 1.3 2002/10/13 23:12:30 deveiant Exp $
 # 
 # == Authors
 # 
@@ -70,10 +70,11 @@ module MUES
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
 		def initialize( version )
-			version = version.to_s
+			parts = version.to_s.split(/\./, 4)
 
-			@versionVector = version.split(/\./).collect {|point|
-				point.to_i.chr
+			@major, @minor, @point, @frag = parts
+			@versionVector = parts.collect {|num|
+				num.to_i.chr
 			}.join("")
 		end
 
@@ -85,6 +86,19 @@ module MUES
 		# The internal representation of the version
 		attr_reader :versionVector
 
+		# The major (X.y.y.y) version
+		attr_reader :major
+
+		# The minor (y.X.y.y) version
+		attr_reader :minor
+
+		# The point (y.y.X.y) version (if any)
+		attr_reader :point
+
+		# The fragment (y.y.y.X) version (if any)
+		attr_reader :frag
+
+
 		### Comparable method.
 		def <=>( otherVersion )
 			return nil unless otherVersion.kind_of?( MUES::Version )
@@ -95,6 +109,18 @@ module MUES
 		def to_s
 			return @versionVector.split('').collect {|c| c[0].to_s}.join(".")
 		end
+
+		### Return the Major.Minor parts of the version as a Floating-point
+		### number
+		def to_f
+			return ("%d.%d" % [@major, @minor]).to_f
+		end
+
+		### Returns a string containing a human-readable representation of the
+		### version object.
+		def inspect
+			"Version %s" % self.to_s
+		end
 	end
 
 
@@ -104,8 +130,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: object.rb,v 1.2 2002/09/12 12:06:12 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.3 2002/10/13 23:12:30 deveiant Exp $
 
 
 		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -113,6 +139,7 @@ module MUES
 		def initialize( *ignored ) # :notnew:
 			# checkVirtualMethods() # <- Not working yet
 			@muesid = MUES::Object::generateMuesId( self )
+			@version = self.class.version
 
 			if $DEBUG
 				objRef = "%s [%d]" % [ self.class.name, self.id ]
@@ -134,7 +161,7 @@ module MUES
 			if self.const_defined?( :Version )
 				ver = self.const_get( :Version )
 			else
-				ver = "0.1"
+				ver = "0.01"
 			end
 
 			return MUES::Version::new( ver )
@@ -167,6 +194,10 @@ module MUES
 
 		### The unique id generated for the object by the constructor
 		attr_reader :muesid
+
+		### The version number (a MUES::Version object) of the class from which
+		### the object was instantiated
+		attr_reader :version
 
 
 		### Comparison operator: Check for object equality using the
