@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.12 2002/10/23 18:29:45 deveiant Exp $
+# $Id: mixins.rb,v 1.13 2002/10/24 14:52:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -506,13 +506,6 @@ module MUES
 		def getEnvironmentByName( name )
 			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
 			return MUES::Engine::instance.getEnvironmentByName( name )
-		end
-
-		### Fetch a connected user object by +name+. Returns +nil+ if no such
-		### user is currently connected.
-		def getUserByName( name )
-			MUES::SafeCheckFunctions::checkTaintAndSafe( 2 )
-			return MUES::Engine::instance.getUserByName( name )
 		end
 
 		### Return a multi-line string indicating the current status of the engine.
