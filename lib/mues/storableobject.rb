@@ -69,14 +69,15 @@ end
 
 class StorableObject < PolymorphicObject; include AbstractClass
 
-  def StorableObject._load (aString)
-    o = self.new
-    o.objectStoreID = aString
-  end
-
-  def _dump (depth)
-    objectStoreID
-  end
+# :!: no loading silly, this is an abstract class
+#    def StorableObject._load (aString)
+#      o = self.new
+#      o.objectStoreID = aString
+#    end
+#
+#    def _dump (depth)
+#      @objectStoreID
+#    end
 
   ### This is the method for providing an id suitable for storing into the 
   ###   ObjectStore of your choice.  Please redefine this for situations in
@@ -138,13 +139,16 @@ class ShallowReference < PolymorphicObject
   ###   an_id - the stringy id value that is to be used to retrieve the actual
   ###           object from the objectStore
   ###   an_obj_store - the ObjectStore to get things from
-  def initialize(an_id, an_obj_store)
+  ###   an_index - the index to be used, if any
+  def initialize(an_id, an_obj_store, an_index = nil, a_val = nil)
     raise TypeError, "Expected String but got #{an_id.type.name}" if
       ! an_id.kind_of?(String)
     raise TypeError, "Expected ObjectStore but got #{an_id.type.name}" if
       ! an_obj_store.kind_of?(ObjectStore)
     @id = an_id
     @obj_store = an_obj_store
+    @index = @an_index
+    @val = a_val
   end
 
   ######
@@ -166,7 +170,11 @@ class ShallowReference < PolymorphicObject
   ###   written to the database.
   def read_only(&block)
     unless (@obj_store.gc.shutting_down)
-      obj = @obj_store._retrieve( @id )
+      if @index
+	obj = eval "@obj)store._retrieve_by_#{@index}(@id, @val)"
+      else
+	obj = @obj_store._retrieve( @id )
+      end
       block.yield(obj)
     end
   end

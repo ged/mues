@@ -232,8 +232,7 @@ class ObjectStore
 	  objects.flatten!
 	  index_names = @indexes.collect {|ind| ind[0].id2name}
 	  index_returns = objects.collect {|o|
-	    raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
-	      o.kind_of?(StorableObject)
+	    raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless o.kind_of?(StorableObject)
 	    @indexes.collect {|ind|
 	      o.send(ind[0])
 	    }
@@ -247,7 +246,7 @@ class ObjectStore
 	    ids.each_index do |i|
 	      if @table.exists?(trans, ids[i])
 		#update(transaction, pkey, column_names, values)
-		@table.update(trans, ids[i], col_names[1, col_names.length-2],
+		@table.update(trans, ids[i], col_names[1..-1],
 			      [serialized[i], index_returns[i]].flatten)
 	      else
 		@table.insert( trans, col_names,
@@ -256,6 +255,20 @@ class ObjectStore
 	    end
 	    trans.commit
 	  }
+	end
+
+	### fills in @active_objects with all db entries that match the given index
+	### name/value provided, or all objects if no arguements are used.
+	### arguments:
+	###   index_name - the name of the index to use
+	###   value - the value to search for
+	### default behavior is to assume no index and load all elements
+	def pre_load (index_name = nil, value = nil)
+	  if(index_name)
+	    @active_objects |= eval("retrieve_all_by_#{index_name}(#{value})")
+	  else
+	    @table.each { |entry| @active_objects |= [retrieve(entry.id)] }
+	  end
 	end
 
 	### Closes the database.
@@ -297,9 +310,32 @@ class ObjectStore
 	  end
 	end
 
+	### auto genererates methods for retrieving objects using the index names provided.
+	### each index must be accompanied by a corresponding method on the objects to be
+	### stored.  during db creation, each index will create an A_Index object to look
+	### through.
+	### methods created:
+	###   retrieve_by_[index] - make a ShallowReference with the right info.
+	###   _retrieve_by_[index] - grab the object, looking for the value provided first,
+	###                          then the id.
+	###   _retrieve_all_by_[index] - for non-typical use, grabs all objects whose indexing
+	###                              method returns the value provided.
 	def add_indexes ( *indexes )
-	  @indexes << indexes.flatten
-	  #:TODO: the auto-generation of 'retrieve_by_[index]' for each index.
+	  
+	  indexes.flatten!
+	  indexes.each {|ind|
+	    ObjectStore.class_eval <<-END
+	    def _retrieve_by_#{ind.kind_of?(String) ? ind : ind.to_s} (id, val)
+	      if ( table_data = (@table.find( nil, id )) )
+		aClass = Class.send( @deserialize, table_data.obj_class )
+		object = aClass.send( @deserialize, table_data.obj )
+		return object
+	      else
+		return nil
+	      end
+	    end
+	    END
+	  }
 	end
 
 	def exists? ( an_id )
