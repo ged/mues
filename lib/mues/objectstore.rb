@@ -49,7 +49,7 @@
 #
 # == Version
 #
-#  $Id: objectstore.rb,v 1.36 2002/10/28 00:04:16 deveiant Exp $
+#  $Id: objectstore.rb,v 1.37 2002/10/29 19:51:18 deveiant Exp $
 # 
 # == Authors
 #
@@ -82,8 +82,9 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version	= %q$Revision: 1.36 $
-		RcsId	= %q$Id: objectstore.rb,v 1.36 2002/10/28 00:04:16 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.37 $} )[1]
+		Rcsid = %q$Id: objectstore.rb,v 1.37 2002/10/29 19:51:18 deveiant Exp $
+
 
 		# The default MemoryManager class
 		DefaultMemMgr = "Null"

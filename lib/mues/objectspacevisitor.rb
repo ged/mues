@@ -54,7 +54,7 @@
 # 
 # == Rcsid
 # 
-# $Id: objectspacevisitor.rb,v 1.5 2002/08/02 20:03:44 deveiant Exp $
+# $Id: objectspacevisitor.rb,v 1.6 2002/10/29 19:51:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -79,8 +79,8 @@ module MUES
 	class ObjectSpaceVisitor < MUES::Object
 
 		### Class constants
-		Version	= %q$Revision: 1.5 $
-		RcsId	= %q$Id: objectspacevisitor.rb,v 1.5 2002/08/02 20:03:44 deveiant Exp $
+		Version	= %q$Revision: 1.6 $
+		RcsId	= %q$Id: objectspacevisitor.rb,v 1.6 2002/10/29 19:51:38 deveiant Exp $
 
 
 		### Instantiate and return a new ObjectSpaceVisitor object.
