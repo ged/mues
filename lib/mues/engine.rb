@@ -121,6 +121,11 @@ the working copy at:
         'loginTime' => (a (({Time})) object created at login)
       }
 
+--- MUES::Engine#connections
+
+    Returns the array which contains IOEventStreams for incoming connections
+    which still haven^t logged in.
+
 --- MUES::Engine#state
 
     Returns the state of the engine, which will be one of:
@@ -259,13 +264,12 @@ require "mues/IOEventStream"
 require "mues/IOEventFilters"
 require "mues/ObjectStore"
 require "mues/World"
+require "mues/LoginSession"
 
 module MUES
 
 	### MUES Engine (server) class
 	class Engine < Object
-
-		private
 
 		### State constants
 		module State
@@ -278,8 +282,8 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= %q$Revision: 1.4 $
-		RcsId			= %q$Id: engine.rb,v 1.4 2001/03/28 22:23:05 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.5 2001/04/06 08:19:20 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -298,19 +302,31 @@ module MUES
 			@log = nil
 			@listener = nil
 			@listenerThread = nil
+
 			@hostname = DefaultHost
 			@port = DefaultPort
 			@name = DefaultName
 			@admin = DefaultAdmin
+
 			@eventQueue = nil
+			@scheduledEvents = { 'timed' => [], 'ticked' => [], 'repeating' => {} }
+			@scheduledEventsMutex = Mutex.new
+
 			@players = {}
 			@playersMutex = Mutex.new
+
+			@loginSessions = []
+			@loginSessionsMutex = Mutex.new
+
 			@exceptionStack = []
 			@exceptionStackMutex = Mutex.new
+
 			@state = State::STOPPED
 			@startTime = nil
 			@tick = nil
+
 			@engineObjectStore = nil
+
 			super()
 		end
 
@@ -320,7 +336,7 @@ module MUES
 		public
 
 		### Read-only accessors for instance variables
-		attr_reader :hostname, :port, :name, :log, :players, :state
+		attr_reader :hostname, :port, :name, :log, :players, :connections, :state
 
 		### (STATIC) METHOD: instance( )
 		def Engine.instance
@@ -371,7 +387,8 @@ module MUES
 									  UntrappedExceptionEvent, 
 									  LogEvent, 
 									  UntrappedSignalEvent,
-									  PlayerEvent
+									  PlayerEvent,
+									  LoginEvent
 									 )
 			
 			### :TODO: Register other event handlers
@@ -379,15 +396,15 @@ module MUES
 			### Start the event queue
 			@log.info( "Starting event queue." )
 			@eventQueue = EventQueue.new( @config["eventqueue"]["minworkers"], 
-										 @config["eventqueue"]["maxworkers"],
-										 @config["eventqueue"]["threshold"] )
+										  @config["eventqueue"]["maxworkers"],
+										  @config["eventqueue"]["threshold"] )
 			# @eventQueue.debugLevel = true
 			@eventQueue.start
 			
 			### Set up a listener socket on the specified port
 			@listener = _setupListenerSocket( @config["engine"]["bindaddress"], 
-											 @config["engine"]["bindport"],
-											 @config["engine"]["tcpwrapper"] )
+											  @config["engine"]["bindport"],
+											  @config["engine"]["tcpwrapper"] )
 			@log.info( "Starting listener thread." )
 			@listenerThread = Thread.new { _listenerThreadRoutine }
 			@listenerThread.abort_on_exception = true
@@ -397,9 +414,9 @@ module MUES
 			@startTime = Time.now
 
 			### Start the event loop
-			@log.info( "Starting event loop." )
+			@log.info( "Starting main thread." )
 			_mainThreadRoutine()
-			@log.info( "Back from event loop." )
+			@log.info( "Main thread exited." )
 
 			return true
 		end
@@ -443,6 +460,8 @@ module MUES
 
 
 		### METHOD: registerHandlerForEvents( anObject, *eventClasses )
+		### Register the specified object as being interested in events of the
+		### type/s specified by ((|eventClasses|)).
 		def registerHandlerForEvents( handlerObject, *eventClasses )
 			checkResponse( handlerObject, "handleEvent" )
 
@@ -453,9 +472,102 @@ module MUES
 
 
 		### METHOD: dispatchEvents( *events )
+		### Queue the given events for dispatch
 		def dispatchEvents( *events )
-			@log.debug( "Dispatching #{events.length} events." )
+			checkEachType( events, Event )
+
+			events.unshift LogEvent.new( 'debug', "Dispatching #{events.length} events." )
 			@eventQueue.enqueue( events )
+		end
+
+
+		### METHOD: scheduleEvents( time, *events )
+		### Schedule the specified events to be dispatched at the time
+		### specified. If ((|time|)) is a (({Time})) object, it will be executed
+		### at the tick which occurs closest to the specified time. If
+		### ((|time|)) is a positive (({Integer})), it is assumed to be a tick
+		### offset, and the event will be dispatched ((|time|)) ticks from now.
+		### If ((|time|)) is a negative (({Integer})), it is assumed to be a
+		### repeating event which requires dispatch every (({time.abs})) ticks.
+		def scheduleEvents( time, *events )
+			checkType( time, Time, Integer )
+			checkEachType( events, Event )
+
+			# Schedule the events based on what kind of thing 'time' is. In any
+			# case, if the time specified has already passed, dispatch the
+			# events immediately without scheduling them.
+			case time
+
+			# Time-fired events
+			when Time
+				if time <= Time.now()
+					dispatchEvents( *events )
+				else
+					@scheduledEventsMutex.synchronize {
+						@scheduledEvents['timed'][ time ] ||= []
+						@scheduledEvents['timed'][ time ] += events
+					}
+				end
+
+			# Repeating and tick-fired events
+			when Integer
+
+				# Repeating events -- keyed with an array of two elements: the
+				# number of the next tick at which the events should be
+				# dispatched, and the interval at which they run
+				if time < 0
+					tickInterval = time.abs
+					nextTick = @tick + interval
+					@scheduledEventsMutex.synchronize {
+						@scheduledEvenst['repeating'][[ nextTick, tickInterval ]] ||= []
+						@scheduledEvenst['repeating'][[ nextTick, tickInterval ]] += events
+					}
+
+				# One-time tick-fired events, keyed by tick number
+				elsif time > 0
+					time = time.abs
+					time += @tick
+					@scheduledEventsMutex.synchronize {
+						@scheduledEvents['ticked'][ time ] ||= []
+						@scheduledEvents['ticked'][ time ] += events
+					}
+
+				# If the tick is 0, dispatch 'em right away
+				else
+					dispatchEvents( *events )
+				end
+
+			else
+				raise ArgumentError, "Schedule time must be a Time or an Integer"
+			end
+
+			return true
+		end
+
+
+		### METHOD: cancelScheduledEvents( *events )
+		### Removes and returns the specified scheduled events, if found.
+		def cancelScheduledEvents( *events )
+			checkEachType( events, Event )
+			removedEvents = []
+
+			# If no events were given, remove all scheduled events
+			if events.length == 0
+				@scheduledEventsMutex.synchronize {
+					@scheduledEvents = { 'timed' => [], 'ticked' => [], 'repeating' => {} }
+				}
+
+			# Remove just the events specified
+			else
+				@scheduledEventsMutex.synchronize {
+					@scheduledEvents.each {|type,eventHash|
+						eventHash.each {|time,eventArray|
+							eventArray -= events
+							### :TODO: Clear out blank schedule entries
+						}
+					}
+				}
+			end
 		end
 
 
@@ -465,10 +577,10 @@ module MUES
 			status =	"#{@name}\n"
 			status +=	" MUES Engine %s\n" % [ Version ]
 			status +=	" Up %.2f seconds at tick %s " % [ Time.now - @startTime, @tick ]
-			status +=	" %d players logged in, %d linkdead, and %d connecting\n\n" % 
-				[ @players.values.find_all {|st| st["status"] == "active"}.size,
-				@players.values.find_all {|st| st["status"] == "linkdead"}.size,
-				@players.values.find_all {|st| st["status"] == "connecting"}.size ]
+			status +=	" %d players logging in\n" % [ @loginSessions.length ]
+			status +=	" %d players active, %d linkdead\n\n" % 
+				[ @players.find_all {|pl,st| st["status"] == "active"}.size,
+				  @players.find_all {|pl,st| st["status"] == "linkdead"}.size ]
 			status +=	"\n Players:\n"
 			@players.keys.each {|player|
 				status += "  #{player.to_s}\n"
@@ -482,14 +594,80 @@ module MUES
 		### Protected methods
 		protected
 
+		### (PROTECTED) METHOD: _setupListenerSocket( host, port, tcpWrapperedFlag )
+		### Set up and return a listener socket (TCPServer) object on the specified host and port, 
+		### optionally wrapped in a TCPWrapper object
+		def _setupListenerSocket( host = DefaultHost, port = DefaultPort, tcpWrappered = false )
+			listener = nil
+
+			### Create either just a plain TCPServer or a wrappered one, depending on the config
+			if tcpWrappered then
+				require "tcpwrap"
+				realListener = TCPServer.new( host, port )
+				@log.info( "Creating tcp_wrappered listener socket on #{host} port #{port}" )
+				listener = TCPWrapper.new( "mues", realListener )
+			else
+				@log.info( "Creating listener socket on #{host} port #{port}" )
+				listener = TCPServer.new( host, port )
+			end
+
+			@log.debug( "Returning listener socket." )
+			return listener
+		end
+
+
+		### (PROTECTED) METHOD: _getPendingEvents( tickNumber )
+		### Returns an (({Array})) of events which are pending execution for the
+		### tick specified.
+		def _getPendingEvents( currentTick )
+			checkType( tick, Integer )
+
+			pendingEvents = []
+			currentTime = Time.now
+
+			# Find and remove pending events, adding them to pendingEvents
+			@scheduledEventsMutex.synchronize {
+
+				# Time-fired events
+				@scheduledEvents['timed'].keys.sort.each {|time|
+					break if time > currentTime
+					pendingEvents += @scheduledEvents['timed'].delete( time )
+				}
+
+				# Tick-fired events
+				@scheduledEvents['ticked'].keys.sort.each {|tick|
+					break if tick > currentTick
+					pendingEvents += @scheduledEvents['ticked'].delete( tick )
+				}
+
+				# Repeating events -- sort works with the interval arrays, too,
+				# so that the event groups that are due first will sort
+				# first. We delete the old scheduled group, update the interval
+				# values, and merge with any already-extant group at the new
+				# interval.
+				@scheduledEvents['repeating'].keys.sort.each {|interval|
+					break if interval[0] > currentTick
+					newInterval = [ interval[0]+interval[1], interval[1] ]
+					events = @scheduledEvents['repeating'].delete( interval )
+					@scheduledEvents['repeating'][newInterval] ||= []
+					@scheduledEvents['repeating'][newInterval] += events
+					pendingEvents += events
+				}
+			}
+
+			return pendingEvents.flatten
+		end
+
+
 		#######################################################################
 		###	T H R E A D   R O U T I N E S
 		#######################################################################
 
 		### (PROTECTED) METHOD: _mainThreadRoutine()
 		### The main event loop. This is the routine that the main thread runs,
-		### dispatching TickEvents for timing. Exits and returns the total
-		### number of ticks to the caller after stop() is called.
+		### dispatching pending scheduled events and TickEvents for
+		### timing. Exits and returns the total number of ticks to the caller
+		### after stop() is called.
 		def _mainThreadRoutine
 
 			@tick = 0
@@ -501,7 +679,8 @@ module MUES
 					@tick += 1
 					@log.debug( "In tick #{@tick}..." )
 					sleep @config["engine"]["TickLength"].to_i
-					dispatchEvents( TickEvent.new(@tick) )
+					pendingEvents = _getPendingEvents( @tick )
+					dispatchEvents( TickEvent.new(@tick), *pendingEvents )
 				rescue StandardError => e
 					dispatchEvents( UntrappedExceptionEvent.new(e) )
 					next
@@ -547,28 +726,6 @@ module MUES
 		end
 
 
-		### (PROTECTED) METHOD: _setupListenerSocket( host, port, tcpWrapperedFlag )
-		### Set up and return a listener socket (TCPServer) object on the specified host and port, 
-		### optionally wrappered in a TCPWrapper object that uses tcp_wrappers
-		def _setupListenerSocket( host = DefaultHost, port = DefaultPort, tcpWrappered = false )
-			listener = nil
-
-			### Create either just a plain TCPServer or a wrappered one, depending on the config
-			if tcpWrappered then
-				require "tcpwrap"
-				realListener = TCPServer.new( host, port )
-				@log.info( "Creating tcp_wrappered listener socket on #{host} port #{port}" )
-				listener = TCPWrapper.new( "mues", realListener )
-			else
-				@log.info( "Creating listener socket on #{host} port #{port}" )
-				listener = TCPServer.new( host, port )
-			end
-
-			@log.debug( "Returning listener socket." )
-			return listener
-		end
-
-
 		#######################################################################
 		###	E V E N T   H A N D L E R S
 		#######################################################################
@@ -577,35 +734,23 @@ module MUES
 		### Handle connections to the listener socket.
 		def _handleSocketConnectEvent( event )
 
-			@log.notice( "Socket connect from '#{event.socket.addr[2]}'." )
+			dispatchEvents( LogEvent.new("Socket connect event from '#{event.socket.addr[2]}'.") )
+
 			### :TODO: Handle bans here
 
-			### Copy the event's socket to dynamic variable
+			### Copy the event's socket to dynamic variable, and create a socket
+			### output filter
 			sock = event.socket
-			newPlayer = Player.new( sock.addr[2] )
+			soFilter = SocketOutputFilter.new( sock )
 
-			### Create the event stream and the player
-			ioEventStream = IOEventStream.new
-			#ioEventStream.debug( 1 )
+			### Create the event stream, add the new filters to the stream
+			ios = IOEventStream.new
+			ios.addFilters( soFilter )
 
-			### Create new filters based on what kind of connection it is
-			### :TODO: This should check for connection type, and generate new
-			### filters accordingly. This of course depends on having the filter
-			### classes to do so
-			liFilter = LoginProxy.new(@config, newPlayer)
-			#liFilter.debug( 1 )
-			soFilter = SocketOutputFilter.new(sock, newPlayer)
-			#soFilter.debug( 1 )
-			shellFilter = CommandShell.new( newPlayer )
-			#comFilter.debug( 1 )
-
-			### Add the new filters to the stream, then add the stream to the player
-			ioEventStream.addFilters( liFilter, soFilter, shellFilter )
-			newPlayer.ioEventStream = ioEventStream
-
-			### Handle plain telnet connections
-			@playersMutex.synchronize {
-				@players[newPlayer] = { "status" => "connecting", "loginTime" => Time.now }
+			### Create the login session and add it to our collection
+			session = LoginSession.new( ios )
+			@loginSessionsMutex.synchronize {
+				@loginSessions.push session
 			}
 
 			return []
@@ -621,28 +766,25 @@ module MUES
 			case event
 
 			when PlayerLoginEvent
-				@log.notice( "Player #{player.name} logged in." )
+				dispatchEvents( LogEvent.new("notice", "Player #{player.name} logged in.") )
 				@playersMutex.synchronize {	@players[ player ]["status"] = "active" }
 
-			when PlayerLoginFailureEvent
-				@log.notice( "Failed login attempt by player #{player.name}: #{event.reason}." )
-
 			when PlayerDisconnectEvent
-				@log.notice( "Player #{player.name} went link-dead." )
+				dispatchEvents( LogEvent.new("notice", "Player #{player.name} went link-dead.") )
 				# :TODO: Once reconnect works: 
 				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
 				@playersMutex.synchronize {	@players.delete( player ) }
 				player.disconnect
 
 			when PlayerIdleTimeoutEvent
-				@log.notice( "Player #{player.name} disconnected due to idle timeout." )
+				dispatchEvents( LogEvent.new("notice", "Player #{player.name} disconnected due to idle timeout.") )
 				# :TODO: Once reconnect works: 
 				# @playersMutex.synchronize {	@players[ player ]["status"] = "linkdead" }
 				@playersMutex.synchronize {	@players.delete( player ) }
 				player.disconnect
 
 			when PlayerLogoutEvent
-				@log.notice( "Player #{player.name} disconnected." )
+				dispatchEvents( LogEvent.new("notice", "Player #{player.name} disconnected.") )
 				@playersMutex.synchronize {	@players.delete( player ) }
 				player.disconnect
 
@@ -653,20 +795,23 @@ module MUES
 			return []
 		end
 
-		### (PROTECTED) METHOD: _handlePlayerAuthenticationEvent( event )
+		### (PROTECTED) METHOD: _handleLoginSessionAuthEvent( event )
 		### Handle a user authentication attempt event
-		def _handlePlayerAuthenticationEvent( event )
+		def _handleLoginSessionAuthEvent( event )
+			session = event.session
+			playerRecord = _getPlayerRecord( event.username )
 
-			if ! passwords.key?( event.username )
-				event.failureCallback.call( event.player, "No such user" )
+			if ! playerRecord.nil?
+				event.failureCallback.call( "No such user" )
 
-			elsif passwords[event.username] != MD5.new( event.password ).hexdigest
-				event.failureCallback.call( event.player, "Bad password" )
+			elsif playerRecord.password != MD5.new( event.password ).hexdigest
+				event.failureCallback.call( "Bad password" )
 
 			else
-				event.successCallback.call( event.player )
+				event.successCallback.call( player )
 			end
 
+			return []
 		end
 
 
@@ -721,10 +866,13 @@ module MUES
 
 			case event
 			when EngineShutdownEvent
-				@log.notice( "Engine shut down by #{event.agent.to_s}." )
+				dispatchEvents( LogEvent.new("notice",
+											 "Engine shut down by #{event.agent.to_s}.") )
 				stop()
 			else
-				@log.notice( "Got a system event (a #{event.class.name}) that it not yet handled." )
+				dispatchEvents( LogEvent.new("notice", 
+											 "Got a system event (a #{event.class.name}) " +
+											 "that is not yet handled.") )
 			end
 
 			return []
@@ -745,7 +893,6 @@ module MUES
 		end
 
 	end # class Engine
-
-end
+end # module MUES
 
 
