@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: loginsession.rb,v 1.14 2002/09/28 12:12:57 deveiant Exp $
+# $Id: loginsession.rb,v 1.15 2002/10/14 09:31:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,10 +59,10 @@ module MUES
 		include MUES::TypeCheckFunctions,
 			MUES::ServerFunctions,
 			MUES::FactoryMethods,
-			MUES::UntaintingFunctions
+			MUES::UtilityFunctions
 
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
-		Rcsid = %q$Id: loginsession.rb,v 1.14 2002/09/28 12:12:57 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
+		Rcsid = %q$Id: loginsession.rb,v 1.15 2002/10/14 09:31:40 deveiant Exp $
 
 		# Pattern for untainting user input for username and password
 		LoginUntaintPattern		= %r{([a-z]\w+)}
@@ -157,7 +157,7 @@ module MUES
 					# If we've not gotten a login yet, this event's data is the
 					# login
 					elsif ! @currentLogin
-						untainted = untaint( events.shift.data, LoginUntaintPattern ).to_s
+						untainted = untaintString( events.shift.data, LoginUntaintPattern ).to_s
 						debugMsg( 4, "Setting login name to '#{untainted}'." )
 						@currentLogin = untainted
 						@delegator.queueOutputEvents( HiddenInputPromptEvent.new(@config.login.passprompt) )
@@ -167,7 +167,7 @@ module MUES
 					# waiting for an auth event to return, then this input event
 					# contains the password, so do authentication
 					else
-						untainted = untaint( events.shift.data, PasswordUntaintPattern ).to_s
+						untainted = untaintString( events.shift.data, PasswordUntaintPattern ).to_s
 
 						debugMsg( 4, "Setting password to '#{untainted}', and dispatching a LoginSessionAuthEvent." )
 						authEvent = LoginSessionAuthEvent.new( self,
