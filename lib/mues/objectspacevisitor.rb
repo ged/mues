@@ -2,7 +2,7 @@
 # 
 # This file contains the MUES::ObjectSpaceVisitor class: A simple no-op
 # objectspace visitor superclass that is used by visitor classes that traverse
-# an objectspace for MUES subsystems such as MUES::ObjectStore::GarbageCollector
+# an objectspace for MUES subsystems such as MUES::ObjectStore::MemoryManager
 # objects.
 # 
 # 
@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: objectspacevisitor.rb,v 1.1 2002/05/28 20:41:33 deveiant Exp $
+# $Id: objectspacevisitor.rb,v 1.2 2002/07/07 18:32:41 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,15 +31,17 @@ require 'mues'
 
 module MUES
 
-	### The base class for the garbage collector visitor. Derivatives of
-	### this class are an encapsulation of the interaction between the
-	### garbage collection strategy and the particulars of whatever class
-	### heirarchy's instances are being stored in the ObjectStore. Instances
-	### of this class just return false for every object, so it is really
-	### only useful as a base class.
+	### The base class for an objectspace visitor. Derivatives of this class are
+	### an encapsulation of operations that need to traverse an environment's
+	### object space and perform some task for a MUES subsystem.
 	class ObjectSpaceVisitor < MUES::Object
 
-		### Instantiate and return a new GarbageCollectorVisitor object.
+		### Class constants
+		Version	= %q$Revision: 1.2 $
+		RcsId	= %q$Id: objectspacevisitor.rb,v 1.2 2002/07/07 18:32:41 deveiant Exp $
+
+
+		### Instantiate and return a new ObjectSpaceVisitor object.
 		def initialize
 			super()
 		end
@@ -49,11 +51,14 @@ module MUES
 		public
 		######
 
-		### Visit the StorableObject specified by <tt>object</tt>, returning
-		### true if the object should be swapped out.
-		def visit( object )
-			return false
+
+		### I'm not sure of the interface here. It should be some sort of
+		### visit() method, but the problem is made more complex by the fact
+		### that we really can't know the interface from either side. We need
+		### some way of providing the glue between two interfaces we don't know.
+		def visit
 		end
+
 	end # class ObjectSpaceVisitor
 
 end # module MUES
