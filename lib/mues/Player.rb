@@ -87,9 +87,6 @@ module MUES
 			@activated = false
 
 			@dbInfo = dbInfo
-
-			OutputEvent.RegisterHandlers( self )
-			TickEvent.RegisterHandlers( self )
 		end
 
 		#############################################################################
@@ -119,7 +116,7 @@ module MUES
 		def remoteIp=( newIp )
 			checkType( newIp, ::String )
 
-			@remoteIp = @dbInfo.lastHost = newIp
+			@remoteIp = @dbInfo['lastHost'] = newIp
 		end
 
 		### METHOD: isCreator?
@@ -175,13 +172,19 @@ module MUES
 
 			# Set the stream attribute and flag the object as activated
 			@ioEventStream = stream
+			@ioEventStream.unpause
 			@activated = true
+
+			OutputEvent.RegisterHandlers( self )
+			TickEvent.RegisterHandlers( self )
+			return []
 		end
 
 
 		### METHOD: disconnect( )
 		### Disconnect our IOEventStream and prepare to be destroyed
 		def disconnect
+			results = []
 
 			### Unregister all our handlers
 			OutputEvent.UnregisterHandlers( self )
@@ -189,29 +192,37 @@ module MUES
 
 			### Shut down the IO event stream
 			@activated = false
-			@ioEventStream.shutdown if @ioEventStream
+			results << @ioEventStream.shutdown if @ioEventStream
+			results << PlayerSaveEvent.new(self)
 			
-			### Save ourselves
-			engine.dispatchEvents( PlayerSaveEvent.new(self) )
+			### Return any events that need dispatching
+			return results.flatten
 		end
 
 
-		### METHOD: reconnect( remoteIp, aSocketOutputFilter )
-		### Reconnect with a new socket output filter
-		def reconnect( remoteIp, newSocketFilter )
-			checkType( newSocketFilter, SocketOutputFilter )
-			newSocketFilter.puts( "Reconnecting..." )
+		### METHOD: reconnect( anIOEventStream )
+		### Reconnect with the client connection from another io stream
+		def reconnect( stream )
+			checkType( stream, MUES::IOEventStream )
+
+			results = []
+
+			newFilter = stream.removeFiltersOfType( SocketOutputFilter )[0]
+			raise RuntimeError, "Cannot reconnect from a stream with no SocketOutputFilter" unless newFilter
+			newFilter.puts( "Reconnecting..." )
 
 			### Get the current stream's socket output filter/s and flush 'em
 			### before closing it and replacing it with the new one.
 			@ioEventStream.removeFiltersOfType( SocketOutputFilter ).each {|filter|
 				filter.puts( "[Reconnect from #{remoteIp}]" )
-				filter.shutdown
+				results << filter.shutdown
 				newFilter.sortPosition = filter.sortPosition
 			}
 			
 			@ioEventStream.addFilter( newFilter )
 			@ioEventStream.handleEvents( InputEvent.new("") )
+
+			return results
 		end
 
 
@@ -257,10 +268,7 @@ module MUES
 		### (PROTECTED) METHOD: _handleIOEvent( anEvent )
 		### IO event handler method
 		def _handleIOEvent( event )
-			return nil unless @ioEventStream
-			@ioEventStream.addEvent( event )
-
-			[]
+			@ioEventStream.addEvents( event )
 		end
 
 
@@ -268,7 +276,7 @@ module MUES
 		### Handle server tick events by delegating them to any subordinate objects
 		### that need them.
 		def _handleTickEvent( event )
-			@ioEventStream.addEvent( event )
+			[]
 		end
 
 
