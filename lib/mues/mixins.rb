@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.10 2002/10/14 09:33:38 deveiant Exp $
+# $Id: mixins.rb,v 1.11 2002/10/23 02:07:39 deveiant Exp $
 # 
 # == Authors
 # 
@@ -233,7 +233,8 @@ module MUES
 						yield( anObject, [ *validTypes ].flatten )
 					else
 						raise TypeError, 
-							"Argument must be of type #{typeList}, not a #{anObject.class.name}", caller(1)
+							"Argument must be of type #{typeList}, not a #{anObject.class.name}",
+							caller(1).find_all {|frame| frame !~ __FILE__}
 					end
 				end
 			else
@@ -242,7 +243,8 @@ module MUES
 						yield( anObject, *validTypes )
 					else
 						raise ArgumentError, 
-							"Argument missing.", caller(1)
+							"Argument missing.",
+							caller(1).find_all {|frame| frame !~ __FILE__}
 					end
 				end
 			end
@@ -265,7 +267,7 @@ module MUES
 						typeList = vTypes.collect {|type| type.name}.join(" or ")
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{obj.class.name}",
-							caller(1).reject {|frame| frame =~ /mues.rb/}
+							caller(1).find_all {|frame| frame !~ __FILE__}
 					}
 				end
 			end
@@ -293,7 +295,8 @@ module MUES
 						yield( method, anObject )
 					else
 						raise TypeError,
-							"Argument '#{anObject.inspect}' does not answer the '#{method}()' method", caller(1)
+							"Argument '#{anObject.inspect}' does not answer the '#{method}()' method",
+							caller(1).find_all {|frame| frame !~ __FILE__}
 					end
 				end
 			end
@@ -317,7 +320,7 @@ module MUES
 					checkResponse( anObject, *requiredMethods ) {|method, object|
 						raise TypeError,
 							"Argument '#{anObject.inspect}' does not answer the '#{method}()' method",
-							caller(1).reject {|frame| frame =~ /Namespace.rb/}
+							caller(1).find_all {|frame| frame !~ __FILE__}
 					}
 				end
 			end
@@ -339,8 +342,9 @@ module MUES
 		### Check the current $SAFE level, and if it is greater than
 		### <tt>permittedLevel</tt>, raise a SecurityError.
 		def checkSafeLevel( permittedLevel=2 )
-			raise SecurityError, "Call to restricted method from insecure space ($SAFE = #{$SAFE})", caller(1) if
-				$SAFE > permittedLevel
+			raise SecurityError,
+				"Call to restricted method from insecure space ($SAFE = #{$SAFE})",
+				caller(1) if $SAFE > permittedLevel
 			return true
 		end
 
@@ -348,10 +352,12 @@ module MUES
 		### <tt>self</tt>, raising a SecurityError if <tt>$SAFE</tt> is greater
 		### than <tt>permittedLevel</tt>, or <tt>self</tt> is tainted.
 		def checkTaintAndSafe( permittedLevel=2 )
-			raise SecurityError, "Call to restricted code from insecure space ($SAFE = #{$SAFE})", caller(1) if
-				$SAFE > permittedLevel
-			raise SecurityError, "Call to restricted code with tainted receiver", caller(1) if
-				self.tainted?
+			raise SecurityError,
+				"Call to restricted code from insecure space ($SAFE = #{$SAFE})",
+				caller(1) if $SAFE > permittedLevel
+			raise SecurityError,
+				"Call to restricted code with tainted receiver",
+				caller(1) if self.tainted?
 			return true
 		end
 
@@ -408,6 +414,46 @@ module MUES
 			return parts.find_all {|p| includeZero || p.count.nonzero?}.
 				collect {|p| "%d %s%s" % [p.count, p.unit, p.count == 1 ? "" : "s"]}.
 				join( joinStr )
+		end
+
+
+		### Trim a <tt>string</tt> to the given <tt>maxLength</tt> (at maximum),
+		### appending an ellipsis if it was truncated.
+		def trimString( string, maxLength=20 )
+			if string.length > maxLength
+				return string[ 0, maxLength - 3 ] + "..."
+			end
+			return string
+		end
+
+
+		### Given a Ruby <tt>objectId</tt>, return the specified MUES::Object
+		### instance, or <tt>nil</tt> if no such object exists in the
+		### objectspace. Can only be used in $SAFE <= 2 and an untainted object.
+		def getObjectByRubyId( objectId )
+			MUES::SafeCheckFunctions::checkTaintAndSafe()
+			targetObject = nil
+			ObjectSpace.each_object( MUES::Object ) {|obj|
+				next unless obj.id == objectId
+				targetObject = obj
+				break 
+			}
+			return targetObject
+		end
+
+
+		### Given a <tt>muesId</tt>, return the specified MUES::Object instance,
+		### or <tt>nil</tt> if no such object exists in the objectspace. Can
+		### only be used in $SAFE <= 2 and an untainted object.
+		def getObjectByMuesId( objectId )
+			MUES::SafeCheckFunctions::checkTaintAndSafe()
+			targetObject = nil
+			ObjectSpace.each_object( MUES::Object ) {|obj|
+				next unless obj.muesid == objectId
+				targetObject = obj
+				break 
+			}
+			return targetObject
 		end
 
 	end
@@ -541,7 +587,6 @@ module MUES
 			require "mues/Log"
 
 			subtype = if klass.name =~ /^.*::(.*)/ then $1 else klass.name end
-			MUES::Log.debug( "\e[33;01mAdding FactoryMethods to #{klass.inspect} for #{subtype} objects\e[0m" )
 
 			### Add a class global to hold derivative classes by various keys and
 			### the class methods.
@@ -609,7 +654,7 @@ module MUES
 				### loaded subclasses can be found in the class variable
 				### '<tt>@@typeRegistry</tt>'.
 				def self.inherited( subClass )
-					MUES::Log.debug( "\e[33;01m%s (factory) inherited by %s\e[0m" % [self.name, subClass.name] )
+					MUES::Log.debug( "%s (factory) inherited by %s" % [self.name, subClass.name] )
 					return self.superclass.inherited( subClass ) unless @@typeRegistry.has_key?( self )
 					factoryType = self.factoryType
 
