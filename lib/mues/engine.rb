@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.30 2002/10/25 00:18:52 deveiant Exp $
+# $Id: engine.rb,v 1.31 2002/10/25 00:33:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.30 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.30 2002/10/25 00:18:52 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.31 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.31 2002/10/25 00:33:40 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1667,8 +1667,11 @@ module MUES
 		def handleSignalEvent( event )
 			self.log.crit( "Caught SIG#{event.signal}" )
 
-			case event.signal
+			if $stderr.tty? && ! $stderr.eof?
+				$stderr.puts ">>> %s <<<" % event.message
+			end
 
+			case event.signal
 			when "HUP"
 				self.dispatchEvents( MUES::ReconfigEvent::new )
 
