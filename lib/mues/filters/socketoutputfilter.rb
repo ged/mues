@@ -2,8 +2,8 @@
 # 
 # This file contains the MUES::SocketOutputFilter class, which is a filter for
 # MUES::IOEventStream objects. Instances of this class are participants in an
-# IOEventStream chain of responsibility, sending output and reading input from a
-# TCPSocket.
+# IOEventStream chain of responsibility, sending output and reading input from
+# an IPSocket.
 # 
 # == Synopsis
 # 
@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.10 2002/06/04 07:09:20 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.11 2002/08/01 03:14:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,13 +25,14 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-require "thread"
-require "sync"
+require 'sync'
+require 'socket'
+require 'poll'
 
-require "mues"
-require "mues/Events"
-require "mues/Exceptions"
-require "mues/filters/IOEventFilter"
+require 'mues'
+require 'mues/Events'
+require 'mues/Exceptions'
+require 'mues/filters/IOEventFilter'
 
 module MUES
 
@@ -48,8 +49,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.10 2002/06/04 07:09:20 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.11 2002/08/01 03:14:40 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
@@ -69,21 +70,22 @@ module MUES
 
 
 		### Create and return a new socket output filter with the specified
-		### TCPSocket and an optional sort order.
-		def initialize( aSocket, order=DefaultSortPosition )
-			checkType( aSocket, IPSocket )
-			super( order )
+		### <tt>socket</tt> (an IPSocket object), <tt>pollProxy</tt>
+		### (MUES::PollProxy object), and an optional <tt>sortOrder</tt>.
+		def initialize( socket, pollProxy, sortOrder=DefaultSortPosition )
+			checkType( socket, IPSocket )
+			checkType( pollProxy, MUES::PollProxy )
+
+			@socket = socket
+			@pollProxy = pollProxy
+			super( sortOrder )
 
 			@readBuffer = ''
 			@writeBuffer = ''
 			@writeMutex = Sync.new
 			@state = State::DISCONNECTED
-			@remoteHost = aSocket.peeraddr[2]
-
+			@remoteHost = socket.peeraddr[2]
 			@windowSize = DefaultWindowSize.dup
-
-			@socketThread = Thread.new { _ioThreadRoutine(aSocket) }
-			@socketThread.desc = "SocketOutputFilter IO thread [fd: #{aSocket.fileno}, peer: #{@remoteHost}]"
 		end
 
 
@@ -105,22 +107,31 @@ module MUES
 		attr_reader :windowSize
 
 
-		### Handle the specified output <tt>events</tt> by appending their data
-		### to the output buffer.
+		### Handle the specified input <tt>events</tt> (MUES::InputEvent objects).
+		def handleInputEvents( *events )
+			return events unless @state == State::CONNECTED
+			return nil unless @pollProxy.registered?
+
+			return super( *events )
+		end
+
+
+		### Handle the specified output <tt>events</tt> (MUES::OutputEvent objects).
 		def handleOutputEvents( *events )
 			events = super( *events )
 			events.flatten!
 
-			_debugMsg( 1, "Handling #{events.size} output events." )
+			debugMsg( 3, "Handling #{events.size} output events." )
 
 			# If we're not in a connected state, just return the array we're given
 			return events unless @state == State::CONNECTED
 
+			# If we're no longer registered with the Poll object, we're finished.
+			return nil unless @pollProxy.registered?
+
 			# Lock the output event queue and add the events we've been given to it
-			_debugMsg( 1, "Appending '" + events.collect {|e| e.data }.join("") + "' to the output buffer." )
-			@writeMutex.synchronize(Sync::EX) {
-				@writeBuffer << events.collect {|e| e.data }.join("")
-			}
+			debugMsg( 5, "Appending '" + events.collect {|e| e.data }.join("") + "' to the output buffer." )
+			appendToWriteBuffer( events.collect {|e| e.data }.join("") )
 
 			# We're snarfing up all outbound events, so just return an empty array
 			return []
@@ -130,24 +141,33 @@ module MUES
 		### Append a string directly onto the output buffer with a
 		### line-ending. Useful when doing direct output and flush.
 		def puts( aString )
-			@writeMutex.synchronize(Sync::EX) {
-				@writeBuffer << aString + "\n"
-			}
+			appendToWriteBuffer( aString + "\n" )
 		end
+
 
 		### Append a string directly onto the output buffer without a line
 		### ending. Useful when doing direct output and flush.
 		def write( aString )
-			@writeMutex.synchronize(Sync::EX) {
-				@writeBuffer << aString
+			appendToWriteBuffer( aString )
+		end
+
+
+		### Start the filter
+		def start( stream )
+			super( stream )
+			@writeMutex.synchronize( Sync::EX ) {
+				@poll.register( Poll::IN, method(:handlePollEvent) )
+				@poll.addMask( Poll::OUT ) unless @writeBuffer.empty?
 			}
+			@state = State::CONNECTED
 		end
 
 		### Shut the filter down, disconnecting from the remote host.
-		def stop( streamObject )
+		def stop( stream )
+			self.sendShutdownMessage if @pollObj.registered?
+			self.shutdown
 			@state = State::DISCONNECTED
-			@socketThread.raise Shutdown
-			super( streamObject )
+			super( stream )
 		end
 
 
@@ -155,124 +175,98 @@ module MUES
 		protected
 		#########
 
-		### Thread routine for socket IO multiplexing. Reads data from queued
+		### Append the specified <tt>strings</tt> to the output buffer and mask
+		### the Poll object to receive writable condition events.
+		def appendToWriteBuffer( *strings )
+			data = strings.join("")
+
+			@writeMutex.synchronize(Sync::EX) {
+				@writeBuffer << data
+
+				# If there's something in the output buffer, register this filter as
+				# interested in its socket being writable.
+				unless @writeBuffer.empty?
+					@pollProxy.addMask( Poll::OUT )
+				end
+			}
+		end
+
+
+		### Handler routine for Poll events. Reads data from queued
 		### output events, sends it to the remote client, and creates new input
-		### events from user input via the specified <tt>socket</tt>.
-		def _ioThreadRoutine( socket )
-			_debugMsg( 1, "In IO thread routine." )
-			mySocket = socket
-			@state = State::CONNECTED
+		### events from user input via the socket.
+		def handlePollEvent( socket, mask )
+			case mask
 
-			### Multiplex I/O, catching IO exceptions
-			begin
-				_ioLoop( mySocket )
+			### Handle invalid file descriptor
+			when Poll::NVAL|Poll::HUP
+				err = (mask == Poll::NVAL ? "Invalid file descriptor" : "Hangup")
+				self.log.error( "#{err} for #{socket.inspect}" )
+				self.shutdown
 
-			### Handle EOF on the socket by setting the state and 
-			rescue EOFError => e
-				engine.dispatchEvents( LogEvent.new("info", "SocketOutputFilter shutting down: #{e.message}") )
+			### Handle socket errors
+			when Poll::ERR
+				so_error = socket.getsockopt( SOL_SOCKET, SO_ERROR )
+				self.log.error( "Socket error: #{so_error.inspect}" )
 
-			rescue Shutdown
-				self._sendShutdownMessage( mySocket )
+			### Read any input from the socket if it's ready
+			when Poll::RDNORM
+				readData = socket.sysread( @@MTU )
+				debugMsg( 5, "Read data in select loop (readData = '#{readData}', length = #{readData.length})." )
+				handleRawInput( readData )
 
-			### Just log any other caught exceptions (for now)
-			rescue StandardError => e
-				_debugMsg( 1, "EXCEPTION: ", e )
-				engine.dispatchEvents( LogEvent.new("error","Error in SocketOutputFilter socket IO routine: #{e.message}") )
+			### Write any buffered output to the socket if we have output
+			### pending and the socket is writable
+			when Poll::WRNORM
+				debugMsg( 5, "Writing in select loop (@writebuffer = '#{@writeBuffer}')." )
+				@writeMutex.synchronize(Sync::EX) {
+					bytesWritten = socket.syswrite( @writeBuffer )
+					@writeBuffer[0 .. bytesWritten] = ''
 
-			### Make sure that the handler is set to the disconnected state and
-			### clean up the socket when we're leaving
-			ensure
-				_debugMsg( 1, "In socket IO thread routine's cleanup (#{$@.to_s})." )
-				@state = State::DISCONNECTED
-				mySocket.flush
-				mySocket.shutdown( 2 )
-				mySocket.close
+					@pollProxy.removeMask( Poll::WRNORM ) if @writeBuffer.empty?
+				}
+
+			else
+				self.log.notice( "Unhandled Poll event in #{self.class.name}: '#{mask.inspect}'" )
 			end
+				
+		end
 
+
+		### Shut the filter down.
+		def shutdown
+			debugMsg( 4, "Filter #{self.inspect} shutting down." )
+
+			# Unregister the filter from the poll object, which indicates that
+			# it is to be removed from the stream, if it's not already being
+			# done (ie., from #stop).
+			@pollProxy.unregister
+
+			@socket.flush
+			@socket.shutdown( 2 )
+			@socket.close
 		end
 
 		
 		### Send a shutdown message to the client using unbuffered I/O on the
 		### <tt>rawSocket</tt> specified, as we won't be around to fetch it from
 		### the buffer.
-		def _sendShutdownMessage( mySocket )
-			mySocket.syswrite( @writeBuffer )
-			mySocket.syswrite( "\n>>> Disconnecting <<<\n\n" )
+		def sendShutdownMessage
+			@socket.syswrite( @writeBuffer )
+			@socket.syswrite( "\n>>> Disconnecting <<<\n\n" )
 		end
-
-
-		### Multiplex reading and writing from the given <tt>socket</tt> object, 
-		def _ioLoop( mySocket )
-			readable = [mySocket]
-			writable = []
-			errors = [mySocket]
-
-			### Loop until we break or get shut down
-			loop do
-
-				# The socket only goes into the writable array if there's
-				# something to write.
-				if @writeBuffer.empty?
-					writable -= [ mySocket ]
-				else
-					writable += [ mySocket ]
-				end
-
-				# Select on the socket
-				rsock, wsock, esock = select( readable, writable, errors, @@SelectTimeout )
-				_debugMsg( 5, "Readable: %s, writable: %s, errors: %s" % [
-							  rsock.nil? ? "(nil)" : rsock.length.to_s,
-							  wsock.nil? ? "(nil)" : wsock.length.to_s,
-							  esock.nil? ? "(nil)" : esock.length.to_s
-						  ])
-
-				# If all three arrays are empty or nil, pass execution to another thread
-				if (rsock.nil?||rsock.empty?) && (wsock.nil?||wsock.empty?) && (esock.nil?||esock.empty?)
-					Thread.pass
-					
-				else
-
-					### Handle socket errors
-					if !esock.nil? && esock.length.nonzero?
-						so_error = mySocket.getsockopt( SOL_SOCKET, SO_ERROR )
-						_debugMsg( 2, "Socket error: #{so_error.inspect}" )
-					end
-
-					### Read any input from the socket if it's ready
-					if !rsock.nil? && rsock.length.nonzero?
-						readData = mySocket.sysread( @@MTU )
-						_debugMsg( 5, "Read data in select loop (readData = '#{readData}', length = #{readData.length})." )
-						_handleRawInput( readData )
-					end
-
-					### Write any buffered output to the socket if we have
-					### output pending and the socket is writable
-					if !wsock.nil? && wsock.length.nonzero?
-						_debugMsg( 5, "Writing in select loop (@writebuffer = '#{@writeBuffer}')." )
-						@writeMutex.synchronize(Sync::EX) {
-							bytesWritten = mySocket.syswrite( @writeBuffer )
-							@writeBuffer[0 .. bytesWritten] = ''
-						}
-					end
-				end
-			end
-		end
-
-
-		### TODO: Possibly abstract the output buffer handling away from the
-		### ioLoop, too?
 
 
 		### Handle the given raw input <tt>data</tt> which has just been read
 		### from the client socket.
-		def _handleRawInput( data )
+		def handleRawInput( data )
 			@readBuffer += data
-			_debugMsg( 5, "Handling raw input (@readBuffer = '#{@readBuffer}', " +
+			debugMsg( 5, "Handling raw input (@readBuffer = '#{@readBuffer}', " +
 					  "length = #{@readBuffer.length})." )
 
 			unless @readBuffer.empty?
-				_debugMsg( 4, "Read buffer is non-empty. Trying to get input events from it." )
-				@readBuffer = _parseInputBuffer( @readBuffer )
+				debugMsg( 4, "Read buffer is non-empty. Trying to get input events from it." )
+				@readBuffer = parseInputBuffer( @readBuffer )
 			end
 		end
 
@@ -280,16 +274,16 @@ module MUES
 		### Parse input events from the given raw <tt>inputBuffer</tt> and
 		### return the (possibly) modified buffer after queueing any input
 		### events created.
-		def _parseInputBuffer( inputBuffer )
+		def parseInputBuffer( inputBuffer )
 			newInputEvents = []
 
 			# Split input lines by CR+LF and strip whitespace before
 			# creating an event
 			inputBuffer.gsub!( /^([^#{CR}#{LF}]*)#{CR}#{LF}?/ ) {|s|
-				_debugMsg( 5, "Read a line: '#{s}' (#{s.length} bytes)." )
+				debugMsg( 5, "Read a line: '#{s}' (#{s.length} bytes)." )
 
-					_debugMsg( 4, "Creating an input event for input = '#{s.strip}'" )
-					newInputEvents.push( InputEvent.new("#{s.strip}") )
+				debugMsg( 4, "Creating an input event for input = '#{s.strip}'" )
+				newInputEvents.push( InputEvent.new("#{s.strip}") )
 				
 				""
 			}

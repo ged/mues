@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.6 2002/04/01 16:27:29 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.7 2002/08/01 03:14:29 deveiant Exp $
 # 
 # == Authors
 # 
@@ -25,13 +25,12 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
-
-require "thread"
 require "sync"
 
 require "mues"
 require "mues/Events"
 require "mues/Exceptions"
+require "mues/PollProxy"
 require "mues/filters/IOEventFilter"
 
 module MUES
@@ -40,8 +39,8 @@ module MUES
 	class ConsoleOutputFilter < IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.6 2002/04/01 16:27:29 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.7 2002/08/01 03:14:29 deveiant Exp $
 		DefaultSortPosition = 300
 
 		# Legibility constants
@@ -64,14 +63,19 @@ module MUES
 		end
 
 		### Initialize the console output filter.
-		def initialize # :nodoc:
-			super()
+		def initialize( io, pollProxy, sortOrder=DefaultSortPosition ) # :no-new:
+			checkType( io, IO )
+			checkType( pollProxy, MUES::PollProxy )
+			super( sortOrder )
+
+			@io = io
+			@pollProxy = pollProxy
+
+			@readBuffer = ''
+			@writeBuffer = ''
+			@writeMutex = Sync.new
 
 			@shutdown = false
-
-			$stderr.puts "Starting IO thread"
-			@ioThread = Thread.new { _inputThreadRoutine() }
-			@ioThread.abort_on_exception = true
 		end
 
 
@@ -79,44 +83,67 @@ module MUES
 		public
 		######
 
-		# The IO thread object running in this filter
-		attr_reader :ioThread
+		### Handle the specified input <tt>events</tt> (MUES::InputEvent objects).
+		def handleInputEvents( *events )
+			return events if @shutdown
+			return nil unless @pollProxy.registered?
+
+			return super( *events )
+		end
 
 
-		### Handle output <tt>events</tt> by appending its data to the output
-		### buffer.
+		### Handle the specified output <tt>events</tt> (MUES::OutputEvent objects).
 		def handleOutputEvents( *events )
-			return nil if @shutdown
-
-			events = super( events )
+			events = super( *events )
 			events.flatten!
 
-			$stdout.print events.collect {|e| e.data }.join("")
-			$stdout.flush
+			debugMsg( 3, "Handling #{events.size} output events." )
+
+			# If we're not in a connected state, just return the array we're given
+			return events if @shutdown
+
+			# If we're no longer registered with the Poll object, we're finished.
+			return nil unless @pollProxy.registered?
+
+			# Lock the output event queue and add the events we've been given to it
+			debugMsg( 5, "Appending '" + events.collect {|e| e.data }.join("") + "' to the output buffer." )
+			appendToWriteBuffer( events.collect {|e| e.data }.join("") )
 
 			# We're snarfing up all outbound events, so just return an empty array
 			return []
 		end
 
 
-		### Handle input <tt>events</tt>.
-		def handleInputEvents( *events )
-			return nil if @shutdown
-			super( *events )
-		end
-
-
-		### Append a string directly onto the output buffer. Useful when doing
-		### direct output and flush.
+		### Append a string directly onto the output buffer with a
+		### line-ending. Useful when doing direct output and flush.
 		def puts( aString )
-			$stdout.puts aString
+			appendToWriteBuffer( aString + "\n" )
 		end
 
 
-		### Shut the filter down, signalling the IO thread to shut down.
-		def stop( filterObject )
-			@ioThread.raise Shutdown
-			super( filterObject )
+		### Append a string directly onto the output buffer without a line
+		### ending. Useful when doing direct output and flush.
+		def write( aString )
+			appendToWriteBuffer( aString )
+		end
+
+
+		### Start the filter
+		def start( stream )
+			super( stream )
+			@writeMutex.synchronize( Sync::EX ) {
+				@poll.register( Poll::IN, method(:handlePollEvent) )
+				@poll.addMask( Poll::OUT ) unless @writeBuffer.empty?
+			}
+			@state = State::CONNECTED
+		end
+
+		### Shut the filter down, disconnecting from the remote host.
+		def stop( stream )
+			self.sendShutdownMessage if @pollObj.registered?
+			self.shutdown
+			@state = State::DISCONNECTED
+			super( stream )
 		end
 
 
@@ -125,7 +152,7 @@ module MUES
 		#########
 
 		### The thread routine for the filter's IO thread.
-		def _inputThreadRoutine
+		def inputThreadRoutine
 			begin
 				$stdin.each {|line|
 					queueInputEvents( InputEvent.new(line.strip) )
@@ -141,14 +168,14 @@ module MUES
 
 			### Just log any other caught exceptions (for now)
 			rescue StandardError => e
-				_debugMsg( 1, "EXCEPTION: ", e )
+				debugMsg( 1, "EXCEPTION: ", e )
 				engine.dispatchEvents( LogEvent.new("error","Error in ConsoleOutputFilter input routine: #{e.message}") )
 
 			### Make sure that the handler is set to the disconnected state and
 			### clean up the socket when we're leaving
 			ensure
 				$stdout.flush
-				_debugMsg( 1, "In console input thread routine's cleanup (#{$@.to_s})." )
+				debugMsg( 1, "In console input thread routine's cleanup (#{$@.to_s})." )
 			end
 
 			@shutdown = true
