@@ -44,8 +44,8 @@ module MUES
 		include Event::Handler
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: role.rb,v 1.1 2001/07/30 11:52:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: role.rb,v 1.2 2001/09/26 12:56:54 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize(  aEnvironment=MUES::Environment, aNameString, aDescString )
 		### Initialize the role with the given environment, name, and description string.
@@ -71,7 +71,7 @@ module MUES
 		### METHOD: to_s()
 		### Returns the role description as a string.
 		def to_s
-			return "     %-15s %-50s" % [ @name, @description ]
+			return "%-15s %-50s" % [ @name, @description ]
 		end
 
 		### METHOD: <=>( otherRole )
