@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.13 2003/09/12 02:22:06 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.14 2003/09/12 04:18:37 deveiant Exp $
 # 
 # == Authors
 # 
@@ -40,8 +40,8 @@ module MUES
 	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.13 $} )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.13 2003/09/12 02:22:06 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.14 2003/09/12 04:18:37 deveiant Exp $
 		DefaultSortPosition = 15
 
 		### A container module for MUES::SocketOutputFilter state contants.
@@ -71,7 +71,7 @@ module MUES
 			checkType( reactorProxy, MUES::ReactorProxy )
 			checkType( originListener, MUES::Listener )
 
-			@reactorProxy		= reactorProxy
+			@reactorProxy	= reactorProxy
 
 			@readBuffer		= ''
 			@writeBuffer	= ''
@@ -166,7 +166,7 @@ module MUES
 		### Start the filter
 		def start( stream )
 			super( stream )
-			@reactorProxy.register( :read, method(:handleReactorEvent) )
+			@reactorProxy.register( :read, &method(:handleReactorEvent) )
 			@state = State::RUNNING
 		end
 
@@ -270,7 +270,6 @@ module MUES
 
 			### Handle invalid file descriptor
 			case event
-
 			when :error
 				self.log.error( "#{err} for #{io.inspect}" )
 				self.shutdown
