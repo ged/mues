@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.24 2002/10/12 15:28:44 deveiant Exp $
+# $Id: user.rb,v 1.25 2002/10/13 20:07:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.24 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.24 2002/10/12 15:28:44 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.25 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.25 2002/10/13 20:07:12 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -315,11 +315,12 @@ module MUES
 
 		### Comparison operator
 		def <=>( otherUser )
-			# :MC: changed to always return something of class Numeric
-			acType = @accountType <=> otherUser.accounttype 
-			acType.nonzero? ?
-			acType :
-			@username <=> otherUser.username
+
+			# Return either the accounttype comparison (since #nonzero? returns
+			# the numeric value itself if it is true), or the comparison of
+			# usernames, which should always be unique.
+			(@accountType <=> otherUser.accounttype).nonzero? ||
+				@username <=> otherUser.username
 		end
 
 
