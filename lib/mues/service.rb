@@ -48,6 +48,8 @@
 # Please see the file COPYRIGHT for licensing details.
 #
 
+require 'pluginfactory'
+
 require 'mues/object'
 require 'mues/exceptions'
 require 'mues/events'
@@ -61,7 +63,7 @@ module MUES
 	### Abstract base class for MUES::Engine subsystems (services)
 	class Service < MUES::Object ; implements MUES::Notifiable, MUES::AbstractClass
 
-		include MUES::Event::Handler, MUES::Factory
+		include MUES::Event::Handler, PluginFactory
 
 		### Class constants
 		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
@@ -94,7 +96,7 @@ module MUES
 
 
 		### Directory to look for services, relative to $LOAD_PATH (part of
-		### MUES::Factory interface)
+		### PluginFactory interface)
 		def self.derivativeDirs
 			@@ServiceDirectories
 		end
