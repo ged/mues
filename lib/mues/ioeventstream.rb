@@ -159,8 +159,6 @@ module MUES
 		def addFilters( *filters )
 			_debugMsg( 1, "Adding #{filters.size} filters to stream #{self.id}" )
 
-			filtersToStart = []
-
 			### Add each filter that isn't already in the stream, adding it to
 			### the array of filters, and notifying each one that it should
 			### start notifying this stream
@@ -298,6 +296,8 @@ module MUES
 		### METHOD: shutdown
 		### Shut down all the filters contained in the stream and prepare for destruction.
 		def shutdown
+			results = []
+
 			_debugMsg( 1, "Shutting down event stream #{self.id}." )
 			@filterMutex.synchronize(Sync::EX) {
 				@state = SHUTDOWN
@@ -305,7 +305,7 @@ module MUES
 				### Shut each filter down and clear them
 				@filters.reverse.each {|f|
 					f.stop( self )
-					f.shutdown
+					results << f.shutdown
 				}
 				@filters.clear
 			}
@@ -328,7 +328,7 @@ module MUES
 				end
 			end
 
-			return true
+			return results.flatten
 		end
 
 
