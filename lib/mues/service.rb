@@ -35,7 +35,7 @@
 #
 # == Rcsid
 # 
-# $Id: service.rb,v 1.7 2002/07/09 14:56:13 deveiant Exp $
+# $Id: service.rb,v 1.8 2002/08/01 03:01:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -64,14 +64,21 @@ module MUES
 		include MUES::Event::Handler, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.7 2002/07/09 14:56:13 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.8 2002/08/01 03:01:43 deveiant Exp $
 
+		### Class globals
+		@@ServiceDirectories = ["mues/services"]
+
+
+		### Initializer
 
 		### Initialize a new service object with the specified +name+ and
 		### +description+. This method should be called via <tt>super()</tt> in
 		### a derivative's initializer.
 		def initialize( name, description )
+			super()
+
 			@name = name
 			@description = description
 		end
@@ -79,15 +86,24 @@ module MUES
 
 		### Class methods
 
+		### Add the directories specified by <tt>dirs</tt> to the front of the
+		### list to be searched by the factory method.
+		def self.addServiceDirectories( *dirs )
+			@@ServiceDirectories.unshift dirs
+		end
+
+
 		### Directory to look for services, relative to $LOAD_PATH (part of
 		### MUES::FactoryMethods interface)
-		def self.derivativeDir
-			return 'mues/services'
+		def self.derivativeDirs
+			@@ServiceDirectories
 		end
+
 
 		### Setup callback method
 		def self.atEngineStartup( theEngine )
 		end
+
 
 		### Shutdown callback method
 		def self.atEngineShutdown( theEngine )
