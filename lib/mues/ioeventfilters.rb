@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 ###########################################################################
-=begin
+=begin 
 = IOEventFilters.rb
 == Name
 
@@ -47,4 +47,5 @@ require "mues/filters/LoginProxy"
 require "mues/filters/MacroFilter"
 require "mues/filters/SnoopFilter"
 require "mues/filters/SocketOutputFilter"
+require "mues/filters/ConsoleOutputFilter"
 
