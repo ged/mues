@@ -2,8 +2,8 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-    Time-stamp: <16-Jul-2002 09:16:30 deveiant>
-	$Id: muesconfig.dtd,v 1.5 2002/07/16 15:18:58 deveiant Exp $
+    Time-stamp: <16-Jul-2002 09:21:04 deveiant>
+	$Id: muesconfig.dtd,v 1.6 2002/07/16 15:22:04 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
 	Time-stamp: "26-May-2002 22:22:46 deveiant"
@@ -28,7 +28,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.5 $ -->
+<!-- A version string like $Revision: 1.6 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -140,7 +140,7 @@
 
 
 <!-- CommandShell config section -->
-<!ELEMENT commandshell          ((param*|commandspath))>
+<!ELEMENT commandshell          ((param)*,commandspath)>
 <!ATTLIST commandshell
             class               %ClassName;         #REQUIRED>
 
