@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.26 2002/10/23 02:11:38 deveiant Exp $
+# $Id: commandshell.rb,v 1.27 2002/10/23 04:59:35 deveiant Exp $
 # 
 # == Authors
 # 
@@ -73,8 +73,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.26 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.26 2002/10/23 02:11:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.27 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.27 2002/10/23 04:59:35 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -874,8 +874,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.26 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.26 2002/10/23 02:11:38 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.27 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.27 2002/10/23 04:59:35 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
@@ -1263,29 +1263,6 @@ specified, the object's current debug level is displayed.
   else
 	  raise CommandError, self.usage
   end
-
-
-
-### 'Eval' command
-= eval
-
-== Restriction
-admin
-
-== Abstract
-Evaluate the specified ruby code in the current object context.
-
-== Usage
-  eval <code>
-
-== Code
-  contextObject = context.evalContext
-
-  rval = nil
-  res = contextObject.instance_eval( argString.strip, '<shell input>', 1 )
-  rval = "=> #{res.inspect}\n\n"
-
-  return [MUES::OutputEvent.new( rval )]
 
 
 
