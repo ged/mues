@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.5 2002/10/06 07:50:46 deveiant Exp $
+# $Id: questionnaire.rb,v 1.6 2002/10/12 11:20:07 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.5 2002/10/06 07:50:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.6 2002/10/12 11:20:07 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -293,8 +293,11 @@ module MUES
 
 
 		### Buffer the specified OutputEvents until the questionnaire is
-		### finished or aborted.
+		### finished or aborted, but send the ones that have been queued
+		### internally.
 		def handleOutputEvents( *events )
+			debugMsg 5, "Called in thread %s via %s" % 
+				[ Thread.current.inspect, caller(1).inspect ]
 			self.queueDelayedOutputEvents( *events ) unless events.empty?
 			events.clear
 			results = super( *events )
@@ -571,14 +574,8 @@ module MUES
 				# If the data's empty, do one of two things: if it has a default,
 				# just use that, otherwise assume a blank input is an abort.
 				elsif data.empty?
-					if step.key?( :default )
-						result = step[:default]
-						debugMsg 3, "Empty data with no validator -- using default '%s'" % result
-					else
-						debugMsg 2, "Empty data with no validator and no default -- aborting"
-						self.abort
-						return nil
-					end
+					return handleEmptyInput( step )
+
 				else
 					debugMsg 3, "No validator: Accepting answer as-is"
 					result = data
@@ -593,6 +590,19 @@ module MUES
 				self.askNextQuestion or @inProgress = false
 			}
 
+		end
+
+
+		### Handle empty input conditions
+		def handleEmptyInput( step )
+			if step.key?( :default )
+				result = step[:default]
+				debugMsg 3, "Empty data with no validator -- using default '%s'" % result
+			else
+				debugMsg 2, "Empty data with no validator and no default -- aborting"
+				self.abort
+				return nil
+			end
 		end
 
 
@@ -622,8 +632,7 @@ module MUES
 			# "kept" matches instead of the whole match.
 			when Regexp
 				if data.empty?
-					self.abort
-					return nil
+					return handleEmptyInput( step )
 
 				elsif (( match = validator.match( data ) ))
 					if match.size > 1
@@ -640,8 +649,7 @@ module MUES
 			# Array validator - Succeeds if the data is in the array.
 			when Array
 				if data.empty?
-					self.abort
-					return nil
+					return handleEmptyInput( step )
 
 				elsif validator.include?( data )
 					result = data
@@ -657,10 +665,15 @@ module MUES
 			# the corresponding value as the answer.  Try both the string and
 			# the symbolified string when matching keys.
 			when Hash
-				if validator.has_key?( data )
+				if data.empty?
+					return handleEmptyInput( step )
+
+				elsif validator.has_key?( data )
 					result = validator[data]
+
 				elsif validator.has_key?( data.intern )
 					result = validator[data.intern]
+
 				else
 					self.error( step[:errorMsg] || "Invalid input. Must "\
 							    "be one of:\n  %s." %
