@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Documentation Generation Script
-#	$Id: makesitedocs.rb,v 1.5 2002/05/16 03:39:09 deveiant Exp $
+#	$Id: makesitedocs.rb,v 1.6 2002/06/04 06:41:06 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -23,7 +23,7 @@ $LOAD_PATH.unshift "docs/lib"
 # Load modules
 require 'getoptlong'
 require 'rdoc/rdoc'
-# require 'rdoc/parsers/parse_faeriemud_rb'
+require 'rdoc/parsers/parse_faeriemud_rb'
 require 'utils'
 include UtilityFunctions
 
@@ -35,7 +35,7 @@ opts.set_options(
 )
 
 $docsdir = "docs/html"
-$libdirs = %w{lib server README INSTALL QUICKSTART}
+$libdirs = %w{lib ext server README INSTALL QUICKSTART}
 opts.each {|opt,val|
 	case opt
 
@@ -58,9 +58,9 @@ flags = [
 	'--all',
 	'--inline-source',
 	'--main', 'README',
-	'--fmt', 'myhtml',
+	'--fmt', 'html',
 	'--include', 'docs',
-	'--template', 'faeriemud',
+	'--template', 'mues',
 	'--op', $docsdir,
 	'--title', "Multi-User Environment Server (MUES)"
 ]
