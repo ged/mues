@@ -39,8 +39,8 @@ module MUES
 	class CommandShell < IOEventFilter
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.3 2001/05/15 02:10:02 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.4 2001/05/22 04:39:55 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class attributes
@@ -116,8 +116,11 @@ module MUES
 						end
 
 					when /^threads/
-						thrList = Thread.list.collect {|t|
-							"\t[%10s] prio: %02d  stat: %5s  sl: %1d  aoe: %1s" % [
+						thrList = "#{Thread.list.length} running threads:\n\n" <<
+							"\t%11s  %-4s  %-5s  %-5s  %-5s\n" % %w{Id Prio State Safe Abort}
+
+						Thread.list.each {|t|
+							thrList << "\t%11s  %-4d  %-5s  %-4d   %-5s\n" % [
 								t.id,
 								t.priority,
 								t.status,
@@ -125,8 +128,26 @@ module MUES
 								t.abort_on_exception ? "t" : "f"
 							]
 						}
-						thrTable = "#{thrList.length} threads: \n" + thrList.join("\n") + "\n\n"
-						output << OutputEvent.new(thrTable)
+						thrList << "\n"
+						output << OutputEvent.new(thrList)
+
+					when /^objects/
+						objectList = []
+						ObjectSpace.each_object( MUES::Object ) {|obj| objectList << obj}
+
+						objectTable = "#{objectList.length} active MUES objects:\n\n" <<
+							"\t        Id  Class                          Frozen  Tainted\n"
+						
+						objectList.each {|obj|
+							objectTable << "\t%10d  %-30s   %1s      %1s\n" % [
+								obj.id,
+								obj.class.name,
+								obj.frozen? ? "y" : "n",
+								obj.tainted? ? "y" : "n"
+							]
+						}
+						objectTable << "\n"
+						output << OutputEvent.new(objectTable)
 
 					when /^set\b\s*(.*)/
 						stuffToSet = $1
