@@ -18,7 +18,7 @@
 # [MUES::CommandShell::UserCommand]
 #	The abstract base class for all user commands.
 #
-# [MUES::ShellCommand::CreatorCommand]
+# [MUES::CommandShell::CreatorCommand]
 #	The abstract base class for all creator commands.
 #
 # [MUES::CommandShell::ImplementorCommand]
@@ -27,27 +27,6 @@
 # [MUES::CommandShell::AdminCommand]
 #	The abstract base class for all admin commands.
 #
-# [MUES::CommandShell::HelpCommand]
-# 	The <tt>help</tt> command.
-#
-# [MUES::CommandShell::RolesCommand]
-# 	The <tt>roles</tt> command.
-#
-# [MUES::CommandShell::ConnectCommand]
-# 	The <tt>connect</tt> command.
-#
-# [MUES::CommandShell::DisconnectCommand]
-# 	The <tt>disconnect</tt> command.
-#
-# [MUES::CommandShell::DebugCommand]
-# 	The <tt>debug</tt> command.
-#
-# [MUES::CommandShell::EvalCommand]
-# 	The <tt>eval</tt> command.
-#
-# [MUES::CommandShell::SetCommand]
-# 	The <tt>set</tt> command.
-# 
 # == Synopsis
 #
 #  require "mues/filters/CommandShell"
@@ -65,7 +44,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.13 2002/07/09 15:20:57 deveiant Exp $
+# $Id: commandshell.rb,v 1.14 2002/08/01 03:13:42 deveiant Exp $
 # 
 # == Authors
 # 
@@ -98,43 +77,39 @@ module MUES
 	### MUES::User object.
 	class CommandShell < IOEventFilter ; implements MUES::Debuggable
 
-		include MUES::ServerFunctions
+		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.13 2002/07/09 15:20:57 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.14 2002/08/01 03:13:42 deveiant Exp $
 		DefaultSortPosition = 700
 
-		### Class attributes
-		@@DefaultCommandString	= '/'
-		@@DefaultPrompt			= 'mues> '
-		@@Instances				= 0
+		### Class globals
 
-		# A finalizer proc to unschedule the ReloadCommandsEvent if there aren't
-		# any more instances.
-		@@Finalizer = Proc.new {
-			@@Instances -= 1
-			_debugMsg( 2, "Decremented command shell instance count: #{@@Instances}" )
-		}
+		# The default characters that designate an input line as a command
+		@@DefaultCommandPrefix	= '/'
+
+		# The default prompt to display when the command shell is forward
+		@@DefaultPrompt			= 'mues> '
 
 
 		### Return a new shell input filter for the specified user (a MUES::User
 		### object).
-		def initialize( aUser )
+		def initialize( user, commandTable, commandPrefix=@@DefaultCommandPrefix, prompt=@@DefaultPrompt )
+			checkType( user, MUES::User )
+			checkType( commandTable, MUES::CommandShell::CommandTable )
+
 			super()
-			_debugMsg( 1, "Initializing command shell for #{aUser.to_s}." )
-			@user = aUser
-			@commandString = @@DefaultCommandString
-			@context = nil
-			@vars = { 'prompt' => @@DefaultPrompt }
+			debugMsg( 1, "Initializing command shell for #{user.to_s}." )
 
-			@commandTable = CommandTable.new( Command.getPermissableCommands(aUser) )
+			@user			= user
+			@commandPrefix	= commandPrefix
+			@vars			= { 'prompt' => prompt }
+			@commandTable	= commandTable
 
-			@stream = nil
-
-			@@Instances += 1
-			_debugMsg( 2, "Incremented command shell instance count: #{@@Instances}" )
-			ObjectSpace.define_finalizer( self, @@Finalizer )
+			# These are passed as arguments to #activate
+			@stream			= nil
+			@context		= nil
 		end
 
 
@@ -145,8 +120,8 @@ module MUES
 		# The Hash of shell variables currently set in the shell
 		attr_accessor	:vars
 
-		# The string which will be prepended to all shell commands
-		attr_accessor	:commandString
+		# The prefix string which will be used to recognize shell commands
+		attr_accessor	:commandPrefix
 
 		# The user (MUES::User) object that owns this shell
 		attr_reader		:user
@@ -161,9 +136,9 @@ module MUES
 		def start( stream )
 			super( stream )
 			@stream = stream
-			@context = Context.new( self, @user, stream, nil )
+			@context = Context::new( self, @user, stream, nil )
 			queueOutputEvents( OutputEvent.new(@vars['prompt']) )
-			_debugMsg( 2, "Starting command shell for #{@user.to_s}" )
+			debugMsg( 2, "Starting command shell for #{@user.to_s}" )
 		end
 
 
@@ -172,7 +147,7 @@ module MUES
 		def stop( stream )
 			@stream = nil
 			@context = nil
-			_debugMsg( 2, "Stopping command shell for #{@user.to_s}" )
+			debugMsg( 2, "Stopping command shell for #{@user.to_s}" )
 			super( stream )
 		end
 
@@ -183,17 +158,16 @@ module MUES
 		def handleInputEvents( *events )
 			unhandledInputEvents = []
 
-			_debugMsg( 5, "CommandShell: Got #{events.size} input events to filter." )
+			debugMsg( 5, "CommandShell: Got #{events.size} input events to filter." )
 
-			### :TODO: This is probably only good for a few commands.
-			### Eventually, this will probably become a dispatch table which
-			### gets shell commands dynamically from somewhere.
+			### Extract commands from each event, run them if they match a
+			### command we know about, and then dispatch the resultant events.
 			events.flatten.each do |e|
 
 				### If the input looks like a command for the shell, look for
 				### commands we know about and take appropriate action when
 				### one is found
-				if e.data =~ /^#{@commandString}(\w+)\b(.*)/
+				if e.data =~ /^#{@commandPrefix}(\w+)\b(.*)/
 					command = $1
 					argString = $2
 
@@ -283,7 +257,7 @@ module MUES
 				@user = user
 				@stream = stream
 				@evalContext = evalContext
-				_debugMsg( 2, "Initializing context object for #{@user.to_s}" )
+				debugMsg( 2, "Initializing context object for #{@user.to_s}" )
 				super()
 			end
 		end # class Context
@@ -297,16 +271,17 @@ module MUES
 		# approximate searches of command names.
 		class CommandTable < MUES::Object ; implements MUES::Debuggable
 
-			include MUES::TypeCheckFunctions
+			include MUES::TypeCheckFunctions, MUES::FactoryMethods
 
 			### Instantiate and return a new <tt>CommandTable</tt> object which
 			### contains an abbreviation mapping for the specified
 			### <tt>commandObjects</tt> (an Array of MUES::CommandShell::Command
 			### objects).
-			def initialize( commands )
-				checkType( commands, Array )
+			def initialize( *commands )
+				commands.flatten!
+				checkEachType( commands, MUES::CommandShell::Command )
 
-				_debugMsg( 2, "Initializing command table with #{commands.length} commands" )
+				debugMsg( 2, "Initializing command table with #{commands.length} commands" )
 				@abbrevTable = {}
 				# @soundexTable = {}
 				occurrenceTable = {}
@@ -336,7 +311,7 @@ module MUES
 					}
 				}
 
-				_debugMsg( 3, "CommandTable: Abbrev table has #{@abbrevTable.keys.length} unique keys." )
+				debugMsg( 3, "CommandTable: Abbrev table has #{@abbrevTable.keys.length} unique keys." )
 				super()
 			end
 
@@ -377,174 +352,220 @@ module MUES
 		end # class CommandTable
 
 
-		# This is an abstract base class for shell commands, which are
-		# event-generating functions triggered by user input. They are loaded
-		# the first time a MUES::CommandShell is created, and are kept up to
-		# date by occasionally checking for updated files. Command objects are
-		# Singletons.
-		class Command < MUES::Object ; implements MUES::AbstractClass, MUES::Debuggable, Notifiable
+		### A command-shell creation factory. Instances of this class create
+		### instances of MUES::CommandShell or a derivative specified by the
+		### configuration, and then maintain a list of commands loaded from a
+		### configured list of directories, reloading any that change.
+		class Factory < MUES::Object
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.13 2002/07/09 15:20:57 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.14 2002/08/01 03:13:42 deveiant Exp $
 
-			### Class values
-			@@CommandRegistry	= {}
-			@@RegistryIsBuilt	= false
-			@@CommandMutex		= Sync.new
-			@@CommandLoadTime	= Time.at(0) # Set initial load time to epoch
-			@@ChildClasses		= []
+			### Class globals
+			@@DefaultShellClass = MUES::CommandShell
+			@@DefaultTableClass = MUES::CommandShell::CommandTable
 
-			# Scheduled event to periodically update commands
-			@@ReloadEvent		= nil
-			@@ReloadInterval	= -30
-			@@Instances			= {}
+			### Create and return a new CommandFactory according to the
+			### commandshell configuration of the specified <tt>config</tt> (a
+			### MUES::Config object).
+			def initialize( config )
+				checkType( config, MUES::Config )
 
-			private_class_method :new
+				@config				= config
 
-			### Class methods
-			class << self
+				# Classes used to build a shell
+				@shellClass			= config.commandshell['class'] || @@DefaultShellClass
+				@tableClass			= config.commandshell['tableclass'] || @@DefaultTableClass
 
-				### Returns (after potentially creating) the instance of the
-				### command class.
-				def instance
-					@@Instances[ self ] ||= new()
-				end
+				@registry			= {}
+				@registryIsBuilt	= false
+				@mutex				= Sync.new
+				@commandLoadTime	= Time.at(0) # Set initial load time to epoch
 
+				@reloadInterval		= -30
 
-				### Notification method (MUES::Notifiable interface) to register
-				### update callback event after the engine is started.
-				def atEngineStartup( theEngine )
-					buildCommandRegistry( theEngine.config )
-					@@ReloadEvent = CallbackEvent.new( self.method('rebuildCommandRegistry'), theEngine.config )
-					theEngine.scheduleEvents( @@ReloadInterval, @@ReloadEvent )
-					LogEvent.new( "notice", "Command registry built and rebuild event scheduled" );
-				end
-
-
-				### Notification method (MUES::Notifiable interface) to un-register
-				### update callback event when the engine is about to shut down.
-				def atEngineShutdown( theEngine )
-					theEngine.cancelScheduledEvents( @@ReloadEvent )
-					LogEvent.new( "notice", "Command registry rebuild event unscheduled" );
-				end
-
-
-				### Iterate over each file in the shell commands directory
-				### specified by the given MUES::Config object, loading each one
-				### if it's changed since last we loaded.
-				def loadCommands( config )
-					checkType( config, MUES::Config )
-					cmdsdir = config["CommandShell"]["CommandsDir"] or
-						raise MUES::Exception "No commands directory configured!"
+				# Fully-qualify all the directories in the command path
+				@commandPath = @config.commandshell["commandpath"].collect {|cmdsdir|
 					if cmdsdir !~ %r{^/}
-						debugMsg( 2, "Prepending rootdir '#{config['rootdir']}' to commands directory." )
-						cmdsdir = File.join( config['rootdir'], cmdsdir )
+						cmdsdir = File.join( @config.general.root_dir, cmdsdir )
 					end
+					cmdsdir
+				}
+				
+				buildCommandRegistry()
+
+				# Schedule an event to periodically update commands
+				@reloadEvent = CallbackEvent.new( self.method('rebuildRegistry') )
+				engine.scheduleEvents( config.commandshell['reload_interval'], @reloadEvent )
+
+				return self
+			end
+
+
+			######
+			public
+			######
+
+			### Returns an Array of all loaded command objects
+			def getCommands
+				@registry.values.uniq
+			end
+
+
+			### Returns the MUES::CommandShell::Command objects that are
+			### available to the given <tt>user</tt> (a MUES::User object) based
+			### on her user account type.
+			def getCommandsAvailableToUser( user )
+				getCommands().find_all {|c| c.canBeUsedBy?(user)}
+			end
+
+
+			### Returns a MUES::CommandShell::CommandTable filled with the
+			### commands that are allowed for the specified <tt>user</tt> (a
+			### MUES::User object).
+			def createCommandTableForUser( user )
+				commands = getCommandsAvailableToUser( user )
+				return CommandTable::create( @tableClass, *commands )
+			end
+
+			### Returns a instance of MUES::CommandShell or one of its
+			### derivatives (as specified by the configuration which created the
+			### factory), tailored for the specified user (a MUES::User object).
+			def createShellForUser( user )
+				table = createCommandTableForUser( user )
+				return CommandShell::create( @shellClass, table,
+											 config.commandshell['command_prefix'],
+											 config.commandshell['prompt'] )
+				
+			end
+
+
+			### Iterate over each file in the shell commands directory specified
+			### in the configuration, loading each one if it's changed since
+			### last we loaded.
+			def loadCommands
+
+				### Load all ruby source in the configured directories newer
+				### than our last load time. Each child will be registered in
+				### the Command class's child classes array as it's loaded
+				### (assuming it's implemented correctly -- if it isn't, we
+				### don't much care).
+				@mutex.synchronize( Sync::EX ) {
+
+					# Get the old load time for comparison and set it to the
+					# current time
+					oldLoadTime = @commandLoadTime
+					@commandLoadTime = Time.now
 					
-
-					### Load all ruby source in the configured directory newer
-					### than our last load time. Each child will be registered
-					### in the @@ChildClasses array as it's loaded (assuming
-					### it's implemented correctly -- if it isn't, we don't much
-					### care).
-					@@CommandMutex.synchronize( Sync::EX ) {
-
-						# Get the old load time for comparison and set it to the
-						# current time
-						oldLoadTime = @@CommandLoadTime
-						@@CommandLoadTime = Time.now
-						
-						### Search top-down for ruby files newer than our last
-						### load time, loading any we find.
+					### Search each directory in the path, top-down, for ruby
+					### files newer than our last load time, loading any we
+					### find.
+					@commandPath.each {|cmdsdir|
 						Find.find( cmdsdir ) {|f|
 							Find.prune if f =~ %r{^\.} # Ignore hidden stuff
 
 							if f =~ %r{\.rb$} && File.stat( f ).file? && File.stat( f ).mtime > oldLoadTime
+								self.log.debug( "Loading command file '#{f}'" )
 								load( f ) 
 							end
 						}
 					}
-				end
+				}
+
+				return true
+			end
 
 
-				### Build the command registry based on the specified
-				### <tt>config</tt> (a MUES::Config object).
-				def buildCommandRegistry( config )
-					checkType( config, MUES::Config )
-					
-					@@CommandMutex.synchronize(Sync::EX) {
-						return true if @@RegistryIsBuilt
-						loadCommands( config )
+			### Build the command registry for this factory
+			def buildCommandRegistry
+				
+				@mutex.synchronize(Sync::EX) {
+					return true if ! @@RegistryIsBuilt
+					self.log.notice( "Building command registry" )
+					loadCommands()
 
-						@@ChildClasses.each {|aSubClass|
+					MUES::CommandShell::Command.childClasses.each {|commandClass|
 
-							# Get the singleton instance of the command class
-							cmd = aSubClass.instance
+						# Get the singleton instance of the command class
+						cmd = commandClass.instance
 
-							# Build an array of command names
-							names = [ cmd.name, cmd.synonyms ].flatten.compact
+						# Build an array of command names
+						names = [ cmd.name, cmd.synonyms ].flatten.compact
 
-							### Test each name to make sure we aren't clobbering some
-							### other command from another class. Warn to the log if
-							### we're clobbering an old version of the command from the
-							### same class.
-							names.each {|name|
-								if @@CommandRegistry.key?( name ) && @@CommandRegistry[name].class != aSubClass
-									raise CommandNameConflictError,
-										"Command '%s' has clashing implementations in %s and %s " % [
-										name,
-										@@CommandRegistry[name].class.name,
-										aSubClass.name
-									]
-								elsif @@CommandRegistry.key?( name )
-									$stderr.puts( "Redefining command '#{name}' from #{aSubClass.name}." )
-								end
+						### Test each name to make sure we aren't clobbering some
+						### other command from another class. Warn to the log if
+						### we're clobbering an old version of the command from the
+						### same class.
+						names.each {|name|
+							if @registry.key?( name ) && @registry[name].class != commandClass
+								raise CommandNameConflictError,
+									"Command '%s' has clashing implementations in %s and %s " % [
+									name,
+									@registry[name].class.name,
+									commandClass.name
+								]
+							elsif @registry.key?( name )
+								self.log.notice( "Redefining command '#{name}' from #{commandClass.name}." )
+							end
 
-								# Install the command into the command registry
-								@@CommandRegistry[ name ] = cmd
-							}
+							# Install the command into the command registry
+							@registry[ name ] = cmd
 						}
 					}
+				}
 
-					return true
-				end
-
-
-				### Rebuild the command registry after checking for
-				### updates. Uses the specified <tt>config</tt> object to
-				### determine what directories to load commands from.
-				def rebuildCommandRegistry( config )
-					_debugMsg( 2, "Rebuilding command registry at #{Time.now}" )
-					@@CommandMutex.synchronize( Sync::EX ) {
-						@@RegistryIsBuilt = false
-						buildCommandRegistry( config )
-					}
-				end
+				return true
+			end
 
 
-				### Returns an Array of all loaded command objects
-				def getCommands
-					@@CommandRegistry.values.uniq
-				end
+			### Rebuild the command registry after checking for
+			### updates. Uses the specified <tt>config</tt> object to
+			### determine what directories to load commands from.
+			def rebuildCommandRegistry
+				self.log.notice( 2, "Flushing command registry for rebuild at #{Time.now}" )
+				@mutex.synchronize( Sync::EX ) {
+					@registryIsBuilt = false
+					buildCommandRegistry( config )
+				}
+			end
 
-
-				### Returns the command objects that are available to the given
-				### user based on her user account type.
-				def getPermissableCommands( aUser )
-					getCommands().find_all {|c| c.canBeUsedBy?(aUser)}
-				end
-
-
-				### Register the specified class with the list of child classes
-				### (callback).
-				def inherited( aSubClass )
-					@@ChildClasses |= [ aSubClass ]
-				end
-
-			end # class << self
+		end
 
 			
+		# This is an abstract base class for shell commands, which are
+		# event-generating functions triggered by user input. They are loaded by
+		# a MUES::CommandShell::CommandFactory the first time a
+		# MUES::CommandShell is created, and are kept up to date by occasionally
+		# checking for updated files. Command objects are Singletons.
+		class Command < MUES::Object ; implements MUES::AbstractClass, MUES::Debuggable
+
+			# Make the new method private
+			private_class_method :new
+
+			@@Instances			= {}
+			@@ChildClasses		= []
+
+			### Class methods
+
+			### Returns (after potentially creating) the instance of the
+			### command class.
+			def self.instance
+				@@Instances[ self ] ||= new()
+			end
+
+			### Register the specified class with the list of child classes
+			### (callback).
+			def self.inherited( aSubClass )
+				@@ChildClasses |= [ aSubClass ]
+			end
+
+			### Return an Array of child classes
+			def self.childClasses
+				@@ChildClasses
+			end
+
+
 			######
 			public
 			######
@@ -569,8 +590,8 @@ module MUES
 			### MUES::User object). Returns false by default, so subclasses must
 			### supply an explicit override for this method if it is to be
 			### usable.
-			def canBeUsedBy?( aUser )
-				checkType( aUser, MUES::User )
+			def canBeUsedBy?( user )
+				checkType( user, MUES::User )
 				return false
 			end
 
@@ -601,8 +622,8 @@ module MUES
 
 			### User commands can always be used, so this method just returns
 			### true unconditionally.
-			def canBeUsedBy?( aUser )
-				checkType( aUser, MUES::User )
+			def canBeUsedBy?( user )
+				checkType( user, MUES::User )
 				return true
 			end
 		
@@ -618,9 +639,9 @@ module MUES
 
 			### Returns true if the specified user has 'creator' or higher
 			### permissions.
-			def canBeUsedBy?( aUser )
-				checkType( aUser, MUES::User )
-				return aUser.isCreator?
+			def canBeUsedBy?( user )
+				checkType( user, MUES::User )
+				return user.isCreator?
 			end
 		
 		end # class CreatorCommand
@@ -635,9 +656,9 @@ module MUES
 
 			### Returns true if the specified user has 'implementor' or higher
 			### permissions.
-			def canBeUsedBy?( aUser )
-				checkType( aUser, MUES::User )
-				return aUser.isImplementor?
+			def canBeUsedBy?( user )
+				checkType( user, MUES::User )
+				return user.isImplementor?
 			end
 		
 		end # class ImplementorCommand
@@ -652,9 +673,9 @@ module MUES
 
 			### Returns true if the specified user has 'admin' or higher
 			### permissions.
-			def canBeUsedBy?( aUser )
-				checkType( aUser, MUES::User )
-				return aUser.isAdmin?
+			def canBeUsedBy?( user )
+				checkType( user, MUES::User )
+				return user.isAdmin?
 			end
 
 		end # class AdminCommand
@@ -665,7 +686,7 @@ module MUES
 		#############################################################
 
 		### Quit command
-		class QuitCommand < UserCommand
+		class QuitCommand < UserCommand # :nodoc:
 
 			def initialize # :nodoc:
 				@name				= 'quit'
@@ -685,7 +706,7 @@ module MUES
 
 
 		### Help command
-		class HelpCommand < UserCommand
+		class HelpCommand < UserCommand # :nodoc:
 
 			### Initialize a new HelpCommand object
 			def initialize # :nodoc:
@@ -733,7 +754,7 @@ module MUES
 
 
 		### 'Roles' command
-		class RolesCommand < UserCommand
+		class RolesCommand < UserCommand # :nodoc:
 
 			include MUES::ServerFunctions
 
@@ -793,7 +814,7 @@ module MUES
 
 
 		### 'Connect' command
-		class ConnectCommand < UserCommand
+		class ConnectCommand < UserCommand # :nodoc:
 
 			### Initialize a new ConnectCommand object
 			def initialize # :nodoc:
@@ -841,7 +862,7 @@ module MUES
 
 
 		### 'Disconnect' command
-		class DisconnectCommand < UserCommand
+		class DisconnectCommand < UserCommand # :nodoc:
 
 			### Initialize a new DisconnectCommand object
 			def initialize # :nodoc:
@@ -892,7 +913,7 @@ module MUES
 
 
 		### 'Debug' command
-		class DebugCommand < ImplementorCommand
+		class DebugCommand < ImplementorCommand # :nodoc:
 
 			### Initialize a new DebugCommand object
 			def initialize # :nodoc:
@@ -920,7 +941,7 @@ module MUES
 
 		
 		### 'Eval' command
-		class EvalCommand < AdminCommand
+		class EvalCommand < AdminCommand # :nodoc:
 
 			### Initialize a new EvalCommand object
 			def initialize # :nodoc:
@@ -951,7 +972,7 @@ module MUES
 
 
 		### 'Set' command
-		class SetCommand < UserCommand
+		class SetCommand < UserCommand # :nodoc:
 
 			### Initialize a new SetCommand object
 			def initialize # :nodoc:
@@ -977,9 +998,9 @@ module MUES
 					value = $2
 
 					# Strip enclosing quotes from the value
-					_debugMsg 4, "Stripping quotes."
+					debugMsg 4, "Stripping quotes."
 					value.gsub!( /\s*(["'])((?:[^\1]+|\\.)*)\1/ ) {|str| $2 }
-					_debugMsg 4, "Done stripping."
+					debugMsg 4, "Done stripping."
 					
 					if context.shell.vars.has_key?( param )
 						results << MUES::OutputEvent.new("Setting #{param} = '#{value}'\n")
