@@ -63,6 +63,8 @@ class ObjectStoreGC
     @mutex = Sync.new
     @shutting_down = false
     @thread = Thread.new { _gc_routine(@algor_args) }
+
+    return self
   end
 
   ######
@@ -70,20 +72,28 @@ class ObjectStoreGC
   ######
 
   def mark
-    @mutex.sychronize( Sync::SH ) {
+    # :MG: Don't need to synchronize here, as return is an atomic operation...
+    # @mutex.sychronize( Sync::SH ) {
       @mark
-    }
+    # }
   end
   
   def algor_args
-    @mutex.sychronize( Sync::SH ) {
+    # :MG: Don't need to synchronize here, as return is an atomic operation...
+    # @mutex.sychronize( Sync::SH ) {
       @algor_args
-    }
+    # }
   end
   
   def algor_args= (val)
-    raise TypeError("Must be a Float between 0 and 1") unless val.kind_of?(Float) and 
-      val.between?(0.0,1.0)
+
+    # :MG: Hmmmm... it's a Hash at construction, but errors if you try to set it
+    # to anything but a Float?
+    #raise TypeError("Must be a Float between 0 and 1") unless val.kind_of?(Float) and 
+    #  val.between?(0.0,1.0)
+    raise TypeError, "Expected Hash, got #{val.type.name}" unless
+      val.kind_of? Hash
+
     @mutex.sychronize( Sync::EX ) {
       @algor_args = val
     }
@@ -93,14 +103,12 @@ class ObjectStoreGC
   ### arguments:
   ###   algor_args - the percent of memory aloowed before GC stops
   def start (args = @algor_args)
-    algor_args=( args )
+    self.algor_args = args
   end
     
   ### Kills the garbage collector, first storing all active objects
   def shutdown
-    @mutex.synchronize( Sync::EX ) {
-      @shutting_down = true
-    }
+    @shutting_down = true
     @thread.join
   end
 
@@ -122,19 +130,26 @@ class ObjectStoreGC
   ###   'trash_rate' - the time between invocations
   def _gc_routine(aHash)
     delay = aHash['trash_rate'] || 50
+
     until(@shutting_down)
       loop_time = Time.now
-      until (Time.new - loop_time >= delay || @shutting_down) do
-	Thread.stop #:!: deadlock is here, when #shutdown calls Thread.join
-      end
       _collect(aHash)
+
+      # :MG: Moved this to the bottom of the loop to avoid calling _collect()
+      # during shutdown. This has the added benefit of counting the time it
+      # takes for _collect to run in the loop_time.
+      until (Time.new - loop_time >= delay || @shutting_down) do
+	Thread.stop unless @shutting_down #:!: deadlock is here, when #shutdown calls Thread.join
+      end
     end
+
+    return true
   end
   
   ### The actual garbage collection algorithm, in this case the simplest we could think of.
   ### Redefine for desired behavior.
   def _collect(aHash)
-#    @mutex.synchronize( Sync::SH ) {
+    @mutex.synchronize( Sync::SH ) {
       @active_objects.each {|o|
 	if(o.refCount == 1 or o.send(@mark))
 	  @mutex.synchronize( Sync::EX ) {
@@ -143,7 +158,7 @@ class ObjectStoreGC
 	  }
 	end
       }
-#    }
+    }
   end
   
 end
