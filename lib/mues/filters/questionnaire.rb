@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.6 2002/10/12 11:20:07 deveiant Exp $
+# $Id: questionnaire.rb,v 1.7 2002/10/13 23:37:16 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.6 2002/10/12 11:20:07 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.7 2002/10/13 23:37:16 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -167,6 +167,7 @@ module MUES
 			@answers = {}
 			@result = nil
 
+			@supportData = {}
 			@inProgress = false
 
 			super( DefaultSortPosition )
@@ -202,8 +203,14 @@ module MUES
 		alias :inProgress? :inProgress
 		alias :in_progress? :inProgress
 
+		# Ancillary support data Hash that can be used to pass objects to
+		# validators or the finalizer.
+		attr_accessor :supportData
+		alias :data :supportData
 
-		# Returns a human-readable String describing the object
+
+
+		### Returns a human-readable String describing the object
 		def to_s
 			if self.inProgress?
 				step = @steps[ @currentStepIndex ]
@@ -221,6 +228,8 @@ module MUES
 				]
 			end
 		end
+
+		
 
 
 		#############################################################
