@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.6 2002/10/26 19:00:39 deveiant Exp $
+# $Id: object.rb,v 1.7 2002/10/29 19:05:59 deveiant Exp $
 # 
 # == Authors
 # 
@@ -91,6 +91,10 @@ module MUES
 		
 		include Comparable
 
+		### Class constants
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.7 2002/10/29 19:05:59 deveiant Exp $
+
 		### Create and return a new Version object from the specified
 		### <tt>version</tt> (a String).
 		def initialize( version )
@@ -154,8 +158,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.6 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.6 2002/10/26 19:00:39 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.7 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.7 2002/10/29 19:05:59 deveiant Exp $
 
 
 		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
