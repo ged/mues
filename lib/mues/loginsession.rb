@@ -60,8 +60,8 @@ module MUES
 	class LoginSession < Object
 		include Debuggable
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: loginsession.rb,v 1.1 2001/05/14 11:10:01 deveiant Exp $
+		Version = %q$Revision: 1.2 $
+		Rcsid = %q$Id: loginsession.rb,v 1.2 2001/05/22 04:33:19 deveiant Exp $
 
 		### :TODO: Testing code only
 		@@Logins = { 
@@ -85,7 +85,9 @@ module MUES
 			@stream				= anIOEventStream
 			@remoteHost			= remoteHost
 
-			@attemptsLeft		= 0
+			@loginAttemptCount	= 0
+			@maxTries			= @config['login']['maxtries'].to_i
+
 			@waitingOnEngine	= false
 			@finished			= false
 			@myProxy			= LoginProxy.new( self )
@@ -191,6 +193,7 @@ module MUES
 					engine.cancelScheduledEvents( @myTimeoutEvent )
 				end
 
+				@stream.pause
 				@stream.removeFilters( @myProxy )
 				@stream.addInputEvents( *@queuedInputEvents )
 			}
@@ -203,12 +206,12 @@ module MUES
 		### Callback for authentication failure.
 		def authFailureCallback( reason="None given" )
 			_debugMsg( 1, "Login failed: #{reason}." )
-			@attemptCount += 1
+			@loginAttemptCount += 1
 
 			### After the number of tries specified in the login section of the
 			### config, generate a login failure event to kill this session and
 			### log the failure
-			if @maxTries > 0 && @loginAttemptCount > @maxTries then
+			if @maxTries > 0 && @loginAttemptCount > @maxTries
 				logMsg = "Max login tries exceeded for player '#{@login}'."
 				_debugMsg( 1, logMsg )
 				@myProxy.queueOutputEvents( OutputEvent.new(">>> Max tries exceeded. <<<") )
