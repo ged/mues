@@ -1,7 +1,7 @@
 #
 # The filters MUES::CommandShell command.
-# Time-stamp: <14-Sep-2002 08:01:32 deveiant>
-# $Id: filters.cmd,v 1.3 2002/09/15 07:44:37 deveiant Exp $
+# Time-stamp: <17-Oct-2002 09:56:41 deveiant>
+# $Id: filters.cmd,v 1.4 2002/10/23 02:16:50 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -36,7 +36,9 @@ implementor
 	  username = $1.to_s
 	  user = MUES::ServerFunctions::getUserByName( username ) 
 	  if user.nil?
-		  return [MUES::OutputEvent.new( "No such user '#{username}'" )]
+		  return [MUES::OutputEvent::new( "No such user '#{username}'\n\n" )]
+	  elsif !user.activated?
+		  return [MUES::OutputEvent::new( "User '#{username}' doesn't appear to be logged in.\n\n" )]
 	  end
   else
 	  return [MUES::OutputEvent.new( self.usage )]
@@ -46,6 +48,6 @@ implementor
   user.ioEventStream.filters.sort.each {|filter|
 	  filterList << filter.to_s
   }
-  return [MUES::OutputEvent.new( filterList.join("\n\t") + "\n" )]
+  return [MUES::OutputEvent.new( filterList.join("\n\t") + "\n\n" )]
 
 
