@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.5 2002/09/28 12:56:41 deveiant Exp $
+#	$Id: quickstart.rb,v 1.6 2002/10/14 09:26:38 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -99,7 +99,7 @@ def main
 
 	message ">>> Starting server...\n\n"
 
-	exec( $Ruby, "-I", "lib", "-I", "ext", "server/bin/mues.rb", '--init', "server/config.xml" )
+	exec( $Ruby, "-I", "lib", "-I", "ext", "server/bin/mues.rb", '--init', "server/config.xml", *ARGV )
 
 end
 
