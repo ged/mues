@@ -35,7 +35,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.15 2003/04/19 06:55:45 deveiant Exp $
+# $Id: events.rb,v 1.16 2003/05/12 18:41:29 deveiant Exp $
 # 
 # == Authors
 # 
@@ -78,7 +78,7 @@ module MUES
 			### <tt><em>eventClass</em></tt> is the class of the event to
 			### handle. If no explicit handler is found, each of the event's
 			### superclasses is tried as well. If no handler is defined for any
-			### of the events, it tries to call <tt>handleEvent()</tt>. If no
+			### of the events, it tries to call <tt>handleAnyEvent()</tt>. If no
 			### handler is found, a MUES::UnhandledEventError is raised.
 			def handleEvent( event )
 				raise TypeError, "argument (#{event.to_s}) is not an event"	unless
@@ -103,11 +103,12 @@ module MUES
 
 				### Now call the default handler if it defines one
 				debugMsg( 1, "Unable to handle the #{event.class.name}. Invoking the handleEvent method." )
-				return self._handleEvent( event ) if
-					self.respond_to?( :handleEvent )
+				return self.handleAnyEvent( event ) if
+					self.respond_to?( :handleAnyEvent )
 
 				raise UnhandledEventError, "No handler defined for #{event.class.name}s"
 			end
+
 
 			### Register <tt>handlerObject</tt> to receive events of the
 			### specified <tt>eventClasses</tt> or any of their derivatives. See
@@ -119,6 +120,7 @@ module MUES
 					eventClass.registerHandlers( handlerObject )
 				end
 			end
+
 
 			### Unregister <tt>handlerObject</tt> as a handler for the specified
 			### <tt>eventClasses</tt>, or all event classes if no classes are
