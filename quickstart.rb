@@ -22,6 +22,7 @@ stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
 
 $Ruby = File::join( CONFIG["bindir"], CONFIG["ruby_install_name"] )
+$DefaultConfig = "server/config.yml"
 
 # Define required libraries
 RequiredLibraries = [
@@ -72,15 +73,15 @@ def main
 		end
 	end
 
-	if File::exists?( "server/config.yml" )
+	if File::exists?( $DefaultConfig )
 		if promptWithDefault( "Edit the configuration? (highly recommended) [Yn]", 'y' ) =~ /y/i
 			editor = ENV['EDITOR'] || ENV['VISUAL'] || findProgram( 'emacs' ) || findProgram( 'vi' ) || ''
 			editor = promptWithDefault( "Editor to use for editing config file? [#{editor}]", editor )
-			message "Invoking editor: #{editor} server/config.xml\n"
-			system( editor, "server/config.xml" ) or abort( "Editor session failed: #{$?}" )
+			message "Invoking editor: #{editor} #$DefaultConfig\n"
+			system( editor, $DefaultConfig ) or abort( "Editor session failed: #{$?}" )
 		end
 	else
-		abort "Missing server/config.yml"
+		abort "Missing #$DefaultConfig"
 	end
 
 	unless File::directory?( "server/log" )
@@ -96,9 +97,19 @@ def main
             "hit enter).\n"
 	writeLine( 55 )
 
+	execArgs = [
+		$Ruby,
+		"-I", "lib",
+		"-I", "ext",
+		"server/bin/mues.rb",
+		'--init',
+		$DefaultConfig,
+		*ARGV
+	]
 	message ">>> Starting server...\n\n"
+	debugMsg "    exec: %s" % execArgs.join(" ")
 
-	exec( $Ruby, "-I", "lib", "-I", "ext", "server/bin/mues.rb", '--init', "server/config.xml", *ARGV )
+	exec( *execArgs )
 
 end
 
