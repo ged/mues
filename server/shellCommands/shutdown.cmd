@@ -1,7 +1,7 @@
 #
 # The shutdown MUES::CommandShell command.
-# Time-stamp: <14-Sep-2002 08:03:12 deveiant>
-# $Id: shutdown.cmd,v 1.2 2002/09/15 07:44:37 deveiant Exp $
+# Time-stamp: <13-Oct-2002 22:13:13 deveiant>
+# $Id: shutdown.cmd,v 1.3 2002/10/14 09:48:31 deveiant Exp $
 #
 # == Authors:
 # * Michael Granger <ged@FaerieMUD.org>
@@ -28,6 +28,9 @@ connections will be closed, user objects and environments saved and destroyed,
 and all subsystems will be told to shut down.
 
 == Code
+
+  # Hide the prompt
+  context.shell.vars['prompt'] = ''
 
   return [ OutputEvent.new( ">>> Shutting down the engine. <<<\n\n" ),
 	   	   EngineShutdownEvent.new( context.user ) ]
