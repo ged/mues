@@ -13,4 +13,5 @@ This is an informal list of tasks yet to be done for the MUES.
 
 * Write the user maintenance commands.
 
+* Fix the PI-parsing part of MUES::Config::Element.
 
