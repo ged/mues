@@ -21,7 +21,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.14 2002/04/01 16:27:31 deveiant Exp $
+# $Id: user.rb,v 1.15 2002/06/04 07:07:08 deveiant Exp $
 # 
 # == Authors
 # 
@@ -39,6 +39,7 @@ require "date"
 require "md5"
 
 require "mues"
+require "mues/StorableObject"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/IOEventFilters"
@@ -46,13 +47,13 @@ require "mues/IOEventFilters"
 module MUES
 
 	# A user connection class for the MUES::Engine
-	class User < Object ; implements MUES::Debuggable
+	class User < MUES::StorableObject ; implements MUES::Debuggable
 
-		include MUES::Event::Handler
+		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.14 2002/04/01 16:27:31 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.15 2002/06/04 07:07:08 deveiant Exp $
 
 		# User AccountType constants module. Contains the following constants:
 		# 
