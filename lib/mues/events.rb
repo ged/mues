@@ -1,17 +1,20 @@
 #!/usr/bin/ruby
 # 
-# This module is a collection of event classes for system-level events, and a
-# mixin which provides a default event handler for dispatching events based on
-# their class.
+# This module is a collection of event classes for system-level (as opposed to
+# environment-level) events, and a mixin which provides default methods for
+# objects which wish to be event handlers.
 # 
 # == Synopsis
 # 
 #   require "mues/Events"
+#	require "mues/Mixins"
 # 
 #   include MUES::Event::Handler
+#	include MUES::ServerFunctions
 # 
-#   event = MUES::EngineShutdownEvent.new
-#   eventQueue.priorityEnqueue( event )
+#   event = MUES::EngineShutdownEvent::new
+#	event.priority = MUES::Event::MaxPriority
+#   dispatchEvent( event )
 # 
 # == Mixins
 # 
@@ -32,7 +35,7 @@
 # 
 # == Rcsid
 # 
-# $Id: events.rb,v 1.12 2002/09/12 11:34:37 deveiant Exp $
+# $Id: events.rb,v 1.13 2002/10/23 02:05:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -60,8 +63,9 @@ module MUES
 	### Abstract base event class
 	class Event
 
-		### A default event handler mixin module. Including this module adds a
-		### #handleEvent method to the including class/module.
+		### A default event handler mixin module. Including this module adds
+		### methods to the including class/module that are useful for an object
+		### which wishes to handle one or more event types.
 		module Handler
 
 			include MUES::TypeCheckFunctions
@@ -82,15 +86,15 @@ module MUES
 
 				methodName = ''
 
-				### Search the event's class heirarchy for Event subclasses, and
-				###	look up handler methods based on the class name
+				# Search the event's class heirarchy for Event subclasses, and
+				# look up handler methods based on the class name
 				event.class.ancestors.find_all {|klass| 
 					klass <= Event
 				}.each {|klass|
 					eventType = klass.name.sub( /MUES::/, '' )
 					debugMsg( 2, "Checking for a handle#{eventType} method..." )
 					methodName = 'handle%s' % eventType
-					if self.class.method_defined?( methodName )
+					if self.respond_to?( methodName )
 						debugMsg( 2, "   found #{methodName}." )
 						return send( methodName, event )
 					end
@@ -99,21 +103,30 @@ module MUES
 				### Now call the default handler if it defines one
 				debugMsg( 1, "Unable to handle the #{event.class.name}. Invoking the handleEvent method." )
 				return self._handleEvent( event ) if
-					self.class.method_defined?( :handleEvent )
+					self.respond_to?( :handleEvent )
 
 				raise UnhandledEventError, "No handler defined for #{event.class.name}s"
 			end
 
-			##
-			# Register <tt>handlerObject</tt> to receive events of the specified
-			# <tt>eventClasses</tt> or any of their derivatives. See the docs for MUES::Event
-			# for how to handle events.
+			### Register <tt>handlerObject</tt> to receive events of the
+			### specified <tt>eventClasses</tt> or any of their derivatives. See
+			### the docs for MUES::Event for how to handle events.
 			def registerHandlerForEvents( handlerObject, *eventClasses )
 				checkResponse( handlerObject, "handleEvent" )
 
 				eventClasses.each do |eventClass|
-					eventClass.RegisterHandlers( handlerObject )
+					eventClass.registerHandlers( handlerObject )
 				end
+			end
+
+			### Unregister <tt>handlerObject</tt> as a handler for the specified
+			### <tt>eventClasses</tt>, or all event classes if no classes are
+			### specified.
+			def unregisterHandlerForEvents( handlerObject, *eventClasses )
+				eventClasses = MUES::Event::getEventClasses if eventClasses.empty?
+				eventClasses.each {|eventClass|
+					eventClass.unregisterHandlers( handlerObject )
+				}
 			end
 
 		end
