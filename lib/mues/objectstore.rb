@@ -81,10 +81,10 @@ require "sync"
 
 class ObjectStore
 
+  ### Example de/serializing proc
   @@prokie = Proc.new {|o|(o.kind_of?(String))?Marshal.load(o):Marshal.dump(o)}
   TRASH_RATE = 50 #seconds
-  CONF_TABLE_NAME = "oss_conf"
-  CONF_ENTRY_KEY = "key"
+  INDEXES_KEY = "indexes"
 
   #########
   # Class #
@@ -119,18 +119,22 @@ class ObjectStore
       @catalog = A_Catalog.use(filename)
       match = %r~(.*)(\..*)?~.match(filename) 
       @basename = match[1]
-      @conf_table_name = CONF_TABLE_NAME + "-" + @basename
-      conf_tbl = A_Table.connect(@conf_table_name)
-      t_data = conf_tbl.find(nil, CONF_ENTRY_KEY)
-      @table = A_Table.connect( t_data.table_name )
-      unpacked = Marshal.load(t_data.indexes)
+      raise "The '#{@basename}' table does not exist in the catalog contained in '#{filename}'." unless A_Table.exists?( @basename )
+      @table = A_Table.connect( @basename )
+      td = @table.find( nil, INDEXES_KEY )
+      indexies = (td) ? td.obj : @dump_undump.call([])
+      unpacked = @dump_undump.call( indexies )
       @indexes = Hash.new
-      unpacked.each {|ind|
-	@indexes[ind] = A_Index.open(ind.to_s, @table.name)
-      }
-      add_index_methods( indexes )
+      if (unpacked)
+	unpacked.each {|ind|
+	  if A_Index.exists?( nil, ind.to_s )
+	    @indexes[ind] = A_Index.open( ind.to_s, @table.name )
+	  end
+	}
+	add_index_methods( indexes )
+      end
       @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
-      finalize_repeat
+      finalize
     else
       @indexes = Hash.new
       if (indexes && indexes.length > 0)
@@ -139,7 +143,7 @@ class ObjectStore
       create_database(filename)
       add_index_methods( indexes )
       @gc = ObjectStoreGC.new(self, :os_gc_mark, 'trash_rate' => TRASH_RATE)
-      finalize_first
+      finalize
     end
     
   end
@@ -158,7 +162,6 @@ class ObjectStore
     end
     cat_name = @basename
     fs_name = @basename
-    @conf_table_name = CONF_TABLE_NAME + "-" + @basename
     fs_filename = @basename + "1.adb"
     locks_filename = @basename + "2.adb"
     @table_name = bt_name = @basename
@@ -190,35 +193,18 @@ class ObjectStore
     end
   end
 
-  def finalize_repeat
-    table = A_Table.connect(@conf_table_name)
-    @mutex.synchronize( Sync::EX ) {
-      trans = A_Transaction.new()
-      cols = ['name', 'table_name', 'indexes']
-      data = [@basename, @table_name, Marshal.dump(@indexes.keys)]
-      table.update(trans, CONF_ENTRY_KEY, cols, data)
-      trans.commit
-    }
-  end
-
   # this writes the configuration information to the ArunaDB and 
   # freezes all unused attributes.
-  def finalize_first
-    cols = []
-    ###################   name type not_nil default constraint action display
-    cols << A_Column.new('name', 'v', nil)
-    cols << A_Column.new('table_name', 'v', nil)
-    cols << A_Column.new('key', 'v', true)
-    cols << A_Column.new('indexes', 'v', nil)
-    fs = A_FileStore.create(@conf_table_name, 1024, @basename.to_s + "3.adb")
-    bt = A_BTree.new(@conf_table_name, @conf_table_name)
-    table = A_Table.new(bt.name, cols, 'key', @conf_table_name, @lck_name)
+  def finalize
+    indexies = @dump_undump.call(@indexes.keys)
     @mutex.synchronize( Sync::EX ) {
-      trans = A_Transaction.new()
-      cols = ['key', 'name', 'table_name', 'indexes']
-      data = [CONF_ENTRY_KEY, @basename, @table_name,
-	      Marshal.dump(@indexes.keys)]
-      table.insert(trans, cols, data)
+      trans = A_Transaction.new
+      if @table.exists?(trans, INDEXES_KEY)
+	#update(transaction, pkey, column_names, values)
+	@table.update(trans, INDEXES_KEY, ['obj'], [indexies] )
+      else
+	@table.insert( trans, ['id', 'obj'], [INDEXES_KEY, indexies] )
+      end
       trans.commit
     }
     instance_variables.each {|o| o.freeze unless o === @active_objects or o === @gc or o === @table}
@@ -265,7 +251,7 @@ class ObjectStore
   ###   that's going to mean.
   def store ( *objects )
     (objects.kind_of?(Array)) ? objects.flatten! : (objects = [objects])
-    (@table) ? 0 : raise("ObjectStore database not open.")
+    raise("ObjectStore database not open.") unless (@table)
     index_names = @indexes.collect {|ind| ind[0].id2name}
     index_returns = objects.collect {|o|
       raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
