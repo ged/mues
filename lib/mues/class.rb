@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.9 2002/06/16 06:14:19 scotus Exp $
+# $Id: class.rb,v 1.10 2002/06/16 07:27:13 scotus Exp $
 # 
 # == Authors
 # 
@@ -61,8 +61,8 @@ module Metaclass
 	### to build other classes.
 	class Class
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
-		Rcsid = %q$Id: class.rb,v 1.9 2002/06/16 06:14:19 scotus Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
+		Rcsid = %q$Id: class.rb,v 1.10 2002/06/16 07:27:13 scotus Exp $
 
 		# Mix in comparison methods
 		include Comparable
@@ -214,8 +214,8 @@ module Metaclass
 		end
 
 
-		### Return the instantiated class object, if it's been created. If not,
-		### returns <tt>nil</tt>.
+		### Return the instantiated Class object, if it's been
+		### created. If not, returns <tt>nil</tt>
 		def instance
 			return @classObj
 		end
