@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Documentation Generation Script
-#	$Id: makedocs.rb,v 1.3 2002/03/01 11:17:07 deveiant Exp $
+#	$Id: makedocs.rb,v 1.4 2002/03/30 19:08:15 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -31,7 +31,7 @@ opts.set_options(
 )
 
 $docsdir = "docs/html"
-$libdirs = %w{lib server}
+$libdirs = %w{lib server README}
 opts.each {|opt,val|
 	case opt
 
@@ -52,8 +52,8 @@ header "Making documentation in #$docsdir from files in #{$libdirs.join(', ')}."
 
 flags = [
 	'--all',
-	'--inline_source',
-	'--main', 'lib/mues.rb',
+	'--inline-source',
+	'--main', 'README',
 	'--include', 'docs',
 	'--op', $docsdir,
 	'--title', "Multi-User Environment Server (MUES)"
