@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.13" time-stamp="$Date: 2002/09/15 00:02:54 $">
+#	<muesconfig version="1.13" time-stamp="$Date: 2002/09/27 16:08:05 $">
 #	
 # 	  <!-- General server configuration:
 # 		  server-name:			The name of the server
@@ -218,7 +218,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.14 2002/09/15 00:02:54 deveiant Exp $
+# $Id: config.rb,v 1.15 2002/09/27 16:08:05 deveiant Exp $
 # 
 # == Authors
 # 
@@ -254,8 +254,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.14 2002/09/15 00:02:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.15 2002/09/27 16:08:05 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -1174,7 +1174,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/09/15 00:02:54 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/09/27 16:08:05 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
@@ -1217,7 +1217,7 @@ __END__
 	<eventqueue>
 	  <minworkers>5</minworkers>
 	  <maxworkers>50</maxworkers>
-	  <threshold>0.5</threshold>
+	  <threshold>2</threshold>
 	  <safelevel>2</safelevel>
 	</eventqueue>
 
