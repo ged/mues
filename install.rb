@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Install Script
-#	$Id: install.rb,v 1.4 2002/09/14 13:28:06 deveiant Exp $
+#	$Id: install.rb,v 1.5 2002/10/17 14:43:14 deveiant Exp $
 #
 #	Thanks to Masatoshi SEKI for ideas found in his install.rb.
 #
@@ -25,8 +25,8 @@ require 'readline'
 include Config
 include Readline
 
-$version	= %q$Revision: 1.4 $
-$rcsId		= %q$Id: install.rb,v 1.4 2002/09/14 13:28:06 deveiant Exp $
+$version	= %q$Revision: 1.5 $
+$rcsId		= %q$Id: install.rb,v 1.5 2002/10/17 14:43:14 deveiant Exp $
 
 stty_save = `stty -g`.chomp
 trap("INT") { system "stty", stty_save; exit }
@@ -37,32 +37,32 @@ class Installer
 	@@PrunePatterns = [
 		/CVS/,
 		/~$/,
-		/^\./,
+		%r:(^|/)\.:,
+		/authorsection/,
+		/\.tpl$/,
 	]
 
 	def initialize( testing=false )
 		@ftools = (testing) ? self : File
 	end
 
-	### Modified version of ftools' File.makedirs that has sane args
+	### Make the specified dirs (which can be a String or an Array of Strings)
+	### with the specified mode.
 	def makedirs( dirs, mode=0755, verbose=false )
 		dirs = [ dirs ] unless dirs.is_a? Array
+
+		oldumask = File::umask
+		File::umask( 0777 - mode )
+
 		for dir in dirs
-			if FileTest.directory? dir
-				$stderr.puts( "No need to make #{dir}: already exists." ) if @ftools == self
-				next
-			end
-			parent = File.dirname( dir )
-			makedirs( parent, mode, verbose ) unless FileTest.directory? parent
-			$stderr.print( "   mkdir ", dir, "\n" ) if verbose
-			if File.basename(dir) != ""
-				if @ftools == File
-					Dir.mkdir dir, mode
-				else
-					$stderr.puts "Make directory %s with mode %o" % [ dir, mode ]
-				end
+			if @ftools == File
+				File::mkpath( dir, $verbose )
+			else
+				$stderr.puts "Make path %s with mode %o" % [ dir, mode ]
 			end
 		end
+
+		File::umask( oldumask )
 	end
 
 	def install( srcfile, dstfile, mode=nil, verbose=false )
@@ -139,13 +139,17 @@ if $0 == __FILE__
 	debugMsg "Sitearchdir = '#{CONFIG['sitearchdir']}'"
 	sitearchdir = CONFIG['sitearchdir']
 
-	message "Compiling C extensions\n"
-	Dir.chdir( "ext" ) {
-		Kernel::load( "extconf.rb", true ) or
-			raise "Extension configuration failed."
-		system( 'make' ) or
-			raise "Make failed."
-	}
+	unless File.exists?( "ext/mues.so" )
+		message "Compiling C extensions\n"
+		Dir.chdir( "ext" ) {
+			Kernel::load( "extconf.rb", true ) or
+				raise "Extension configuration failed."
+			system( 'make' ) or
+				raise "Make failed."
+		}
+	else
+		message "C extensions already compiled.\n"
+	end
 
 	message "Installing\n"
 	i = Installer.new( viewOnly )
