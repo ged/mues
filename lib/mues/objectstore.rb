@@ -1,4 +1,4 @@
-#!/usr/bin/ruby -w
+# !/usr/bin/ruby -w
 #
 # This file contains the class for the ObjectStore service, as it will be
 # used by MUES.
@@ -55,7 +55,7 @@
 #   The serializing Proc must be able to accept both a random StorableObject
 #   and a String, to differentiate between the two, and to return an object of
 #   the corresponding type (String for StorableObjects, a kind of StorableObject
-#   for Strings).  Fx: {|o|(o.kind_of?(String))?Marshal.load(o):Marshal.dump(o)}
+#   for Strings).
 #
 #   Indexes, as passed to the 'new' method, must return strings.
 #   They should take no arguments, but need not be implemented in all classes to be
@@ -84,7 +84,7 @@ class ObjectStore
   @@prokie = Proc.new {|o|(o.kind_of?(String))?Marshal.load(o):Marshal.dump(o)}
   TRASH_RATE = 50 #seconds
   CONF_TABLE_NAME = "oss_conf"
-  CONF_ENTRY_KEY = Marshal.dump("key")
+  CONF_ENTRY_KEY = "key"
 
   #########
   # Class #
@@ -122,7 +122,7 @@ class ObjectStore
       @conf_table_name = CONF_TABLE_NAME + "-" + @basename
       conf_tbl = A_Table.connect(@conf_table_name)
       t_data = conf_tbl.find(nil, CONF_ENTRY_KEY)
-      @table = A_Table.connect(Marshal.load( t_data.table_name ))
+      @table = A_Table.connect( t_data.table_name )
       unpacked = Marshal.load(t_data.indexes)
       @indexes = Hash.new
       unpacked.each {|ind|
@@ -195,7 +195,7 @@ class ObjectStore
     @mutex.synchronize( Sync::EX ) {
       trans = A_Transaction.new()
       cols = ['name', 'table_name', 'indexes']
-      data = [Marshal.dump(@base_name), Marshal.dump(@table_name), Marshal.dump(@indexes.keys)]
+      data = [@basename, @table_name, Marshal.dump(@indexes.keys)]
       table.update(trans, CONF_ENTRY_KEY, cols, data)
       trans.commit
     }
@@ -215,9 +215,8 @@ class ObjectStore
     table = A_Table.new(bt.name, cols, 'key', @conf_table_name, @lck_name)
     @mutex.synchronize( Sync::EX ) {
       trans = A_Transaction.new()
-      ins_me = [0, ]
       cols = ['key', 'name', 'table_name', 'indexes']
-      data = [CONF_ENTRY_KEY, Marshal.dump(@base_name), Marshal.dump(@table_name),
+      data = [CONF_ENTRY_KEY, @basename, @table_name,
 	      Marshal.dump(@indexes.keys)]
       table.insert(trans, cols, data)
       trans.commit
@@ -265,11 +264,8 @@ class ObjectStore
   ###   multi-threaded capabilities haven't been fully tested.  who knows what
   ###   that's going to mean.
   def store ( *objects )
-    if(objects.kind_of?(Array))
-      objects.flatten!
-    else
-      objects = [objects]
-    end
+    (objects.kind_of?(Array)) ? objects.flatten! : (objects = [objects])
+    (@table) ? 0 : raise("ObjectStore database not open.")
     index_names = @indexes.collect {|ind| ind[0].id2name}
     index_returns = objects.collect {|o|
       raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
