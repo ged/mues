@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.8 2002/08/02 20:03:43 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.9 2002/09/12 12:36:56 deveiant Exp $
 # 
 # == Authors
 # 
@@ -31,16 +31,16 @@ require "mues/Object"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/PollProxy"
-require "mues/filters/IOEventFilter"
+require "mues/filters/OutputFilter"
 
 module MUES
 
 	# A console input/output filter class. Implements MUES::Debuggable.
-	class ConsoleOutputFilter < IOEventFilter ; implements MUES::Debuggable
+	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.8 $ )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.8 2002/08/02 20:03:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.9 $ )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.9 2002/09/12 12:36:56 deveiant Exp $
 		DefaultSortPosition = 300
 
 		# Legibility constants
@@ -66,7 +66,6 @@ module MUES
 		def initialize( io, pollProxy, sortOrder=DefaultSortPosition ) # :no-new:
 			checkType( io, IO )
 			checkType( pollProxy, MUES::PollProxy )
-			super( sortOrder )
 
 			@io = io
 			@pollProxy = pollProxy
@@ -76,6 +75,7 @@ module MUES
 			@writeMutex = Sync.new
 
 			@shutdown = false
+			super( "FD%d" % io.fileno, sortOrder )
 		end
 
 
