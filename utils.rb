@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.10 2002/10/22 18:15:28 deveiant Exp $
+#	$Id: utils.rb,v 1.11 2002/10/29 07:36:41 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -75,13 +75,14 @@ module UtilityFunctions
 		end
 	end
 
-	def testForRequiredLibrary( lib, nicename=nil, raaUrl=nil, downloadUrl=nil )
+	def testForRequiredLibrary( lib, nicename=nil, raaUrl=nil, downloadUrl=nil, fatal=true )
 		nicename ||= "'lib'"
 		unless testForLibrary( lib, nicename )
 			msgs = [ "You are missing the required #{nicename} library.\n" ]
 			msgs << "RAA: #{raaUrl}\n" if raaUrl
 			msgs << "Download: #{downloadUrl}\n" if downloadUrl
-			abort( msgs.join('') )
+			abort( msgs.join('') ) if fatal
+			
 		end
 		return true
 	end
@@ -97,10 +98,14 @@ module UtilityFunctions
 		$stdout.flush
 	end
 
+	def errorMessage( msg )
+		message ansiCode( 'bold', 'white', 'on_red' ) + msg + ansiCode( 'reset' )
+	end
+
 	def debugMsg( msg )
 		return unless $DEBUG
 		msg.chomp!
-		$stderr.puts ansiCode( 'bold', 'red' ) + ">>> #{msg}" + ansiCode( 'reset' )
+		$stderr.puts ansiCode( 'bold', 'yellow', 'on_blue' ) + ">>> #{msg}" + ansiCode( 'reset' )
 		$stderr.flush
 	end
 
