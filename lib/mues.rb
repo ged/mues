@@ -8,8 +8,8 @@
 #
 # It defines the <tt>MUES</tt> module, the base object class (MUES::Object), and
 # several mixins and interface modules (MUES::TypeCheckFunctions,
-# MUES::SafeCheckFunctions, MUES::AbstractClass, MUES::Debuggable, and
-# MUES::Notifiable).
+# MUES::SafeCheckFunctions, MUES::AbstractClass, MUES::Debuggable,
+# MUES::FactoryMethods, and MUES::Notifiable).
 #
 # == Synopsis
 #
@@ -20,7 +20,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.21 2002/06/06 14:22:23 deveiant Exp $
+# $Id: mues.rb,v 1.22 2002/07/07 18:23:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -36,6 +36,7 @@
 
 require "md5"
 require "sync"
+require "log4r"
 
 require "mues/Exceptions"
 
@@ -380,26 +381,160 @@ module MUES
 
 
 
-	# :TODO: Abstract the pluggability of Environment and CommandShell::Command
-	# into a generic mixin.
+	### A mixin that adds factory class methods to a base class, so that
+	### subclasses may be instantiated by name.
+	module FactoryMethods
 
-	# ##
-	# # A mixin that can be used to add "pluggability" to an object class by
-	# # adding ruby source files to a configured directory.
-	# module Extensible
-	#
-	# 	@@Extensions = {}
-	#
-	# 	def Extensible.append_features( klass )
-	# 		super(klass)
-	# 		@@Extensions[klass] = {
-	# 			loadTime	=> Time.at(0),
-	# 			classes		=> [],
-	# 			mutex		=> Sync.new
-	# 		}
-	#
-	# 	end
-	# end
+		### Inclusion callback -- Adds the factory methods to the including
+		### class.
+		def self.append_features( klass )
+			subtype = nil
+
+			# Figure out the parts of the class name we'll need later
+			if klass.name =~ /^.*::(.*)/
+				subtype = $1
+			else
+				subtype = klass.name
+			end
+
+			$stderr.puts "Adding FactoryMethods to #{klass.inspect} "+
+				"for #{subtype} objects" if $DEBUG
+
+			# Add a class global to hold derivative classes by various keys and
+			# the class methods.
+			klass.instance_eval {
+
+				@@typename = subtype
+				@@registeredDerivatives = {}
+
+				### Returns an Array of registered derivatives
+				def self.getDerivativeClasses
+					@@registeredDerivatives.values.uniq
+				end
+
+
+				### Given the <tt>className</tt> of the class to instantiate,
+				### and other arguments bound for the constructor of the new
+				### object, this method loads the derivative class if it is not
+				### loaded already (raising a LoadError if an
+				### appropriately-named file cannot be found), and instantiates
+				### it with the given <tt>args</tt>. The <tt>className</tt> may
+				### be the the fully qualified name of the class, the class
+				### object itself, or the non-unique part of the class name. The
+				### following examples would all try to load an instantiate a
+				### class called "MUES::FooListener" if MUES::Listener included
+				### MUES::FactoryMethods (which it does):
+				###   obj = MUES::Listener::create( 'MUES::FooListener' )
+				###   obj = MUES::Listener::create( MUES::FooListener )
+				###   obj = MUES::LIstener::create( 'Foo' )
+				### If the including class responds to a method called
+				### <tt>beforeCreation</tt>, it will be called after the
+				### subclass is looked up, but before it is instantiated,
+				### passing the subclass, the <tt>className</tt> argument, and
+				### the argument array. If the class responds to a method called
+				### <tt>afterCreation</tt>, it will be called after the object
+				### is instantiated, and is passed the new instance.
+				def self.create( subType, *args )
+					subClass = getSubclass( subType )
+
+					if self.respond_to?( :beforeCreation )
+						# :TODO: Use return values?
+						self.beforeCreation( subClass, subType, *args )
+					end
+
+					instance = subClass.new( *args )
+
+					if self.respond_to?( :afterCreation )
+						# :TODO: Use return values?
+						self.afterCreation( instance, *args )
+					end
+
+					return instance
+				end
+
+
+				### Inheritance callback -- registers classes which inherit from
+				### the Factory for later lookup. This is how the factory class
+				### finds the classes named by the #create method. The hash of
+				### loaded subclasses can be found in the class variable
+				### '@@registeredDerivatives'.
+				def self.inherited( subClass )
+					truncatedName =
+						if subClass.name.match( /(?:.*::)?(\w+)(?:#{@@typename})/ )
+							Regexp.last_match[1]
+						else
+							subClass.name.sub( /.*::/ )
+						end
+					
+
+					$stderr.puts "Registering the #{subClass.name} #{@@typename} class "+
+						"as #{truncatedName}" if $DEBUG
+
+					@@registeredDerivatives[ subClass.name ] = subClass
+					@@registeredDerivatives[ truncatedName ] = subClass
+					@@registeredDerivatives[ subClass ] = subClass
+				end
+
+
+				### Given a <tt>className</tt> like that of the first argument
+				### to #create, attempt to load the corresponding class if it is
+				### not already loaded and return the class object.
+				def self.getSubclass( className )
+					unless @@registeredDerivatives.has_key? className
+						self.loadDerivative( className )
+					end
+					
+					return @@registeredDerivatives[ className ]
+				end
+
+
+				### Calculates an appropriate filename for the derived class
+				### using the name of the base class and tries to load it via
+				### <tt>require</tt>. If the including class responds to a
+				### method named <tt>derivativeDir</tt>, its return value is
+				### added as a directory to the beginning of the require. Eg.,
+				### if <tt>class.derivativeDir</tt> returns 'foo', the require
+				### line has 'foo/' prepended to it.
+				def self.loadDerivative( className )
+					className = className.to_s
+
+					if className =~ /\w+#{@@typename}/
+						modName = className.sub( /(?:.*::)?(\w+)(?:#{@@typename})?/,
+												"\1#{@@typename}" )
+					else
+						modName = "%s#{@@typename}" % className
+					end
+
+					# See if we have a special subdir that derivatives live in
+					if ( self.respond_to?(:derivativeDir) && (subdir = self.derivativeDir) )
+						modName = File::join( subdir, modName )
+					end
+
+					$stderr.puts "Trying to load #{@@typename} #{className} with "+
+						%Q{'require "#{modName}"'} if $DEBUG
+
+					# Try to require the module that defines the specified
+					# listener
+					require( modName )
+
+					# Check to see if the specified listener is now loaded. If it
+					# is not, raise an error to that effect.
+					unless @@registeredDerivatives.has_key? className
+						raise RuntimeError,
+							"Loading '%s' didn't define a #{@@typename} named '%s'" % [
+							modName,
+							className
+						]
+					end
+
+					return true
+				end
+			}
+
+			super( klass )
+		end
+
+	end
 
 
 	# This class is the abstract base class for all MUES objects. Most of the MUES
@@ -408,8 +543,8 @@ module MUES
 
 		##
 		# Class constants
-		Version	= %q$Revision: 1.21 $
-		RcsId	= %q$Id: mues.rb,v 1.21 2002/06/06 14:22:23 deveiant Exp $
+		Version	= %q$Revision: 1.22 $
+		RcsId	= %q$Id: mues.rb,v 1.22 2002/07/07 18:23:44 deveiant Exp $
 
 		### Constructor/initializer
 		
@@ -442,7 +577,7 @@ module MUES
 		end
 
 		### Returns a unique id for an object
-		def generateMuesId( obj )
+		def self.generateMuesId( obj )
 			raw = "%s:%s:%.6f" % [ $$, obj.id, Time.new.to_f ]
 			return MD5.new( raw ).hexdigest
 		end
@@ -454,11 +589,25 @@ module MUES
 		# The unique id assigned to the object by the server
 		attr_reader :muesid
 
+		### Comparison operator: Check for object equality using the
+		### <tt>other</tt> object's muesid.
+		def ==( other )
+			return false unless other.kind_of? MUES::Object
+			self.muesid == other.muesid
+		end
+
+		#########
+		protected
+		#########
+
+		### Return the logger for the receiving class.
+		def log
+			Log4r::Logger[ self.class.name ] || Log4r::Logger::new( self.class.name )
+		end
 	end
 
 
 end
-
 
 require "mues.so"
 
