@@ -23,7 +23,7 @@
 #   <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
 #        "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 #   
-#   <muesconfig version="1.1" time-stamp="$Date: 2002/10/27 21:23:38 $">
+#   <muesconfig version="1.1" time-stamp="$Date: 2002/11/10 05:38:25 $">
 #   
 #     <!--
 #   
@@ -32,7 +32,7 @@
 #     without any argument. For the actual defaults, see the end of
 #     lib/mues/Config.rb.
 #   
-#     $Id: config.rb,v 1.22 2002/10/27 21:23:38 deveiant Exp $
+#     $Id: config.rb,v 1.23 2002/11/10 05:38:25 deveiant Exp $
 #   
 #     -->
 #   
@@ -270,7 +270,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.22 2002/10/27 21:23:38 deveiant Exp $
+# $Id: config.rb,v 1.23 2002/11/10 05:38:25 deveiant Exp $
 # 
 # == Authors
 # 
@@ -307,8 +307,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.22 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.22 2002/10/27 21:23:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.23 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.23 2002/11/10 05:38:25 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -964,7 +964,7 @@ module MUES
 			######
 
 			# Delegate the Enumerable interface to the underlying Hash
-			def_delegators :@items, *( Hash.instance_methods - %w{inspect} )
+			def_delegators :@items, *( Hash.instance_methods - %w{initialize inspect} )
 
 			### Returns a stringified version of the services section object
 			def inspect
@@ -1375,7 +1375,7 @@ __END__
 <!DOCTYPE muesconfig PUBLIC "-//FAERIEMUD//MUES Config v0.02//EN"
      "http://mues.FaerieMUD.org/dtds/muesconfig.dtd">
 
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/27 21:23:38 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/11/10 05:38:25 $">
 
   <!-- General config -->
   <general>
