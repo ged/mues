@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.26 2002/10/23 02:01:02 deveiant Exp $
+# $Id: engine.rb,v 1.27 2002/10/23 04:56:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -125,6 +125,7 @@ require "thread"
 require "sync"
 require "digest/md5"
 require "poll"
+require "timeout"
 
 require "mues/Mixins"
 require "mues/Object"
@@ -176,8 +177,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.26 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.26 2002/10/23 02:01:02 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.27 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.27 2002/10/23 04:56:10 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -754,7 +755,8 @@ module MUES
 									  LoginSessionEvent,
 									  EnvironmentEvent,
 									  CallbackEvent,
-									  RebuildCommandRegistryEvent
+									  RebuildCommandRegistryEvent,
+									  EvalCommandEvent
 									 )
 		end
 
@@ -1378,6 +1380,37 @@ module MUES
 		### Handle reload requests for the CommandShell::Factory.
 		def handleRebuildCommandRegistryEvent( event )
 			return @commandShellFactory.rebuildCommandRegistry
+		end
+
+
+		### Handle an admin user's request for an eval in privileged space.
+		def handleEvalCommandEvent( event )
+			checkTaintAndSafe( 2 )
+
+			raise SecurityError, "User '%s' is not authorized to eval" unless
+				event.user.isAdmin?
+
+			code = event.code
+			code.untaint
+
+			rval = timeout( 5 ) {
+				event.context.instance_eval( code, "EvalCommandEvent" )
+			}
+
+			output = "%s: eval(%s)\n=> %s\n\n" %
+				[trimString(event.context.inspect, 40), event.code, rval.inspect]
+			event.user.handleEvent( MUES::OutputEvent::new(output) )
+
+		rescue StandardError, TimeoutError, SystemExit => err
+			msg = "Error occurred while evaluating '%s' in the context of %s: %s\n\t%s\n\n" %
+				[ event.code,
+				  trimString(event.context.inspect, 40),
+				  err.message,
+				  err.backtrace.join("\n\t") ]
+			self.log.error( "%s: %s" % [event.user.login.capitalize, msg] )
+			event.user.handleEvent( MUES::OutputEvent::new(msg) )
+
+			return []
 		end
 
 
