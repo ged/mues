@@ -45,7 +45,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventfilter.rb,v 1.14 2002/08/29 07:19:17 deveiant Exp $
+# $Id: ioeventfilter.rb,v 1.15 2002/09/27 16:18:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -75,8 +75,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
-		Rcsid = %q$Id: ioeventfilter.rb,v 1.14 2002/08/29 07:19:17 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.15 $ )[1]
+		Rcsid = %q$Id: ioeventfilter.rb,v 1.15 2002/09/27 16:18:26 deveiant Exp $
 		DefaultSortPosition = 500
 
 
@@ -128,11 +128,12 @@ module MUES
 		alias :isFinished? :isFinished
 
 
-		### Start filter notifications for the specified stream. Returns true on
-		### success. Filter subclasses can override this method if they need to
-		### do setup tasks before being added to the stream, but they should be
-		### sure to call this class's implementation via <tt>super()</tt>, or
-		### the filter will not notify the stream when events are pending.
+		### Start filter notifications for the specified stream. Returns an
+		### array of events to propagated for startup. Filter subclasses can
+		### override this method if they need to do setup tasks before being
+		### added to the stream, but they should be sure to call this class's
+		### implementation via <tt>super()</tt>, or the filter will not notify
+		### the stream when events are pending.
 		def start( streamObject )
 			add_observer( streamObject )
 			[]
@@ -233,6 +234,18 @@ module MUES
 		def to_s
 			"%s filter [%d]" % [ self.class.name, @sortPosition ]
 		end
+
+
+
+		#########
+		protected
+		#########
+
+		### Set the finished flag to <tt>true</tt>.
+		def finish
+			@isFinished = true
+		end
+
 
 	end # class IOEventFilter
 end # module MUES
