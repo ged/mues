@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.17 2003/08/04 02:30:37 deveiant Exp $
+#	$Id: utils.rb,v 1.18 2003/10/13 04:08:19 deveiant Exp $
 #
 #	Copyright (c) 2001-2003, The FaerieMUD Consortium.
 #
@@ -411,25 +411,26 @@ module UtilityFunctions
 	### <tt>line</tt> at a time. The return value of the block is used as the
 	### new line, or omitted if the block returns <tt>nil</tt> or
 	### <tt>false</tt>.
-	def editInPlace( file ) # :yields: line
+	def editInPlace( file, testMode=false ) # :yields: line
 		raise "No block specified for editing operation" unless block_given?
 
 		tempName = "#{file}.#{$$}"
 		File::open( tempName, File::RDWR|File::CREAT, 0600 ) {|tempfile|
-			File::unlink( tempName )
 			File::open( file, File::RDONLY ) {|fh|
 				fh.each {|line|
 					newline = yield( line ) or next
 					tempfile.print( newline )
+					$deferr.puts "%p -> %p" % [ line, newline ] if
+						line != newline
 				}
 			}
-
-			tempfile.seek(0)
-
-			File::open( file, File::TRUNC|File::WRONLY, 0644 ) {|newfile|
-				newfile.print( tempfile.read )
-			}
 		}
+
+		if testMode
+			File::unlink( tempName )
+		else
+			File::rename( tempName, file )
+		end
 	end
 
 	### Execute the specified shell <tt>command</tt>, read the results, and
