@@ -51,6 +51,25 @@
 #   All objects stored must inherit from the class StorableObject, for
 #   the required ability to be a shallow reference.
 #
+#   The serialize methods must be implemented on the instance level of
+#   all objects to be stored, and the deserialize method must be implemented
+#   on the class level for all classes of objects to be stored.
+#   Along these lines, class Class must implement the deserializer, and each
+#   class to be stored must implement serialize on itself.  In these cases,
+#   it is not necessary to completely serialize the class - just the name will
+#   do, which the deserializer can simply eval to return a reference to the
+#   Class object it represents.  This is because every object also has its class
+#   stored with it, so that the deserialization method can be known.
+#
+#   Indexes, as passed to the 'new' method, must be in the form:
+#      [[:meth1, ReturnClass1], [meth2, ReturnClass2], ...]
+#   and the return classes can only be of the following:
+#      * FixNum
+#      * Time
+#      * String
+#   They should no arguments, and need not be implemented in all classes to be
+#   stored.  If an object does not respond to a method, nil will be used.
+#
 # == Authors
 #
 # * Martin Chase <stillflame@FaerieMUD.org>
@@ -79,22 +98,26 @@ class ObjectStore
         ### Creates a new ObjectStore object, or loads it if it already exists
         ### (arguments are explained with initialize)
 	def ObjectStore.new(filename, indexes = [], serialize = nil, deserialize = nil)
-		if File.exists?(filename)
-			file = File.open(filename)
-			conf = file.readlines.join('')
-			file.close
-			
-			name = ( %r~<name>(.*?)</name>~im.match(conf) )[1]
-			catl = ( %r~<catalog>(.*?)</catalog>~im.match(conf) )[1]
-			tabl = ( %r~<table>(.*?)</table>~im.match(conf) )[1]
-			
-			the_cat = A_Catalog.use(catl)
-			the_table = A_Table.connect(tabl)
-			database = [the_cat, the_table]
-		else
-			database = nil
-		end
-		super(filename, database, indexes, serialize, deserialize)
+	  if File.exists?(filename)
+	    file = File.open(filename)
+	    conf = file.readlines.join('')
+	    file.close
+	    
+	    name = ( %r~<name>(.*?)</name>~im.match(conf) )[1]
+	    catl = ( %r~<catalog>(.*?)</catalog>~im.match(conf) )[1]
+	    tabl = ( %r~<table>(.*?)</table>~im.match(conf) )[1]
+	    inds = ( %r~<indexes>(.*?)</indexes>~im.match(conf) )[1].split( "," )
+	    indexes = inds.collect {|i|
+	      (meth,retu) = i.split(":")
+	      [eval(":#{meth}"), eval(retu)]
+	    }
+	    the_cat = A_Catalog.use(catl)
+	    the_table = A_Table.connect(tabl)
+	    database = [the_cat, the_table]
+	  else
+	    database = nil
+	  end
+	  super(filename, database, indexes, serialize, deserialize)
 	end
 
 	### Loads in the specified config file, and returns the ObjectStore attached to it
@@ -130,7 +153,7 @@ class ObjectStore
 	  cols << A_Column.new("id" , 'i', true  ,  nil  ,"%d > 0"  ,  nil , "%d"  )
 	  cols << A_Column.new("obj", typ,  nil  ,  nil  ,   nil    ,  nil ,  nil  )
 	  @indexes.each { |ind|
-	    typ = get_type( ind[1] )
+	    typ = get_type( ind[1] )  #should not be "*"
 	    cols << A_Column.new( ind[0].id2name, typ )
 	  }
 	  pkeys= "id"
@@ -138,23 +161,34 @@ class ObjectStore
 	  return [cat,tabl]
 	end
 
-	def get_type
-	  "*"
+	### Returns the arunadb code for the type of storage to be used on a class.
+	### Raises: TypeError if class isn't supported
+	def get_type(aClass)
+	  case aClass
+	    when FixNum
+	      "l"
+	    when Time
+	      "t"
+	    when String
+	      "v"
+	    else
+	      raise TypeError "Indexes cannot return objects of class %s" % aClass
+	  end
 	end
 
 	### Initializes a new ObjectStore
 	### arguments:
 	###   filename - the filename to store the ObjectStore config file as
 	###   database - the array of ArunaDB objects to be used for storing data
-	###   indexes - an 2D array [ [:method_symbol, return_class], ...]
+	###   indexes - a 2D array [ [method_symbol, return_class], ...]
 	###   serialize - the symbol for the method to serialize the objects
 	###   deserialize - the symbol for the method to deserialize the objects
 	def initialize( filename, database, indexes = [],
 		        serialize = nil, deserialize = nil )
 	  @filename = filename
 	  @indexes = indexes
-	  @serialize = serialize
-	  @deserialize = deserialize
+	  @serialize = serialize || :_dump
+	  @deserialize = deserialize || :_load
 	  
 	  add_indexes( @indexes )
 	  
@@ -169,52 +203,51 @@ class ObjectStore
 	######
 	
 	attr_reader :filename, :database, :serialize, :deserialize, :indexes,
-	  :active_objects
-	def table
-	  @table_mutex.synchronize( Sync::EX ) {
-	    @table
-	  }
-	end
+	  :active_objects, :table
 
 	### Stores the objects into the database
 	### arguments:
 	###   objects - the objects to store
 	def store ( *objects )
-	  @table_mutex.synchronize( Sync::EX ) {
-	    objects.flatten!
-	    ids = objects.collect {|o| o.objectStoreID}
-	    serialized = objects.collect {|o| @serialize ? o.send(@serialize) : o}
-	    trans = A_Transaction.new
-	    ids.each_index do |i|
-	      if @table.exists?(trans, ids[i])
-		#update(transaction, pkey, column_names, values)
-		@table.update(trans, ids[i], "obj", serialized[i])
-	      else
-		@gc.register( objects[i] )
-		@table.insert( trans, ['id', 'obj'], [ids[i], serialized[i]] )
-	      end
-	      @indexes.each {|ind|
-		@table.update( trans, ids[i], ind[0].id2name, objects[i].send(ind) )
-	      }
-	    end
-	    trans.commit
+	  objects.flatten!
+	  index_names = @indexes.collect {|ind| ind[0].id2name}
+	  index_returns = objects.collect {|o|
+	    @indexes.collect {|ind|
+	      o.send(ind[0])
+	    }
 	  }
+	  ids = objects.collect {|o| o.objectStoreID}
+	  serialized = objects.collect {|o| o.send(@serialize, -1)}
+	  classes = objects.collect {|o| o.class.send(@serialize, 0)} #:?: what depth for classes?
+	  #:?: or should classes be stored as keys that point to entries in the db?
+	  trans = A_Transaction.new
+	  col_names = ['id', 'obj', 'obj_class'] + index_names
+	  ids.each_index do |i|
+	    if @table.exists?(trans, ids[i])
+	      #update(transaction, pkey, column_names, values)
+	      @table.update(trans, ids[i], "obj", serialized[i])
+	    else
+	      @gc.register( objects[i] )
+	      @table.insert( trans, col_names,
+			    [ids[i], serialized[i], classes[i], index_returns[i]].flatten )
+	    end
+	    @indexes.each {|ind|
+	      @table.update( trans, ids[i], ind[0].id2name, objects[i].send(ind) )
+	    }
+	  end
+	  trans.commit
 	end
 
 	### Closes the database.
 	def close 
 	  @gc.shutdown
-	  @table_mutex.synchronize( Sync::EX ) {
-	    @table.close
-	  }
+	  @table.close
 	end
 	
 	### Opens the database again.  Starts a new garbage collector.
 	### That is, if the database isn't already open.
 	def open
-	  @table_mutex.synchronize( Sync::EX ) {
-	    @table.open
-	  }
+	  @table.open if ! @table.open?
 	  @gc.start( TRASH_RATIO )
 	end
 
@@ -229,14 +262,14 @@ class ObjectStore
 	###   id - the id (objectStoreID) of the object
 	###   read_only - whether or not this lookup is read-only
 	def _retrieve ( id , read_only = false )
-	  @table_mutex.synchronize( Sync::EX ) {
-	    object = (@table.find( nil, id )).obj
-	    if read_only
-	      yield object
-	    else
-	      return object
-	    end
-	  }
+	  table_data = (@table.find( nil, id )).obj
+	  aClass = Class.send( @deserialize, table_data.obj_class )
+	  object = aClass.send( @deserialize, table_data.obj )
+	  if read_only
+	    yield object
+	  else
+	    return object
+	  end
 	end
 
 	def add_indexes ( *indexes )
@@ -245,9 +278,7 @@ class ObjectStore
 	end
 
 	def empty? 
-	  @table_mutex.synchronize( Sync::SH ) {
 	    @table.nitems == 0
-	  }
 	end
 
 	def open? 
@@ -255,16 +286,12 @@ class ObjectStore
 	end
 
 	def entries 
-	  @table_mutex.synchronize( Sync::SH ) {
 	    @table.nitems()
-	  }
 	end
 	alias size entries
 	alias count entries
 
 	def clear
-	  @table_mutex.synchronize( Sync::EX ) {
 	    @table.clear
-	  }
 	end
 end
