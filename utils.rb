@@ -1,6 +1,6 @@
 #
-#	MUES Documentation Generation Script
-#	$Id: utils.rb,v 1.2 2001/11/01 19:51:19 deveiant Exp $
+#	Install/distribution utility functions
+#	$Id: utils.rb,v 1.3 2002/05/16 04:02:20 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -61,7 +61,7 @@ module UtilityFunctions
 	def testForRequiredLibrary( lib, nicename=nil, raaUrl=nil, downloadUrl=nil )
 		nicename ||= "'lib'"
 		unless testForLibrary( lib, nicename )
-			msgs = [ "You must install the #{nicename} library to run MUES.\n" ]
+			msgs = [ "You are missing the #{nicename} library.\n" ]
 			msgs << "RAA: #{raaUrl}\n" if raaUrl
 			msgs << "Download: #{downloadUrl}\n" if downloadUrl
 			message( msgs )
@@ -72,7 +72,7 @@ module UtilityFunctions
 
 	def header( msg )
 		msg.chomp!
-		print ansiCode( 'bold', 'white' ) + msg + ansiCode( 'reset' ) + "\n"
+		print ansiCode( 'bold', 'white', 'on_blue' ) + msg + ansiCode( 'reset' ) + "\n"
 	end
 
 	def message( msg )
@@ -92,11 +92,11 @@ module UtilityFunctions
 
 	def prompt( promptString )
 		promptString.chomp!
-		return readline( "#{promptString}: " ).strip
+		return readline( ansiCode('bold', 'green') + "#{promptString}: " + ansiCode('reset') ).strip
 	end
 
 	def promptWithDefault( promptString, default )
-		response = prompt( promptString )
+		response = prompt( "%s [%s]" % [ promptString, default ] )
 		if response.empty?
 			return default
 		else
@@ -110,5 +110,30 @@ module UtilityFunctions
 			return file if File.executable?( file )
 		}
 		return nil
+	end
+
+	def extractNextVersionFromTags( file )
+		message "Attempting to extract next release version from CVS tags for #{file}...\n"
+		raise RuntimeError, "No such file '#{file}'" unless File.exists?( file )
+		cvsPath = findProgram( 'cvs' ) or
+			raise RuntimeError, "Cannot find the 'cvs' program. Aborting."
+
+		output = %x{#{cvsPath} log #{file}}
+		release = [ 0, 0 ]
+		output.scan( /RELEASE_(\d+)_(\d+)/ ) {|match|
+			if $1.to_i > release[0] || $2.to_i > release[1]
+				release = [ $1.to_i, $2.to_i ]
+				replaceMessage( "Found %d.%02d...\n" % release )
+			end
+		}
+
+		if release[1] >= 99
+			release[0] += 1
+			release[1] = 1
+		else
+			release[1] += 1
+		end
+
+		return "%d.%02d" % release
 	end
 end
