@@ -10,13 +10,13 @@ else
 	raise "Cannot find lib and ext directories!"
 end
 
-
-require 'mues/mixins'
+require 'pluginfactory'
+#require 'mues/mixins'
 
 puts "Defining base class"
 module Base
 	class Service
-		include MUES::Factory
+		include PluginFactory
 
 		def self.beforeCreation( backendClass, *args )
 			puts "   beforeCreation: About to instantiate a #{backendClass.inspect}."
