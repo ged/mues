@@ -1,6 +1,6 @@
 #
 #	MUES Documentation Generation Script
-#	$Id: utils.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+#	$Id: utils.rb,v 1.2 2001/11/01 19:51:19 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -76,7 +76,8 @@ module UtilityFunctions
 	end
 
 	def message( msg )
-		print msg
+		$stdout.print msg
+		$stdout.flush
 	end
 
 	def replaceMessage( *msg )
