@@ -1,16 +1,21 @@
-# -*- shell-script -*-
+# -*- shell-script -*- (For font-lock only)
 #	
 #	Example MUES config file
-#	$Id: MUES.cfg.example,v 1.1 2001/10/29 22:42:05 deveiant Exp $
+#	$Id: MUES.cfg.example,v 1.2 2001/11/01 18:01:42 deveiant Exp $
 #
 
-### Name and admin
+# Name and admin
 Name		"Experimental Mud"
 Admin		"MUES Administrator <admin@localhost>"
 
-### Root directory and path to logfile
-RootDir		.
+# Root ('server') directory
+RootDir		server
+
+# Path to logfile, either relative to RootDir or absolute
 LogFile		MUES.log
+
+# Become a daemon process after starting?
+StartAsDaemon yes
 
 ### Engine (main server object)
 <Engine>
@@ -31,28 +36,35 @@ LogFile		MUES.log
 
 	# How many untrapped exception events to keep around for later perusal
 	ExceptionStackSize	10
+
+	# Engine debugging message level
+	DebugLevel			0
 </Engine>
 
 
 ### Objectstore (object persistance)
 <ObjectStore>
 
-	# The name of the driver to use. All except the 'Dummy' driver require
-	# additional modules to be installed. (See the mues/adapters directory for
-	# the possible values)
-	Driver			"Bdb"
+	# The values in this section are dependent on which objectstore adapter you
+	# wish to use. All except the 'Dummy' driver require additional modules to
+	# be installed. (See the lib/mues/adapters directory for the possible values)
 
-	# Which host to connect to
-	Host			""
+	### For the 'Dummy' driver
+	Driver			"Dummy"
+	Directory		"objectstore"
 
-	# The name of the DB to use
-	Db				"mues"
+	### For the 'Bdb' driver
+	#Driver			"Bdb"
+	#Directory		"objectstore-bdb"
+	#Db				"mues"
 
-	# The username to use when connecting
-	Username		"mues"
+	### For the 'Mysql' driver
+	#Driver			'Mysql'
+	#Db				'mues'
+	#Host			''
+	#Username		'mues'
+	#Password		'<changme>'
 
-	# The password to use when connecting
-	Password		""
 </ObjectStore>
 
 
@@ -69,6 +81,11 @@ LogFile		MUES.log
 	# between checks. A tuning parameter. Something between 0.20 and 0.70 is
 	# probably good.
 	Threshold		0.25
+
+	# The SAFE level to set worker threads to when they start (this should
+	# ordinarily be 2 or 3, but the Dummy adapter requires File.mkdir() which
+	# isn't allowed under $SAFE >= 1
+	SafeLevel		0
 </EventQueue>
 
 
