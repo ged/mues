@@ -29,51 +29,63 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
+require "thread"
+require "sync"
+
 require "mues/Namespace"
 require "mues/Debugging"
 require "mues/Events"
 require "mues/Exceptions"
 require "mues/filters/IOEventFilter"
 
-require "thread"
-
 module MUES
 	class SocketOutputFilter < IOEventFilter
 		include Debuggable
 
+		# State constants
 		module State
 			DISCONNECTED = 0
 			CONNECTED = 1
 		end
-		
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.1 2001/03/29 02:34:27 deveiant Exp $
 
-		### How much data to attempt to send at each write, the number of
-		### seconds to wait in select(), and the default sort position in the
-		### stream
-		@@MTU = 4096
-		@@SelectTimeout = 0.75
-		@@DefaultSortPosition = 100
+		### Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.2 2001/05/14 12:31:38 deveiant Exp $
+		DefaultSortPosition = 300
 
-		### Public methods
+		NULL = "\000"
+		CR   = "\015"
+		LF   = "\012"
+		EOL  = CR + LF
+
+		### Class attributes
+		@@MTU = 4096				# Maximum Transmissable Unit
+
+		### (PROTECTED) METHOD: initialize( socket )
+		### Initialize the filter
+		protected
+		def initialize( aSocket )
+			super()
+
+			@readBuffer = ''
+			@readMutex = Sync.new
+			@writeBuffer = ''
+			@writeMutex = Sync.new
+			@state = State::DISCONNECTED
+
+			@mode = ''
+
+			@socketThread = Thread.new { _ioThreadRoutine(aSocket) }
+		end
+
+
+		#######################################################################
+		###	P U B L I C   M E T H O D S
+		#######################################################################
 		public
 
 		# Accessors
 		attr_reader :socket, :readBuffer, :writeBuffer
-
-		### METHOD: initialize( socket )
-		### Initialize the filter
-		def initialize( aSocket, aPlayer )
-			super()
-			@writeBuffer = ''
-			@writeMutex = Mutex.new
-			@state = State::DISCONNECTED
-			@player = aPlayer
-
-			@socketThread = Thread.new { __doSocketIO(aSocket) }
-		end
-
 
 		### handleOutputEvents( *events )
 		### Handle an output event by appending its data to the output buffer
@@ -88,14 +100,23 @@ module MUES
 
 			# Lock the output event queue and add the events we've been given to it
 			_debugMsg( 1, "Appending '" + events.collect {|e| e.data }.join("") + "' to the output buffer." )
-			@writeMutex.synchronize {
-				@writeBuffer.concat events.collect {|e| e.data }.join("")
+			@writeMutex.synchronize(Sync::EX) {
+				@writeBuffer << events.collect {|e| e.data }.join("")
 			}
 
 			# We're snarfing up all outbound events, so just return an empty array
 			return []
 		end
 
+
+		### METHOD: puts( aString )
+		### Append a string directly onto the output buffer. Useful when doing
+		### direct output and flush.
+		def puts( aString )
+			@writeMutex.synchronize(Sync::EX) {
+				@writeBuffer << aString + "\n"
+			}
+		end
 
 		### METHOD: shutdown
 		def shutdown
@@ -104,17 +125,19 @@ module MUES
 			super
 		end
 
-		### Private methods
-		private
 
-		### (PRIVATE) METHOD: __doSocketIO( socket )
+		#######################################################################
+		###	P R O T E C T E D   M E T H O D S
+		#######################################################################
+		protected
+
+		### (PROTECTED) METHOD: _ioThreadRoutine( socket )
 		###	Thread routine for socket IO multiplexing. Reads data from queued output
 		###		events and sends it to the remote client, and creates new input events
 		###		from user input.
-		def __doSocketIO( socket )
-			_debugMsg( 1, "In socket IO thread." )
+		def _ioThreadRoutine( socket )
+			_debugMsg( 1, "In IO thread routine." )
 			mySocket = socket
-			buffer = ''
 			@state = State::CONNECTED
 
 			### Multiplex I/O, catching IO exceptions
@@ -123,57 +146,48 @@ module MUES
 				writeable = []
 
 				### Loop until we break or get shut down
-				until @state == State::DISCONNECTED do
-					readable, writable = select( [mySocket], [mySocket], nil, @@SelectTimeout )
+				loop do
+					readable, writable = select( [mySocket], [mySocket] )
 
 					### Read any input from the socket if it's ready
-					if ( readable.size > 0 ) then
-						buffer += mySocket.sysread( @@MTU )
-						_debugMsg( 1, "Read data in select loop (buffer = '#{buffer}', length = #{buffer.length})." )
+					unless readable.empty?
+						@readMutex.synchronize(Sync::EX) {
+							@readBuffer += mySocket.sysread( @@MTU )
+							_debugMsg( 5, "Read data in select loop (@readBuffer = '#{@readBuffer}', " +
+									   "length = #{@readBuffer.length})." )
+
+							unless @readBuffer.empty?
+								_debugMsg( 4, "Read buffer has stuff in it. Trying to get input events from it." )
+								@readBuffer = _parseRawInput( @readBuffer )
+							end
+						}
 					end
 
-					### Write any buffered output to the socket if we have output pending
-					if ( writable.size > 0 && @writeBuffer.length > 0 ) then
-						_debugMsg( 1, "Writing in select loop (writebuffer = '#{@writeBuffer}')." )
-						@writeMutex.synchronize {
+					### Write any buffered output to the socket if we have
+					### output pending and the socket is writable
+					unless writable.empty? || @writeBuffer.empty?
+						_debugMsg( 5, "Writing in select loop (@writebuffer = '#{@writeBuffer}')." )
+						@writeMutex.synchronize(Sync::EX) {
 							bytesWritten = mySocket.syswrite( @writeBuffer )
 							@writeBuffer[0 .. bytesWritten] = ''
 						}
 					end
-
-					### Create any input events that are parseable from the buffer
-					### and queue them for the next input pass
-					if buffer.length > 0 then
-						newInputEvents = []
-						buffer.gsub!( /^([^\n\r]*)\r\n?/ ) {|s|
-							_debugMsg( 1, "Read a line: '#{s}' (#{s.length} bytes)." )
-							if ( s =~ /\w/ ) then
-								_debugMsg( 1, "Creating an input event for input = '#{s.strip}'" )
-								newInputEvents.push( InputEvent.new("#{s.strip}") )
-							end
-							
-							""
-						}
-						queueInputEvents( *newInputEvents )
-					end
-
 				end
 
-				### Handle EOF on the socket by dispatching a PlayerDisconnectEvent
+			### Handle EOF on the socket by setting the state and 
 			rescue EOFError => e
-				@state = State::DISCONNECTED
-				engine().dispatchEvents( PlayerDisconnectEvent.new(@player) )
+				engine.dispatchEvents( LogEvent.new("info", "SocketOutputFilter shutting down: #{e.message}") )
 
 			rescue Shutdown
-				mySocket.syswrite( "\n\n>>> Server shutdown <<<\n\n" )
+				mySocket.syswrite( "\n\n>>> Disconnecting <<<\n\n" )
 
-				### Just log any other caught exceptions (for now)
+			### Just log any other caught exceptions (for now)
 			rescue StandardError => e
 				_debugMsg( 1, "EXCEPTION: ", e )
-				engine().dispatchEvents( LogEvent.new("error","Error in SocketOutputFilter socket IO routine: #{e.message}") )
+				engine.dispatchEvents( LogEvent.new("error","Error in SocketOutputFilter socket IO routine: #{e.message}") )
 
-				### Make sure that the handler is set to the disconnected state and
-				### clean up the socket when we're leaving
+			### Make sure that the handler is set to the disconnected state and
+			### clean up the socket when we're leaving
 			ensure
 				_debugMsg( 1, "In socket IO thread routine's cleanup (#{$@.to_s})." )
 				@state = State::DISCONNECTED
@@ -182,6 +196,30 @@ module MUES
 				mySocket.close
 			end
 
+		end
+
+		
+		### (PROTECTED) METHOD: _parseRawInput( inputBuffer )
+		### Parse input events from the given raw buffer and return the
+		### (possibly) modified buffer after queueing any input events created.
+		def _parseRawInput( inputBuffer )
+			newInputEvents = []
+
+			# Split input lines by CR+LF and strip whitespace before
+			# creating an event
+			inputBuffer.gsub!( /^([^#{CR}#{LF}]*)#{CR}#{LF}?/ ) {|s|
+				_debugMsg( 5, "Read a line: '#{s}' (#{s.length} bytes)." )
+
+				if ( s =~ /\w/ )
+					_debugMsg( 4, "Creating an input event for input = '#{s.strip}'" )
+					newInputEvents.push( InputEvent.new("#{s.strip}") )
+				end
+				
+				""
+			}
+
+			queueInputEvents( *newInputEvents )
+			return inputBuffer
 		end
  
 	end # class SocketOutputFilter
