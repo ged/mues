@@ -38,7 +38,7 @@
 #
 # == Rcsid
 # 
-# $Id: commandshell.rb,v 1.23 2002/10/13 23:22:32 deveiant Exp $
+# $Id: commandshell.rb,v 1.24 2002/10/14 09:40:06 deveiant Exp $
 # 
 # == Authors
 # 
@@ -72,8 +72,8 @@ module MUES
 		include MUES::ServerFunctions, MUES::FactoryMethods
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
-		Rcsid = %q$Id: commandshell.rb,v 1.23 2002/10/13 23:22:32 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
+		Rcsid = %q$Id: commandshell.rb,v 1.24 2002/10/14 09:40:06 deveiant Exp $
 		DefaultSortPosition = 700
 
 		### Class globals
@@ -786,6 +786,7 @@ module MUES
 								next unless line =~ /\S/
 								debugMsg( 5, "Adding '#{line.strip}' to code." )
 								sections[:code] += line
+								sections[:code].untaint
 
 							else
 								debugMsg( 5, "Skipping out-of-section or unsupported section line '#{line}'" )
@@ -831,8 +832,8 @@ module MUES
 			include MUES::TypeCheckFunctions, MUES::ServerFunctions
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.23 $} )[1]
-			Rcsid = %q$Id: commandshell.rb,v 1.23 2002/10/13 23:22:32 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.24 $} )[1]
+			Rcsid = %q$Id: commandshell.rb,v 1.24 2002/10/14 09:40:06 deveiant Exp $
 
 			### Class globals
 			DefaultShellClass	= MUES::CommandShell
@@ -873,7 +874,8 @@ module MUES
 				@parser				= CommandParser::create( @parserClass,
 															 MUES::CommandShell::Command )
 
-				@reloadInterval		= -30
+				# Set the reload interval to 10 minutes
+				@reloadInterval		= -600
 
 				# Fully-qualify all the directories in the command path
 				unless commandPath.nil? || commandPath.empty?
@@ -947,11 +949,93 @@ module MUES
 			end
 
 
+			### Build the command registry for this factory
+			def buildCommandRegistry
+				@mutex.synchronize( Sync::EX ) {
+					return [] if @registryIsBuilt
+					self.log.notice( "Building command registry" )
+					loadCommandsIntoRegistry()
+				}
+
+				return []
+			end
+
+
+			### Rebuild the command registry after checking for
+			### updates. Uses the specified <tt>config</tt> object to
+			### determine what directories to load commands from.
+			def rebuildCommandRegistry
+				debugMsg 1, "Flushing command registry for rebuild"
+				@mutex.synchronize( Sync::EX ) {
+					@registryIsBuilt = false
+					loadCommandsIntoRegistry()
+				}
+
+				return []
+			end
+
+
+			#########
+			protected
+			#########
+
+			### Find commands newer than the last time the registry was build,
+			### load them, and insert the commands into the Factory's
+			### registry. Returns the number of commands that were successfully
+			### (re)loaded.
+			def loadCommandsIntoRegistry
+				commands = nil
+
+				@mutex.synchronize(Sync::EX) {
+
+					# Get the list of updated commands and derive the list of
+					# their sources
+					commands = loadNewCommands()
+					unless commands.empty?
+
+						self.log.notice "Loading %d new/reloaded commands into the "\
+						"CommandFactory's registry" % commands.length
+
+						# Remove old commands loaded from the modified sources (so
+						# deleting a command from sources works)
+						sources = commands.collect {|cmd| cmd.sourceFile}.sort.uniq
+						@registry.delete_if {|k,v| sources.include? v.sourceFile}
+
+						# Insert new versions of the commands into the registry,
+						# checking for collisions.
+						commands.each {|command|
+
+							# Iterate over the command name and any associated aliases
+							[ command.name, command.synonyms ].flatten.compact.each {|name|
+
+								# Test for collision
+								if @registry.has_key?( name )
+									raise CommandNameConflictError,
+										"Command '%s' has clashing implementations in %s:%d and %s:%d " % [
+										name,
+										@registry[name].sourceFile, @registry[name].sourceLine,
+										command.sourceFile, command.sourceLine
+									]
+								end
+
+								# Install the command into the command registry
+								@registry[ name ] = command
+							}
+						}
+					end
+
+					@registryIsBuilt = true
+				}
+
+				return commands.length
+			end
+
+
 			### Iterate over each file in the shell commands directory specified
 			### in the configuration, parsing the ones that have changed since
 			### last we loaded, and returning an Array of resulting
 			### MUES::CommandShell::Command objects.
-			def loadCommands
+			def loadNewCommands
 				commands = nil
 
 				### Parse all command files in the configured directories newer
@@ -963,32 +1047,32 @@ module MUES
 					oldLoadTime = @commandLoadTime
 					@commandLoadTime = Time.now
 
-					self.log.info( "Loading commands newer than #{@commandLoadTime.to_s}" )
-
-					# Get the target filespec from the parser
-					fileSpec = @parser.fileSpec
-					debugMsg( 2, "File spec is: #{fileSpec.inspect}" )
+					debugMsg 2, "Loading commands newer than #{oldLoadTime.to_s}"
 
 					# Load the default commands defined at the end of this file.
-					self.log.info( "Loading built-in commands" )
-					commands = @parser.parse( __FILE__ )
+					commands = []
+					if File.mtime(__FILE__) > oldLoadTime
+						self.log.info( "(Re)loading built-in commands from %s" % __FILE__ )
+						commands += @parser.parse( __FILE__ )
+					end
 					
-					### Search each directory in the path, top-down, for command
-					### files newer than our last load time, loading any we
-					### find.
-					@commandPath.each {|cmdsdir|
-						self.log.info( "Looking for updated commands in '#{cmdsdir}'." )
-						Find.find( cmdsdir ) {|f|
-							Find.prune if f =~ %r{^\.} # Ignore hidden stuff
+					# Find any files that have changed
+					newFiles = findUpdatedCommandFiles( oldLoadTime )
 
-							# Turn the filename into its fully-qualified version
-							fqf = File::expand_path( f, cmdsdir )
-
-							if fileSpec.match(fqf) && File.file?(fqf) && File.mtime(fqf) > oldLoadTime
-								self.log.info( "Loading commands from '#{fqf}'" )
-								commands += @parser.parse( fqf )
-							end
-						}
+					# Now if any newer files were found, load commands from
+					# them.
+					newFiles.each {|fqf|
+						fqf.untaint
+						self.log.info( "(Re)loading commands from '#{fqf}'" )
+						begin
+							commands += @parser.parse( fqf )
+						rescue SyntaxError => e
+							self.log.error "Syntax error in command file '%s': %s:\n\t%s" %
+								[ fqf, e.message, e.backtrace.join("\t\n") ]
+						rescue => e
+							self.log.error "Unknown error while parsing command file '%s': %s:\n\t%s" %
+								[ fqf, e.message, e.backtrace.join("\t\n") ]
+						end
 					}
 				}
 
@@ -996,64 +1080,41 @@ module MUES
 			end
 
 
-			### Build the command registry for this factory
-			def buildCommandRegistry
-				
-				@mutex.synchronize(Sync::EX) {
-					return true if @registryIsBuilt
-					self.log.notice( "Building command registry" )
+			### Find and return an Array of the fully-qualified paths to any
+			### command files under the factory's command path that are newer
+			### than <tt>oldLoadTime</tt>.
+			def findUpdatedCommandFiles( oldLoadTime )
+				# Get the target filespec from the parser
+				fileSpec = @parser.fileSpec
+				fileSpec.untaint
+				debugMsg( 2, "File spec is: #{fileSpec.inspect}" )
 
-					# Get the list of updated commands and derive the list of
-					# their sources
-					commands = loadCommands()
-					self.log.notice( "Got %d new/reloaded commands" % commands.length )
+				# Search each directory in the path, top-down, for command
+				# files newer than our last load time, loading any we
+				# find.
+				newFiles = []
+				@commandPath.each {|cmdsdir|
+					cmdsdir.untaint
+					self.log.info( "Looking for updated commands in '#{cmdsdir}'." )
+					Find.find( cmdsdir ) {|f|
+						f.untaint
+						Find.prune if f =~ %r{^\.} # Ignore hidden stuff
 
-					# Remove old commands loaded from the modified sources (so
-					# deleting a command from sources works)
-					sources = commands.collect {|cmd| cmd.sourceFile}.sort.uniq
-					@registry.delete_if {|k,v| sources.include? v.sourceFile}
+						# Turn the filename into its fully-qualified version
+						fqf = File::expand_path( f, cmdsdir )
+						fqf.untaint
 
-					# Insert new versions of the commands into the registry,
-					# checking for collisions.
-					commands.each {|command|
-
-						# Iterate over the command name and any associated aliases
-						[ command.name, command.synonyms ].flatten.compact.each {|name|
-
-							# Test for collision
-							if @registry.has_key?( name )
-								raise CommandNameConflictError,
-									"Command '%s' has clashing implementations in %s:%d and %s:%d " % [
-									name,
-									@registry[name].sourceFile, @registry[name].sourceLine,
-									command.sourceFile, command.sourceLine
-								]
-							end
-
-							# Install the command into the command registry
-							@registry[ name ] = command
-						}
+						if fileSpec.match(fqf) && File.file?(fqf) && File.mtime(fqf) > oldLoadTime
+							debugMsg 3, "Found updated file '#{fqf}'"
+							newFiles.push( fqf )
+						end
 					}
-
-					@registryIsBuilt = true
 				}
 
-				return true
+				return newFiles
 			end
 
-
-			### Rebuild the command registry after checking for
-			### updates. Uses the specified <tt>config</tt> object to
-			### determine what directories to load commands from.
-			def rebuildCommandRegistry
-				self.log.notice( "Flushing command registry for rebuild at #{Time.now}" )
-				@mutex.synchronize( Sync::EX ) {
-					@registryIsBuilt = false
-					buildCommandRegistry()
-				}
-			end
-
-		end
+		end # class Factory
 
 			
 	end # class CommandShell
@@ -1086,8 +1147,11 @@ logout
 
 == Code
 
+  # Turn off the user's prompt
+  context.shell.vars['prompt'] = ''
+
   return [
-	MUES::OutputEvent::new( "Logging out." ),
+	MUES::OutputEvent::new( ">>> Logging out <<<\n" ),
 	MUES::UserLogoutEvent::new( context.user )
   ]
 
@@ -1136,12 +1200,8 @@ Evaluate the specified ruby code in the current object context.
   contextObject = context.evalContext
 
   rval = nil
-  begin
-	  res = contextObject.instance_eval( argString.strip, '<shell input>', 1 )
-	  rval = "=> #{res.inspect}\n\n"
-  rescue StandardError, ScriptError => e
-	  rval = ">>> Eval error: #{e.to_s}\n\n"
-  end
+  res = contextObject.instance_eval( argString.strip, '<shell input>', 1 )
+  rval = "=> #{res.inspect}\n\n"
 
   return [MUES::OutputEvent.new( rval )]
 
