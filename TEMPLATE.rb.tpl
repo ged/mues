@@ -9,7 +9,7 @@
 # 
 # == Rcsid
 # 
-# $Id: TEMPLATE.rb.tpl,v 1.6 2002/08/01 00:15:46 deveiant Exp $
+# $Id: TEMPLATE.rb.tpl,v 1.7 2002/08/02 14:51:57 deveiant Exp $
 # 
 # == Authors
 # 
@@ -22,8 +22,8 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'mues'
-
+require 'mues/Mixins'
+require 'mues/Object'
 
 module MUES
 
@@ -31,8 +31,8 @@ module MUES
 	class (>>>FILE_SANS<<<) < (>>>superclass<<<)
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.6 2002/08/01 00:15:46 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: TEMPLATE.rb.tpl,v 1.7 2002/08/02 14:51:57 deveiant Exp $
 
 		### Create a new (>>>FILE_SANS<<<) object.
 		def initialize
