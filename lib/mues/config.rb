@@ -16,11 +16,38 @@ MUES::Config - Configuration file class for the MUES engine
 
   config["serverPort"]						# -> 6565
   config["serverAddress"]					# -> "0.0.0.0"
-  
+
+== Description
+
+Configuration file reader/writer class. Given an IO object, a filename, or a
+String with configuration contents, this class parses the configuration and
+returns an instantiated configuration object that provides a hash interface to
+the config values. MUES::Config objects can also dump the configuration back
+into a string for writing.
+
+The format of the config file loosely follows the philosophy of the Apache
+config file. Sections are delimited by (({<Section>}))/(({</Section>})) blocks,
+and attributes are set in key/value pairs separated by whitespace. For example:
+
+  RootDir		/mud
+  LogFile		logs/FaerieMUD.log
+
+  <ListenSocket>
+	  BindPort		6565
+	  BindAddress	0.0.0.0
+  </ListenSocket>
+
+This would yield an object that you could use thusly:
+
+  Dir.chdir configObj["RootDir"]
+  log = File.open( configObj["LogFile"],  )
+  sock = TCPServer.new( configObj["ListenSocket"]["BindAddress"],
+						configObj["ListenSocket"]["BindPort"] )
+
 =end
 ###########################################################################
 
-require "mues/MUES"
+require "mues/Namespace"
 require "mues/Exceptions"
 
 module MUES
@@ -168,8 +195,6 @@ module MUES
 			return mainSection
 		end
 
-
-
 		### Configuration section class
 		class Section < Object
 
@@ -237,9 +262,7 @@ module MUES
 			alias :key? :has_key?
 			alias :include? :has_key?
 
-		end
-
-	end
-
-end
+		end # MUES::Config::Section
+	end # MUES::Config
+end # MUES
 
