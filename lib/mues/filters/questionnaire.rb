@@ -116,7 +116,7 @@
 # 
 # == Rcsid
 # 
-# $Id: questionnaire.rb,v 1.4 2002/10/06 02:04:04 deveiant Exp $
+# $Id: questionnaire.rb,v 1.5 2002/10/06 07:50:46 deveiant Exp $
 # 
 # == Authors
 # 
@@ -146,8 +146,8 @@ module MUES
 	class Questionnaire < MUES::IOEventFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
-		Rcsid = %q$Id: questionnaire.rb,v 1.4 2002/10/06 02:04:04 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
+		Rcsid = %q$Id: questionnaire.rb,v 1.5 2002/10/06 07:50:46 deveiant Exp $
 
 		DefaultSortPosition = 600
 
@@ -155,7 +155,7 @@ module MUES
 		### Create a new Questionnaire object.
 		def initialize( name, *steps )
 			@name = name
-			@steps = checkSteps( *steps )
+			@steps = checkSteps( *(steps.flatten) )
 			@stepsMutex = Sync::new
 			@currentStepIndex = -1
 
@@ -249,6 +249,8 @@ module MUES
 				[ self.name, self.muesid ]
 			results = super( streamObject )
 			self.finish
+
+			results.push( MUES::InputEvent::new('') )
 			return results
 		end
 
@@ -278,7 +280,7 @@ module MUES
 				end
 
 				### If we've completed all the steps, call the finalizer.
-				unless self.inProgress?
+				unless self.inProgress? || self.finished?
 					debugMsg 2, "Last step answered. Calling finalizer."
 					@result = @finalizer.call( self ) if @finalizer
 					debugMsg 3, "Finalizer returned <%s>" % @result.inspect
@@ -296,7 +298,7 @@ module MUES
 			self.queueDelayedOutputEvents( *events ) unless events.empty?
 			events.clear
 			results = super( *events )
-			debugMsg 3, "Returning #{results.length} output events"
+			debugMsg 3, "Returning #{results.length} output events."
 			return results
 		end
 
@@ -465,16 +467,17 @@ module MUES
 		### Abort the current session with the specified <tt>message</tt>. This
 		### is a method designed to be used by callback-type answerspecs and
 		### pre- and post-processes.
-		def abort( message="Aborted." )
-			debugMsg 2, "Aborting questionnaire %s" % self.muesid
+		def abort( message="Aborted.\n\n" )
+			debugMsg 2, "Aborting questionnaire: %s" % self.muesid
 			self.queueOutputEvents MUES::OutputEvent::new( message )
-			@inProgress = false
+			self.clear
+			self.finish
 		end
 
 
 		### Report an error
 		def error( message )
-			debugMsg 2, "Sending error message '%s'" % message
+			debugMsg 2, "Sending error message '%s'" % message.chomp
 			self.queueOutputEvents MUES::OutputEvent::new( message )
 		end
 
@@ -561,7 +564,7 @@ module MUES
 					result = validateAnswer( data, step )
 					debugMsg 3, "Validator returned result: %s" % result.inspect
 					unless result
-						self.reaskCurrentQuestion
+						self.reaskCurrentQuestion if self.inProgress?
 						return nil
 					end
 
@@ -618,7 +621,11 @@ module MUES
 			# Regex validator - If the match has paren-groups, use the array of
 			# "kept" matches instead of the whole match.
 			when Regexp
-				if (( match = validator.match( data ) ))
+				if data.empty?
+					self.abort
+					return nil
+
+				elsif (( match = validator.match( data ) ))
 					if match.size > 1
 						result = match.to_ary[ 1 .. -1 ]
 					else
@@ -632,8 +639,13 @@ module MUES
 
 			# Array validator - Succeeds if the data is in the array.
 			when Array
-				if validator.include?( data )
+				if data.empty?
+					self.abort
+					return nil
+
+				elsif validator.include?( data )
 					result = data
+
 				else
 					self.error( step[:errorMsg] || "Invalid input. Must "\
 							    "be one of:\n  %s." %
