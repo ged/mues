@@ -13,9 +13,17 @@
 
 	Both bans will need to have info about who is doing the banning.
 
+* banlist - a list of users/ips that are banned.
+
 * setuser* - have mutators for all the mutatable user attributes (password is
   done already).
+
+* saveuser - commit a user object information to the database.
 
 * motd - allow an admin to change the message of the day.
 
 * setdefault - set a default shell parameter.
+
+* restart - restart the server.
+
+* reload - reload the config file.
