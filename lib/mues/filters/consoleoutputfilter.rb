@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: consoleoutputfilter.rb,v 1.11 2002/10/26 19:03:24 deveiant Exp $
+# $Id: consoleoutputfilter.rb,v 1.12 2002/10/31 02:17:26 deveiant Exp $
 # 
 # == Authors
 # 
@@ -40,9 +40,9 @@ module MUES
 	class ConsoleOutputFilter < MUES::OutputFilter ; implements MUES::Debuggable
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.11 $} )[1]
-		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.11 2002/10/26 19:03:24 deveiant Exp $
-		DefaultSortPosition = 300
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.12 $} )[1]
+		Rcsid = %q$Id: consoleoutputfilter.rb,v 1.12 2002/10/31 02:17:26 deveiant Exp $
+		DefaultSortPosition = 15
 
 		### A container module for MUES::SocketOutputFilter state contants.
 		module State

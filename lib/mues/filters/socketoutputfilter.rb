@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.17 2002/10/26 19:04:39 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.18 2002/10/31 02:18:55 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,9 +49,9 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.17 $} )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.17 2002/10/26 19:04:39 deveiant Exp $
-		DefaultSortPosition = 300
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.18 $} )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.18 2002/10/31 02:18:55 deveiant Exp $
+		DefaultSortPosition = 15
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
 
 		# The poll events to react to

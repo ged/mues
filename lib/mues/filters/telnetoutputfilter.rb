@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.13 2002/10/23 03:03:54 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.14 2002/10/31 02:19:00 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.13 2002/10/23 03:03:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.14 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.14 2002/10/31 02:19:00 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {
@@ -73,7 +73,7 @@ module MUES
 		}	  
 
 		# IOEventStream sort order
-		DefaultSortPosition = 300
+		DefaultSortPosition = 15
 
 		### Create and return a new telnet output filter with the specified
 		### <tt>socket</tt> (an IPSocket object), <tt>pollProxy</tt>
