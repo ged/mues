@@ -12,7 +12,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketoutputfilter.rb,v 1.16 2002/10/25 03:14:22 deveiant Exp $
+# $Id: socketoutputfilter.rb,v 1.17 2002/10/26 19:04:39 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,13 +48,14 @@ module MUES
 			CONNECTED = 1
 		end
 
-		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN|Poll::OUT
-
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.16 2002/10/25 03:14:22 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.17 $} )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.17 2002/10/26 19:04:39 deveiant Exp $
 		DefaultSortPosition = 300
 		DefaultWindowSize = { 'height' => 23, 'width' => 80 }
+
+		# The poll events to react to
+		HandledBits = Poll::NVAL|Poll::HUP|Poll::ERR|Poll::IN|Poll::OUT
 
 		# Legibility constants
 		NULL = "\000"
@@ -185,6 +186,7 @@ module MUES
 			self.shutdown
 			return super( stream )
 		end
+
 
 
 		#########

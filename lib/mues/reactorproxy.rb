@@ -15,7 +15,7 @@
 # 
 # == Rcsid
 # 
-# $Id: reactorproxy.rb,v 1.2 2002/08/02 20:03:44 deveiant Exp $
+# $Id: reactorproxy.rb,v 1.3 2002/10/26 19:00:56 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,6 +48,11 @@ module MUES
 			@ioObject = ioObject
 		end
 
+
+		######
+		public
+		######
+
 		### Register the specified <tt>callback</tt> (a Method or Proc
 		### object) or <tt>block</tt> for the specified <tt>eventMask</tt>
 		### (see the Poll#register method for details)
@@ -55,10 +60,12 @@ module MUES
 			return @poll.register( @ioObject, eventMask, callback||block, *args )
 		end
 
+
 		### Unregister any callbacks for the IO associated with the proxy.
 		def unregister
 			return @poll.unregister( @ioObject )
 		end
+
 
 		### Returns true if the IO associated with the proxy is registered
 		### with the Poll object.
@@ -66,10 +73,12 @@ module MUES
 			return @poll.registered?( @ioObject )
 		end
 
+
 		### Returns the event mask for the IO associated with the proxy.
 		def mask
 			return @poll.mask( @ioObject )
 		end
+
 
 		### Add (bitwise OR) the specified <tt>eventMask</tt> with the
 		### proxied poll object's current mask for the IO associated with
@@ -77,6 +86,7 @@ module MUES
 		def addMask( eventMask )
 			return @poll.addMask( @ioObject, eventMask )
 		end
+
 
 		### Remove (bitwise XOR) the specified <tt>eventMask</tt> from the
 		### proxied poll object's current mask for the IO associated with
