@@ -22,7 +22,7 @@
 #	<?xml version="1.0" encoding="UTF-8"?>
 #	<!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 #	
-#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/06 01:55:54 $">
+#	<muesconfig version="1.13" time-stamp="$Date: 2002/10/22 18:20:49 $">
 #	
 # 	  <!-- General server configuration:
 # 		  server-name:			The name of the server
@@ -218,7 +218,7 @@
 #
 # == Rcsid
 # 
-# $Id: config.rb,v 1.16 2002/10/06 01:55:54 deveiant Exp $
+# $Id: config.rb,v 1.17 2002/10/22 18:20:49 deveiant Exp $
 # 
 # == Authors
 # 
@@ -239,6 +239,7 @@ require 'mues/Mixins'
 require 'mues/Exceptions'
 
 # Configuration-instantiation dependencies
+require 'mues/Log'
 require 'mues/Object'
 require 'mues/ObjectStore'
 require 'mues/Environment'
@@ -254,8 +255,8 @@ module MUES
 	class Config < MUES::Object
 		
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.16 $ )[1]
-		Rcsid = %q$Id: config.rb,v 1.16 2002/10/06 01:55:54 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.17 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.17 2002/10/22 18:20:49 deveiant Exp $
 
 		### Return a new configuration object, optionally loading the
 		### configuration from <tt>source</tt>, which should be either a file
@@ -521,6 +522,9 @@ module MUES
 			# REXML::Element object that created this section
 			attr_reader :xmlElement
 
+			# The parent element of this one
+			attr_reader :parent
+
 
 			### Returns an Array of item names contained by this element.
 			def items
@@ -531,6 +535,18 @@ module MUES
 			### Returns an Array of the subsections contained by this element.
 			def subsections
 				return @subsections.keys
+			end
+
+
+			### Returns an Array of the parents of this element.
+			def parents
+				rary = [ self.parent ]
+				while (( ancestor = rary.last.parent ))
+					break if rary.include?( ancestor )
+					rary.push( ancestor )
+				end
+
+				return rary.compact
 			end
 
 
@@ -583,7 +599,79 @@ module MUES
 				return false
 			end
 
-		end
+
+			
+			#########
+			protected
+			#########
+
+			### Process the specified string <tt>value</tt> from the XML into a
+			### Ruby value.
+			def processValue( value )
+				rval = nil
+
+				case value
+				when REXML::Element
+					rval = value.to_a.collect {|part|
+						case part
+						when REXML::Text
+							part.to_s
+						when REXML::Instruction
+							self.processInstruction( part )
+						when REXML::Comment
+							''
+						else
+							self.log.info "Unhandled Item part type '%s'" % part.class.name
+						end
+						
+					}.join('')
+
+				else
+					rval = value.to_s
+				end
+
+				case rval
+				when /^\d+\.\d+$/
+					rval = rval.to_f
+
+				when /^\d+$/
+					rval = rval.to_i
+
+				when /^true$/
+					rval = true
+
+				when /^false$/i, /^no$/i, /^off$/i
+					rval = false
+
+				when /^nil$/
+					rval = nil
+				end				
+
+				return rval
+			end
+
+
+			### Process the specified XML processing instruction (an
+			### REXML::Instruction object), and return its value.
+			def processInstruction( pi )
+				case pi.target
+				when /config/
+					top = self.parents[-1]
+					return pi.content.split(/\./).inject(top) {|elem,msg|
+						return elem unless elem.kind_of?( MUES::Config::Element )
+						begin
+							elem.send( msg )
+						rescue => e
+							"Error in PI: <?%s %s?>: %s" %
+								[ pi.target, pi.content, e.message ]
+						end
+					}
+				else
+					self.log.info "Unhandled processing instruction: "
+				end
+			end
+
+		end # class Element
 
 
 
@@ -595,6 +683,7 @@ module MUES
 			### specified <tt>xmlElement</tt> (a REXML::Element object).
 			def initialize( xmlElement, parent = nil )
 				super( xmlElement, parent )
+				$stderr.puts "Adding item '%s': %s" % [ self.inspect, self.value.inspect ]
 			end
 
 
@@ -604,19 +693,8 @@ module MUES
 			
 			### Returns the item cast into an appropriate datatype
 			def value
-				val = @xmlElement.text
-				return case val
-					   when /^\d+\.\d+$/
-						   val.to_f
-
-					   when /^\d+$/
-						   val.to_i
-
-					   else
-						   val
-					   end
+				return processValue( @xmlElement )
 			end
-
 		end
 
 
@@ -806,17 +884,6 @@ module MUES
 			end
 
 			
-			# Given a String or a REXML::Text object, return the boolean
-			# (<tt>true</tt> or <tt>false</tt> equivalent)
-			def asBoolean( item )
-				return case item.to_s
-					   when /^false$/i, /^no$/i, /^off$/i
-						   false
-					   else
-						   item
-					   end
-			end
-
 		end # class Section
 
 
@@ -951,7 +1018,7 @@ module MUES
 				if env.name == 'environment'
 					parameters = {}
 					env.elements.each("param") {|param|
-						parameters[ param.attributes["name"] ] = asBoolean( param.text )
+						parameters[ param.attributes["name"] ] = self.processValue( param )
 					}
 
 					description = env.elements["description"].text
@@ -1084,7 +1151,7 @@ module MUES
 				if listener.name == 'listener'
 					parameters = {}
 					listener.elements.each("param") {|param|
-						parameters[ param.attributes["name"] ] = param.text
+						parameters[ param.attributes["name"] ] = self.processValue( param )
 					}
 
 					@items[ name ] = {
@@ -1175,7 +1242,7 @@ end # module MUES
 
 # Embed the default configuration
 __END__
-<muesconfig version="1.1" time-stamp="$Date: 2002/10/06 01:55:54 $">
+<muesconfig version="1.1" time-stamp="$Date: 2002/10/22 18:20:49 $">
 
   <!-- General server configuration:
 	server-name:		The name of the server
@@ -1240,9 +1307,9 @@ __END__
 
 	  <!-- Telnet listener for MUES::TelnetOutputFilter -->
 	  <listener class="Telnet" name="telnet">
-		<param name="bind-port">23</param>
+		<param name="bind-port">4848</param>
 		<param name="bind-address">0.0.0.0</param>
-		<param name="use-wrapper">true</param>
+		<param name="use-wrapper">false</param>
 	  </listener>
 
 	  <!-- Console listener for MUES::ConsoleOutputFilter -->
