@@ -18,7 +18,7 @@
 # 
 # == Rcsid
 # 
-# $Id: object.rb,v 1.4 2002/10/23 02:09:05 deveiant Exp $
+# $Id: object.rb,v 1.5 2002/10/25 19:01:53 deveiant Exp $
 # 
 # == Authors
 # 
@@ -68,6 +68,12 @@ class Class
 			alias_method( newSym, oldSym )
 		}
 		return rval
+
+	rescue Exception => err
+		# Mangle exceptions to point someplace useful
+		frames = err.backtrace
+		frames.shift while frames.first =~ /#{__FILE__}/
+		Kernel::raise err, err.message, frames
 	end
 end
 
@@ -147,8 +153,8 @@ module MUES
 	class Object < ::Object; implements MUES::AbstractClass
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
-		Rcsid = %q$Id: object.rb,v 1.4 2002/10/23 02:09:05 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.5 $} )[1]
+		Rcsid = %q$Id: object.rb,v 1.5 2002/10/25 19:01:53 deveiant Exp $
 
 
 		### Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -193,7 +199,7 @@ module MUES
 			}
 		end
 
-
+		
 		### Returns a unique id for an object
 		def self.generateMuesId( obj )
 			raw = "%s:%s:%.6f" % [ $$, obj.id, Time.new.to_f ]
@@ -230,9 +236,15 @@ module MUES
 					self.log.warn "warning: %s: #{warningMessage}" % caller(1)
 					send( #{newSym.inspect}, *args )
 				rescue => err
+					# Mangle exceptions to point someplace useful
 					Kernel::raise err, err.message, err.backtrace[2..-1]
 				end
 			}
+		rescue Exception => err
+			# Mangle exceptions to point someplace useful
+			frames = err.backtrace
+			frames.shift while frames.first =~ /#{__FILE__}/
+			Kernel::raise err, err.message, frames
 		end
 
 
@@ -260,6 +272,7 @@ module MUES
 					MUES::Log.warn "warning: %s: #{warningMessage}" % caller(1)
 					send( #{newSym.inspect}, *args )
 				rescue => err
+					# Mangle exceptions to point someplace useful
 					Kernel::raise err, err.message, err.backtrace[2..-1]
 				end
 			}
