@@ -49,8 +49,8 @@ module MUES
 		end
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.2 $ )[1]
-		Rcsid = %q$Id: socketoutputfilter.rb,v 1.2 2001/05/14 12:31:38 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: socketoutputfilter.rb,v 1.3 2001/05/15 02:14:36 deveiant Exp $
 		DefaultSortPosition = 300
 
 		NULL = "\000"
@@ -90,7 +90,7 @@ module MUES
 		### handleOutputEvents( *events )
 		### Handle an output event by appending its data to the output buffer
 		def handleOutputEvents( *events )
-			events = super( events )
+			events = super( *events )
 			events.flatten!
 
 			_debugMsg( 1, "Handling #{events.size} output events." )
