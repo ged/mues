@@ -1,0 +1,21 @@
+
+= To Do - shellCommands
+
+	This is an informal list of commands we intend to implement.
+
+* deleteuser - remove a user from the database.
+
+* kickuser - boot a user from the server, implementor and above(?).
+
+* banuser - ban a user from being on the server, admin and above(?).
+
+* banip - ban an ip set from logging onto the server, admin and above(?).
+
+	Both bans will need to have info about who is doing the banning.
+
+* setuser* - have mutators for all the mutatable user attributes (password is
+  done already).
+
+* motd - allow an admin to change the message of the day.
+
+* setdefault - set a default shell parameter.
