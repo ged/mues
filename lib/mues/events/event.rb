@@ -54,7 +54,7 @@
 #	  # MySubEvent events:
 # 	  def initialize
 # 	    super
-# 	    MyEvent.RegisterHandlers( self )
+# 	    MyEvent::registerHandlers( self )
 # 	  end
 # 
 # 	  def handleEvents( *events )
@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: event.rb,v 1.14 2002/10/26 19:02:47 deveiant Exp $
+# $Id: event.rb,v 1.15 2003/06/06 22:37:44 deveiant Exp $
 # 
 # == Authors
 # 
@@ -87,36 +87,28 @@ module MUES
 
 	### Abstract base event class.
 	class Event < Object ; implements MUES::Debuggable, MUES::AbstractClass, Comparable
+		include MUES::TypeCheckFunctions
 
-		include MUES::TypeCheckFunctions, MUES::FactoryMethods
-
-		### Class constants
-		Version			= /([\d\.]+)/.match( %q{$Revision: 1.14 $} )[1]
-		Rcsid			= %q$Id: event.rb,v 1.14 2002/10/26 19:02:47 deveiant Exp $
+		### Constants
+		Version			= /([\d\.]+)/.match( %q{$Revision: 1.15 $} )[1]
+		Rcsid			= %q$Id: event.rb,v 1.15 2003/06/06 22:37:44 deveiant Exp $
 		MaxPriority		= 64
 		MinPriority		= 1
 		DefaultPriority	= (MaxPriority / 2).to_i
 
-		### Class globals
+		### Class global - A hash of handlers, keyed by Class, for each event
+		### type.
 		@@Handlers = { Event => [] }
 
 
-		### Initialize a new event with the specified +priority+. This should be
-		### called by the initializer of all derivate event classes.
-		def initialize( priority=DefaultPriority ) # :notnew:
-			super()
-			self.priority = priority
-			@creationTime = Time.now
-			debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime} (priority=#{@priority})" )
-		end
-
-
-		### Class methods
+		#############################################################
+		###	C L A S S   M E T H O D S
+		#############################################################
 
 		### Register the specified objects as interested in events of the
 		### receiver class. Alias <tt>RegisterHandlers</tt> provided for
 		### backward-compatibility; will be removed soon.
-		def self.registerHandlers( *handlers )
+		def self::registerHandlers( *handlers )
 			TypeCheckFunctions::checkEachResponse( handlers, "handleEvent" )
 
 			# Add the handlers to the handlers for this class
@@ -128,7 +120,7 @@ module MUES
 		### Unregister the specified objects as interested in events of the
 		### receiver class.  Alias <tt>UnregisterHandlers</tt> provided for
 		### backward-compatibility; will be removed soon.
-		def self.unregisterHandlers( *handlers )
+		def self::unregisterHandlers( *handlers )
 			@@Handlers[ self ] -= handlers
 			@@Handlers[ self ].length
 		end
@@ -137,7 +129,7 @@ module MUES
 		### Return handlers for the specified class and its parents, most
 		### specific first. Alias <tt>GetHandlers</tt> provided for
 		### backward-compatibility; will be removed soon.
-		def self.getHandlers
+		def self::getHandlers
 			return self.ancestors.find_all { |klass| 
 				klass <= Event
 			}.collect { |klass|
@@ -145,30 +137,34 @@ module MUES
 			}.flatten.uniq
 		end
 
-		# Register backward-compatibility class methods
-		# :TODO: This block should be removed in the next release
-		deprecate_class_method :RegisterHandlers, :registerHandlers
-		deprecate_class_method :UnregisterHandlers, :unregisterHandlers
-		deprecate_class_method :GetHandlers, :getHandlers
-
-		# Alias the inheritance callback added by MUES::FactoryMethods so it can
-		# be overridden without clobbering it.
-		alias_class_method :__inherited, :inherited
 
 		### Inheritance callback: Set up a handler array for each new
 		### <tt>subclass</tt> as it is created.
-		def self.inherited( subclass )
+		def self::inherited( subclass )
 			@@Handlers[ subclass ] = []
-			return __inherited( subclass )
+			super
 		end
 
 
 		### Return a list of all the events for which handlers may be
 		### registered.
-		def self.getEventClasses
+		def self::getEventClasses
 			return @@Handlers.keys
 		end
 
+
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
+
+		### Initialize a new event with the specified +priority+. This should be
+		### called by the initializer of all derivate event classes.
+		def initialize( priority=DefaultPriority ) # :notnew:
+			super()
+			self.priority = priority
+			@creationTime = Time.now
+			debugMsg( 1, "Initializing an #{self.class.name} at #{@creationTime} (priority=#{@priority})" )
+		end
 
 
 		######
