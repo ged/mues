@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE muesconfig SYSTEM "muesconfig.dtd">
 
-<muesconfig version="1.1" revision="$Revision: 1.3 $">
-  
+<muesconfig version="1.1" time-stamp="$Date: 2002/07/07 18:11:34 $">
+
   <!-- General server configuration -->
   <general>
 	<server-name>Experimental MUD</server-name>
@@ -19,13 +19,15 @@
 	<tick-length>1.0</tick-length>
 	<exception-stack-size>10</exception-stack-size>
 	<debug-level>0</debug-level>
-
+	
 	<!-- Engine objectstore config -->
-	<objectstore>
+	<objectstore name="mues">
 	  <backend class="BerkeleyDB"></backend>
-	  <garbagecollector class="Simple">
-		<param name="trash_rate">50</param>
-	  </garbagecollector>
+	  <memorymanager class="Simple">
+		<param name="interval">50</param>
+	  </memorymanager>
+	  <visitor class="ObjectSpaceVisitor">
+	  </visitor>
 	</objectstore>
 
 	<!-- Listener objects -->
@@ -38,7 +40,7 @@
 		<bind-address>0.0.0.0</bind-address>
 		<use-wrapper>true</use-wrapper>
 	  </listener>
-
+	  
 	  <!-- Client listener: MUES::ClientOutputFilter (BEEP) -->
 	  <listener name="client">
 		<filter-class>MUES::ClientOutputFilter</filter-class>
@@ -48,7 +50,7 @@
 	  </listener>
 	</listeners>
   </engine>
-
+  
 
   <!-- Logging system configuration (Log4R format) -->
   <logging>
@@ -56,10 +58,8 @@
 
 	  <!-- Log4R pre-config -->
 	  <pre_config>
-		<parameters>
-		  <logpath>server/log</logpath>
-		  <mypattern>%l [%d] %m</mypattern>
-		</parameters>
+		<parameter name="logpath" value="server/log" />
+		<parameter name="mypattern" value="%l [%d] %m" />
 	  </pre_config>
 
 	  <!-- Log Outputters -->
@@ -70,12 +70,8 @@
 		filename="#{logpath}/error.log" trunc="true" />
 	  <outputter type="FileOutputter" name="environmentlog"
 		filename="#{logpath}/environments.log" trunc="false" />
-	  <outputter type="EmailOutputter" name="mailadmin">
-		<server>localhost</server>
-		<port>25</port>
-		<from>mueslogs@localhost</from>
-		<to>muesadmin@localhost</to>
-	  </outputter>
+	  <outputter type="EmailOutputter" name="mailadmin" server="localhost"
+		port="25" from="mueslogs@localhost" to="muesadmin@localhost" />
 
 	  <!-- Loggers -->
 	  <logger name="MUES"   level="INFO"  outputters="serverlog" />
@@ -84,27 +80,27 @@
 	</log4r_config>
   </logging>
 
-
+  
   <!-- Environments which are to be loaded at startup -->
   <environments>
 	<environment name="FaerieMUD" class="FaerieMUD::World">
 	  <objectstore name="FaerieMUD">
-		<backend class="BerkeleyDB"></backend>
-		<garbagecollector class="PMOS"></garbagecollector>
+		<backend class="BerkeleyDB" />
+		<memorymanager class="PMOS" />
 	  </objectstore>
 	</environment>
-
+	
 	<environment name="testing" class="MUES::ObjectEnv">
 	  <objectstore name="testing-objectenv">
 		<backend class="Flatfile" />
-		<garbagecollector class="Simple">
-		  <param name="trash_rate">100</param>
-		</garbagecollector>
+		<memorymanager class="Simple">
+		  <param name="interval">100</param>
+		</memorymanager>
 	  </objectstore>
 	</environment>
   </environments>
 
-
+  
   <!-- Services which are to be loaded at startup -->
   <services>
 	<service name="objectstore" class="MUES::ObjectStoreService" />
