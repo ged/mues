@@ -24,7 +24,7 @@
 # 
 # == Rcsid
 # 
-# $Id: socketlistener.rb,v 1.6 2002/10/26 19:05:47 deveiant Exp $
+# $Id: socketlistener.rb,v 1.7 2002/10/31 02:19:18 deveiant Exp $
 # 
 # == Authors
 # 
@@ -47,8 +47,8 @@ module MUES
 	class SocketListener < MUES::Listener
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid = %q$Id: socketlistener.rb,v 1.6 2002/10/26 19:05:47 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid = %q$Id: socketlistener.rb,v 1.7 2002/10/31 02:19:18 deveiant Exp $
 
 		### Create a new SocketListener object with the specified
 		### <tt>name</tt>. This listener understands the following
@@ -172,6 +172,7 @@ module MUES
 		def releaseOutputFilter( pollObj, filter )
 			self.log.notice "Filter %s (%s) released to %s" % 
 				[ filter.muesid, filter.class.name, self.class.name ]
+			return []
 		end
 
 
