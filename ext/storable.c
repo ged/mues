@@ -1,6 +1,6 @@
 /*
  *	polymorphic.c - Polymorphic backend for MUES::StorableObject
- *	$Id: storable.c,v 1.2 2002/05/28 16:46:46 deveiant Exp $
+ *	$Id: storable.c,v 1.3 2002/05/28 16:47:50 deveiant Exp $
  *
  *	This module defines the part of the MUES::StorableObject class which allows
  *	it to exchange its identity with another StorableObject by calling its
@@ -40,7 +40,7 @@ VALUE cStorableObject;
  * receiver.
  */
 static VALUE
-polyobj_become( self, other ) 
+storable_become( self, other ) 
 	 VALUE self, other;
 {
   long t[5];
