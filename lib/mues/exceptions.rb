@@ -95,7 +95,7 @@
 # 
 # == Rcsid
 # 
-# $Id: exceptions.rb,v 1.9 2002/04/01 16:27:31 deveiant Exp $
+# $Id: exceptions.rb,v 1.10 2002/05/16 03:49:17 deveiant Exp $
 # 
 # == Authors
 # 
@@ -150,9 +150,7 @@ module MUES
 	def_exception :SecurityViolation,		"Security violation",				Exception
 
 	# Environment exceptions
-	def_exception :EnvironmentError,		"Generic environment error",		Exception
-	def_exception :EnvironmentLoadError,	"Could not load environment",		EnvironmentError
-	def_exception :EnvironmentUnloadError,	"Could not unload environment",		EnvironmentError
+	# (Moved to Environment.rb - [Ged])
 
 	# Signal exceptions
 	def_exception :Reload,					"Configuration out of date",		Exception
