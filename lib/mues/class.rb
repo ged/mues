@@ -29,7 +29,7 @@
 #
 # == Rcsid
 # 
-# $Id: class.rb,v 1.5 2002/04/04 17:11:42 deveiant Exp $
+# $Id: class.rb,v 1.6 2002/04/09 06:59:51 deveiant Exp $
 # 
 # == Authors
 # 
@@ -48,13 +48,6 @@ require 'metaclass/Constants'
 ### builtin classes.
 module Metaclass
 
-	autoload :Operation, "metaclass/Operation"
-	autoload :Parameter, "metaclass/Parameter"
-	autoload :Interface, "metaclass/Interface"
-	autoload :Attribute, "metaclass/Attribute"
-	autoload :Asscociation, "metaclass/Association"
-
-
 	### An exception for indicating a problem in a Class metaclass object.
 	class ClassException < ScriptError; end
 
@@ -65,15 +58,15 @@ module Metaclass
 
 		include Comparable
 
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: class.rb,v 1.5 2002/04/04 17:11:42 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: class.rb,v 1.6 2002/04/09 06:59:51 deveiant Exp $
 
 
 		### Create and return a new Class metaclass object with the specified
 		### +name+, and optional +superclass+.
 		def initialize( name, superclass=nil )
-			raise TypeError, "Superclass must be a Class or a Metaclass::Class." unless
-				superclass.nil? || superclass.kind_of?( Class ) || superclass.kind_of?( Metaclass::Class )
+			raise ArgumentError, "Superclass must be a Class or a Metaclass::Class." unless
+				superclass.nil? || superclass.kind_of?( ::Class ) || superclass.kind_of?( Metaclass::Class )
 
 			@name				= name
 			@operations			= {}
@@ -82,7 +75,12 @@ module Metaclass
 			@classAttributes	= {}
 			@interfaces			= []
 
-			@superclass			= superclass
+			# If the BaseClass class isn't loaded yet, load it
+			unless Metaclass.const_defined? :BaseClass
+				require 'metaclass/BaseClass'
+			end
+
+			@superclass			= superclass || Metaclass::BaseClass::instance
 
 			# The generated anonymous class
 			@classObj			= nil
@@ -115,6 +113,81 @@ module Metaclass
 		attr_reader :superclass
 
 
+		### Return a stringified representation of the class object.
+		def inspect
+			"The %s class <Metaclass::Class (%d op/%d attr/%d ifcs)>" % [
+				self.name,
+				self.operations.length,
+				self.attributes.length,
+				self.interfaces.length
+			]
+		end
+
+
+		### Test for the attribute specified. Returns true if instances of the
+		### class have an attribute with the specified attribute, which may be a
+		### Metaclass::Attribute object, or a String containing the name of the
+		### attribute to test for.
+		def hasAttribute?( attribute )
+			if attribute.kind_of? Metaclass::Attribute
+				return true if @attributes.has_value? attribute
+			else
+				return @attributes.has_key? attribute.to_s
+			end
+		end
+
+		
+		### Test for the class attribute specified. Returns true if instances of
+		### the class have an attribute with the specified attribute, which may
+		### be a Metaclass::Attribute object, or a String containing the name of
+		### the attribute to test for.
+		def hasClassAttribute?( attribute )
+			if attribute.kind_of? Metaclass::Attribute
+				return true if @classAttributes.has_value? attribute
+			else
+				return @classAttributes.has_key? attribute.to_s
+			end
+		end
+
+		
+		### Test for the operation specified. Returns true if instances of the
+		### class have an operation with the specified operation, which may be a
+		### Metaclass::Operation object, or a String containing the name of the
+		### operation to test for.
+		def hasOperation?( operation )
+			if operation.kind_of? Metaclass::Operation
+				return true if @operations.has_value? operation
+			else
+				return @operations.has_key? operation.to_s
+			end
+		end
+
+		
+		### Test for the class operation specified. Returns true if instances of
+		### the class have an operation with the specified operation, which may
+		### be a Metaclass::Operation object, or a String containing the name of
+		### the operation to test for.
+		def hasClassOperation?( operation )
+			if operation.kind_of? Metaclass::Operation
+				return true if @classOperations.has_value? operation
+			else
+				return @classOperations.has_key? operation.to_s
+			end
+		end
+
+
+		### Test for inclusion of the specified interface, which may be either a
+		### Metaclass::Interface object or the name of one, in the
+		### class. Returns true if the specified interface is included.
+		def includesInterface?( interface )
+			if interface.kind_of? Metaclass::Interface
+				return @interfaces.include? interface
+			else
+				return true if @interfaces.detect {|iface| iface.name == interface.to_s}
+			end
+		end
+
+
 		### Append operator: Adds the specified <tt>metaObject</tt> to the
 		### appropriate attribute, and returns itself. Valid
 		### <tt>metaObject</tt>s are Metaclass::Attribute, Metaclass::Operation,
@@ -132,18 +205,44 @@ module Metaclass
 				addInterface( metaObject )
 
 			else
-				raise TypeError, "Can't append a '#{metaObject.type.name}' to a #{self.type.name}."
+				raise ArgumentError, "Can't append a '#{metaObject.type.name}' to a #{self.type.name}."
 			end
 
 			return self
 		end
 
+
 		### Add the specified interface (a Metaclass::Interface object) to the
 		### class. Returns +true+ if the interface was successfully added.
 		def addInterface( interface )
+			raise ArgumentError, "Illegal argument 1: Metaclass::Interface object." unless
+				interface.kind_of?( Metaclass::Interface )
+
 			self.interfaces << interface
 			return true
 		end
+
+
+		### Remove the specified interface (a Metaclass::Interface object) from
+		### the class. Returns the removed interface on success, or <tt>nil</tt>
+		### if the interface wasn't found.
+		def removeInterface( interface )
+			raise ArgumentError, "Illegal argument 1: Metaclass::Interface object." unless
+				interface.kind_of?( Metaclass::Interface ) || interface.kind_of?( ::String )
+
+			# Look for an remove the specified interface
+			rval = @interfaces.find {|iface|
+				iface == interface || iface.name == interface
+			}
+			
+			# If we found an interface to remove, remove the stuff it added, too.
+			if rval
+				@interfaces.delete( rval )
+				# Remove interface-added ops, attributes, sub-interfaces
+			end
+
+			return rval
+		end			
 
 
 		### Add the specified attribute (a Metaclass::Attribute object) to the
@@ -154,41 +253,73 @@ module Metaclass
 		### operation objects will be added as well. Returns true if the
 		### attribute was successfully added.
 		def addAttribute( attribute, name=nil, readOnly=false )
-			raise TypeError, "Illegal argument 1: Metaclass::Attribute object." unless
+			raise ArgumentError, "Illegal argument 1: Metaclass::Attribute object." unless
 				attribute.kind_of?( Metaclass::Attribute )
 
-			# Normalize the name and set the attribute in the appropriate
-			# attribute hash
+			# Normalize the name
 			name ||= attribute.name
+
+			# Add attribute and accessor/mutator
 			if attribute.scope == Scope::INSTANCE
 				@attributes[ name ] = attribute
+
+				# Add any accessors/mutators which are called for
+				if attribute.visibility >= Visibility::PROTECTED
+					# If there's not already an accessor, add one
+					unless self.hasOperation? name
+						self.addOperation( attribute.makeAccessorOp, name )
+					end
+
+					# ...same for a mutator unless the attribute's read-only
+					unless readOnly || self.hasOperation?("#{name}=")
+						self.addOperation( attribute.makeMutatorOp, "#{name}=" )
+					end
+				end
 			else
 				@classAttributes[ name ] = attribute
-			end
 
-			# Pick the appropriate operations hash to use based on the scope of
-			# the attribute
-			targetOps = if attribute.scope == Scope::INSTANCE
-							@operations
-						else
-							@classOperations
-						end
+				# Add any accessors/mutators which are called for
+				if attribute.visibility >= Visibility::PROTECTED
+					# If there's not already an accessor, add one
+					unless self.hasClassOperation? name
+						self.addOperation( attribute.makeAccessorOp, name )
+					end
 
-			# Add any accessors/mutators which are called for
-			if attribute.visibility >= Scope::PROTECTED
-				
-				# If there's not already an accessor, add one
-				unless targetOps.key? name
-					targetOps[ name ] = attribute.makeAccessorOp
+					# ...same for a mutator unless the attribute's read-only
+					unless readOnly || self.hasClassOperation?("#{name}=")
+						self.addOperation( attribute.makeMutatorOp, "#{name}=" )
+					end
 				end
 
-				# ...same for a mutator unless the attribute's read-only
-				unless readOnly || targetOps.has_key?("#{name}=")
-					targetOps[ "#{name}=" ] = attribute.makeMutatorOp
-				end
 			end
 
 			return true
+		end
+
+
+		### Remove the specified attribute (a Metaclass::Attribute object or a
+		### String containing the name of the attribute), from the class. If an
+		### accessor and/or mutator was added to the class by the attribute,
+		### those too will be removed. Returns the removed attribute on success,
+		### or <tt>nil</tt> if the specified attribute was not found.
+		def removeAttribute( attribute )
+			raise ArgumentError,
+				"Expected a Metaclass::Attribute or a String, not a #{attribute.type.name}" unless
+				attribute.kind_of?( Metaclass::Attribute ) || attribute.kind_of?( String )
+
+			# Look for and remove the specified attribute
+			rval = @attributes.find {|name,attrObj|
+				attrObj == attribute || name == attribute
+			}
+
+			# If we found the pair, remove them and their associated operations, if present
+			if rval
+				rval = @attributes.delete( rval[0] )
+				self.removeOperation( rval.makeAccessorOp )
+				self.removeOperation( rval.makeMutatorOp )
+			end
+
+			return rval
 		end
 
 
@@ -197,7 +328,7 @@ module Metaclass
 		### the method name instead of the operation's own name. Returns true if the
 		### operation was successfully added.
 		def addOperation( operation, name=nil )
-			raise TypeError, "Illegal argument 1: Metaclass::Operation object." unless
+			raise ArgumentError, "Illegal argument 1: Metaclass::Operation object." unless
 				operation.kind_of?( Metaclass::Operation )
 
 			# Normalize the name and set the operation in the appropriate
@@ -209,7 +340,43 @@ module Metaclass
 				@classOperations[ name ] = operation
 			end
 
+			# If the class object's already been instantiated, turn off warnings
+			# about redefinition, and eval the new method into the class object
+			if @classObj
+				oldVerbose = $VERBOSE
+				$VERBOSE = false
+				@classObj.class_eval { operation.methodDefinition(name) }
+				$VERBOSE = oldVerbose
+			end
+
 			return true
+		end
+
+
+		### Remove the specified operation (a Metaclass::Operation object, or a
+		### String containing the name associated with the operation). Returns
+		### the removed operation if successful, or <tt>nil</tt> if the
+		### specified operation was not found.
+		def removeOperation( operation )
+			raise ArgumentError,
+				"Expected a Metaclass::Operation or a String, not a #{operation.type.name}" unless
+				operation.kind_of?( Metaclass::Operation ) || operation.kind_of?( String )
+
+			# Look for and remove the specified attribute
+			rval = @operations.find {|name,opObj|
+				opObj == operation || name == operation
+			}
+
+			# If we found the pair, remove them and their associated operations, if present
+			if rval
+				if @classObj
+					@classObj.class_eval { remove_method rval[0].intern }
+				end
+
+				rval = @operations.delete( rval[0] )
+			end
+
+			return rval
 		end
 
 
@@ -218,17 +385,28 @@ module Metaclass
 		### <tt>otherClass</tt>. This method (and all the rest defined by
 		### Comparable behave accordingly).
 		def <=>( otherClass )
-			return 0 unless otherClass.kind_of?( Metaclass::Class ) && otherClass != self
+			raise ArgumentError,
+				"Cannot compare a #{self.type.name} and a #{otherClass.type.name}" unless
+				otherClass.kind_of?( Metaclass::Class )
 
-			return -1 if @superclass.ancestors.detect {|k| k == otherClass}
-			return 1 if otherClass.ancestors.detect {|k| k == self}
+			return 0 if otherClass.name == self.name
+			return 1 if otherClass.ancestors.detect {|k| k.equal? self}
+			return -1 if @superclass.ancestors.detect {|k| k.equal? otherClass}
 			return 0
 		end
 
 
-		### Return a stringified representation of the class object.
-		def inspect
-			@name
+		### Returns true if the receiver is between the specified classes in the
+		### inheritance hierarchy.
+		def between?( classOne, classTwo )
+			raise ArgumentError,
+				"Illegal argument 1: Cannot compare a #{classOne.type.name} with a #{self.type.name}" unless
+				classOne.kind_of? Metaclass::Class
+			raise ArgumentError,
+				"Illegal argument 2: Cannot compare a #{classTwo.type.name} with a #{self.type.name}" unless
+				classTwo.kind_of? Metaclass::Class
+
+			return true if (classOne < self && self < classTwo) || (classTwo < self && self < classOne)
 		end
 
 
@@ -236,7 +414,7 @@ module Metaclass
 		### the receiver itself).
 		def ancestors
 			if @superclass
-				[ self, @superclass.ancestors ].flatten
+				[ self, *@superclass.ancestors ].flatten
 			else
 				[ self ]
 			end
@@ -285,14 +463,23 @@ module Metaclass
 		end
 
 
-		### (Potentially) instantiate and return the anonymous class object
-		### instantiated from the receiver.
+		### Return the anonymous class object associated with the receiver.
 		def classObj
-			@classObj ||= Class::new( self.superclass.classObj ) {|klass|
-				klass.class_eval self.classDefinition( false, false )
+			klassDef = self.classDefinition( false, false )
+
+			# Ladder idiom -- define a new anonymous class if it's not
+			# instantiated already, and eval the class definition sans
+			# declaration in the new class
+			@classObj ||= ::Class::new( self.superclass.classObj ) {
+				self.class_eval klassDef
 			}
 		end
 
+
+		### Instantiate the class.
+		def new( *args )
+			self.classObj.new( *args )
+		end
 
 	end # class Class
 
