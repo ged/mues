@@ -9,7 +9,8 @@
 # * Encapsulate the functions you want to offer in a class that inherits from
 # 	the MUES::Service class.
 # 
-# * Add your class to the Services config section.
+# * Add your class to the mues/lib/services directory, or require it explicitly
+#   from somewhere.
 # 
 # * Add the events you want to use for interacting with your service either to
 #   mues/events/ServiceEvents.rb, or define them in a separate class and add the
@@ -34,7 +35,7 @@
 #
 # == Rcsid
 # 
-# $Id: service.rb,v 1.5 2002/05/16 03:48:43 deveiant Exp $
+# $Id: service.rb,v 1.6 2002/06/04 07:04:55 deveiant Exp $
 # 
 # == Authors
 # 
@@ -56,11 +57,21 @@ require "mues/Events"
 module MUES
 
 	### Abstract base class for MUES::Engine subsystems (services)
-	class Service < Object ; implements MUES::Notifiable, MUES::AbstractClass, MUES::Event::Handler
+	class Service < MUES::Object ; implements MUES::Notifiable, MUES::AbstractClass, MUES::Event::Handler
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.5 $ )[1]
-		Rcsid = %q$Id: service.rb,v 1.5 2002/05/16 03:48:43 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
+		Rcsid = %q$Id: service.rb,v 1.6 2002/06/04 07:04:55 deveiant Exp $
+
+		# Directory to look for services (relative to $LOAD_PATH)
+		ServicesDir = 'mues/services'
+
+		# Instances of services, keyed by type
+		@@instances = {}
+
+		# Registered service classes, keyed by class name and shortened class
+		# name
+		@@registeredServices = {}
 
 
 		### Initialize a new service object with the specified +name+ and
@@ -75,10 +86,51 @@ module MUES
 		### Class methods
 		class << self
 
-			### Get the service specified by the given +name+, instantiating
-			### it if necessary.
-			def getService( type )
+			### Register a Service as available
+			def inherit( subClass )
+				truncatedName = subClass.name.sub( /(?:.*::)?(\w+)(?:Service)?/, "\1" )
+				@@registeredServices[ subClass.name ] = subClass
+				@@registeredServices[ truncatedName ] = subClass
 			end
+
+			### Factory method: Instantiate and return a new Service of the
+			### specified <tt>serviceClass</tt>, using the specified
+			### <tt>objectStore</tt>, <tt>name</tt>, <tt>dump_undump</tt>
+			### Proc, and <tt>indexes</tt> Array.
+			def create( serviceClass, objectStore, name, dump_undump, indexes )
+				unless @@registeredServices.has_key? serviceClass
+					self.loadService( serviceClass )
+				end
+
+				@@registeredServices[ serviceClass ].new( objectStore,
+														 name,
+														 dump_undump,
+														 indexes )
+			end
+
+			### Attempt to guess the name of the file containing the
+			### specified service class, and look for it. If it exists, and
+			### is not yet loaded, load it.
+			def loadService( className )
+				modName = File.join( ServicesDir,
+									className.sub(/(?:.*::)?(\w+)(?:Service)?/, "\1Service") )
+
+				# Try to require the module that defines the specified
+				# service, raising an error if the require fails.
+				unless require( modName )
+					raise ObjectStoreError, "No such service class '#{className}'"
+				end
+
+				# Check to see if the specified service is now loaded. If it
+				# is not, raise an error to that effect.
+				unless @@registeredServices.has_key? className
+					raise ObjectStoreError,
+						"Loading '#{modName}' didn't define a service named '#{className}'"
+				end
+
+				return true
+			end
+
 
 			### Setup callback method
 			def atEngineStartup( theEngine )
