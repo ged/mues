@@ -17,7 +17,7 @@
 # 
 # == Rcsid
 # 
-# $Id: accessoroperation.rb,v 1.3 2002/10/04 04:05:38 deveiant Exp $
+# $Id: accessoroperation.rb,v 1.4 2002/10/04 05:06:43 deveiant Exp $
 # 
 # == Authors
 # 
@@ -35,12 +35,13 @@ require 'mues/metaclass/Operation'
 module MUES
 	module Metaclass
 
-		### An attribute accessor specialization of Metaclass::Operation.
+		### An attribute accessor specialization of Metaclass::Operation. It is
+		### used to create accessor methods for MUES::Metaclass::Class objects.
 		class AccessorOperation < Metaclass::Operation
 
 			### Class constants
-			Version = /([\d\.]+)/.match( %q{$Revision: 1.3 $} )[1]
-			Rcsid = %q$Id: accessoroperation.rb,v 1.3 2002/10/04 04:05:38 deveiant Exp $
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.4 $} )[1]
+			Rcsid = %q$Id: accessoroperation.rb,v 1.4 2002/10/04 05:06:43 deveiant Exp $
 
 			### Create a new AccessorOperation object.
 			def initialize( name, scope=Operation::DEFAULT_SCOPE, visibility=Operation::DEFAULT_VISIBILITY )

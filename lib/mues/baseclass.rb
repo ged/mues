@@ -1,76 +1,90 @@
 #!/usr/bin/ruby
 # 
-# This file contains a singleton class called Metaclass::BaseClass, which is a
+# This file contains the singleton class MUES::Metaclass::BaseClass, which is a
 # mechanism to provide a common normal Ruby class as a superclass for all
-# Metaclass::Class instances. It is basically just a metaclass wrapper around a
-# regular Ruby class.
+# MUES::Metaclass::Class instances. It is basically just a metaclass wrapper
+# around a regular Ruby class.
 #
-# It wraps the <tt>Object</tt> class by default, but this default can be changed
-# by providing an alternative class to the class's constructor when it is first
-# instantiated.
+# It wraps the <tt>MUES::Object</tt> class by default, but this default can be
+# changed by providing an alternative class to the class's constructor when it
+# is first instantiated.
 # 
 # == Synopsis
+#
+#	require 'mues/Metaclasses'
+#	include MUES
 # 
 #   myClass = Metaclass::Class::new( "MyClass", Metaclass::BaseClass.instance )
 # 
-# == Author
-# 
-# Michael Granger <ged@FaerieMUD.org>
-# 
-# Copyright (c) 2002 The FaerieMUD Consortium. All rights reserved.
-# 
-# This module is free software. You may use, modify, and/or redistribute this
-# software under the terms of the Perl Artistic License. (See
-# http://language.perl.com/misc/Artistic.html)
-# 
-# == Version
+# == Rcsid
 #
-#  $Id: baseclass.rb,v 1.1 2002/04/09 06:50:23 deveiant Exp $
+#  $Id: baseclass.rb,v 1.2 2002/10/04 05:06:43 deveiant Exp $
 # 
+# == Authors
+# 
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+#:include: COPYRIGHT
+#
+#---
+#
+# Please see the file COPYRIGHT for licensing details.
+#
 
-require 'metaclass/Constants'
-require 'metaclass/Class'
+require 'mues/Mixins'
+require 'mues/Object'
 
-### The base Ruby class metaclass
-module Metaclass
-	class BaseClass < Metaclass::Class
+require 'mues/metaclass/Constants'
+require 'mues/metaclass/Class'
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: baseclass.rb,v 1.1 2002/04/09 06:50:23 deveiant Exp $
+module MUES
+	module Metaclass
 
-		# Make the constructor private, as this is a singleton
-		private_class_method :new
+		### A singleton class which acts as a mechanism to provide a common normal
+		### Ruby class as a superclass for all MUES::Metaclass::Class
+		### instances. It is basically just a metaclass wrapper around a regular
+		### Ruby class.
+		class BaseClass < Metaclass::Class
 
-		@@instance = nil
-		@@rubyClass = ::Object
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
+			Rcsid = %q$Id: baseclass.rb,v 1.2 2002/10/04 05:06:43 deveiant Exp $
 
-		### Allow the superclass to be set until the instance is set
-		def BaseClass.rubyClass=( klass )
-			raise Metaclass::Exception, "Can't redefine superclass after instantiation" unless
-				@@instance.nil?
-			raise ArgumentError, "Superclass must be a Class object" unless
-				klass.is_a? ::Class
+			# Make the constructor private, as this is a singleton
+			private_class_method :new
 
-			# Warn against screwing with reality
-			if klass.kind_of? Metaclass::Class
-				$stderr.puts
-				"You do realize that, by doing this, you may very well cause the \n" +
-					"Universe to implode, right?" #"
+			@@instance = nil
+			@@rubyClass = MUES::Object
+
+			### Allow the superclass to be set until the instance is set
+			def self.rubyClass=( klass )
+				raise Metaclass::Exception, "Can't redefine superclass after instantiation" unless
+					@@instance.nil?
+				raise ArgumentError, "Superclass must be a Class object" unless
+					klass.is_a? ::Class
+
+				# Warn against screwing with reality
+				if klass.kind_of? Metaclass::Class
+					$stderr.puts "You do realize that, by doing this, you may very well cause the \n" \
+					"Universe to implode, right? "
+				end
+
+				@@rubyClass = klass
 			end
 
-			@@rubyClass = klass
-		end
+			### Return the instance of the BaseClass object, after potentially
+			### creating it.
+			def self.instance
+				@@instance ||= new( @@rubyClass.name, @@rubyClass )
+			end
 
-		### Return the instance of the BaseClass object, after potentially
-		### creating it.
-		def BaseClass.instance
-			@@instance ||= new( @@rubyClass.name, @@rubyClass )
-		end
+			def classObj
+				@@rubyClass
+			end
 
-		def classObj
-			@@rubyClass
-		end
+		end # class BaseClass
 
-	end # class BaseClass
-end # module Metaclass
+	end # module Metaclass
+end # module MUES
+
+

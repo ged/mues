@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 # 
-# This file contains the (>>>FILE_SANS<<<) metaclass: (>>>description<<<).
+# This file contains the MUES::Metaclass::(>>>FILE_SANS<<<) class, a derivative
+# of (>>>superclass<<<). (>>>description<<<)
 # 
 # == Synopsis
 # 
@@ -8,11 +9,11 @@
 # 
 # == Rcsid
 # 
-# $Id: template.rb.tpl,v 1.1 2002/05/26 00:12:41 deveiant Exp $
+# $Id: template.rb.tpl,v 1.2 2002/10/04 05:06:43 deveiant Exp $
 # 
 # == Authors
 # 
-# * Michael Granger <ged@FaerieMUD.org>
+# * (>>>USER_NAME<<<) <(>>>AUTHOR<<<)>
 # 
 #:include: COPYRIGHT
 #
@@ -21,33 +22,35 @@
 # Please see the file COPYRIGHT in the 'docs' directory for licensing details.
 #
 
-require 'metaclass/Constants'
+require 'mues/metaclass/Constants'
 
-module Metaclass
+module MUES
+	module Metaclass
 
-	### (>>>description<<<)
-	class (>>>FILE_SANS<<<) < Metaclass::(>>>superclass<<<)
+		### (>>>description<<<)
+		class (>>>FILE_SANS<<<) < (>>>superclass<<<)
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.1 $ )[1]
-		Rcsid = %q$Id: template.rb.tpl,v 1.1 2002/05/26 00:12:41 deveiant Exp $
+			### Class constants
+			Version = /([\d\.]+)/.match( %q{$Revision: 1.2 $} )[1]
+			Rcsid = %q$Id: template.rb.tpl,v 1.2 2002/10/04 05:06:43 deveiant Exp $
 
-		### Create a new (>>>FILE_SANS<<<) object.
-		def initialize
-		end
-
-
-		######
-		public
-		######
+			### Create a new (>>>FILE_SANS<<<) object.
+			def initialize
+			end
 
 
-		#########
-		protected
-		#########
+			######
+			public
+			######
 
 
-	end # class (>>>FILE_SANS<<<)
-end # module Metaclass
+			#########
+			protected
+			#########
 
+
+		end # class (>>>FILE_SANS<<<)
+
+	end # module Metaclass
+end # module MUES
 
