@@ -113,4 +113,8 @@ class ObjectStore
 	def _retrieve ( id )
 	end
 
+	def add_indexes ( *indexes )
+		@indexes << indexes.flatten
+	end
+
 end
