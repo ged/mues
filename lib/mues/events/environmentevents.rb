@@ -30,7 +30,7 @@
 # 
 # == Rcsid
 # 
-# $Id: environmentevents.rb,v 1.8 2002/08/29 07:07:14 deveiant Exp $
+# $Id: environmentevents.rb,v 1.9 2002/09/12 12:15:50 deveiant Exp $
 # 
 # == Authors
 # 
@@ -46,7 +46,7 @@
 require "mues/Object"
 require "mues/Exceptions"
 
-require "mues/events/Event"
+require "mues/events/PrivilegedEvent"
 
 module MUES
 
@@ -56,7 +56,7 @@ module MUES
 
 	### An abstract class for events used to interact with MUES::Environment
 	### objects.
-	class EnvironmentEvent < Event ; implements MUES::AbstractClass, MUES::Debuggable
+	class EnvironmentEvent < PrivilegedEvent ; implements MUES::AbstractClass, MUES::Debuggable
 
 		include MUES::TypeCheckFunctions
 
@@ -82,19 +82,13 @@ module MUES
 	### environment.
 	class LoadEnvironmentEvent < EnvironmentEvent
 
-		# The name to associate with the new environment
-		attr_reader :name
-
-		# The name of the Environment class to load.
-		attr_reader :envClassName
-
 		### Create and return a new event to load an instance of the environment
 		### specified by +eventClassName+ (the name of the Environment class to
 		### load) and associate it with the given +name+. If the optional +user+
 		### argument is given (a MUES::User object), the status of the event
 		### will be sent to the User as an OutputEvent.
 		def initialize( name, envClassName, user=nil )
-			checkEachType( [name,envClassName], String )
+			checkEachType( [name,envClassName], ::String )
 			checkType( user, NilClass, MUES::User )
 
 			@name = name
@@ -102,6 +96,17 @@ module MUES
 
 			super( user )
 		end
+
+
+		######
+		public
+		#######
+
+		# The name to associate with the new environment
+		attr_reader :name
+
+		# The name of the Environment class to load.
+		attr_reader :envClassName
 
 	end
 
