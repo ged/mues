@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
-###########################################################################
-
+#################################################################
 =begin 
 
 = EventQueue.rb
@@ -31,8 +30,7 @@ software under the terms of the Perl Artistic License. (See
 http://language.perl.com/misc/Artistic.html)
 
 =end
-
-###########################################################################
+#################################################################
 
 require "thread"
 #require "sync"	<-- ConditionVariable doesn't grok these
@@ -48,8 +46,8 @@ module MUES
 	class EventQueue < Object ; implements Debuggable
 
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.6 2001/07/18 01:48:37 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.7 2001/07/30 10:47:34 deveiant Exp $
 
 		### Class attributes
 		@@DefaultMinWorkers	= 2
@@ -92,9 +90,9 @@ module MUES
 			@supervisorMutex = Mutex.new
 		end
 
-		###############################################################################
+		###########################################################
 		###	P U B L I C   M E T H O D S
-		###############################################################################
+		###########################################################
 		public
 
 		### Attribute accessors
@@ -125,6 +123,7 @@ module MUES
 		### Add the specified events to the end of the queue of pending events
 		def enqueue( *events )
 			events.flatten!
+			return false if events.empty?
 			checkEachType( events, Event )
 			return false if @shuttingDown
 
@@ -298,9 +297,9 @@ module MUES
 		end
 
 
-		###############################################################################
+		###########################################################
 		###	P R O T E C T E D   M E T H O D S
-		###############################################################################
+		###########################################################
 		protected
 
 		### (PROTECTED) METHOD: _supervisorThreadRoutine()
