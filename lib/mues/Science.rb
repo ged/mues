@@ -34,15 +34,15 @@ http://language.perl.com/misc/Artistic.html)
 =end
 ###########################################################################
 
-require "mues/MUES"
+require "mues/Namespace"
 
 module MUES
 	class Science < Object
 
 		include AbstractClass
 
-		Version = %q$Revision: 1.1 $
-		Rcsid = %q$Id: Science.rb,v 1.1 2001/03/15 02:22:16 deveiant Exp $
+		Version = %q$Revision: 1.2 $
+		Rcsid = %q$Id: Science.rb,v 1.2 2001/03/29 02:31:32 deveiant Exp $
 
 	end
 end
