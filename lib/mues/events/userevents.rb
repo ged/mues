@@ -73,16 +73,18 @@ module MUES
 	class UserLoginEvent < UserEvent
 
 		autoload	'MUES::IOEventStream', "mues/IOEventStream"
-		attr_reader	:stream
+		attr_reader	:stream, :loginSession
 
-		### METHOD: new( aUser, anIOEventStream )
+		### METHOD: new( aUser, anIOEventStream, aLoginSession )
 		### Returns a new UserLoginEvent with the specified target user and
 		### IOEventStream
-		def initialize( aUser, anIOEventStream )
+		def initialize( aUser, anIOEventStream, aLoginSession )
 			super( aUser )
 
 			checkType( anIOEventStream, MUES::IOEventStream )
+			checkType( aLoginSession, MUES::LoginSession )
 			@stream = anIOEventStream
+			@loginSession = aLoginSession
 		end
 	end
 
