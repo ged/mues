@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.7 2002/10/23 18:27:27 deveiant Exp $
+#	$Id: quickstart.rb,v 1.8 2002/10/27 21:01:19 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -58,7 +58,7 @@ def main
 		testForRequiredLibrary( *lib )
 	end
 
-	unless FileTest.exists?( "ext/mues.so" )
+	unless File::exists?( "ext/mues.so" )
 		message "Building C extensions...\n"
 		begin
 			Dir::chdir( "ext" ) {
@@ -73,7 +73,7 @@ def main
 		end
 	end
 
-	unless FileTest.exists?( "server/config.xml" )
+	unless File::exists?( "server/config.xml" )
 		message "Copying example minimal config to config.xml..."
 		File.copy( "server/minimal-config.xml", "server/config.xml", true )
 		message "done.\n"
@@ -84,6 +84,11 @@ def main
 			message "Invoking editor: #{editor} server/config.xml\n"
 			system( editor, "server/config.xml" ) or abort( "Editor session failed: #{$?}" )
 		end
+	end
+
+	unless File::directory?( "server/log" )
+		message "Creating server directories in ./server..."
+		File::mkpath( "server/log" )
 	end
 
 	print "\n\n"
