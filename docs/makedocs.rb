@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES RDoc Documentation Generation Script
-#	$Id: makedocs.rb,v 1.8 2002/10/23 18:28:27 deveiant Exp $
+#	$Id: makedocs.rb,v 1.9 2002/11/04 15:09:50 deveiant Exp $
 #
 #	Copyright (c) 2001,2002 The FaerieMUD Consortium.
 #
@@ -34,7 +34,7 @@ def makeDocs( docsdir, template='css2', upload=nil, diagrams=false, ridocs=false
 
 	header "Making documentation in #{docsdir}."
 	header "Will upload to '#{upload}'\n" if upload
-	header "Will also create/install 'ri' source"
+	header "Will also create/install 'ri' source" if ridocs
 
 	flags = [
 		'--all',
@@ -151,7 +151,7 @@ if $0 == __FILE__
 	verbose = false
 	upload = nil
 	diagrams = false
-	template = 'mues'
+	template = 'css2'
 	docsdir = "docs/html"
 	rimode = false
 
