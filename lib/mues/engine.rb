@@ -106,7 +106,7 @@
 # 
 # == Rcsid
 # 
-# $Id: engine.rb,v 1.43 2003/09/12 02:09:44 deveiant Exp $
+# $Id: engine.rb,v 1.44 2003/09/12 04:16:30 deveiant Exp $
 # 
 # == Authors
 # 
@@ -178,8 +178,8 @@ module MUES
 		end
 
 		### Default constants
-		Version				= /([\d\.]+)/.match( %q{$Revision: 1.43 $} )[1]
-		Rcsid				= %q$Id: engine.rb,v 1.43 2003/09/12 02:09:44 deveiant Exp $
+		Version				= /([\d\.]+)/.match( %q{$Revision: 1.44 $} )[1]
+		Rcsid				= %q$Id: engine.rb,v 1.44 2003/09/12 04:16:30 deveiant Exp $
 		DefaultHost			= 'localhost'
 		DefaultPort			= 6565
 		DefaultName			= 'ExperimentalMUES'
@@ -1242,10 +1242,22 @@ module MUES
 						begin
 							# Timeout so changes/additions to the reactor take
 							# effect
-							@reactor.poll( 1 )
+							@reactor.poll( 0.2 ) {|io, event, *args|
+								self.log.warn "Disabling unhandled IO event %p on %p "\
+									"with args = %p" %
+									[ event, io, args ]
+								@reactor.disableEvents( io, event )
+							}
 						rescue StandardError => e
-							dispatchEvents( UntrappedExceptionEvent.new(e) )
-							next
+							if self.running?
+								dispatchEvents( UntrappedExceptionEvent.new(e) )
+								next
+							else
+								self.log.error "Untrapped exception in main "\
+									"loop in a non-running state: %s\n\t%s" %
+									[ e.message, e.backtrace.join("\n\t") ]
+								break
+							end
 						end
 						Thread.pass
 					end
@@ -1264,7 +1276,7 @@ module MUES
 				end
 			end
 
-			self.log.notice( "Listener thread exiting." )
+			self.log.notice( "Exiting IO thread routine." )
 			return true
 		end
 
