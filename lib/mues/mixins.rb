@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.24 2003/10/13 05:19:32 deveiant Exp $
+# $Id: mixins.rb,v 1.25 2004/02/29 18:29:38 deveiant Exp $
 # 
 # == Authors
 # 
@@ -137,10 +137,10 @@ module MUES
 	### instances.
 	module Debuggable
 
-		### Include callback that ensures 'mues/Log' is required before adding
-		### methods which depend on it.
+		### Include callback that ensures 'mues/logger' is required before
+		### adding methods which depend on it.
 		def self::included( mod )
-			require 'mues/log'
+			require 'mues/logger'
 			super
 		end
 
@@ -244,7 +244,7 @@ module MUES
 					else
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{anObject.class.name}",
-							caller(1).find_all {|frame| /#{__FILE__}/ !~ frame}
+							caller(1).find_all {|frame| frame.include?(__FILE__)}
 					end
 				end
 			else
@@ -254,7 +254,7 @@ module MUES
 					else
 						raise ArgumentError, 
 							"Argument missing.",
-							caller(1).find_all {|frame| /#{__FILE__}/ !~ frame}
+							caller(1).find_all {|frame| frame.include?(__FILE__)}
 					end
 				end
 			end
@@ -277,7 +277,7 @@ module MUES
 						typeList = vTypes.collect {|type| type.name}.join(" or ")
 						raise TypeError, 
 							"Argument must be of type #{typeList}, not a #{obj.class.name}",
-							caller(1).find_all {|frame| /#{__FILE__}/ !~ frame}
+							caller(1).find_all {|frame| frame.include?(__FILE__)}
 					}
 				end
 			end
@@ -306,7 +306,7 @@ module MUES
 					else
 						raise TypeError, "Argument '#{anObject.inspect}' does "\
 							"not answer the '#{method}()' method",
-							caller(1).find_all {|frame| /#{frame}/ !~ __FILE__}
+							caller(1).find_all {|frame| frame.include?(__FILE__)}
 					end
 				end
 			end
@@ -331,7 +331,7 @@ module MUES
 					checkResponse( anObject, *requiredMethods ) {|method, object|
 						raise TypeError, "Argument '#{anObject.inspect}' does "\
 							"not answer the '#{method}()' method",
-							caller(1).find_all {|frame| /#{frame}/ !~ __FILE__}
+							caller(1).find_all {|frame| frame.include?(__FILE__)}
 					}
 				end
 			end
@@ -572,6 +572,7 @@ module MUES
 
 
 	end # module ServerFunctions
+	ServerFunctions.freeze
 
 
 	### A mixin that adds factory class methods to a base class, so that
@@ -644,7 +645,7 @@ module MUES
 				end
 
 			[ subclass.name, truncatedName, subclass ].each {|key|
-				MUES::Log.info "Registering derivative of %s as %p" %
+				MUES::Logger.info "Registering derivative of %s as %p" %
 					[ self.name, key ]
 				self.derivatives[ key ] = subclass
 			}
@@ -794,11 +795,11 @@ module MUES
 						begin
 							require( path.untaint )
 						rescue LoadError => e
-							#MUES::Log[self].warn "No module at '#{path}': '#{e.message}'"
+							MUES::Logger[self].warning "No module at '#{path}': '#{e.message}'"
 							next
 						rescue ScriptError,StandardError => e
-							#MUES::Log[self].error "Found '#{path}', but encountered an error:\n" +
-							#	"    #{e.message} at #{e.backtrace[0]}"
+							MUES::Logger[self].error "Found '#{path}', but encountered an error:\n" +
+								"    #{e.message} at #{e.backtrace[0]}"
 							next
 						else
 							throw :found
@@ -810,6 +811,37 @@ module MUES
 			}
 		end
 	end # module Factory
+
+
+	# Recursive hash-merge function
+	HashMergeFunction = Proc::new {|key, oldval, newval|
+		#debugMsg "Merging '%s': %s -> %s" %
+		#	[ key.inspect, oldval.inspect, newval.inspect ]
+		case oldval
+		when Hash
+			case newval
+			when Hash
+				#debugMsg "Hash/Hash merge"
+				oldval.merge( newval, &HashMergeFunction )
+			else
+				newval
+			end
+
+		when Array
+			case newval
+			when Array
+				#debugMsg "Array/Array union"
+				oldval | newval
+			else
+				newval
+			end
+
+		else
+			newval
+		end
+	}
+
+
 
 
 end # module MUES
