@@ -66,7 +66,7 @@
 #
 # == Rcsid
 # 
-# $Id: event.rb,v 1.11 2002/09/12 12:16:32 deveiant Exp $
+# $Id: event.rb,v 1.12 2002/09/15 00:11:40 deveiant Exp $
 # 
 # == Authors
 # 
@@ -164,6 +164,12 @@ module MUES
 			priority = MaxPriority if priority > MaxPriority
 			priority = MinPriority if priority < MinPriority
 			@priority = priority
+		end
+
+		### Equality comparison operator. Returns true if the reciever is
+		### identical to <tt>object</tt>.
+		def ==( object )
+			return object.equal?( self )
 		end
 
 		### Comparison operator: Returns 1, 0, or -1 depending on the priority
