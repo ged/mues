@@ -97,7 +97,7 @@ class ClassTestCase < MUES::TestCase
 		# Add items so we can remove 'em
 		testAttr = Metaclass::Attribute::new 'testAttr'
 		testClass.addAttribute( testAttr )
-		testOp = Metaclass::Operation::new 'testOp'
+		testOp = Metaclass::Operation::new 'testOp', '#no-op'
 		testClass.addOperation( testOp )
 		testIface = Metaclass::Interface::new 'TestIface'
 		testClass.addInterface( testIface )
@@ -221,6 +221,53 @@ class ClassTestCase < MUES::TestCase
 
 		# And the class object should support the 'count' method
 		assert_respond_to myClass.classObj, :count
+	end
+
+	def test_16AbstractClass
+		parentClass = intermediateClass = myClass = nil
+		instance = rval = nil
+
+		assert_nothing_raised {
+
+			# Define the parent class, and add an initializer and a virtual
+			# operation to it
+			parentClass = Metaclass::Class::new( "Parent" )
+			parentClass << Metaclass::Attribute::new( "parentInit" )
+			parentClass << Metaclass::Operation::new( "initialize", "@parentInit = true" )
+			parentClass << Metaclass::VirtualOperation::new( "foo" )
+
+			# Define an intermediate class, don't add any operations. This one
+			# should still be abstract
+			intermediateClass = Metaclass::Class::new( "Intermediate", parentClass )
+
+			# Now create the child, override the virtual method and the
+			# initializer
+			myClass = Metaclass::Class::new( "Tester", intermediateClass )
+			myClass << Metaclass::Attribute::new( "childInit" )
+			myClass << Metaclass::Operation::new( "initialize", "super ; @childInit = true" )
+			myClass << Metaclass::Operation::new( "foo", "#no-op" )
+		}
+
+		# Make sure instantiating a class with a virtual operation fails.
+		assert parentClass.abstract?
+		assert_raises( NoMethodError ) { parentClass::new }
+		
+		# Make sure instantiating the intermediate class fails, too.
+		assert intermediateClass.abstract?
+		assert_raises( NoMethodError ) { intermediateClass::new }
+		
+		# Now make sure we can instantiate the class with an overridden version
+		# of the virtual operation
+		assert_nothing_raised { instance = myClass::new }
+
+		# Call the overridden method
+		assert_nothing_raised { instance.foo }
+
+		# Check both ivars
+		assert_nothing_raised { rval = instance.parentInit }
+		assert rval
+		assert_nothing_raised { rval = instance.childInit }
+		assert rval
 	end
 
 end # class ClassTestCase
