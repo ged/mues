@@ -122,7 +122,7 @@ class Object
 					yield( method, anObject )
 				else
 					raise TypeError,
-						"Argument does not answer the '#{method}()' method", caller(1)
+						"Argument '#{anObject.inspect}' does not answer the '#{method}()' method", caller(1)
 				end
 			end
 		end
@@ -139,7 +139,7 @@ class Object
 			else
 				checkResponse( anObject, *requiredMethods ) {|method, object|
 					raise TypeError,
-						"Argument #{anObject.to_s} does not answer the '#{method}()' method",
+						"Argument '#{anObject.inspect}' does not answer the '#{method}()' method",
 						caller(1).reject {|frame| frame =~ /Namespace.rb/}
 				}
 			end
@@ -170,8 +170,8 @@ module MUES
 		include AbstractClass
 
 		### Class constants
-		Version	= %q$Revision: 1.6 $
-		RcsId	= %q$Id: Namespace.rb,v 1.6 2001/05/14 12:04:50 deveiant Exp $
+		Version	= %q$Revision: 1.7 $
+		RcsId	= %q$Id: Namespace.rb,v 1.7 2001/05/15 02:09:04 deveiant Exp $
 
 		### (PROTECTED) METHOD: initialize( *ignored )
 		protected
