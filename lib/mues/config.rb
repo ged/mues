@@ -55,8 +55,15 @@ module MUES
 	class ConfigFormatError < SyntaxError; end
 
 	class Config < Object
+		
+		### Class constants
+		Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
+		Rcsid = %q$Id: config.rb,v 1.3 2001/04/06 08:19:20 deveiant Exp $
 
 		### METHOD: initialize( sourceIoOrFileName = nil )
+		### Initialize the configuration, optionally loading the configuration
+		### parameters from an IO object or the file named.
+		protected
 		def initialize( source = nil )
 			unless source.nil? then
 				if source.is_a?( IO )
@@ -73,21 +80,36 @@ module MUES
 			super()
 		end
 
+
+		#######################################################################
+		###	P U B L I C   M E T H O D S
+		#######################################################################
+
+		### METHOD: [ key ]
+		### Look up a value in the config.
 		def []( key )
 			@mainSection[ key ]
 		end
 
+		### METHOD: [ key ] = value
+		### Set the value in the configuration
 		def []=( key, value )
 			@mainSection[ key ] = value
 		end
 
+		### METHOD: dump()
+		### Dump the configuration file into a String and return it
 		def dump
 			@mainSection.dump
 		end
 
+		#######################################################################
+		###	P R O T E C T E D   M E T H O D S
+		#######################################################################
 		protected
 
 		### (PROTECTED) METHOD: _initFromIo( source )
+		### Load the configuration values from an IO object
 		def _initFromIo( source )
 			checkType( source, IO )
 
@@ -95,6 +117,7 @@ module MUES
 		end
 
 		### (PROTECTED) METHOD: _initFromFile( source )
+		### Load the configuration objects from the file specified
 		def _initFromFile( source )
 			checkType( source, String )
 
@@ -103,6 +126,8 @@ module MUES
 		end
 
 		### (PROTECTED) METHOD: _parseConfig( contentArray )
+		### Parse the configuration from the array of Strings given, and return
+		### a section object.
 		def _parseConfig( contentArray )
 			checkType( contentArray, Array )
 
@@ -201,12 +226,19 @@ module MUES
 			attr_reader :name
 
 			### METHOD: initialize( sectionName )
+			### Initialize this config section with the name specified
+			protected
 			def initialize( sectionName )
 				checkType( sectionName, String )
 				@name = sectionName
 				@values = {}
 				super()
 			end
+
+
+			###################################################################
+			###	P U B L I C   M E T H O D S
+			###################################################################
 
 			### METHOD: dump( indent = 0 ) -> aString
 			def dump( indent=0 )
@@ -240,12 +272,15 @@ module MUES
 			end
 
 			### METHOD: [ key ]
+			### Get the configuration value with the name specified.
 			def []( key )
 				checkType( key, String )
 				return @values[ key.downcase ]
 			end
 
 			### METHOD: [ key ] = value
+			### Set the configuration value specified by name to the value
+			### specified.
 			def []=( key, value )
 				checkType( key, String )
 				checkType( value, Numeric, String, Config::Section, TrueClass, FalseClass )
@@ -256,6 +291,7 @@ module MUES
 			### METHOD: has_key?( key )
 			### METHOD: key?( key )
 			### METHOD: include?( key )
+			### Returns true if the configuration section has the key specified
 			def has_key?( key )
 				@values.has_key?( key.downcase )
 			end
