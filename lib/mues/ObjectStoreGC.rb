@@ -44,7 +44,7 @@
 
 class ObjectStoreGC
 
-  attr_accessor :mark, :delay, :trash_rate
+  attr_accessor :mark, :delay, :trash_rate, :objectStore
   
   #########
   protected
@@ -52,10 +52,12 @@ class ObjectStoreGC
 
   ### Initialize a new ObjectStoreGC object
   ### arguments:
+  ###   objectStore - the ObjectStore to 'delete' objects to
   ###   mark - the symbol of the method to be used for 'mark'ing objects
-  ###   delay - the (seconds) delay between GC invocations
   ###   trash_rate - the percent of memory allowed to be trash
-  def initialize(mark = nil, delay = 5, trash_rate = 0.1)
+  ###   delay - the (seconds) delay between GC invocations
+  def initialize(objectStore, mark = nil, trash_rate = 0.1, delay = 5)
+	@objectStore = objectStore
     @mark = mark
     @delay = delay
     @trash_rate = trash_rate
@@ -68,7 +70,20 @@ class ObjectStoreGC
   ### Runs the GC right now
   ### arguments:
   ###   trash_rate - the percent of memory aloowed before GC stops
-  def start
+  def start (trash_rate = @trash_rate)
+	  @trash_rate = trash_rate if trash_rate
+  end
+
+  ### Kills the garbage collector, first storing all active objects
+  def shutdown
+	  #oi.  what should happen here, i don't know.
+	  #it'll need to go through every object it's keeping track of, and
+	  #'delete' them into the database.
+  end
+
+  ### Registers object(s) with the GC
+  def register ( *objects )
+	  @objects << objects.flatten
   end
 
 end
@@ -84,7 +99,7 @@ end
 
 # Also, the train algorithm was intended for helping negate the individual time
 # cost of each GC cycle.  while this may be necessary in some cases, won't this
-# be such that all it's doing is sending an item to a database (ArunaDB), which
+# be such that all it's doing is sending a message to a database (ArunaDB), which
 # is pretty multi-threaded and not too time costing.  Is it even advantageous to
 # attempt to minimize the grouping of calls to that database?  the train algorithm
 # does come with an typical overall time cost, at the return of rarified user

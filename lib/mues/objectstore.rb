@@ -39,8 +39,78 @@
 # * Martin Chase <stillflame@FaerieMUD.org>
 #
 
-require "ArunaDB"
+#require "ArunaDB"
 
 class ObjectStore
+
+	######
+	#Class
+	######
+
+	### Loads in the specified database, and returns the ObjectStore attached to it
+	### arguments:
+	###   filename - the filename of the ObjectStore config file (?)
+	def ObjectStore.load (filename)
+	end
+
+	#########
+	protected
+	#########
+
+	### Initializes a new ObjectStore
+	### arguments:
+	###   filename - the filename to store the ObjectStore config file as
+	###   objects - an array of objects to store
+	###   indexes - an array of symbols for methods to create indicies off of
+	###   serialize - the symbol for the method to serialize the objects
+	###   deserialize - the symbol for the method to deserialize the objects
+	def initialize( filename,
+				    objects = [],
+				    indexes = [],
+				    serialize = nil,
+				    deserialize = nil )
+		@filename = filename
+		@indexes = indexes
+		@serialize = serialize
+		@deserialize = deserialize
+
+		add_indexes( @indexes )
+
+		#actually create the database here
+
+		objects.each {|o|
+			store(o)
+		}
+	end
+	
+	######
+	public
+	######
+	
+	attr_accessor :filename, :indexes, :serialize, :deserialize, :database
+
+	### Stores the objects into the database
+	### arguments:
+	###   objects - the objects to store
+	def store ( *objects )
+	end
+
+	### Closes the database.
+	### caveats:
+	###   This method does not have any way of telling if there are active objects
+	###   in the environment which need to be stored.  Use an ObjectStoreGC to keep
+	###   track of those objects.
+	def close
+	end
+
+	### Gets the object specified by the given id out of the database
+	### Well, not really.  returns a StorableObject style shallow reference
+	def retrieve ( id )
+		StorableObject.new( id )
+	end
+
+	### ACTUALLY gets the object specifed by the given id out of the database
+	def _retrieve ( id )
+	end
 
 end

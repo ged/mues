@@ -58,8 +58,8 @@ module MUES
 
     ### Class constants
 	  #:!: MUES has its own, i shouldn't tread.
-#    Version = /([\d\.]+)/.match( %q$Revision: 1.3 $ )[1]
-#    Rcsid = %q$Id: objectstoreservice.rb,v 1.3 2002/03/04 06:16:50 stillflame Exp $
+#    Version = /([\d\.]+)/.match( %q$Revision: 1.4 $ )[1]
+#    Rcsid = %q$Id: objectstoreservice.rb,v 1.4 2002/03/04 19:27:01 stillflame Exp $
 
     #########
     protected
@@ -68,14 +68,6 @@ module MUES
     ### Initialize a new ObjectStoreService object, passing in a hash of
     ### values with the following keys:
     ### 'name' -> the name to give this ObjectStoreService.
-    ### 'filename' -> the filename of the ObjectStore to associate this with.
-    ### 'objects' -> an array of objects to be stored.
-    ### 'indexes' -> an array of symbols corresponding to the methods that will
-    ###              be used to generate the desired indices.
-    ### 'serialize' -> the symbol for the method to be used for object
-    ###                serialization.
-    ### 'deserialize' -> the symbol for the method to be used for object
-    ###                  deserialization.
     ### 'mark' -> the symbol for the method to be used for marking objects for
     ###           garbage collection.
     ### 'GC_delay' -> the period of time inbetween garbage collection sweeps
@@ -106,7 +98,9 @@ module MUES
 		### Make sure no more objects are unsotred
 		def atEngineShutdown( theEngine )
 			###:!: maybe a GC function?
-		  @gc.shutdown
+			###    this should also take care of the object store, no?
+			@gc.shutdown
+			@objectStore.close
       end
 
     end
@@ -118,23 +112,53 @@ module MUES
     ### Handle the events.
 
     def _handleCloseObjectStoreEvent (event)
+		@objectStore.close
+		@objectStore = nil
     end
 
+	### handles the creation of new ObjectStore's
+	### arguments (as passed to the event)
+    ###   'filename' -> the filename of the ObjectStore to associate this with.
+    ###   'objects' -> an array of objects to be stored.
+    ###   'indexes' -> an array of symbols corresponding to the methods that will
+    ###                be used to generate the desired indices.
+    ###   'serialize' -> the symbol for the method to be used for object
+    ###                  serialization.
+    ###   'deserialize' -> the symbol for the method to be used for object
+    ###                    deserialization.
     def _handleNewObjectStoreEvent (event)
+		@objectStore = ObjectStore.new( event.filename,
+									    event.objects,
+									    event.indexes,
+									    event.serialize,
+									    event.deserialize )
     end
 
+	### handles the loading of ObjectStore's
+	### arguments (as passed to the event)
+	###   'filename' -> the filename of the ObjectStore config file (?)
     def _handleLoadObjectStoreEvent (event)
+		@objectStore = ObjectStore.load( event.filename )
     end
 
+	### Makes sure the GC is running, and optionally sets the trash_ratio
+	### assumes an ObjectStore is open and active
     def _handleObjectStoreGCEvent (event)
+		@gc ||= ObjectStoreGC.new( @objectStore )
+		@gc.start( event.trash_ratio )
     end
 
+	### All object storing is to be done through the garbage collector
     def _handleStoreObjectEvent (event)
+		@gc.register( event.data )
     end
 
     def _handleRequestObjectEvent (event)
+		event.recipient = @objectStore.retrieve( event.obj_id )
+		#is there a better way to do this?
     end
 
+	### included to prevent MUES::Event::Handler#handleEvent from screaming
 	def _debugMsg (*args)
 	end
   end
