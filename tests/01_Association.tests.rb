@@ -1,36 +1,36 @@
 #!/usr/bin/ruby -w
 
-require 'metaclass/Constants'
-require 'metaclass/Association'
+begin
+	require 'muesunittest'
+rescue
+	require '../muesunittest'
+end
 
-require 'test/unit'
+require 'metaclasses'
 
-### Log tests
-module Metaclass
+# Mock object
+class MockAssnSubclass < Metaclass::Association
+	public_class_method :new
+end
 
-	class MockAssnSubclass < Metaclass::Association
-		public_class_method :new
+class AssociationTestCase < MUES::TestCase
+
+	### Test instantiation with various arguments
+	def test_00Instantiate
+		assert_raises( NoMethodError ) { Metaclass::Association.new }
 	end
 
-	class AssociationTestCase < Test::Unit::TestCase
+	### Test subclass instantiation
+	def test_01SubclassInstantiation
+		obj = nil
 
-		### Test instantiation with various arguments
-		def test_Instantiate
-			assert_raises( NoMethodError ) { Metaclass::Association.new }
-		end
+		# No-arg (should raise an ArgumentError)
+		assert_raises( ArgumentError ) { MockAssnSubclass.new }
 
-		### Test subclass instantiation
-		def test_SubclassInstantiation
-			obj = nil
+		# One-arg. Test inherited initializer and accessor
+		assert_nothing_raised { obj = MockAssnSubclass.new("thename") }
+		assert_equal "thename", obj.name
+	end
 
-			# No-arg (should raise an ArgumentError)
-			assert_raises( ArgumentError ) { Metaclass::MockAssnSubclass.new }
-
-			# One-arg. Test inherited initializer and accessor
-			assert_nothing_raised { obj = Metaclass::MockAssnSubclass.new("thename") }
-			assert_equal "thename", obj.name
-		end
-
-	end # class AssociationTestCase
-end # module Metaclass
+end # class AssociationTestCase
 
