@@ -43,7 +43,23 @@ require "PolymorphicObject"
 require "ObjectStore"
 require "md5"
 
-class StorableObject < PolymorphicObject; implements AbstractClass
+module AbstractClass
+  def AbstractClass.append_features( klass )
+    klass.class_eval <<-"END"
+    class << self
+      def new( *args, &block )
+	raise InstantiationError if self == #{klass.name}
+	super( *args, &block )
+      end
+    end
+    END
+    super( klass )
+  end
+end
+
+class InstantiationError < Exception; end
+
+class StorableObject < PolymorphicObject; include AbstractClass
 
   attr_reader :objectStoreID
   ### This is the method for providing an id suitable for storing into the 
