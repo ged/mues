@@ -4,28 +4,27 @@
 =begin
 
 = EventQueue.rb
-
-== NAME
+== Name
 
 MUES::EventQueue - a scalable thread work crew class for the FaerieMUD server.
 
-== SYNOPSIS
+== Synopsis
 
-  require "mues/eventqueue"
+  require "mues/EventQueue"
 
   queue = MUES::EventQueue.new( 2, 10, 1.5, events )
   queue.enqueue( moreEvents )
 
-== DESCRIPTION
+== Description
 
 MUES::EventQueue is a thread work crew for the MUES Engine. It^s still experimental at
 this point.
 
-== AUTHOR
+== Author
 
 Michael Granger <((<ged@FaerieMUD.org|URL:mailto:ged@FaerieMUD.org>))>
 
-Copyright (c) 2000 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 2000-2001 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -34,6 +33,8 @@ http://language.perl.com/misc/Artistic.html)
 =end
 
 ###########################################################################
+
+require "mues/Namespace"
 require "mues/WorkerThread"
 require "mues/Exceptions"
 require "mues/Events"
@@ -78,7 +79,7 @@ module MUES
 			@running = false
 			@shuttingDown = false
 
-			_debugMsg( "Initializing event queue: max = #{@maxWorkers}, min = #{@minWorkers}" )
+			_debugMsg( 1, "Initializing event queue: max = #{@maxWorkers}, min = #{@minWorkers}" )
 
 			### Instance variables
 			@workerCount = 0;
@@ -95,7 +96,7 @@ module MUES
 		### METHOD: start()
 		### Start the supervisor thread and begin processing events
 		def start
-			_debugMsg( "In start()" )
+			_debugMsg( 1, "In start()" )
 			@supervisorMutex.synchronize {
 				unless @supervisor
 					@supervisor = Thread.new { _supervisorThreadRoutine() }
@@ -108,18 +109,18 @@ module MUES
 		### METHOD: enqueue( events=[ Event ] )
 		### Add the specified events to the end of the queue of pending events
 		def enqueue( *events )
-			_debugMsg( "Enqueuing " + events.length.to_s + " events." )
+			_debugMsg( 1, "Enqueuing " + events.length.to_s + " events." )
 			@queueMutex.synchronize {
 				@queuedEvents += events
 				@queuedEvents.flatten!
-		}
+			}
 		end
 
 
 		### METHOD: priorityEnqueue( events=[ Event ] )
 		### Add the specified events to the beginning of the queue of pending events
 		def priorityEnqueue( *events )
-			_debugMsg( "Enqueuing " + events.length.to_s + " priority events." )
+			_debugMsg( 1, "Enqueuing " + events.length.to_s + " priority events." )
 			@queueMutex.synchronize {
 				@queuedEvents.unshift( events )
 				@queueCond.signal
@@ -130,7 +131,7 @@ module MUES
 		### METHOD: dequeue()
 		### Remove and return a pending event from the queue (if any)
 		def dequeue( nonBlocking=false )
-			_debugMsg( "Entering queue for event." )
+			_debugMsg( 1, "Entering queue for event." )
 
 			event = nil
 
@@ -139,7 +140,7 @@ module MUES
 			### dequeue without block, otherwise wait on the queue's condition
 			### variable for the queue to be populated.
 			@queueMutex.synchronize {
-				_debugMsg( "Queue has #{@queuedEvents.length} queued events." )
+				_debugMsg( 1, "Queue has #{@queuedEvents.length} queued events." )
 
 				if @queuedEvents.length == 0
 					if nonBlocking
@@ -149,18 +150,18 @@ module MUES
 						### Add the current thread to the idle threadgroup, which removes it from 
 						###	the workers threadgroup, and wait on the queue mutex. Once we come out
 						###	of the wait, switch ourselves back into the workers group
-						_debugMsg( "Thread #{WorkerThread.current.id} going to sleep waiting for an event." )
+						_debugMsg( 1, "Thread #{WorkerThread.current.id} going to sleep waiting for an event." )
 						@idleWorkers.add( WorkerThread.current )
 						@queueCond.wait( @queueMutex ) until @queuedEvents.length > 0
 						@workers.add( WorkerThread.current )
-						_debugMsg( "Thread #{WorkerThread.current.id} woke up. Event queue has #{@queuedEvents.size} events." )
+						_debugMsg( 1, "Thread #{WorkerThread.current.id} woke up. Event queue has #{@queuedEvents.size} events." )
 					end
 				end
 
 				event = @queuedEvents.shift
 			}
 
-			_debugMsg( "Got event from queue: #{event.to_s}")
+			_debugMsg( 1, "Got event from queue: #{event.to_s}")
 			return event
 		end
 
@@ -178,10 +179,10 @@ module MUES
 				return currentEvents unless @running
 
 				### Synchronize around the queue mutex, setting the shutdown flag 
-				_debugMsg( "Shutting down." )
+				_debugMsg( 1, "Shutting down." )
 				@queueMutex.synchronize {
 					@shuttingDown = true
-					_debugMsg( "Clearing #{@queuedEvents.length.to_s} pending events from the queue." )
+					_debugMsg( 1, "Clearing #{@queuedEvents.length.to_s} pending events from the queue." )
 					currentEvents << @queuedEvents
 					@queuedEvents.clear
 				}
@@ -217,7 +218,7 @@ module MUES
 		### METHOD: halt()
 		### Halt all queue threads forcefully.
 		def halt
-			_debugMsg( "Forcefully halting all threads." )
+			_debugMsg( 1, "Forcefully halting all threads." )
 
 			return true unless @running
 			deadThreads = ThreadGroup.new
@@ -248,7 +249,7 @@ module MUES
 			rescue StandardError => e
 
 				### :FIXME: Some other persistent behaviour (retry?) would probably be more useful
-				_debugMsg( "Caught exception while killing queue threads: #{e.to_s}" )
+				_debugMsg( 1, "Caught exception while killing queue threads: #{e.to_s}" )
 				return false
 			end
 
@@ -277,9 +278,9 @@ module MUES
 
 			###	Start the minimum number of worker threads
 			@queueMutex.synchronize {
-				_debugMsg( "Starting #{@minWorkers} initial worker threads." )
+				_debugMsg( 1, "Starting #{@minWorkers} initial worker threads." )
 				@minWorkers.to_i.times do |i|
-					_debugMsg( "Starting initial worker #{i}." )
+					_debugMsg( 1, "Starting initial worker #{i}." )
 					_startWorker()
 				end
 			}
@@ -290,7 +291,7 @@ module MUES
 			### Maintain the thread crew until we're told to shut down
 			until ( @shuttingDown ) do
 
-				#_debugMsg( "Supervisor: In throttle loop" )
+				#_debugMsg( 1, "Supervisor: In throttle loop" )
 				@queueMutex.synchronize {
 					@queuedEvents.length.times {
 						@queueCond.signal
@@ -304,7 +305,7 @@ module MUES
 						if ( @idleWorkers.list.length + @workers.list.length < @maxWorkers ) then
 							_startWorker()
 						else
-							_debugMsg( "Max worker limit reached with #{@queuedEvents.length} events queued." )
+							_debugMsg( 1, "Max worker limit reached with #{@queuedEvents.length} events queued." )
 						end
 					}
 
@@ -315,7 +316,7 @@ module MUES
 						if ( @idleWorkers.list.length + @workers.list.length > @minWorkers && @idleWorkers.list.length > 0 ) then
 							targetWorker = @idleWorkers.list.shift
 
-							_debugMsg( "Killing worker thread #{targetWorker.id} at idle threshold" )
+							_debugMsg( 1, "Killing worker thread #{targetWorker.id} at idle threshold" )
 
 							workerCemetary.add( targetWorker )
 							_killWorkerThread( targetWorker )
@@ -330,13 +331,13 @@ module MUES
 
 			end
 
-			_debugMsg( "Supervisor: Exiting throttle loop. Entering shutdown cycle." )
+			_debugMsg( 1, "Supervisor: Exiting throttle loop. Entering shutdown cycle." )
 
 			### Queue thread shutdown events for any idle threads, and wait on ones that are still
 			###		working.
 			while ( @idleWorkers.list.length > 0 || @workers.list.length > 0 )
 				workersRemaining = @idleWorkers.list.length
-				_debugMsg( "Sending shutdown events to #{workersRemaining} idle workers" )
+				_debugMsg( 1, "Sending shutdown events to #{workersRemaining} idle workers" )
 				@queueMutex.synchronize {
 					workersRemaining.times do
 						@queuedEvents.push( ThreadShutdownEvent.new )
@@ -350,7 +351,7 @@ module MUES
 				sleep 0.25
 			end
 
-			_debugMsg( "Supervisor: Exiting" )
+			_debugMsg( 1, "Supervisor: Exiting" )
 			@running = false
 
 		end
@@ -359,12 +360,12 @@ module MUES
 		### (PROTECTED) METHOD: _doWork()
 		### The worker thread work method.
 		def _doWork( threadNumber )
-			_debugMsg( "Worker #{WorkerThread.current.id} reporting for duty." )
+			_debugMsg( 1, "Worker #{WorkerThread.current.id} reporting for duty." )
 			$SAFE = @safeLevel
 
 			### Get the first event
 			event = dequeue()
-			_debugMsg( "Dequeued event (#{event.class.name}) #{event.to_s}" )
+			_debugMsg( 1, "Dequeued event (#{event.class.name}) #{event.to_s}" )
 
 			### Dispatch events as we get them, quitting if we're given nil
 			while ( ! event.is_a?( ThreadShutdownEvent ) )
@@ -372,7 +373,7 @@ module MUES
 				enqueue( consequences ) if consequences.size > 0
 				event = dequeue()
 			end
-			_debugMsg( "Worker #{WorkerThread.current.id} going home." )
+			_debugMsg( 1, "Worker #{WorkerThread.current.id} going home." )
 		end
 
 
@@ -384,13 +385,13 @@ module MUES
 				raise ArgumentError, "Argument '#{event.class.name}' is not an event object."
 			end
 
-			_debugMsg( "Dispatching a #{event.class.name}" )
+			_debugMsg( 1, "Dispatching a #{event.class.name}" )
 			consequences = []
 
 			### Iterate over each handler for this kind of event, calling each ones
 			### handleEvent() method, adding any events that are returned to the consequences.
 			event.class.GetHandlers.each do |handler|
-				_debugMsg( "Got a #{handler.class} object for a #{event.class.name}." )
+				_debugMsg( 1, "Got a #{handler.class} object for a #{event.class.name}." )
 				begin
 					result = handler.handleEvent( event )
 					if result.is_a?( Array ) then
@@ -414,7 +415,7 @@ module MUES
 		### (PROTECTED) METHOD: _startWorker()
 		### Start a new worker thread
 		def _startWorker
-			_debugMsg( "Creating new worker thread (count is #{@workerCount})." )
+			_debugMsg( 1, "Creating new worker thread (count is #{@workerCount})." )
 			@workerCount += 1
 			worker = WorkerThread.new { _doWork(@workerCount) }
 			@workers.add( worker )
