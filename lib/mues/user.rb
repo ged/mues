@@ -17,7 +17,7 @@
 #
 # == Rcsid
 # 
-# $Id: user.rb,v 1.28 2002/10/23 04:58:29 deveiant Exp $
+# $Id: user.rb,v 1.29 2002/10/23 13:18:32 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include MUES::Event::Handler, MUES::TypeCheckFunctions
 
 		### Class constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.28 $ )[1]
-		Rcsid			= %q$Id: user.rb,v 1.28 2002/10/23 04:58:29 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.29 $ )[1]
+		Rcsid			= %q$Id: user.rb,v 1.29 2002/10/23 13:18:32 deveiant Exp $
 
 		# Account type constants module for the MUES::User class. Contains the
 		# following constants:
@@ -379,15 +379,14 @@ module MUES
 		def deactivate
 			results = []
 
-			### Unregister all our handlers
-			MUES::OutputEvent::UnregisterHandlers( self )
-			#MUES::TickEvent.UnregisterHandlers( self )
+			# Unregister all our handlers
+			unregisterHandlerForEvents( self )
 
-			### Shut down the IO event stream
+			# Shut down the IO event stream
 			@activated = false
 			results << @ioEventStream.shutdown if @ioEventStream
 			
-			### Return any events that need dispatching
+			# Return any events that need dispatching
 			return results.flatten
 		end
 
@@ -398,14 +397,14 @@ module MUES
 
 			results = []
 
-			### :FIXME: This shouldn't explicitly refer to the output filter
-			### class, since it may not even be a SocketOutputFilter at all.
+			# :FIXME: This shouldn't explicitly refer to the output filter
+			# class, since it may not even be a SocketOutputFilter at all.
 			newFilter = stream.removeFiltersOfType( MUES::SocketOutputFilter )[0]
 			raise RuntimeError, "Cannot reconnect from a stream with no SocketOutputFilter" unless newFilter
 			newFilter.puts( "Reconnecting..." )
 
-			### Get the current stream's socket output filter/s and flush 'em
-			### before closing it and replacing it with the new one.
+			# Get the current stream's socket output filter/s and flush 'em
+			# before closing it and replacing it with the new one.
 			@ioEventStream.removeFiltersOfType( MUES::SocketOutputFilter ).each {|filter|
 				filter.puts( "[Reconnect from #{newFilter.remoteHost}]" )
 				results << filter.shutdown
@@ -439,7 +438,11 @@ module MUES
 		end
 
 
-		# The list of questions for the user-creation questionnaire.
+		#############################################################
+		###	Q U E S T I O N N A I R E S
+		#############################################################
+
+		### The user-creation questionnaire.
 		CreateUserQuestions = [
 
 			# Username
@@ -470,8 +473,8 @@ module MUES
 						end
 
 						true
-					}
-				},
+					} # callcc
+				}, # Proc::new
 			},
 
 			# Account type
@@ -519,8 +522,8 @@ module MUES
 						else
 							rval.call( res[0][1] )
 						end
-					}
-				},
+					} # callcc
+				}, # Proc::new
 			},
 
 			# Real name
@@ -572,8 +575,8 @@ module MUES
 						else
 							rval.call( true )
 						end
-					}
-				},
+					} # callcc
+				}, # Proc::new
 			},
 
 			# Password confirmation
@@ -594,17 +597,18 @@ module MUES
 						else
 							rval.call( true )
 						end
-					}
-				},
+					} # callcc
+				}, # Proc::new
 
 			},
 
 		]
 
 
-		# The list of questions for admin password changing questionnaire.
+		### The admin password-changing questionnaire.
 		ChangePasswordQuestions = [
 
+			# Previous password
 			{
 				:name		=> 'oldPassword',
 				:hidden		=> true,
@@ -626,7 +630,7 @@ module MUES
 							rval.call(false)
 						end
 					} # callcc
-				} # Proc
+				} # Proc::new
 			},
 
 			# Password
@@ -679,7 +683,7 @@ module MUES
 							rval.call( true )
 						end
 					} # callcc
-				}, # Proc
+				}, # Proc::new
 			}
 		]
 		
