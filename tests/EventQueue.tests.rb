@@ -26,7 +26,7 @@ module MUES
 
 		def setup
 			$QueueObj = EventQueue.new
-			# $QueueObj.debugged = true
+			# $QueueObj.debugLevel = 1
 			$MockHandler = MockEventHandler.new
 			DebugOutputEvent.RegisterHandlers( $MockHandler )
 		end
@@ -77,7 +77,7 @@ module MUES
 		end
 
 		def test_StartWhileRunning()
-			$QueueObj.debugged = true
+			$QueueObj.debugLevel = true
 			$QueueObj.start
 			assert( $QueueObj.start )
 			$QueueObj.shutdown
