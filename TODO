@@ -5,13 +5,15 @@ This is an informal list of tasks yet to be done for the MUES.
 
 == Immediate Tasks
 
-These are tasks which should be completed before the next release.
+These are tasks which should be completed before the next release:
 
 * (There are no more tasks for this release)
 
 == Planned Tasks
 
-These are things which are planned to be added in the next release.
+These are things which are planned for the next release:
+
+* Make the password strictness in the User questionnaires configurable.
 
 * Add applicable telnet options to the parameters hash for MUES::TelnetListener.
 
@@ -22,6 +24,8 @@ These are things which are planned to be added in the next release.
 
 * Finish design/implementation of MUES::ClassLibrary.
 
+* Finish metaclass editor.
+
 * Finish OutputEvent decorators for wrapping, paged output, markup, etc. Undo
   current unfinished class-per-decoration implementation for a
   Decorator-pattern-based approach.
@@ -31,4 +35,19 @@ These are things which are planned to be added in the next release.
 * Finish code to re-write a config file.
 
 * Add 'bans' code to Engine.
+
+* Finish the DBI ObjectStore backend.
+
+* Add other backends for other kinds of storage.
+
+* TelnetOutputFilter:
+
+  - Cleanup/refactor some of the really heinously long methods.
+
+  - Add telnet option configuration parameters to the constructor, and make more
+    use of some of the useful telnet (sub-)?options.
+
+* Finish the documentation of the config file in ./CONFIGURATION. This can
+  mostly be assembled from the comments in server/minimal-config.xml, but
+  elaboration of the values and what they do will be in order.
 
