@@ -1,0 +1,10 @@
+
+= MUES Configuration
+
+== Config File
+
+The format of the configuration file is specified by the XML DTD in
+docs/muesconfig.dtd.
+
+
+
