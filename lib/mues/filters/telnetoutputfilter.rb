@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: telnetoutputfilter.rb,v 1.10 2002/08/29 07:28:58 deveiant Exp $
+# $Id: telnetoutputfilter.rb,v 1.11 2002/09/12 12:39:47 deveiant Exp $
 # 
 # == Authors
 # 
@@ -59,8 +59,8 @@ module MUES
 		include StateConstants
 
 		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.10 $ )[1]
-		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.10 2002/08/29 07:28:58 deveiant Exp $
+		Version = /([\d\.]+)/.match( %q$Revision: 1.11 $ )[1]
+		Rcsid = %q$Id: telnetoutputfilter.rb,v 1.11 2002/09/12 12:39:47 deveiant Exp $
 
 		### List of supported options and whether we ask for or offer them
 		Supported = {
@@ -313,7 +313,7 @@ module MUES
 
 		### Send the specified +message+ in-band.
 		def sendInBand( message )
-			self.log.debug( "Sending in-band: " + hexdump( message ) )
+			debugMsg( 5, "Sending in-band: " + hexdump( message ) )
 			self.write( message )
 		end
 
@@ -579,7 +579,7 @@ module MUES
 
 		### Add a state message to the state trace array for debugging.
 		def addStateTrace( msg )
-			self.log.debug( msg )
+			debugMsg( 2, msg )
 			@stateTrace << msg
 		end
 
