@@ -20,7 +20,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.20 2002/06/04 06:48:03 deveiant Exp $
+# $Id: mues.rb,v 1.21 2002/06/06 14:22:23 deveiant Exp $
 # 
 # == Authors
 # 
@@ -58,7 +58,7 @@ class Module
 
 	# Syntactic sugar for mixin/interface modules
 	alias :implements :include
-	alias :implements? :<
+	alias :implements? :include?
 end
 
 
@@ -138,32 +138,10 @@ module MUES
 		end
 
 
-		######
-		public
-		######
-
-		# The debugging level. Higher values = more debugging output
-		attr_reader :debugLevel
-
-		### Output <tt>messages</tt> to the debugging log if the
-		### <tt>debugLevel</tt> of the calling object is greater than or equal
-		### to <tt>level</tt>
-		def debugMsg( level, *messages )
-			raise TypeError, "Level must be a Fixnum, not a #{level.class.name}." unless
-				level.is_a?( Fixnum )
-			return unless debugged?( level )
-
-			logMessage = messages.collect {|m| m.to_s}.join('')
-			frame = caller(1)[0]
-			if Thread.current != Thread.main && Thread.current.respond_to?( :desc )
-				logMessage = "[Thread: #{Thread.current.desc}] #{frame}: #{logMessage}"
-			elsif Thread.current != Thread.main
-				logMessage = "[Thread #{Thread.current.id}] #{frame}: #{logMessage}"
-			else
-				logMessage = "#{frame}: #{logMessage}"
-			end
-
-			$stderr.flush
+		# Returns the current debugging level as a Fixnum. Higher values = more
+		# debugging output
+		def debugLevel
+			@debugLevel ||= 0
 		end
 
 		### Set the debugging level of the reciever. The <tt>value</tt> argument
@@ -190,6 +168,33 @@ module MUES
 		def debugged?( level=1 )
 			debugLevel() >= level
 		end
+
+
+		###############
+		module_function
+		###############
+
+		### Output <tt>messages</tt> to the debugging log if the
+		### <tt>debugLevel</tt> of the calling object is greater than or equal
+		### to <tt>level</tt>
+		def debugMsg( level, *messages )
+			raise TypeError, "Level must be a Fixnum, not a #{level.class.name}." unless
+				level.is_a?( Fixnum )
+			return unless debugged?( level )
+
+			logMessage = messages.collect {|m| m.to_s}.join('')
+			frame = caller(1)[0]
+			if Thread.current != Thread.main && Thread.current.respond_to?( :desc )
+				logMessage = "[Thread: #{Thread.current.desc}] #{frame}: #{logMessage}"
+			elsif Thread.current != Thread.main
+				logMessage = "[Thread #{Thread.current.id}] #{frame}: #{logMessage}"
+			else
+				logMessage = "#{frame}: #{logMessage}"
+			end
+
+			$stderr.flush
+		end
+		alias :_debugMsg :debugMsg
 		
 	end
 
@@ -403,8 +408,8 @@ module MUES
 
 		##
 		# Class constants
-		Version	= %q$Revision: 1.20 $
-		RcsId	= %q$Id: mues.rb,v 1.20 2002/06/04 06:48:03 deveiant Exp $
+		Version	= %q$Revision: 1.21 $
+		RcsId	= %q$Id: mues.rb,v 1.21 2002/06/06 14:22:23 deveiant Exp $
 
 		### Constructor/initializer
 		
@@ -412,12 +417,11 @@ module MUES
 		# attributes to it. Any arguments passed are ignored.
 		def initialize( *ignored )
 			#__checkVirtualMethods() # <- Not working yet
-			@muesid = __GenerateMuesId()
-			@objectStoreData = nil
+			@muesid = MUES::Object::generateMuesId( self )
 
 			if $DEBUG
 				objRef = "%s [%d]" % [ self.class.name, self.id ]
-				ObjectSpace.define_finalizer( self, MUES::Object.finalizer(objRef) )
+				ObjectSpace.define_finalizer( self, MUES::Object::makeFinalizer(objRef) )
 			end
 		end
 
@@ -427,7 +431,7 @@ module MUES
 
 		# Returns a finalizer closure to keep track of object
 		# garbage-collection.
-		def self.finalizer( objDesc ) #  :TODO: This shouldn't be left in a production server.
+		def self.makeFinalizer( objDesc ) #  :TODO: This shouldn't be left in a production server.
 			return Proc.new {
 				if Thread.current != Thread.main
 					$stderr.puts "[Thread #{Thread.current.desc}]: " + objDesc + " destroyed."
@@ -437,6 +441,11 @@ module MUES
 			}
 		end
 
+		### Returns a unique id for an object
+		def generateMuesId( obj )
+			raw = "%s:%s:%.6f" % [ $$, obj.id, Time.new.to_f ]
+			return MD5.new( raw ).hexdigest
+		end
 
 		######
 		public
@@ -445,32 +454,6 @@ module MUES
 		# The unique id assigned to the object by the server
 		attr_reader :muesid
 
-		# Return the ObjectStore data of the object. This is an attribute that
-		# can be used by the ObjectStore backend to store meta-data about the
-		# object, such as its rowid.
-		attr_accessor :objectStoreData
-
-
-		# Callback method for prepping the object for storage in an ObjectStore.
-		def lull
-			# No-op
-		end
-
-		##
-		# Callback method for thawing after being retrieved from the
-		# ObjectStore.
-		def awaken
-			# No-op
-		end
-
-
-
-		##
-		# Returns a unique id for an object
-		def __GenerateMuesId
-			raw = "%s:%s:%.6f" % [ $$, self.id, Time.new.to_f ]
-			return MD5.new( raw ).hexdigest
-		end
 	end
 
 
