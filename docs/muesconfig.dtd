@@ -2,8 +2,8 @@
 <!--
 
 	Multi-User Environment Server Configuration File DTD
-    Time-stamp: <26-May-2002 22:49:29 deveiant>
-	$Id: muesconfig.dtd,v 1.1 2002/05/28 03:20:10 deveiant Exp $
+    Time-stamp: <29-May-2002 08:04:17 deveiant>
+	$Id: muesconfig.dtd,v 1.2 2002/06/04 06:42:06 deveiant Exp $
 
 	Michael Granger - ged@FaerieMUD.org
 	Time-stamp: "26-May-2002 22:22:46 deveiant"
@@ -28,7 +28,7 @@
 <!-- A version string for the configuration format (eg., 1.1) -->
 <!ENTITY % FormatVersion    "CDATA">
 
-<!-- A version string like $Revision: 1.1 $ -->
+<!-- A version string like $Revision: 1.2 $ -->
 <!ENTITY % CVSVersion       "CDATA">
 
 <!-- one or more digits -->
@@ -69,7 +69,6 @@
 <!ELEMENT exception-stack-size  (#PCDATA)>
 <!ELEMENT debug-level           (#PCDATA)>
 
-<!ELEMENT objectstore           (#PCDATA)>
 <!ELEMENT listeners             (listener)*>
 
 <!ELEMENT listener              (filter-class,bind-port,bind-address,use-wrapper?)>
@@ -136,6 +135,19 @@
 
 
 <!-- Universal elements -->
+<!ELEMENT objectstore           (backend,garbagecollector)>
+<!ATTLIST objectstore
+            name                %Text;              #REQUIRED>
+
+<!ELEMENT backend               (param)*>
+<!ATTLIST backend
+            class               %Text;              #REQUIRED>
+
+<!ELEMENT garbagecollector      (param)*>
+<!ATTLIST garbagecollector
+            class               %Text;              #REQUIRED>
+
+
 <!ELEMENT param                 ANY>
 <!ATTLIST param
             name                %Text;              #REQUIRED>
