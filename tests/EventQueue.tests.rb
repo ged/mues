@@ -41,7 +41,7 @@ module MUES
 				#assert_equals( 1, threads.size )
 				if threads.size > 1
 					puts "\nThread status (Queue is #{ if $QueueObj.running? then \"running\" else \"not running\" end}):"
-					puts "Supervisor thread == #{ $QueueObj.supervisor.id } (#{ $QueueObj.supervisor.status })" if
+					puts "Supervisor thread: #{ $QueueObj.supervisor.id } (#{ $QueueObj.supervisor.status })" if
 						$QueueObj.supervisor.is_a?( Thread )
 					puts "Worker threads: #{ $QueueObj.workers.list.collect {|thr| thr.id}.join(',') }"
 					puts "Idle worker threads: #{ $QueueObj.idleWorkers.list.collect {|thr| thr.id}.join(',') }"
@@ -57,12 +57,12 @@ module MUES
 			$QueueObj = nil
 		end
 		
-		def test_New
+		def test_00_New
 			assert_not_nil( $QueueObj )
 			assert_instance_of( EventQueue, $QueueObj )
 		end
 
-		def test_StartStop
+		def test_01_StartStop
 			assert_no_exception {
 				$QueueObj.start
 			}
@@ -72,25 +72,27 @@ module MUES
 			}
 		end
 
-		def test_StopWithoutStart()
-			assert_equals( nil, $QueueObj.shutdown )
+		def test_02_StopWithoutStart()
+			assert_no_exception {
+				$QueueObj.shutdown
+			}
 		end
 
-		def test_StartWhileRunning()
-			$QueueObj.debugLevel = false
+		def test_03_StartWhileRunning()
+			$QueueObj.debugLevel = 0
 			$QueueObj.start
-			assert( $QueueObj.start )
+			assert_no_exception { $QueueObj.start }
 			$QueueObj.shutdown
 		end
 
-		def test_QueueEvent
+		def test_04_QueueEvent
 			assert_no_exception {
 				ev = DebugOutputEvent.new( 1 )
 				$QueueObj.enqueue( ev )
 			}
 		end
 
-		def test_QueueWithoutArgs
+		def test_05_QueueWithoutArgs
 			assert( ! $QueueObj.enqueue )
 		end
 
