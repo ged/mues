@@ -5,55 +5,40 @@ This is an informal list of tasks yet to be done for the MUES.
 
 == Immediate Tasks
 
-* Add applicable telnet options to the parameters hash for MUES::TelnetListener.
+* Core
 
-* I18n via GetText:
-  http://home2.highway.ne.jp/mutoh/tools/ruby/en/ruby-gettext.html
+  - Add 'bans' code to Engine.
 
-* Finish unit tests.
+  - I18n via GetText:
+	http://home2.highway.ne.jp/mutoh/tools/ruby/en/ruby-gettext.html
 
-* Finish design/implementation of MUES::ClassLibrary.
+  - Finish unit tests.
 
-* Finish metaclass editor.
+  - Better and more-useful error-handling. Errors from Environments should never
+	crash the server.
 
-* Finish OutputEvent decorators for wrapping, paged output, markup, etc. Undo
-  current unfinished class-per-decoration implementation for a
-  Decorator-pattern-based approach.
+* ObjectStore
 
-* Implement the commands in server/shellCommands/TODO.
+  - Finish the DBI ObjectStore backend.
 
-* Finish code to re-write a config file.
+  - Add other backends for other kinds of storage.
 
-* Add 'bans' code to Engine.
+* IO Subsystem:
 
-* Finish the DBI ObjectStore backend.
+  - Cleanup/refactor some of the really heinously long methods in
+    TelnetOutputFilter.
 
-* Add other backends for other kinds of storage.
-
-* TelnetOutputFilter:
-
-  - Cleanup/refactor some of the really heinously long methods.
+  - Finish OutputEvent decorators for wrapping, paged output, markup, etc. Undo
+	current unfinished class-per-decoration implementation for a
+	Decorator-pattern-based approach.
 
   - Add telnet option configuration parameters to the constructor, and make more
     use of some of the useful telnet (sub-)?options.
 
-* Finish the documentation of the config file in ./CONFIGURATION. This can
-  mostly be assembled from the comments in server/minimal-config.xml, but
-  elaboration of the values and what they do will be in order.
+  - Work on an OutputFilter (probably a derivative of TelnetOutputFilter) that
+	uses readline or has readline-like capabilities.
 
-* Rewrite the login system to use MUES::Questionnaire.
-
-* Work on an OutputFilter (probably a derivative of TelnetOutputFilter) that
-  uses readline or has readline-like capabilities.
-
-* Better and more-useful error-handling. Errors from Environments should never
-  crash the server.
-
-* Make it possible to configure all aspects of login semantics. Should be able
-  to go directly from login to environment, give them a command shell if they're
-  not an admin, etc. (reltuk's idea on IRC)
-
-* Make the password strictness in the User questionnaires configurable.
+  - Implement the commands in server/shellCommands/TODO.
 
 
 
