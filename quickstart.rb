@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.1 2001/11/01 15:52:08 deveiant Exp $
+#	$Id: quickstart.rb,v 1.2 2001/11/01 19:51:04 deveiant Exp $
 #
 #	Copyright (c) 2001, The FaerieMUD Consortium.
 #
@@ -37,8 +37,9 @@ def main
 	end
 
 	unless FileTest.exists?( "server/MUES.cfg" )
-		message "Copying example config to MUES.cfg"
+		message "Copying example config to MUES.cfg..."
 		File.copy( "server/MUES.cfg.example", "server/MUES.cfg", true )
+		message "done.\n"
 	end
 
 	if promptWithDefault( "Edit the configuration? (highly recommended) [Yn]", 'y' ) =~ /y/i
