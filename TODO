@@ -5,8 +5,6 @@ This is an informal list of tasks yet to be done for the MUES.
 
 == Immediate Tasks
 
-* Make the password strictness in the User questionnaires configurable.
-
 * Add applicable telnet options to the parameters hash for MUES::TelnetListener.
 
 * I18n via GetText:
@@ -54,6 +52,8 @@ This is an informal list of tasks yet to be done for the MUES.
 * Make it possible to configure all aspects of login semantics. Should be able
   to go directly from login to environment, give them a command shell if they're
   not an admin, etc. (reltuk's idea on IRC)
+
+* Make the password strictness in the User questionnaires configurable.
 
 
 
