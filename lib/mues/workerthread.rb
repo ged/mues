@@ -14,7 +14,7 @@
 # 
 # == Rcsid
 # 
-# $Id: workerthread.rb,v 1.9 2002/08/02 20:03:44 deveiant Exp $
+# $Id: workerthread.rb,v 1.10 2002/09/12 12:14:59 deveiant Exp $
 # 
 # == Authors
 # 
@@ -28,6 +28,8 @@
 
 require "thread"
 require "mues/Object"
+require "mues/Mixins"
+
 
 ### Add a description attribute to the thread class for diagnostics
 class Thread
@@ -35,12 +37,12 @@ class Thread
 	# The thread description
 	attr_accessor :desc
 
-	alias_method :realInitialize, :initialize
+	alias_method :__initialize, :initialize
 
 	### Override the default initializer to set the description attribute for
 	### all threads.
 	def initialize( *args, &block )
-		realInitialize( *args, &block )
+		__initialize( *args, &block )
 		self.desc = "(unknown): started from #{caller(1)[0]}"
 	end
 end
@@ -70,6 +72,22 @@ module MUES
 			return Time.now.to_i - @startTime.to_i
 		end
 
-	end
+	end # class WorkerThread
+
+
+	### A ThreadGroup subclass that only allows MUES::WorkerThreads to be added to it.
+	class WorkerThreadGroup < ThreadGroup ; implements MUES::Debuggable
+		
+		include MUES::TypeCheckFunctions
+
+		### Add a thread (a MUES::WorkerThread object) to the group. Adding any
+		### other kind of thread will result in an exception being raised.
+		def add( thread )
+			checkType( thread, MUES::WorkerThread )
+			super( thread )
+		end
+
+	end # class WorkerThreadGroup
+
 end
 
