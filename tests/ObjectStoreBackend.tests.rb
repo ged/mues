@@ -14,7 +14,7 @@ class ObjectStoreBackendTestCase < MUES::TestCase
 	@@TestedStores = %w{Flatfile BerkeleyDB}
 	@@name = 'test00'
 
-	def __nextName
+	def nextName
 		@@name = @@name.succ
 	end
 
@@ -32,7 +32,7 @@ class ObjectStoreBackendTestCase < MUES::TestCase
 	### Test instantiation with various arguments
 	def test_01_Instantiate
 		@@TestedStores.each {|storeName|
-			assert_nothing_raised { MUES::ObjectStore::Backend::create( storeName, __nextName ) }
+			assert_nothing_raised { MUES::ObjectStore::Backend::create( storeName, nextName() ) }
 		}
 	end
 
