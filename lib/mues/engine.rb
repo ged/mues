@@ -335,8 +335,8 @@ module MUES
 		include Event::Handler
 
 		### Default constants
-		Version			= /([\d\.]+)/.match( %q$Revision: 1.12 $ )[1]
-		Rcsid			= %q$Id: engine.rb,v 1.12 2001/11/01 17:02:01 deveiant Exp $
+		Version			= /([\d\.]+)/.match( %q$Revision: 1.13 $ )[1]
+		Rcsid			= %q$Id: engine.rb,v 1.13 2001/11/01 19:52:00 deveiant Exp $
 		DefaultHost		= 'localhost'
 		DefaultPort		= 6565
 		DefaultName		= 'ExperimentalMUES'
@@ -927,16 +927,16 @@ module MUES
 				user.lastLogin = Time.now
 				user.remoteHost = loginSession.remoteHost
 
-				### If the user object is already active (ie., already
-				### connected and has a shell), remove the old socket connection
-				### and re-connect with the new one. Otherwise, just activate
-				### the user object.
+				### If the user object is already active (ie., already connected
+				### and has a shell), remove the old socket connection and
+				### re-connect with the new one. Otherwise just activate the
+				### user object.
 				if user.activated?
 					results << LogEvent.new( "notice", "User #{user.to_s} reconnected." )
 					results << user.reconnect( stream )
 				else
 					results << LogEvent.new( "notice", "Login succeeded for #{user.to_s}." )
-					results << user.activate( stream )
+					results << user.activate( stream, @config['motd'] )
 				end
 
 				# Add the activated user to our userlist, and remove the spent
