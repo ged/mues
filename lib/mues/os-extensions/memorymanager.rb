@@ -13,7 +13,7 @@
 # 
 # == Rcsid
 # 
-# $Id: memorymanager.rb,v 1.6 2002/10/13 23:25:10 deveiant Exp $
+# $Id: memorymanager.rb,v 1.7 2002/10/14 09:45:10 deveiant Exp $
 # 
 # == Authors
 # 
@@ -160,6 +160,20 @@ module MUES
 
 				@activeObjects.rehash
 			end
+
+			### Unregister the specified <tt>objects</tt> with the
+			### memory-manager.
+			def unregister( *objects )
+				checkEachType( objects, MUES::StorableObject )
+
+				@mutex.synchronize( Sync::EX ) {
+					objects.each {|o|
+						@activeObjects.delete( o.objectStoreId )
+					}
+				}
+
+				@activeObjects.rehash
+			end				
 
 
 			### Clear the objectspace
