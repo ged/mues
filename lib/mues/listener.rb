@@ -12,12 +12,13 @@
 # Concrete derivatives of this class will probably be interested in providing
 # implementations of one or more of the following operations:
 #
-# [<tt>createOutputFilter( <em>pollObject</em> )</tt>]
+# [<tt>createOutputFilter( <em>reactorObject</em> )</tt>]
 #   Called when the listener's IO object indicates it is readable, this method
 #   is responsbible for doing any preparation work (eg., calling #accept on the
 #   socket, etc.), and returning an appropriate MUES::IOEventFilter object. The
-#   <tt>pollObject</tt> parameter is the Engine's Poll object, which the filter
-#   can use to drive its own IO, perhaps through a MUES::PollProxy object.
+#   <tt>reactorObject</tt> parameter is the Engine's IO::Reactor object, which
+#   the filter can use to drive its own IO, perhaps through a MUES::ReactorProxy
+#   object.
 #
 # [<tt>releaseOutputFilter( <em>filter</em> )</tt>]
 #   Called after a filter created by this listener indicates that its peer has
@@ -27,15 +28,15 @@
 # 
 # == Synopsis
 #
-#	require "mues/PollProxy"
+#	require "mues/ReactorProxy"
 #	require "mues/IOEventFilters"
 # 
 #   class MySocketListener < MUES::Listener
 #
-#       def createOutputFilter( poll )
+#       def createOutputFilter( reactor )
 #           clientSocket = self.io.accept
-#			proxy = MUES::PollProxy::new( poll, clientSocket )
-#			return MUES::MyOutputFilter::new( clientSocket, pollProxy )
+#			proxy = MUES::ReactorProxy::new( reactor, clientSocket )
+#			return MUES::MyOutputFilter::new( clientSocket, reactorProxy )
 #       end
 #
 #       def releaseOutputFilter( filter )
@@ -46,7 +47,7 @@
 # 
 # == Rcsid
 # 
-# $Id: listener.rb,v 1.7 2003/04/19 06:56:29 deveiant Exp $
+# $Id: listener.rb,v 1.8 2003/09/12 02:12:33 deveiant Exp $
 # 
 # == Authors
 # 
@@ -62,7 +63,7 @@
 require 'rbconfig'
 
 require 'mues/Object'
-require 'mues/PollProxy'
+require 'mues/ReactorProxy'
 
 
 module MUES
@@ -72,11 +73,15 @@ module MUES
 
 		include MUES::FactoryMethods
 
-		### Class constants
-		Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-		Rcsid = %q$Id: listener.rb,v 1.7 2003/04/19 06:56:29 deveiant Exp $
+		# CVS version tag
+		Version = /([\d\.]+)/.match( %q{$Revision: 1.8 $} )[1]
 
-		### Class methods
+		# CVS id tag 
+		Rcsid = %q$Id: listener.rb,v 1.8 2003/09/12 02:12:33 deveiant Exp $
+
+		#############################################################
+		###	C L A S S   M E T H O D S
+		#############################################################
 
 		# The directories to search for derivative classes
 		@derivativeDirs = [ File::join(::Config::CONFIG['sitelibdir'], "mues/listeners") ]
@@ -84,6 +89,11 @@ module MUES
 			attr_accessor :derivativeDirs
 		end
 
+
+
+		#############################################################
+		###	I N S T A N C E   M E T H O D S
+		#############################################################
 
 		### Create a new Listener object with the specified <tt>name</tt>,
 		### optional <tt>parameters</tt> (a Hash), and <tt>io</tt> (an IO
@@ -93,12 +103,9 @@ module MUES
 			@parameters	= parameters
 			@io			= io
 
-			@filterDebugLevel	= parameters['filter-debug'].to_i
-
-			self.log.info( "Initialized a %s" % self.class.name )
+			@filterDebugLevel = parameters['filter-debug'].to_i
 
 			super()
-			self.log.debug "Returning from MUES::Listener initializer"
 		end
 
 
@@ -124,6 +131,12 @@ module MUES
 
 		# Virtual methods required in derivatives
 		abstract :createOutputFilter, :releaseOutputFilter
+
+
+		### Halt the listener and accept no more clients.
+		def stop
+			@io = nil
+		end
 
 
 		### Return a human-readable version of the listener suitable for log
