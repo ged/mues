@@ -50,15 +50,10 @@ require "ObjectStore"
 require "ObjectStoreGC"
 
 module MUES
-  
+
   ### Class for the ObjectStore system's Service interface to MUES
   class ObjectStoreService < Service
     include Event::Handler
-
-    ### Class constants
-	  #:!: MUES has its own, i shouldn't tread.
-#    Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
-#    Rcsid = %q$Id: objectstoreservice.rb,v 1.7 2002/03/20 22:07:17 stillflame Exp $
 
     #########
     protected
@@ -66,36 +61,18 @@ module MUES
 
     ### Initialize a new ObjectStoreService object, passing in a hash of
     ### values with the following keys:
-    ### 'name' -> the name to give this ObjectStoreService.
-    ### 'mark' -> the symbol for the method to be used for marking objects for
-    ###           garbage collection.
-    ### 'GC_delay' -> the period of time inbetween garbage collection sweeps
-    def initialize(name, filename=nil, objects=[], indexes=[],
-		   serialize=nil, deserialize=nil, mark=:os_gc_mark, gc_delay=nil)
-		#:TODO: find out why this doesn't work
-#		registerHandlerForEvents(ObjectStoreGCEvent,
-#								 CloseObjectStoreEvent,
-#								 NewObjectStoreEvent,
-#								 LoadObjectStoreEvent,
-#								 StoreObjectEvent,
-#								 RequestObjectEvent)
-      @name = name
-      @objectStore = ObjectStore.new(filename, indexes, serialize, deserialize)
-      @gc = @objectStore.gc
+    def initialize()
+      @objectStores = []
+      @name = "ObjectStoreService"
+      registerHandlerForEvents( GetServiceAdapterEvent )
     end
 
     ### Class methods
     class << self
-      
-		### Make sure no more objects are unsotred
-		def atEngineShutdown( theEngine )
-			###:!: maybe a GC function?
-			###    this should also take care of the object store, no?
-			###    will i have to wait for @gc.shutdown?
-			@gc.shutdown
-			@objectStore.close
+      ### Make sure no more objects are unsotred
+      def atEngineShutdown( theEngine )
+	@objectStores.each {|os| os.close}
       end
-
     end
 
     ######
@@ -104,56 +81,19 @@ module MUES
 
     ### Handle the events.
 
-    def _handleCloseObjectStoreEvent (event)
-		@objectStore.close
-		@objectStore = nil
+    ### Check to see if anyone wants an ObjectStore
+    def _handleGetServiceAdapterEvent (event)
+      if (event.name == @name)
+	@objectStores << ObjectStore.new(*(event.args))
+	event.callback.call( @objectStores[-1] )
+      end
+      return []
     end
 
-	### handles the creation of new ObjectStore's
-	### arguments (as passed to the event)
-    ###   'filename' -> the filename of the ObjectStore to associate this with.
-    ###   'indexes' -> an array of symbols corresponding to the methods that will
-    ###                be used to generate the desired indices.
-    ###   'serialize' -> the symbol for the method to be used for object
-    ###                  serialization.
-    ###   'deserialize' -> the symbol for the method to be used for object
-    ###                    deserialization.
-    def _handleNewObjectStoreEvent (event)
-		@objectStore = ObjectStore.new( event.filename,
-									    event.indexes,
-									    event.serialize,
-									    event.deserialize )
+    ### included to prevent MUES::Event::Handler#handleEvent from screaming
+    def _debugMsg (*args)
     end
 
-	### handles the loading of ObjectStore's
-	### arguments (as passed to the event)
-	###   'filename' -> the filename of the ObjectStore config file (?)
-    def _handleLoadObjectStoreEvent (event)
-		@objectStore = ObjectStore.load( event.filename )
-    end
-
-	### Makes sure the GC is running, and optionally sets the trash_ratio
-	### assumes an ObjectStore is open and active
-    def _handleObjectStoreGCEvent (event)
-		@gc ||= ObjectStoreGC.new( @objectStore )
-		@gc.start( event.trash_ratio )
-    end
-
-	### All object storing is to be done through the garbage collector
-    def _handleStoreObjectEvent (event)
-		@gc.register( event.objects )
-    end
-
-    def _handleRequestObjectEvent (event)
-      event.recipient.become( @objectStore.retrieve( event.obj_id ) )
-      # is there a better way to do this?
-      # maybe an event getting dispatched with the object in it?
-      # then everyone would always be looking for that event, no?
-    end
-
-	### included to prevent MUES::Event::Handler#handleEvent from screaming
-	def _debugMsg (*args)
-	end
   end
 
 end
