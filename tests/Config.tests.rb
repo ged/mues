@@ -19,12 +19,13 @@ module MUES
 			[ :general, :server_name ]					=> "Experimental MUD",
 			[ :general, :server_admin ]					=> "MUES Admin <muesadmin@localhost>",
 
-			[ :engine, :debug_level ]					=> "0",
+			[ :engine,  :debug_level ]					=> 0,
+			[ :engine,  :exception_stack_size ]			=> 10,
 		}
 
 		@@AttributeTests = {
 			[ [:engine, :backend], "class" ]			=> "BerkeleyDB",
-			[ [:engine, :garbagecollector], "class"]	=> "Simple",
+			[ [:engine, :memorymanager], "class"]		=> "Simple",
 		}
 
 		def set_up
@@ -40,13 +41,14 @@ module MUES
 
 		def test_MethodChain
 			@@MethodTests.each {|chain,expectedResult|
+				$stderr.puts "Calling #{chain.join('.')}, expecting #{expectedResult.inspect}" if
+					$DEBUG
+
 				lastRes = @config
 				chain.each {|sym|
 					assert_nothing_raised { lastRes = lastRes.send( sym ) }
 				}
-
-				assert_instance_of MUES::Config::Item, lastRes
-				assert_equal expectedResult, lastRes.to_s
+				assert_equal expectedResult, lastRes
 			}
 		end
 
@@ -82,9 +84,9 @@ module TestConfig
 	<!-- Engine objectstore config -->
 	<objectstore>
 	  <backend class="BerkeleyDB"></backend>
-	  <garbagecollector class="Simple">
+	  <memorymanager class="Simple">
 		<param name="trash_rate">50</param>
-	  </garbagecollector>
+	  </memorymanager>
 	</objectstore>
 
 	<!-- Listener objects -->
@@ -149,16 +151,16 @@ module TestConfig
 	<environment name="FaerieMUD" class="FaerieMUD::World">
 	  <objectstore name="FaerieMUD">
 		<backend class="BerkeleyDB"></backend>
-		<garbagecollector class="PMOS"></garbagecollector>
+		<memorymanager class="PMOS"></memorymanager>
 	  </objectstore>
 	</environment>
 
 	<environment name="testing" class="MUES::ObjectEnv">
 	  <objectstore name="testing-objectenv">
 		<backend class="Flatfile" />
-		<garbagecollector class="Simple">
+		<memorymanager class="Simple">
 		  <param name="trash_rate">100</param>
-		</garbagecollector>
+		</memorymanager>
 	  </objectstore>
 	</environment>
   </environments>
