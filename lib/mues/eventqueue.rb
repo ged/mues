@@ -20,7 +20,7 @@
 # 
 # == Rcsid
 # 
-# $Id: eventqueue.rb,v 1.20 2002/10/25 00:22:46 deveiant Exp $
+# $Id: eventqueue.rb,v 1.21 2002/10/26 18:55:12 deveiant Exp $
 # 
 # == Authors
 # 
@@ -49,8 +49,8 @@ module MUES
 		include MUES::TypeCheckFunctions
 		
 		### Class constants
-		Version	= /([\d\.]+)/.match( %q{$Revision: 1.20 $} )[1]
-		Rcsid	= %q$Id: eventqueue.rb,v 1.20 2002/10/25 00:22:46 deveiant Exp $
+		Version	= /([\d\.]+)/.match( %q{$Revision: 1.21 $} )[1]
+		Rcsid	= %q$Id: eventqueue.rb,v 1.21 2002/10/26 18:55:12 deveiant Exp $
 
 		### Class attributes
 		DefaultMinWorkers	= 2
@@ -482,6 +482,9 @@ module MUES
 
 			thr = WorkerThread.current
 			debugMsg( 1, "Worker #{thr.id} going home after #{thr.runtime} seconds of faithful service." )
+		rescue ::Exception => err
+			self.log.error "%s caught a fatal exception: %s\n\t%s" %
+				[ Thread.current.to_s, err.message, err.backtrace.join("\n\t") ]
 		end
 
 
