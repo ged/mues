@@ -1,6 +1,6 @@
 #
 #	Install/distribution utility functions
-#	$Id: utils.rb,v 1.5 2002/09/14 23:57:28 deveiant Exp $
+#	$Id: utils.rb,v 1.6 2002/09/27 16:05:53 deveiant Exp $
 #
 #	Copyright (c) 2001, 2002, The FaerieMUD Consortium.
 #
@@ -66,11 +66,10 @@ module UtilityFunctions
 	def testForRequiredLibrary( lib, nicename=nil, raaUrl=nil, downloadUrl=nil )
 		nicename ||= "'lib'"
 		unless testForLibrary( lib, nicename )
-			msgs = [ "You are missing the #{nicename} library.\n" ]
+			msgs = [ "You are missing the required #{nicename} library.\n" ]
 			msgs << "RAA: #{raaUrl}\n" if raaUrl
 			msgs << "Download: #{downloadUrl}\n" if downloadUrl
-			message( msgs )
-			exit 1
+			abort( msgs.join('') )
 		end
 		return true
 	end
@@ -96,6 +95,10 @@ module UtilityFunctions
 	def replaceMessage( *msg )
 		print ErasePreviousLine
 		message( *msg )
+	end
+
+	def writeLine( length=75 )
+		puts "\r" + ("-" * length )
 	end
 
 	def abort( msg )
