@@ -232,6 +232,8 @@ class ObjectStore
 	  objects.flatten!
 	  index_names = @indexes.collect {|ind| ind[0].id2name}
 	  index_returns = objects.collect {|o|
+	    raise TypeError.new("Expected a StorableObject but received a #{o.type.name}") unless
+	      o.kind_of?(StorableObject)
 	    @indexes.collect {|ind|
 	      o.send(ind[0])
 	    }
@@ -239,7 +241,6 @@ class ObjectStore
 	  ids = objects.collect {|o| o.objectStoreID}
 	  serialized = objects.collect {|o| o.send(@serialize, -1)}
 	  classes = objects.collect {|o| o.class.send(@serialize, -1)}
-	  #:?: or should classes be stored as keys that point to entries in the db?
 	  trans = A_Transaction.new
 	  col_names = ['id', 'obj', 'obj_class'] + index_names
 	  ids.each_index do |i|
@@ -273,16 +274,18 @@ class ObjectStore
 	### Gets the object specified by the given id out of the database
 	### Well, not really.  returns a StorableObject style shallow reference
 	def retrieve ( id )
-	  ShallowReference.new( id, self )
+	  if ( an_obj = @active_objects[id] )
+	    return an_obj
+	  else
+	    return ShallowReference.new( id, self )
+	  end
 	end
 
 	### *ACTUALLY* gets the object specifed by the given id out of the database
 	### arguments:
 	###   id - the id (objectStoreID) of the object
 	def _retrieve ( id )
-	  if ( an_obj = @active_objects[id] )
-	    return an_obj
-	  elsif ( table_data = (@table.find( nil, id )) )
+	  if ( table_data = (@table.find( nil, id )) )
 	    aClass = Class.send( @deserialize, table_data.obj_class )
 	    object = aClass.send( @deserialize, table_data.obj )
 	    return object

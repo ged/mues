@@ -60,6 +60,13 @@ end
 
 class InstantiationError < Exception; end
 
+class Object
+  ### allows shallow references to be seen for what they are.
+  def shallow?
+    false
+  end
+end
+
 class StorableObject < PolymorphicObject; include AbstractClass
 
   def StorableObject._load (aString)
@@ -104,14 +111,10 @@ class StorableObject < PolymorphicObject; include AbstractClass
     objectStoreID == an_other.objectStoreID
   end
 
-  ### allows shallow references to be seen for what they are.
-  def shallow?
-    false
-  end
-
   ### This is a place holder for the method that will return the number of references
   ### to an object (will be in C).
   def refCount
+    return 2
   end
 
 end
@@ -174,7 +177,9 @@ class ShallowReference < PolymorphicObject
   ### When any other method is sent, become the object returned by the database,
   ###   and send again.
   def method_missing (*args)
-    become( @obj_store._retrieve( @id ) )
+    thingy = @obj_store._retrieve( @id )
+    super unless !thingy.shallow? and thingy.respond_to?(args[0])
+    become(thingy)
     send args.shift, *args
   end
 

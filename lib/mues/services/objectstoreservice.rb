@@ -57,8 +57,8 @@ module MUES
 
     ### Class constants
 	  #:!: MUES has its own, i shouldn't tread.
-#    Version = /([\d\.]+)/.match( %q$Revision: 1.6 $ )[1]
-#    Rcsid = %q$Id: objectstoreservice.rb,v 1.6 2002/03/19 08:35:14 stillflame Exp $
+#    Version = /([\d\.]+)/.match( %q$Revision: 1.7 $ )[1]
+#    Rcsid = %q$Id: objectstoreservice.rb,v 1.7 2002/03/20 22:07:17 stillflame Exp $
 
     #########
     protected
@@ -145,8 +145,10 @@ module MUES
     end
 
     def _handleRequestObjectEvent (event)
-		event.recipient = @objectStore.retrieve( event.obj_id )
-		#is there a better way to do this?
+      event.recipient.become( @objectStore.retrieve( event.obj_id ) )
+      # is there a better way to do this?
+      # maybe an event getting dispatched with the object in it?
+      # then everyone would always be looking for that event, no?
     end
 
 	### included to prevent MUES::Event::Handler#handleEvent from screaming

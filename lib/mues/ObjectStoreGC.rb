@@ -121,8 +121,6 @@ class ObjectStoreGC
 
   ### Registers object(s) with the GC
   def register ( *objects )
-    raise TypeError.new( "Expected Array but received #{objects.type.name}" ) unless
-      objects.kind_of?(Array)
     objects.flatten!
     objects.compact!
     @mutex.synchronize( Sync::EX ) {
@@ -167,7 +165,7 @@ class ObjectStoreGC
   def _collect(aHash)
     @mutex.synchronize( Sync::SH ) {
       @active_objects.each {|o|
-	if( !o.shallow? and (o.refCount == 1 or o.send(@mark)) )
+	if( !o.shallow? and (o.refCount <= 1 or o.send(@mark)) )
 	  @mutex.synchronize( Sync::EX ) {
 	    @objectStore.store(o)
 	    o.become(ShallowReference.new( o.objectStoreID ))
