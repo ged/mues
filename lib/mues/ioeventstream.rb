@@ -49,7 +49,7 @@
 # 
 # == Rcsid
 # 
-# $Id: ioeventstream.rb,v 1.19 2002/10/04 05:16:36 deveiant Exp $
+# $Id: ioeventstream.rb,v 1.20 2002/10/06 07:44:34 deveiant Exp $
 # 
 # == Authors
 # 
@@ -520,8 +520,24 @@ module MUES
 
 			results = filter.send( "handle%sEvents" % direction.capitalize, *events ) unless
 				filter.isFinished?
-			debugMsg( 3, "Filter returned #{results.size} events for the next filter." ) if
-				results.is_a? Array
+
+			# Normalize the results into an Array, removing any filters that
+			# were returned.
+			if results
+				results = [ results ] unless results.is_a?( Array )
+				results.flatten!
+				debugMsg( 3, "Filter returned #{results.size} events for the next filter." )
+
+				# Remove filters that are returned as results and add them to
+				# the stream.
+				filters = results.find_all {|item| item.kind_of?(MUES::IOEventFilter) }
+				unless filters.empty?
+					debugMsg 2, "Adding %d result filters" % filters.length
+					results -= filters
+					self.addFilters( *filters )
+				end
+			end
+				 
 
 			# If the filter returned nil or its isFinished flag is set,
 			# get all of its queued events and remove it from the stream.
@@ -542,12 +558,10 @@ module MUES
 				# Add any pending events to the array of results.
 				consequences = filter.send("queued%sEvents" % direction.capitalize)
 				results.push( *consequences ) if consequences.is_a?( Array ) && ! consequences.empty?
-			elsif ( ! results.is_a? Array )
-				results = [ results ]
 			end
 
 			debugMsg( 3, "#{results.size} events left after filtering." )
-			return results.flatten
+			return results
 		end
 
 
