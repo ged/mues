@@ -46,7 +46,7 @@
 # 
 # == Rcsid
 # 
-# $Id: mixins.rb,v 1.19 2003/06/06 22:18:15 deveiant Exp $
+# $Id: mixins.rb,v 1.20 2003/06/14 16:25:11 deveiant Exp $
 # 
 # == Authors
 # 
@@ -613,10 +613,21 @@ module MUES
 
 		### Returns the type name used when searching for a derivative.
 		def factoryType
-			if self.name =~ /^.*::(.*)/
+			base = nil
+			self.ancestors.each {|klass|
+				if klass.instance_variables.include?( "@derivatives" )
+					base = klass
+					break
+				end
+			}
+
+			raise FactoryError, "Couldn't find factory base for #{self.name}" if
+				base.nil?
+
+			if base.name =~ /^.*::(.*)/
 				return $1
 			else
-				return self.name
+				return base.name
 			end
 		end
 
@@ -624,6 +635,7 @@ module MUES
 		### Inheritance callback -- Register subclasses in the derivatives hash
 		### so that ::create knows about them.
 		def inherited( subclass )
+			MUES::Log.debug( "Inheritance callback for '%s'" % self.factoryType )
 			truncatedName =
 				# Handle class names like 'FooBar' for 'Bar' factories.
 				if subclass.name.match( /(?:.*::)?(\w+)(?:#{self.factoryType})/ )
@@ -633,6 +645,7 @@ module MUES
 				end
 
 			[ subclass.name, truncatedName, subclass ].each {|key|
+				MUES::Log.debug( "Registering '%s' as '%s'" % [subclass.name, key] )
 				self.derivatives[ key ] = subclass
 			}
 			super
