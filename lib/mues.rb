@@ -21,7 +21,7 @@
 #
 # == Rcsid
 # 
-# $Id: mues.rb,v 1.17 2002/04/11 16:58:26 deveiant Exp $
+# $Id: mues.rb,v 1.18 2002/05/16 03:47:31 deveiant Exp $
 # 
 # == Authors
 # 
@@ -222,7 +222,7 @@ module MUES
 			class << self
 				def new( *args, &block )
 					raise InstantiationError if self == #{klass.name}
-						super( *args, &block )
+					super( *args, &block )
 				end
 			end
 			END
@@ -412,8 +412,8 @@ module MUES
 
 		##
 		# Class constants
-		Version	= %q$Revision: 1.17 $
-		RcsId	= %q$Id: mues.rb,v 1.17 2002/04/11 16:58:26 deveiant Exp $
+		Version	= %q$Revision: 1.18 $
+		RcsId	= %q$Id: mues.rb,v 1.18 2002/05/16 03:47:31 deveiant Exp $
 
 		##
 		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
@@ -467,6 +467,11 @@ module MUES
 		# Callback method for thawing after being retrieved from the ObjectStore.
 		def awaken
 			# No-op
+		end
+
+		### Allows shallow references to be seen for what they are.
+		def shallow?
+			false
 		end
 
 
