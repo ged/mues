@@ -11,15 +11,15 @@ rescue
 end
 
 require "mues"
+require "mues/StorableObject"
 
 
 ### Test classes
 
-# Predeclare token class
+### Predeclare token class
 class BecomeTestToken < MUES::PolymorphicObject ; end
 
-##
-# Test tokenizable object class for testing
+### Test tokenizable object class for testing
 class BecomeTestObject < MUES::PolymorphicObject
 	attr_accessor :value
 
@@ -35,8 +35,7 @@ class BecomeTestObject < MUES::PolymorphicObject
 	end
 end
 
-##
-# Token object class for testing
+### Token object class for testing
 class BecomeTestToken < MUES::PolymorphicObject
 
 	def initialize( val )
@@ -57,8 +56,7 @@ class BecomeTestToken < MUES::PolymorphicObject
 	
 end
 
-##
-# Container class for testing (un)tokenize across object instances.
+### Container class for testing (un)tokenize across object instances.
 class BecomeTestContainer
 	attr_reader :contents
 	def initialize( *contents )
@@ -67,13 +65,44 @@ class BecomeTestContainer
 end
 
 
+### Test class
+class PolyTestObject < MUES::PolymorphicObject
+	attr_reader :thing
+
+	def initialize
+		@thing = 1
+	end
+
+	def mutate( other )
+		self.become other
+	end
+end
+
+
 module MUES
 
 	# Test case class
-	class PolymorphicObjectBecomeTestCase < MUES::TestCase
+	class PolymorphicObjectTestCase < MUES::TestCase
+
+		# Make sure loading works
+		def test_00_require
+			assert_not_nil $".detect {|lib| lib =~ /mues\.so/ }
+			assert_instance_of( Class, MUES::PolymorphicObject )
+		end
+
+		# Test to be sure 
+		def test_05_nonpolymorphic_become
+			testObj = PolyTestObject::new
+
+			other = "a string"
+			assert_raises( TypeError ) { testObj.mutate other }
+
+			yetAnother = 1
+			assert_raises( TypeError ) { testObj.mutate yetAnother }
+		end
 
 		# Test tokenizing the test object
-		def test_00_tokenize
+		def test_10_tokenize
 			obj = nil
 			rv = nil
 
@@ -85,7 +114,7 @@ module MUES
 		end
 
 		# Test un-tokenizing
-		def test_01_untokenize
+		def test_20_untokenize
 			obj = nil
 			rv = nil
 
@@ -97,7 +126,7 @@ module MUES
 
 		# Test tokenizing across multiple references in instance vars of multiple
 		# objects
-		def test_02_tokenize_multiref
+		def test_30_tokenize_multiref
 			obj = BecomeTestObject.new( "Big badda boom." )
 			container1 = BecomeTestContainer.new( obj )
 			container2 = BecomeTestContainer.new( obj )
@@ -112,7 +141,7 @@ module MUES
 
 		# Test tokenizing across multiple references in instance vars of multiple
 		# objects
-		def test_03_untokenize_multiref
+		def test_40_untokenize_multiref
 			obj = BecomeTestToken.new( "Mmmmm chicken... more chicken." )
 			container1 = BecomeTestContainer.new( obj )
 			container2 = BecomeTestContainer.new( obj )
