@@ -42,167 +42,184 @@ module MUES
     # The base class for all objects which are storable in a
     # MUES::ObjectStore. MUES::StorableObjects can be polymorphically
     # represented with MUES::ShallowReference objects, which can be used by the
-    # GarbageCollector associated with the store to swap disused objects out of
+    # MemoryManager associated with the store to swap disused objects out of
     # memory temporarily.
     class StorableObject < MUES::PolymorphicObject; implements MUES::AbstractClass
 
 		include MUES::TypeCheckFunctions
 
-		### Initialize the StorableObject, adding an <tt>objectStoreID</tt>
-		### instance variable that will be used as the primary key of the object
-		### in the ObjectStore.
-		def initialize # :nonew:
+		# Initialize the object, adding <tt>muesid</tt> and <tt>objectStoreData</tt>
+		# attributes to it. Any arguments passed are ignored.
+		def initialize( *ignored )
 			super()
+			@objectStoreData = nil
 		end
 
+
+		######
+		public
+		######
+
+		# Return the ObjectStore data of the object. This is an attribute that
+		# can be used by the ObjectStore backend to store meta-data about the
+		# object, such as its rowid.
+		attr_accessor :objectStoreData
+		
 		### The auto-generated object id used as the primary key in the
 		### MUES::ObjectStore.
 		alias :objectStoreID :muesid
 
-		### Returns true for objects which are ShallowReferences to real
-		### objects.
+
+		### Returns true if the receiver is a shallow reference to a
+		### StorableObject.
 		def shallow?
 			false
 		end
 
-		### The visitor method for the StorableCollectorVisitor. This should call
-		### the <tt>visit</tt> method on the visitor with 
-		def os_gc_accept( visitor )
-			checkType( visitor, MUES::ObjectStore::GarbageCollectorVisitor )
+
+		### The visitor method for the MUES::ObjectSpaceVisitor. This method
+		### calls #visit on its argument, with itself as the first argument, and
+		### any other objects which should be visited as the second and
+		### succeeding arguments.
+		def accept( visitor )
+			checkType( visitor, MUES::ObjectStore::ObjectSpaceVisitor )
 			return visitor.visit( self )
 		end
 
 
-		### equality by objectStoreID
-		def ==( an_other )
-			objectStoreID == an_other.objectStoreID
+		### Callback method for prepping the object for storage in an
+		### ObjectStore. Should return either itself or a copy of itself
+		### suitable for serialization (eg., with references flattened,
+		### un-serializable data removed or preserved in some way, etc.). It may
+		### modify any attribute except its <tt>muesid</tt>, provided, of
+		### course, that it can reconstitute itself when its #awaken method is
+		### called. The MUES::ObjectStore it is about to be stored in is given
+		### as the <tt>objStore</tt> argument.
+		def lull( objStore )
+			return self
 		end
 
-    end
+
+		### Callback method for thawing after being retrieved from the
+		### ObjectStore. Should return either itself, or a copy of itself which
+		### has been prepared for use in some way (references restored,
+		### un-serializable data reconstituted, etc.). The MUES::ObjectStore it
+		### is about to be stored in is given as the <tt>objStore</tt> argument.
+		def awaken( objStore )
+			return self
+		end
+
+    end # class StorableObject
 
 
     # A placeholder class for StorableObjects which have been swapped out of
     # memory and into the ObjectStore.
     class ShallowReference < MUES::PolymorphicObject
 
-		### This undefines all instance methods for this class, so that any call
+		include MUES::TypeCheckFunctions
+
+		@@PreservedMethods = %w{become muesid __send__ __id__}
+
+		### This undefines all instance methods for this class so that any call
 		### to an object will invoke #method_missing.
 		public_instance_methods(true).each {|method|
-			next if method == "become" or method == "__send__" or
-				method == "__id__"
+			next if @@PreservedMethods.include? method
 			undef_method( method.intern )
 		}
 		
 
-		### Create and return a new ShallowReference object that will become the
-		### actual database object when a real method is called on it.
-		### arguments:
-		### [an_id] the stringy id value that is to be used to
-		### retrieve the actual object from the objectStore
-		### [an_obj_store] the ObjectStore this belongs to
-		### [some_values] a hash populated with the String return
-		### values of each index, keyed by their respective index
-		### names
-		def initialize( an_id, an_obj_store, some_values = nil )
-			raise TypeError, "Expected ObjectStore but got #{an_id.type.name}" unless
-				an_obj_store.kind_of?(MUES::ObjectStore)
+		### Create and return a new MUES::ShallowReference object that will act
+		### as a surrogate for the object specified by <tt>id</tt> in the given
+		### <tt>objectStore</tt> (a MUES::ObjectStore). If the optional
+		### <tt>indexTable</tt> is given, it must be a Hash of <tt>method =>
+		### value</tt> pairs which will become read-only methods on the
+		### reference. If no <tt>indexTable</tt> is given, the hash returned by
+		### #get_index_values will be used instead.
+		### 
+		### Arguments:
+		### [id]
+		###   Either the object to reference, or an id that can be used to
+		###   retrieve the actual object from the ObjectStore.
+		### [objectStore]
+		###   The MUES::ObjectStore which contains the real object
+		### [indexTable]
+		###   A Hash populated with the return values of each index, keyed by
+		###   their respective index names.
+		def initialize( obj, objectStore = nil, indexTable = nil )
+			checkType( objectStore, MUES::ObjectStore, NilClass )
+			checkEachType( indexTable.keys, String ) if indexTable
 
-			@id = an_id.to_s
-			@obj_store = an_obj_store
-			@values = some_values ? some_values : get_index_values()
+			super()
+
+			if obj.kind_of? MUES::StorableObject
+				@muesid = id.objectStoreID
+				@indexTable = indexTable ? indexTable : {}
+			else
+				@muesid = obj.to_s
+				@indexTable = {}
+			end
+
+			@objectStore = objectStore
 		end
 
 
-		#########
-		protected
-		#########
-
-		# gets the return values of the indexed methods
-		def get_index_values
-			hash = Hash.new
-			obj = @obj_store.retrieve(@id)
-			@obj_store.indexes.each {|ind|
-				hash[ind] = obj.send(ind)
-			}
-			return hash
+		### Marshal interface: Returns a partially-reconstituted
+		### ShallowReference -- it will be non-functional until the #objStore
+		### method is called with the current MUES::ObjectStore object.
+		def ShallowReference._load( string )
+			MUES::ShallowReference::new( string )
 		end
+
+
 
 		######
 		public
 		######
 
+		### Marshal interface: Returns a serialized ShallowReference as a
+		### String.
+		def _dump( depth )
+			return @muesid
+		end
+
+
+		### Set the objectStore this reference points into, if not set
+		### already. Calling this method more than once on a single object
+		### raises an error.
+		def objectStore=( store )
+			raise RuntimeError, "Cannot reset objectStore" unless @objectStore.nil?
+			checkType( store, MUES::ObjectStore )
+			@objectStore = store
+		end
+
+
 		### Returns true if the object is a shallow reference
 		def shallow?
 			true
 		end
-		
-		### The id is something that a lookup isn't needed for
-		def objectStoreID
-			@id
-		end
 
-		### [MG]: Moved the do_read_only method to ObjectStore.
 
-		### equality by objectStoreID
-		def ==( an_other )
-			objectStoreID == an_other.objectStoreID
+		### Returns true if the reference doesn't yet have an associated
+		### MUES::ObjectStore.
+		def dangling?
+			return @objectStore.nil?
 		end
 
 
 		### Reload the object this reference points to from the objectstore,
 		### swap identities with it, and call the method on it.
-		def method_missing (*args)
-			if @values.exists?(args[0])
-				@values[args[0]]
-			else
-				thingy = @obj_store.retrieve( @id )
-				
-				if( thingy.shallow? or ! thingy.respond_to?(args[0]) )
-					super
-				else
-					become(thingy)
-					send args.shift, *args
-				end
-			end
+		def method_missing( sym, *args )
+			return @indexTable[sym.to_s] if @indexTable.has_key? sym.to_s
 
+			raise RuntimeError, "Cannot use a dangling ShallowReference" unless @objectStore
+			realObject = @objectStore.retrieve( @muesid )
+			self.become( realObject )
+
+			# Now 'self' is realObject, realObject is the shallow ref...
+			self.send( sym, *args )
 		end
 
 
-    end # class StorableObject
-
-
-	# A subclass of ShallowReference that allows the object lookup to
-	# be done using the index specified.
-	class IndexedShallowReference < MUES::ShallowReference
-
-		# Instantiate and return a shallow reference 
-		# arguments:
-		# [an_id]       the id of the objected referenced
-		# [an_ostore]   the ObjectStore this belongs to
-		# [some_index_values] a hash populated with the String return
-		# values of each index, keyed by their respective indexes.
-		# [an_index]    the A_Index to look up the object through
-		def initialize ( an_id, an_ostore, a_main_index, some_index_values = nil )
-			@id = an_id
-			@obj_store = an_ostore
-			@index = a_main_index
-			@values = some_index_values
-			add_indexes()
-		end
-
-		# When any other method is sent, become the object returned by the database,
-		# and send again.
-		def method_missing(*args)
-			thingy = @obj_store.send( "_retrieve_by_#{@index.name}".intern, @id )
-			
-			if( ! thingy.respond_to?(args[0]) )
-				super
-			else
-				become(thingy)
-				send args.shift, *args
-			end
-		end
-
-	end # class IndexedShallowReference
+    end # class ShallowReference
 
 end # module MUES
