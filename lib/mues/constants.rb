@@ -9,7 +9,7 @@
 # 
 # == Rcsid
 # 
-# $Id: constants.rb,v 1.2 2002/05/16 04:05:25 deveiant Exp $
+# $Id: constants.rb,v 1.3 2002/07/28 01:35:06 scotus Exp $
 # 
 # == Authors
 # 
@@ -28,7 +28,7 @@ module Metaclass
 	### Container module for scope constants. The following constants are
 	### defined:
 	###
-	###	[INSTANCE]
+	### [INSTANCE]
 	###   Instance scope. The attribute or operation is per-instance.
 	###
 	### [CLASS]
