@@ -172,7 +172,7 @@ module MUES
 		### created by the listener using the Engine's IO::Reactor.
 		def initialize( listener, outputFilter )
 			super( listener )
-			@outputFilter = filter
+			@outputFilter = outputFilter
 		end
 
 

@@ -138,6 +138,8 @@ module MUES
 			@streamThread.abort_on_exception = true
 			@streamThread.desc = "IOEventStream thread [Stream #{self.object_id}]"
 
+			self.log.debug "%p initialized." % self
+
 			# self.debugLevel = 5
 		end
 

@@ -161,19 +161,24 @@ module MUES
 		def getInitialFilters( filter )
 			filters = []
 
+			self.log.debug "Loading initial filters for %s: %p" %
+				[ self, @params ]
+			
 			# Load the configured questionnaire
-			unless !@params.key?( :questionnaire ) ||
+			if @params.key?( :questionnaire ) ||
 				@params[:questionnaire].nil? ||
 				@params[:questionnaire].empty? ||
 				@params[:questionnaire][:name].nil? ||
 				@params[:questionnaire][:name].empty? ||
 
 				qconfig = @params[:questionnaire]
+				self.log.debug "Loading questionnaire for %s" % self
 
 				qnaire = MUES::Questionnaire::load( qconfig[:name], self.name )
 				qconfig[:params].each {|k,v| qnaire.data[k] = v }
 				qnaire.data[:filter] = filter
 				qnaire.debugLevel = @filterDebugLevel
+				self.log.debug "Loaded %p for %s" % [ qnaire, self ]
 
 				filters << qnaire
 			end

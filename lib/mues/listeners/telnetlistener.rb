@@ -48,11 +48,18 @@ module MUES
 		# SVN URL
 		SVNURL = %q$URL$
 
+		# Default configuration parameters -- will be merged with those
+		# given to the constructor.
+		DefaultParameters = {
+			:bindPort			=> 4849,
+		}
+
+
 		### Create a new TelnetListener object. See
 		### MUES::SocketListener#initialize for the list of valid
 		### <tt>parameters</tt>.
 		def initialize( name, parameters={} )
-			super( name, parameters )
+			super( name, DefaultParameters.merge(parameters) )
 
 			# :TODO: Extract telnet filter options from parameters?
 		end

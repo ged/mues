@@ -189,6 +189,7 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 	# Prototype for scheduled events hash (duped before use)
 	ScheduledEventsHash = { :timed => {}, :ticked => {}, :repeating => {} }
 
+
 	### Class variables
 	@@Instance		= nil
 
@@ -222,8 +223,8 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 		# Attributes
 		@hostname				= nil
 		@port					= nil
-		@name					= DefaultName
-		@admin					= DefaultAdmin
+		@name					= nil
+		@admin					= nil
 		@initMode				= false
 
 		@state 					= State::STOPPED
@@ -1089,7 +1090,7 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 			ofilter = listener.createOutputFilter( @reactor )
 
 			# Dispatch an event with the new filter
-			self.dispatchEvents( ListenerConnectEvent::new(listener) )
+			self.dispatchEvents( ListenerConnectEvent::new(listener, ofilter) )
 
 		# Error events
 		when :error
@@ -1408,10 +1409,12 @@ class Engine < MUES::Object ; implements MUES::Debuggable
 
 		# Get the initial set of filters
 		filters = listener.getInitialFilters( ofilter )
+		self.log.debug "Got %d initial filters" % filters.length
 
 		# Create the event stream, add the new filters to the stream
 		ios = IOEventStream::new
 		ios.addFilters( ofilter, *filters )
+		self.log.debug "Created %p for incoming connection" % ios
 
 		# Add the new stream to the stream list for this engine
 		@streamsMutex.synchronize( Sync::EX ) { @streams << ios }
