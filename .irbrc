@@ -26,7 +26,23 @@ end
 begin
 	puts "Requiring mues..."
 	require "mues"
+
+	if $DEBUG
+		puts "Turning on logging..."
+		format = colored( %q{#{time} [#{level}]: }, 'cyan' ) +
+			colored( %q{#{name} #{frame ? '('+frame+')' : ''}: #{msg[0,1024]}}, 'white' )
+		outputter = MUES::Logger::Outputter::create( 'file', $deferr, "Default", format )
+		MUES::Logger::global.outputters << outputter
+		MUES::Logger::global.level = :debug
+
+		MUES::Logger::global.notice "Logging enabled."
+	end	
 rescue => e
 	$stderr.puts "Ack! MUES library failed to load: #{e.message}\n\t" +
 		e.backtrace.join( "\n\t" )
 end
+
+__END__
+Local Variables:
+mode: ruby
+
