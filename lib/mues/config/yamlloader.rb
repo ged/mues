@@ -20,7 +20,6 @@
 #
 
 require 'yaml'
-require 'yip'
 
 require 'mues/mixins'
 require 'mues/object'
@@ -51,7 +50,7 @@ class Config
 		### specified.
 		def load( filename )
 			self.log.info "Loading YAML-format configuration from '%s'" % filename
-			return YAML::load_and_interpolate( File::read(filename) )
+			return YAML::load( File::read(filename) )
 		end
 
 
