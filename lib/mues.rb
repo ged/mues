@@ -1,4 +1,7 @@
 #!/usr/bin/ruby
+
+require 'rbconfig'
+
 #
 # The Multi-User Environment Server.
 #
@@ -9,10 +12,10 @@
 #
 # == Synopsis
 #
-#   require "mues"
+#   require 'mues'
 #
-#   config = MUES::Config::new( "muesconfig.xml" )
-#   MUES::Engine::instance.start( config )
+#   config = MUES::Config.new( 'muesconfig.yaml' )
+#   MUES::Engine.instance.start( config )
 #
 # == Subversion ID
 # 
@@ -22,23 +25,19 @@
 # 
 # * Michael Granger <ged@FaerieMUD.org>
 # 
-#:include: COPYRIGHT
+#:include: LICENSE
 #
 #---
 #
-# Please see the file COPYRIGHT for licensing details.
+# Please see the file LICENSE for licensing details.
 #
+module MUES
 
-require 'rbconfig'
+	# Package version constant
+	VERSION = '1.99.0'
 
-# The base namespace under which all MUES components exist.
-module MUES ; end
+	require 'mues_ext'
+	require 'mues/engine'
 
-unless RUBY_VERSION >= "1.8.0" || ENV['NO_VERSION_CHECK']
-	fail "MUES requires at least Ruby 1.8.0. This is #{RUBY_VERSION}."
-end
-
-require "mues.#{Config::CONFIG['DLEXT']}"
-require 'mues/engine'
-
+end # module MUES
 

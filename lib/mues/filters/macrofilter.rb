@@ -108,7 +108,7 @@ module MUES
 
 						alreadyMatched[pattern] = true
 						e.data.gsub!( pattern, expansion )
-						retry
+						redo
 					}
 				end
 			}

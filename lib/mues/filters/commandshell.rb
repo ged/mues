@@ -58,6 +58,7 @@ require "find"
 require "observer"
 #require "Soundex"
 
+require 'mues'
 require 'mues/object'
 require 'mues/mixins'
 require 'mues/events'

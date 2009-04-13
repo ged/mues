@@ -18,19 +18,21 @@
 #
 # 
 
-unless defined? MUES && defined? MUES::TestCase
-	testsdir = File::dirname( File::expand_path(__FILE__) )
-	basedir = File::dirname( testsdir )
+BEGIN {
+	require 'pathname'
+	
+	testsdir = Pathname( __FILE__ ).dirname
+	basedir = testsdir.parent
 
 	$LOAD_PATH.unshift "#{basedir}/lib" unless
 		$LOAD_PATH.include?( "#{basedir}/lib" )
 	$LOAD_PATH.unshift "#{basedir}/ext" unless
 		$LOAD_PATH.include?( "#{basedir}/ext" )
-	$LOAD_PATH.unshift "#{basedir}/tests" unless
-		$LOAD_PATH.include?( "#{basedir}/tests" )
+	$LOAD_PATH.unshift testsdir.to_s unless
+		$LOAD_PATH.include?( testsdir.to_s )
 
 	require 'muestestcase'
-end
+}
 
 require 'mues/filters/commandshell'
 require 'mues/user'

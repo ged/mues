@@ -1,6 +1,6 @@
 /*
  *	mues.h - header file for MUES C extensions
- *	$Id: mues.h,v 1.2 2003/04/19 06:53:33 deveiant Exp $
+ *	$Id$
  *
  *	Authors:
  *		Martin Chase <stillflame@FaerieMUD.org>
@@ -23,10 +23,10 @@
 #define _MUES_H 1
 
 /* Rubyish include */
-#include <ruby.h>
-#include <node.h>
-#include <st.h>			// Hash functions
-#include <intern.h>		// For rb_ivar_defined() and friends
+#include "ruby.h"
+// #include "ruby/node.h"
+// #include "ruby/st.h"			// Hash functions
+// #include "intern.h"		// For rb_ivar_defined() and friends
 
 /* System includes */
 #include <stdio.h>
@@ -72,7 +72,7 @@ extern VALUE mues_eVirtualMethodError;
 
 
 // Prototypes for external symbols
-extern void Init_mues						_(());
+extern void Init_mues_ext					_(());
 extern void Init_Mues_PolymorphicObject		_(());
 extern void Init_Mues_Object				_(());
 extern void Init_Mues_BlankObject			_(());

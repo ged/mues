@@ -299,6 +299,3 @@ module MUES
 end # module MUES
 
 
-# Load the C part of MUES::Object
-require 'rbconfig'
-require "mues.#{Config::CONFIG['DLEXT']}"

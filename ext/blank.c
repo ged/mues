@@ -1,6 +1,6 @@
 /*
  *	blank.c - The BlankObject class.
- *	$Id: blank.c,v 1.1 2003/04/19 06:50:16 deveiant Exp $
+ *	$Id$
  *
  *	This module defines the MUES::BlankObject class, which is an object class
  *	which exists outside of the regular Ruby class heirarchy, and contains only

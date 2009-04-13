@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
 #	The default password-changing questionnaire
-#	$Id: changePassword.rb,v 1.1 2003/11/22 09:15:56 deveiant Exp $
+#	$Id$
 #
 
 [

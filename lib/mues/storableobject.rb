@@ -33,7 +33,7 @@
 #
 
 require 'rbconfig'
-require "mues.#{Config::CONFIG['DLEXT']}"
+require 'mues'
 
 module MUES #:nodoc:
 
@@ -163,7 +163,7 @@ module MUES #:nodoc:
 
 
 		# Methods to not remove from the instances of this class
-		@@PreservedMethods = %w{become polymorph muesid __send__ __id__}
+		@@PreservedMethods = [:become, :polymorph, :muesid, :__send__, :__id__, :object_id ]
 
 		### This undefines all instance methods for this class so that any call
 		### to an object will invoke #method_missing.

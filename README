@@ -3,11 +3,11 @@
 
 == Authors
 
- Michael Granger <ged@FaerieMUD.org>
- Dave McCorkhill <scotus@FaerieMUD.org>
- Martin Chase <stillflame@FaerieMUD.org>
- Jeremiah Chase <phaedrus@FaerieMUD.org>
- Alexis Lee <red@FaerieMUD.org>
+* Michael Granger <ged@FaerieMUD.org>
+* Dave McCorkhill <scotus@FaerieMUD.org>
+* Martin Chase <stillflame@FaerieMUD.org>
+* Jeremiah Jordan <phaedrus@FaerieMUD.org>
+* Alexis Lee <red@FaerieMUD.org>
 
 == General Information
 
@@ -42,9 +42,7 @@ reached at <architects@FaerieMUD.org>, which is a mailing list of parties who
 are interested in MUES and FaerieMUD development. You may access the interface
 to this and other FaerieMUD-related lists at: <http://lists.FaerieMUD.org/>.
 
-If you're interested in helping out, please read the ./HACKING file. We'd
-welcome patches for any of the tasks in the ./TODO file and
-./server/shellCommands/TODO.
+If you're interested in helping out, please read the HACKING file. 
 
 == Installation
 
@@ -71,21 +69,9 @@ version of the MUES.
 
 == Legal
 
-The MUES is Open Source Software which is Copyright (c) 2001,2002 by The
-FaerieMUD Consortium.
+See the LICENSE file for licensing information.
 
-You may use, modify, and/or redistribute this software under the terms of the
-Perl Artistic License, a copy of which should have been included in this
-distribution (See the file Artistic). If it was not, a copy of it may be
-obtained from http://language.perl.com/misc/Artistic.html or
-http://www.faeriemud.org/artistic.html).
-
-THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.
-
-
- $Id: README,v 1.8 2003/05/12 18:43:23 deveiant Exp $
+ $Id$
 
 
 

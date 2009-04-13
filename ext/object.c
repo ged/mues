@@ -1,6 +1,6 @@
 /*
  *	object.c - C extensions for the MUES::Object class
- *	$Id: object.c,v 1.5 2003/04/19 06:54:38 deveiant Exp $
+ *	$Id$
  *
  *	This file contains extensions for the MUES::Object base class.
  *
@@ -209,7 +209,7 @@ mues_check_virtual_methods(self)
 			DebugMsg(( "  Skipping: No virtual methods table for %s class.", rb_class2name(klass) ));
 		}
 
-		klass = RCLASS(klass)->super;
+		klass = RCLASS_SUPER(klass);
 	}
 
 	return Qtrue;

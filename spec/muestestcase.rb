@@ -61,6 +61,9 @@ begin
 		$LOAD_PATH.include?( "#{basedir}/tests" )
 end
 
+require 'rubygems'
+gem 'test-unit-mock'
+
 require "test/unit"
 require "test/unit/mock"
 

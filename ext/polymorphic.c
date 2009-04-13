@@ -1,6 +1,6 @@
 /*
  *	polymorphic.c - Polymorphic backend for MUES::StorableObject
- *	$Id: polymorphic.c,v 1.14 2003/04/19 06:54:45 deveiant Exp $
+ *	$Id$
  *
  *	This module defines the MUES::PolymorphicObject class which is a derivative
  *	of MUES::Object that allows it to exchange its identity with another
@@ -56,7 +56,7 @@ mues_polymorphic_polymorph( self, other )
 
 	// Check to make sure the other object is also polymorphic
 	if ( !rb_obj_is_kind_of(other, mues_cMuesPolymorphicObject) )
-		rb_raise( rb_eTypeError, "Cannot polymorph a non-polymorphic object.",
+		rb_raise( rb_eTypeError, "Cannot polymorph a non-polymorphic object (%s).",
 				  rb_class2name(CLASS_OF( other )) );
 
 	// Make sure both objects are real objects (this shouldn't be a concern, as
@@ -84,8 +84,8 @@ void
 Init_Mues_PolymorphicObject()
 {
 	static char
-		rcsid[]		= "$Id: polymorphic.c,v 1.14 2003/04/19 06:54:45 deveiant Exp $",
-		revision[]	= "$Revision: 1.14 $";
+		rcsid[]		= "$Id$",
+		revision[]	= "$Revision$";
 
 	VALUE vstr		= rb_str_new( (revision+11), strlen(revision) - 11 - 2 );
 	VALUE rcsstr	= rb_str_new( rcsid, strlen(rcsid) );

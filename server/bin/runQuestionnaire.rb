@@ -42,7 +42,7 @@ require 'mues/ioeventstream'
 require 'mues/ioeventfilters'
 require 'mues/reactorproxy'
 
-header "Questionnaire Runner ($Revision: 1.1 $)"
+header "Questionnaire Runner ($Revision$)"
 qname = ARGV.shift or abort( "Usage: #$0 <questionnaire>" )
 
 ios = MUES::IOEventStream::new

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 #	MUES Quickstart Script
-#	$Id: quickstart.rb,v 1.12 2004/03/14 01:43:49 stillflame Exp $
+#	$Id$
 #
 #	Copyright (c) 2001-2004, The FaerieMUD Consortium.
 #

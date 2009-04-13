@@ -1,7 +1,7 @@
 #!/usr/bin/ruby -w
 #
 # Unit test for the MUES::Logger class
-# $Id: Logger.tests.rb,v 1.1 2004/03/06 22:40:03 stillflame Exp $
+# $Id$
 #
 # Copyright (c) 2003, 2004 RubyCrafters, LLC. Most rights reserved.
 # 

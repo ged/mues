@@ -39,8 +39,11 @@ require 'mues'
 require 'mues/object'
 require 'mues/exceptions'
 require 'mues/events'
+require 'mues/storableobject'
 
 module MUES
+
+	raise "Fuckery" unless defined?( StorableObject )
 
 	### A role class for MUES::Environment objects.
 	class Role < MUES::StorableObject ; implements MUES::Debuggable
