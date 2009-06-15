@@ -1,6 +1,5 @@
 #!/usr/bin/ruby
 
-require 'rbconfig'
 
 #
 # The Multi-User Environment Server.
@@ -13,9 +12,7 @@ require 'rbconfig'
 # == Synopsis
 #
 #   require 'mues'
-#
-#   config = MUES::Config.new( 'muesconfig.yaml' )
-#   MUES::Engine.instance.start( config )
+#   MUES::Engine.start( 'config.yml' )
 #
 # == Subversion ID
 # 
@@ -33,10 +30,27 @@ require 'rbconfig'
 #
 module MUES
 
-	# Package version constant
-	VERSION = '1.99.0'
+	### Make a vector out of the given +version_string+, which makes it easier to compare 
+	### with other x.y.z-style version strings.
+	def vvec( version_string )
+		return version_string.split('.').collect {|v| v.to_i }.pack( 'N*' )
+	end
+	module_function :vvec
 
-	require 'mues_ext'
+	# Package version constant
+	VERSION = '2.0.0'
+
+	# Version vector
+	VERSION_VEC = vvec( VERSION )
+
+	unless vvec(RUBY_VERSION) >= vvec('1.9.1')
+		raise "MUES requires Ruby 1.9.1 or greater."
+	end
+
+	# Load all the parts
+	require 'mues/mixins'
+	require 'mues/logger'
+	require 'mues/constants'
 	require 'mues/engine'
 
 end # module MUES
