@@ -5,11 +5,10 @@ project_requirements: {}
 project_pubdir: /usr/local/www/public/code
 project_description: A multi-threaded, event-driven Internet game environment server.
 rubyforge_group: deveiate
-author_name: Michael Granger
 project_pubhost: deveiate
 project_homepage: http://deveiate.org/projects/MUES
 project_dependencies: 
-  io-reactor: ">=0"
+  bunny: ">= 0.4.4"
 project_summary: The Multi-User Environment Server
 project_name: MUES
 version_file: mues.rb
@@ -17,5 +16,8 @@ additional_pkgfiles:
 - server/**/*
 dev_dependencies: {}
 
-author_email: ged@FaerieMUD.org
+authors: 
+  Martin Chase: stillflame@FaerieMUD.org
+  Michael Granger: ged@FaerieMUD.org
+  Dave McCorkhill: scotus@FaerieMUD.org
 post_install_message: ""
