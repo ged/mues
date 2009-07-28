@@ -5,12 +5,28 @@ h2. Server
 |_. vhost |_. configure |_. write |_. read |
 | /       | .*          | .*      | .*     |
 
+# Create the @/players@ vhost if it doesn't already exist
+# Create direct-exchange:/players/login
+# Create queue:/players/new-connections and bind it to exchange:/players/login/connect
+# Create the @/env@ vhost if it doesn't already exist
+# Create direct-exchange:/env/areas
+# Create direct-exchange:/env/agents
+
+
 h2. Clients
 
+For a player named 'ged':
+
+# Connect to the /players vhost and authenticate
+# Publish a "connected" event to the 'login' exchange
+
+
+
+queue:/players:ged.agentoutput
+exchange:/players:ged.agentinput
+
 |_. vhost   |_. configure |_. write                      |_. read |
-| /players  | ''          | "^(login|$playername\..*)"   | "^$playername\..*" |
+| /players  | '^$playername\.agent(output|input)'          | "^(login|$playername\..*)"   | "^$playername\..*" |
 
 h3. Login
 
-# Connect via AMQP to the /players vhost and authenticate
-# Publish a "connected" event to the 'login' exchange

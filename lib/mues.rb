@@ -51,7 +51,12 @@ module MUES
 	require 'mues/mixins'
 	require 'mues/logger'
 	require 'mues/constants'
+	require 'mues/utils'
 	require 'mues/engine'
 
 end # module MUES
 
+### Extend numeric types
+class Numeric
+	include MUES::NumericConstantMethods
+end

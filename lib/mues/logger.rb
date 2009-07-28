@@ -77,7 +77,7 @@ class MUES::Logger
 	### Module for adding internals debugging to the Logger class
 	module DebugLogger # :nodoc:
 		def debug_msg( *parts ) # :nodoc:
-			# $deferr.puts parts.join('') if $DEBUG
+			# $stderr.puts parts.join('') if $DEBUG
 		end
 	end
 
