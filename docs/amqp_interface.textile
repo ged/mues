@@ -19,7 +19,7 @@ h2. Clients
 For a player named 'ged':
 
 # Connect to the /players vhost and authenticate
-# Publish a "connected" event to the 'login' exchange
+# Publish a request to be connected to a named character
 
 
 

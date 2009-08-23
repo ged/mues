@@ -11,13 +11,8 @@ class MUES::Engine
 
     config_key :engine
 
-
-	# SVN Revision
-	SVNRev = %q$Rev$
-
-	# SVN Id
-	SVNId = %q$Id$
-
+	# The Engine's version-control revision
+	VCSREV = %q$Revision$
 
 end # class MUES::Engine
 
