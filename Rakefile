@@ -107,7 +107,7 @@ RAKE_TASKLIBS_URL = 'http://repo.deveiate.org/rake-tasklibs'
 LOCAL_RAKEFILE = BASEDIR + 'Rakefile.local'
 
 EXTRA_PKGFILES = Rake::FileList.new
-EXTRA_PKGFILES.include "#{BASEDIR}/server/**/*"
+EXTRA_PKGFILES.include( "#{BASEDIR}/server/**/*" )
 
 RELEASE_FILES = TEXT_FILES + 
 	SPEC_FILES + 
@@ -118,6 +118,7 @@ RELEASE_FILES = TEXT_FILES +
 	DATA_FILES + 
 	RAKE_TASKLIBS +
 	EXTRA_PKGFILES
+
 
 RELEASE_FILES << LOCAL_RAKEFILE.to_s if LOCAL_RAKEFILE.exist?
 
@@ -133,9 +134,7 @@ RCOV_OPTS = [
 
 
 ### Load some task libraries that need to be loaded early
-begin
-	require RAKE_TASKDIR + 'helpers.rb'
-rescue LoadError => err
+if !RAKE_TASKDIR.exist?
 	$stderr.puts "It seems you don't have the build task directory. Shall I fetch it "
 	ans = readline( "for you? [y]" )
 	ans = 'y' if !ans.nil? && ans.empty?
@@ -143,16 +142,18 @@ rescue LoadError => err
 	if ans =~ /^y/i
 		$stderr.puts "Okay, fetching #{RAKE_TASKLIBS_URL} into #{RAKE_TASKDIR}..."
 		system 'hg', 'clone', RAKE_TASKLIBS_URL, RAKE_TASKDIR
-		if $?.success?
-			retry
-		else
+		if ! $?.success?
 			fail "Damn. That didn't work. Giving up; maybe try manually fetching?"
 		end
 	else
 		$stderr.puts "Then I'm afraid I can't continue. Best of luck."
 		fail "Rake tasklibs not present."
 	end
+
+	RAKE_TASKLIBS.include( "#{RAKE_TASKDIR}/*.rb" )
 end
+
+require RAKE_TASKDIR + 'helpers.rb'
 
 # Define some constants that depend on the 'svn' tasklib
 if hg = which( 'hg' )
@@ -192,7 +193,7 @@ RUBYFORGE_PROJECT = 'mues'
 
 # Gem dependencies: gemname => version
 DEPENDENCIES = {
-	'bunny' => '>= 0.4.4',
+	'bunny' => '>= 0.5.2',
 }
 
 # Developer Gem dependencies: gemname => version
@@ -238,6 +239,7 @@ GEMSPEC   = Gem::Specification.new do |gem|
 	gem.bindir            = BINDIR.relative_path_from(BASEDIR).to_s
 	gem.executables       = BIN_FILES.select {|pn| File.executable?(pn) }.
 	                            collect {|pn| File.basename(pn) }
+	gem.require_paths << EXTDIR.relative_path_from( BASEDIR ).to_s if EXTDIR.exist?
 
 	if EXTCONF.exist?
 		gem.extensions << EXTCONF.relative_path_from( BASEDIR ).to_s
@@ -273,7 +275,7 @@ RAKE_TASKLIBS.each do |tasklib|
 	next if tasklib.to_s =~ %r{/helpers\.rb$}
 	begin
 		trace "  loading tasklib %s" % [ tasklib ]
-		require tasklib
+		import tasklib
 	rescue ScriptError => err
 		fail "Task library '%s' failed to load: %s: %s" %
 			[ tasklib, err.class.name, err.message ]

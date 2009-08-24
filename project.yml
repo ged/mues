@@ -1,4 +1,6 @@
 --- 
+excluded_pkgfiles: []
+
 rubyforge_project: mues
 project_requirements: {}
 
@@ -8,7 +10,7 @@ rubyforge_group: deveiate
 project_pubhost: deveiate
 project_homepage: http://deveiate.org/projects/MUES
 project_dependencies: 
-  bunny: ">= 0.4.4"
+  bunny: ">= 0.5.2"
 project_summary: The Multi-User Environment Server
 project_name: MUES
 version_file: mues.rb

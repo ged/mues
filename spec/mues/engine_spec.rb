@@ -32,6 +32,7 @@ describe MUES::Engine do
 	include MUES::SpecHelpers,
 	        MUES::TestConstants
 
+	
 
 end
 
