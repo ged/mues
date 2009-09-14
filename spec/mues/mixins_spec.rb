@@ -9,7 +9,6 @@ BEGIN {
 	$LOAD_PATH.unshift( libdir ) unless $LOAD_PATH.include?( libdir )
 }
 
-require 'rubygems'
 require 'spec'
 require 'spec/lib/helpers'
 require 'spec/lib/constants'

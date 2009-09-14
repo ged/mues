@@ -157,7 +157,7 @@ require RAKE_TASKDIR + 'helpers.rb'
 
 # Define some constants that depend on the 'svn' tasklib
 if hg = which( 'hg' )
-	id = IO.read('|-') or exec hg, 'id', '-q'
+	id = IO.read('|-') or exec hg.to_s, 'id', '-q'
 	PKG_BUILD = id.chomp
 else
 	PKG_BUILD = 0
@@ -198,17 +198,12 @@ DEPENDENCIES = {
 
 # Developer Gem dependencies: gemname => version
 DEVELOPMENT_DEPENDENCIES = {
-	'amatch'      => '>= 0.2.3',
-	'rake'        => '>= 0.8.1',
-	'rcodetools'  => '>= 0.7.0.0',
-	'rcov'        => '>= 0',
 	'RedCloth'    => '>= 4.0.3',
 	'rspec'       => '>= 0',
 	'rubyforge'   => '>= 0',
 	'termios'     => '>= 0',
 	'text-format' => '>= 1.0.0',
 	'tmail'       => '>= 1.2.3.1',
-	'ultraviolet' => '>= 0.10.2',
 	'libxml-ruby' => '>= 0.8.3',
 	'rdoc'        => '>= 2.4.3',
 }
@@ -253,14 +248,6 @@ GEMSPEC   = Gem::Specification.new do |gem|
 		gem.add_runtime_dependency( name, version )
 	end
 
-	# Developmental dependencies don't work as of RubyGems 1.2.0
-	unless Gem::Version.new( Gem::RubyGemsVersion ) <= Gem::Version.new( "1.2.0" )
-		DEVELOPMENT_DEPENDENCIES.each do |name, version|
-			version = '>= 0' if version.length.zero?
-			gem.add_development_dependency( name, version )
-		end
-	end
-
 	REQUIREMENTS.each do |name, version|
 		gem.requirements << [ name, version ].compact.join(' ')
 	end
@@ -268,7 +255,7 @@ end
 
 $trace = Rake.application.options.trace ? true : false
 $dryrun = Rake.application.options.dryrun ? true : false
-
+$include_dev_dependencies = false
 
 # Load any remaining task libraries
 RAKE_TASKLIBS.each do |tasklib|
@@ -300,7 +287,6 @@ task :default  => [:clean, :local, :spec, :rdoc, :package]
 
 ### Task the local Rakefile can append to -- no-op by default
 task :local
-
 
 ### Task: clean
 CLEAN.include 'coverage'
