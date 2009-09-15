@@ -1,18 +1,17 @@
 --- 
 excluded_pkgfiles: []
 
-rubyforge_project: mues
-project_requirements: {}
-
 project_pubdir: /usr/local/www/public/code
-project_description: A multi-threaded, event-driven Internet game environment server.
-rubyforge_group: deveiate
 project_pubhost: deveiate
 project_homepage: http://deveiate.org/projects/MUES
+rubyforge_group: deveiate
+project_requirements: {}
+
+project_description: A multi-threaded, event-driven Internet game environment server.
 project_dependencies: 
+  pluginfactory: ">= 1.0.4"
   bunny: ">= 0.5.2"
 project_summary: The Multi-User Environment Server
-project_name: MUES
 version_file: mues.rb
 additional_pkgfiles: 
 - server/**/*
@@ -23,3 +22,5 @@ authors:
   Michael Granger: ged@FaerieMUD.org
   Dave McCorkhill: scotus@FaerieMUD.org
 post_install_message: ""
+project_name: MUES
+rubyforge_project: mues

@@ -14,5 +14,17 @@ class MUES::Engine
 	# The Engine's version-control revision
 	VCSREV = %q$Revision$
 
+	### Create a new instance of the Engine.
+	def initialize
+		
+	end
+
+
+	######
+	public
+	######
+
+	
+
 end # class MUES::Engine
 

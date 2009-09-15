@@ -157,7 +157,7 @@ require RAKE_TASKDIR + 'helpers.rb'
 
 # Define some constants that depend on the 'svn' tasklib
 if hg = which( 'hg' )
-	id = IO.read('|-') or exec hg.to_s, 'id', '-q'
+	id = IO.read('|-') or exec hg, 'id', '-q'
 	PKG_BUILD = id.chomp
 else
 	PKG_BUILD = 0
@@ -193,11 +193,16 @@ RUBYFORGE_PROJECT = 'mues'
 
 # Gem dependencies: gemname => version
 DEPENDENCIES = {
+	'pluginfactory' => '>= 1.0.4',
 	'bunny' => '>= 0.5.2',
 }
 
 # Developer Gem dependencies: gemname => version
 DEVELOPMENT_DEPENDENCIES = {
+	'amatch'      => '>= 0.2.3',
+	'rake'        => '>= 0.8.1',
+	'rcodetools'  => '>= 0.7.0.0',
+	'rcov'        => '>= 0',
 	'RedCloth'    => '>= 4.0.3',
 	'rspec'       => '>= 0',
 	'rubyforge'   => '>= 0',
