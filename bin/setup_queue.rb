@@ -35,9 +35,9 @@ USERS = {
 		:password  => 'test',
 		:perms => {
 			'/players' => [
-				'^(testplayer\.agent(in|out)put))$',
-				'^(login|testplayer\..*)$',
-				'^testplayer\..*$',
+				'^testplayer(:.*)?$',
+				'^(login|testplayer)$',
+				'^testplayer$',
 			],
 		}
 	},

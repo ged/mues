@@ -34,6 +34,8 @@ class Server < Logger::Application
 			:pass => BUS_PASS
 		  )
 		@connect_queue = nil
+		@client_threads = ThreadGroup.new
+
 		super( "AMQP Spike Server" )
 	end
 
@@ -60,13 +62,60 @@ class Server < Logger::Application
 		log( NOTICE, "Halting server." )
 		@connect_queue.unsubscribe
 		@connect_queue.unbind
+
+		@players.each do |pl|
+			pl.disconnect
+		end
 	end
 
+	# Read the username from the connect event and set up a client thread for the
+	# corresponding exchange.
 	def handle_client_connect( event )
+		header, details, payload = event.values_at( :header, :delivery_details, :payload )
+		playername = payload.strip
+
+		log( INFO, "Trying to connect to the #{playername} exchange." )
+		exch = @playersbus.exchange( playername, :passive => true )
+		queue = @playersbus.queue( "#{playername}_commands", 
+			:durable => true, :exclusive => true, :auto_delete => true )
+		queue.bind( exch, :key => 'command.#' )
+
+		player = Player.new( playername, queue, exch )
+
+		thr = player.start
+		@players[ playername ] = player
+		@player_threads.add( thr )
 	end
 
 end
 
+
+class Player
+
+	def initialize( name, queue, exchange )
+		@name = name
+		@queue = queue
+		@exchange = exchange
+
+		@thread = nil
+	end
+
+	def start
+		@thread = Thread.new do
+			@queue.subscribe( :header => true, &self.method(:input_handler) )
+		end
+	end
+
+	def disconnect
+		@queue.unsubscribe
+		@thread.join
+	end
+
+	def input_handler( event )
+		pp event
+	end
+
+end
 
 class Room
 

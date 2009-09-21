@@ -22,11 +22,11 @@ broker = Bunny.new( :vhost => '/players', :user => user, :pass => pass, :logging
 broker.start
 
 # Create the player's exchange and start listening for events on it
-player_exch = broker.exchange( user )
-player_queue = broker.queue( "#{user}_events", :exclusive => true )
+player_exch = broker.exchange( user, :durable => true, :auto_delete => true )
+player_queue = broker.queue( "#{user}", :exclusive => true )
 
 # Publish a request for connection to the specified character
-connect_exchange = broker.exchange( :login )
+connect_exchange = broker.exchange( :login, :passive => true )
 connect_exchange.publish( "#{user}:#{char}",
 	:key => :character_name, :mandatory => true )
 msg = broker.returned_message
