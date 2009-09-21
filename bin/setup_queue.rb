@@ -45,9 +45,9 @@ USERS = {
 		:password  => 'toy*59washes',
 		:perms => {
 			'/players' => [
-				'^(ged\.agent(in|out)put))$',
-				'^(login|testplayer\..*)$',
-				'^testplayer\..*$',
+				'^(login|ged(:.*)?)$',
+				'^(login|ged)$',
+				'^ged(:.*)?$',
 			],
 		}
 	}
