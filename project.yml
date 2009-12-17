@@ -16,8 +16,6 @@ additional_pkgfiles:
 - server/**/*
 dev_dependencies: {}
 
-authors: 
-  Martin Chase: stillflame@FaerieMUD.org
-  Michael Granger: ged@FaerieMUD.org
-  Dave McCorkhill: scotus@FaerieMUD.org
+authors: {}
+
 post_install_message: ""
