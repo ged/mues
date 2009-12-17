@@ -1,4 +1,4 @@
-#!rake
+#!rake -*- ruby -*-
 #
 # MUES rakefile
 #
@@ -7,6 +7,9 @@
 # Copyright (c) 2007-2009 The FaerieMUD Consortium
 #
 # Authors:
+#  * Martin Chase <stillflame@FaerieMUD.org>
+#  * Michael Granger <ged@FaerieMUD.org>
+#  * Dave McCorkhill <scotus@FaerieMUD.org>
 #
 
 BEGIN {
@@ -28,6 +31,14 @@ rescue LoadError
 	def readline( text )
 		$stderr.print( text.chomp )
 		return $stdin.gets
+	end
+end
+
+begin
+	require 'rubygems'
+rescue LoadError
+	module Gem
+		class Specification; end
 	end
 end
 
@@ -119,6 +130,10 @@ RELEASE_FILES = TEXT_FILES +
 
 RELEASE_FILES << LOCAL_RAKEFILE.to_s if LOCAL_RAKEFILE.exist?
 
+RELEASE_ANNOUNCE_ADDRESSES = [
+	"Ruby-Talk List <ruby-talk@ruby-lang.org>",
+]
+
 COVERAGE_MINIMUM = ENV['COVERAGE_MINIMUM'] ? Float( ENV['COVERAGE_MINIMUM'] ) : 85.0
 RCOV_EXCLUDES = 'spec,tests,/Library/Ruby,/var/lib,/usr/local/lib'
 RCOV_OPTS = [
@@ -138,7 +153,7 @@ if !RAKE_TASKDIR.exist?
 
 	if ans =~ /^y/i
 		$stderr.puts "Okay, fetching #{RAKE_TASKLIBS_URL} into #{RAKE_TASKDIR}..."
-		system 'hg', 'clone', RAKE_TASKLIBS_URL, RAKE_TASKDIR
+		system 'hg', 'clone', RAKE_TASKLIBS_URL, "./#{RAKE_TASKDIR}"
 		if ! $?.success?
 			fail "Damn. That didn't work. Giving up; maybe try manually fetching?"
 		end
@@ -152,12 +167,12 @@ end
 
 require RAKE_TASKDIR + 'helpers.rb'
 
-# Define some constants that depend on the 'svn' tasklib
+# Set the build ID if the mercurial executable is available
 if hg = which( 'hg' )
-	id = IO.read('|-') or exec hg, 'id', '-q'
-	PKG_BUILD = id.chomp
+	id = IO.read('|-') or exec hg.to_s, 'id', '-n'
+	PKG_BUILD = 'pre' + id.chomp[ /^[[:xdigit:]]+/ ]
 else
-	PKG_BUILD = 0
+	PKG_BUILD = 'pre0'
 end
 SNAPSHOT_PKG_NAME = "#{PKG_FILE_NAME}.#{PKG_BUILD}"
 SNAPSHOT_GEM_NAME = "#{SNAPSHOT_PKG_NAME}.gem"
@@ -174,7 +189,7 @@ RDOC_OPTIONS = [
   ]
 
 # Release constants
-SMTP_HOST = 'mail.faeriemud.org'
+SMTP_HOST = "mail.faeriemud.org"
 SMTP_PORT = 465 # SMTP + SSL
 
 # Project constants
@@ -184,10 +199,6 @@ PROJECT_DOCDIR = "#{PROJECT_PUBDIR}/#{PKG_NAME}"
 PROJECT_SCPPUBURL = "#{PROJECT_HOST}:#{PROJECT_PUBDIR}"
 PROJECT_SCPDOCURL = "#{PROJECT_HOST}:#{PROJECT_DOCDIR}"
 
-# Rubyforge stuff
-RUBYFORGE_GROUP = 'deveiate'
-RUBYFORGE_PROJECT = 'mues'
-
 # Gem dependencies: gemname => version
 DEPENDENCIES = {
 	'pluginfactory' => '>= 1.0.4',
@@ -196,18 +207,16 @@ DEPENDENCIES = {
 
 # Developer Gem dependencies: gemname => version
 DEVELOPMENT_DEPENDENCIES = {
-	'amatch'      => '>= 0.2.3',
-	'rake'        => '>= 0.8.1',
+	'rake'        => '>= 0.8.7',
 	'rcodetools'  => '>= 0.7.0.0',
-	'rcov'        => '>= 0',
+	'rcov'        => '>= 0.8.1.2.0',
+	'rdoc'        => '>= 2.4.3',
 	'RedCloth'    => '>= 4.0.3',
-	'rspec'       => '>= 0',
-	'rubyforge'   => '>= 0',
+	'rspec'       => '>= 1.2.6',
 	'termios'     => '>= 0',
 	'text-format' => '>= 1.0.0',
 	'tmail'       => '>= 1.2.3.1',
-	'libxml-ruby' => '>= 0.8.3',
-	'rdoc'        => '>= 2.4.3',
+	'diff-lcs'    => '>= 1.1.2',
 }
 
 # Non-gem requirements: packagename => version
@@ -224,10 +233,9 @@ GEMSPEC   = Gem::Specification.new do |gem|
 		"A multi-threaded, event-driven Internet game environment server.",
   	  ].join( "\n" )
 
-	gem.authors           = ""
-	gem.email             = []
+	gem.authors           = "Martin Chase, Michael Granger, Dave McCorkhill"
+	gem.email             = ["stillflame@FaerieMUD.org", "ged@FaerieMUD.org", "scotus@FaerieMUD.org"]
 	gem.homepage          = 'http://deveiate.org/projects/MUES'
-	gem.rubyforge_project = RUBYFORGE_PROJECT
 
 	gem.has_rdoc          = true
 	gem.rdoc_options      = RDOC_OPTIONS
@@ -291,7 +299,7 @@ task :default  => [:clean, :local, :spec, :rdoc, :package]
 task :local
 
 ### Task: clean
-CLEAN.include 'coverage'
+CLEAN.include 'coverage', '**/*.orig', '**/*.rej'
 CLOBBER.include 'artifacts', 'coverage.info', PKGDIR
 
 ### Task: changelog
