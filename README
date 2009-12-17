@@ -11,20 +11,20 @@
 
 == General Information
 
-The MUES is a multi-threaded, event-driven Internet game environment server
-written in Ruby. It is intended to facilitate the building of online multi-player
-games or simulations by providing one or more dynamically-programmed object
+The MUES is an event-driven Internet game environment server written in Ruby.
+It is intended to facilitate the building of online multi-player games or
+simulations by providing one or more dynamically-programmed object
 environments (worlds), the means to access these environments using a network
-client, various useful services or daemons for creating in-game systems, and an
-event system for facilitating the interaction of all the parts.
+client, various useful services or daemons for creating in-game systems, and
+an event system for facilitating the interaction of all the parts.
 
-The design of the MUES attempts to assume as little as possible about what sort
-of thing an 'environment' is, and so comes with little to no game code. It is
-planned to eventually include code for useful game services, such as
-linguistics, physics, and a metaclass system for defining the classes which make
-up a game environment, but such things are only in their very nascent form in
-the current distribution. Community contributions in this area are especially
-welcome.
+The design of the MUES attempts to assume as little as possible about what
+sort of thing an 'environment' is, and so comes with little to no game code.
+It is planned to eventually include code for useful game services, such as
+linguistics, physics, and a metaclass system for defining the classes which
+make up a game environment, but such things are only in their very nascent
+form in the current distribution. Community contributions in this area are
+especially welcome.
 
 
 == Caveats
@@ -32,8 +32,8 @@ welcome.
 *IMPORTANT*: This is an *alpha* release, a work in progress. It might blow up,
 compromise your security, write random data to sensitive portions of your hard
 drive, or otherwise fail to work as advertised. It is intended to be used by
-developers who are interested in helping out or curious onlookers who don't mind
-getting a bit wet.
+developers who are interested in helping out or curious onlookers who don't
+mind getting a bit wet.
 
 That said, we would greatly appreciate feedback on any aspect of this
 software. Suggestions, feature requests, questions, design critiques, and bug
@@ -42,38 +42,45 @@ reached at <architects@FaerieMUD.org>, which is a mailing list of parties who
 are interested in MUES and FaerieMUD development. You may access the interface
 to this and other FaerieMUD-related lists at: <http://lists.FaerieMUD.org/>.
 
-If you're interested in helping out, please read the HACKING file. 
 
 == Installation
 
-For installation instructions (such as they are at this point), see the INSTALL
-file.
-
-If you're really impatient and just want to test things out, see the QUICKSTART
-document. It includes instructions that should let you get the server up and
-running with a minimum of effort.
+There's nothing really to install at this point, but you can go back to the
+1.0 release by updating to the 'before-191-conversion' branch and read the
+INSTALL file there. It's not guaranteed to work, but it might be fun.
 
 
 == More Information
 
-For more information about the MUES project, see <http://mues.FaerieMUD.org/>.
-
-For more information about the FaerieMUD project as a whole, and about the
-FaerieMUD Consortium, see <http://www.FaerieMUD.org/> and the FaerieMUD
-Documentation Wiki at <http://docs.FaerieMUD.org/>.
-
-You may also access a web interface to the FaerieMUD CVS repository at:
-<http://cvs.FaerieMUD.org/>, which includes instructions on checking out the CVS
-version of the MUES.
+For more information about the MUES project, see <http://deveiate.org/projects/MUES>.
 
 
 == Legal
 
-See the LICENSE file for licensing information.
+Copyright (c) 2001-2009, The FaerieMUD Consortium
+All rights reserved.
 
- $Id$
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
 
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
+* Neither the name of the author/s, nor the names of the project's
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
 
-
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

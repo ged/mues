@@ -104,7 +104,7 @@ RAKE_TASKLIBS_URL = 'http://repo.deveiate.org/rake-tasklibs'
 LOCAL_RAKEFILE = BASEDIR + 'Rakefile.local'
 
 EXTRA_PKGFILES = Rake::FileList.new
-EXTRA_PKGFILES.include "#{BASEDIR}/server/**/*"
+EXTRA_PKGFILES.include( "#{BASEDIR}/server/**/*" )
 
 RELEASE_FILES = TEXT_FILES + 
 	SPEC_FILES + 
@@ -115,6 +115,7 @@ RELEASE_FILES = TEXT_FILES +
 	DATA_FILES + 
 	RAKE_TASKLIBS +
 	EXTRA_PKGFILES
+
 
 RELEASE_FILES << LOCAL_RAKEFILE.to_s if LOCAL_RAKEFILE.exist?
 
@@ -189,7 +190,8 @@ RUBYFORGE_PROJECT = 'mues'
 
 # Gem dependencies: gemname => version
 DEPENDENCIES = {
-	'bunny' => '>= 0.4.4',
+	'pluginfactory' => '>= 1.0.4',
+	'bunny' => '>= 0.5.2',
 }
 
 # Developer Gem dependencies: gemname => version
@@ -204,7 +206,6 @@ DEVELOPMENT_DEPENDENCIES = {
 	'termios'     => '>= 0',
 	'text-format' => '>= 1.0.0',
 	'tmail'       => '>= 1.2.3.1',
-	'ultraviolet' => '>= 0.10.2',
 	'libxml-ruby' => '>= 0.8.3',
 	'rdoc'        => '>= 2.4.3',
 }
@@ -235,6 +236,7 @@ GEMSPEC   = Gem::Specification.new do |gem|
 	gem.bindir            = BINDIR.relative_path_from(BASEDIR).to_s
 	gem.executables       = BIN_FILES.select {|pn| File.executable?(pn) }.
 	                            collect {|pn| File.basename(pn) }
+	gem.require_paths << EXTDIR.relative_path_from( BASEDIR ).to_s if EXTDIR.exist?
 
 	if EXTCONF.exist?
 		gem.extensions << EXTCONF.relative_path_from( BASEDIR ).to_s
@@ -248,14 +250,6 @@ GEMSPEC   = Gem::Specification.new do |gem|
 		gem.add_runtime_dependency( name, version )
 	end
 
-	# Developmental dependencies don't work as of RubyGems 1.2.0
-	unless Gem::Version.new( Gem::RubyGemsVersion ) <= Gem::Version.new( "1.2.0" )
-		DEVELOPMENT_DEPENDENCIES.each do |name, version|
-			version = '>= 0' if version.length.zero?
-			gem.add_development_dependency( name, version )
-		end
-	end
-
 	REQUIREMENTS.each do |name, version|
 		gem.requirements << [ name, version ].compact.join(' ')
 	end
@@ -263,14 +257,14 @@ end
 
 $trace = Rake.application.options.trace ? true : false
 $dryrun = Rake.application.options.dryrun ? true : false
-
+$include_dev_dependencies = false
 
 # Load any remaining task libraries
 RAKE_TASKLIBS.each do |tasklib|
 	next if tasklib.to_s =~ %r{/helpers\.rb$}
 	begin
 		trace "  loading tasklib %s" % [ tasklib ]
-		require tasklib
+		import tasklib
 	rescue ScriptError => err
 		fail "Task library '%s' failed to load: %s: %s" %
 			[ tasklib, err.class.name, err.message ]
@@ -295,7 +289,6 @@ task :default  => [:clean, :local, :spec, :rdoc, :package]
 
 ### Task the local Rakefile can append to -- no-op by default
 task :local
-
 
 ### Task: clean
 CLEAN.include 'coverage'

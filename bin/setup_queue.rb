@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby-1.9.1
+#!/usr/bin/env ruby1.9
 
 BEGIN {
 	require 'pathname'
@@ -35,9 +35,19 @@ USERS = {
 		:password  => 'test',
 		:perms => {
 			'/players' => [
-				'^testplayer\.agent(output|input)',
-				'^(login|testplayer\..*)',
-				'^testplayer\..*'
+				'^testplayer(:.*)?$',
+				'^(login|testplayer)$',
+				'^testplayer$',
+			],
+		}
+	},
+	'ged' => {
+		:password  => 'toy*59washes',
+		:perms => {
+			'/players' => [
+				'^(login|ged(:.*)?)$',
+				'^(login|ged)$',
+				'^ged(:.*)?$',
 			],
 		}
 	}

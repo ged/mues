@@ -5,20 +5,21 @@ h2. Server
 |_. vhost |_. configure |_. write |_. read |
 | /       | .*          | .*      | .*     |
 
-# Create the @/players@ vhost if it doesn't already exist
-# Create direct-exchange:/players/login
-# Create queue:/players/new-connections and bind it to exchange:/players/login/connect
-# Create the @/env@ vhost if it doesn't already exist
-# Create direct-exchange:/env/areas
-# Create direct-exchange:/env/agents
-
+# Connect to the @/players@ vhost
+## Create the @login@ direct exchange
+## Create the @client@ queue and bind it to the @login@ exchange
+# Connect to the @/env@ vhost
+## Create the @areas@ direct exchange
+## Create the @agents@ direct exchange
+# Boot the world
+## Load the root area
 
 h2. Clients
 
 For a player named 'ged':
 
 # Connect to the /players vhost and authenticate
-# Publish a "connected" event to the 'login' exchange
+# Publish a request to be connected to a named character
 
 
 

@@ -8,19 +8,11 @@ BEGIN {
 	$LOAD_PATH.unshift( libdir ) unless $LOAD_PATH.include?( libdir.to_s )
 }
 
-begin
-	require 'spec'
-	require 'spec/lib/helpers'
-	require 'spec/lib/constants'
+require 'spec'
+require 'spec/lib/helpers'
+require 'spec/lib/constants'
 
-	require 'mues/engine.rb'
-rescue LoadError
-	unless Object.const_defined?( :Gem )
-		require 'rubygems'
-		retry
-	end
-	raise
-end
+require 'mues/engine.rb'
 
 
 
@@ -32,6 +24,7 @@ describe MUES::Engine do
 	include MUES::SpecHelpers,
 	        MUES::TestConstants
 
+	
 
 end
 

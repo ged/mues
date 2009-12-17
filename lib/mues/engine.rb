@@ -11,13 +11,20 @@ class MUES::Engine
 
     config_key :engine
 
+	# The Engine's version-control revision
+	VCSREV = %q$Revision$
 
-	# SVN Revision
-	SVNRev = %q$Rev$
+	### Create a new instance of the Engine.
+	def initialize
+		
+	end
 
-	# SVN Id
-	SVNId = %q$Id$
 
+	######
+	public
+	######
+
+	
 
 end # class MUES::Engine
 
