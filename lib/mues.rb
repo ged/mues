@@ -56,7 +56,3 @@ module MUES
 
 end # module MUES
 
-### Extend numeric types
-class Numeric
-	include MUES::NumericConstantMethods
-end

@@ -1,19 +1,18 @@
 --- 
 excluded_pkgfiles: []
 
-project_requirements: {}
-
 project_pubdir: /usr/local/www/public/code
-project_description: A multi-threaded, event-driven Internet game environment server.
 project_pubhost: deveiate
 project_homepage: http://deveiate.org/projects/MUES
-release_mailto: Ruby-Talk List <ruby-talk@ruby-lang.org>
+project_requirements: {}
+
+release_smtphost: mail.faeriemud.org
+project_description: A multi-threaded, event-driven Internet game environment server.
+release_mailto: FaerieMUD Mages <mages@FaerieMUD.org>
 project_dependencies: 
   pluginfactory: ">= 1.0.4"
   bunny: ">= 0.5.2"
-release_smtphost: mail.faeriemud.org
 project_summary: The Multi-User Environment Server
-project_name: MUES
 version_file: mues.rb
 additional_pkgfiles: 
 - server/**/*
@@ -23,4 +22,5 @@ authors:
   Martin Chase: stillflame@FaerieMUD.org
   Michael Granger: ged@FaerieMUD.org
   Dave McCorkhill: scotus@FaerieMUD.org
-post_install_message: ""
+post_install_message: The 'quickstart' script will get you started.
+project_name: MUES

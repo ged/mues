@@ -8,5 +8,8 @@ module MUES::Constants
 	# The domain to put Arrow objects into
 	YAML_DOMAIN = "faeriemud.org,2009-06-15"
 
-end
+	# The default port to listen on
+	DEFAULT_PORT = 2424
+
+end # module MUES::Constants
 

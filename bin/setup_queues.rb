@@ -53,8 +53,9 @@ USERS = {
 	}
 }
 
-$rabbitmqctl = (ENV['RABBITMQCTL'] || which('rabbitmqctl') ) or
-	abort "Can't find rabbitmqctl in your PATH. Try running with RABBITMQCTL=/path/to/rabbitmqctl"
+$rabbitmqctl = ( ENV['RABBITMQCTL'] || which('rabbitmqctl') ) or
+	abort "Can't find rabbitmqctl in your PATH. Try running with " +
+	      "RABBITMQCTL=/path/to/rabbitmqctl"
 
 
 vhosts = []

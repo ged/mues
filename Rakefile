@@ -4,7 +4,7 @@
 #
 # Based on various other Rakefiles, especially one by Ben Bleything
 #
-# Copyright (c) 2007-2009 The FaerieMUD Consortium
+# Copyright (c) 2007-2010 The FaerieMUD Consortium
 #
 # Authors:
 #  * Martin Chase <stillflame@FaerieMUD.org>
@@ -131,7 +131,7 @@ RELEASE_FILES = TEXT_FILES +
 RELEASE_FILES << LOCAL_RAKEFILE.to_s if LOCAL_RAKEFILE.exist?
 
 RELEASE_ANNOUNCE_ADDRESSES = [
-	"Ruby-Talk List <ruby-talk@ruby-lang.org>",
+	"FaerieMUD Mages <mages@FaerieMUD.org>",
 ]
 
 COVERAGE_MINIMUM = ENV['COVERAGE_MINIMUM'] ? Float( ENV['COVERAGE_MINIMUM'] ) : 85.0
@@ -170,7 +170,7 @@ require RAKE_TASKDIR + 'helpers.rb'
 # Set the build ID if the mercurial executable is available
 if hg = which( 'hg' )
 	id = IO.read('|-') or exec hg.to_s, 'id', '-n'
-	PKG_BUILD = 'pre' + id.chomp[ /^[[:xdigit:]]+/ ]
+	PKG_BUILD = 'pre' + (id.chomp[ /^[[:xdigit:]]+/ ] || '1')
 else
 	PKG_BUILD = 'pre0'
 end
@@ -232,6 +232,9 @@ GEMSPEC   = Gem::Specification.new do |gem|
 	gem.description       = [
 		"A multi-threaded, event-driven Internet game environment server.",
   	  ].join( "\n" )
+	gem.post_install_message = [
+		"The 'quickstart' script will get you started.",
+	  ].join( "\n" )
 
 	gem.authors           = "Martin Chase, Michael Granger, Dave McCorkhill"
 	gem.email             = ["stillflame@FaerieMUD.org", "ged@FaerieMUD.org", "scotus@FaerieMUD.org"]
@@ -300,7 +303,7 @@ task :local
 
 ### Task: clean
 CLEAN.include 'coverage', '**/*.orig', '**/*.rej'
-CLOBBER.include 'artifacts', 'coverage.info', PKGDIR
+CLOBBER.include 'artifacts', 'coverage.info', 'ChangeLog', PKGDIR
 
 ### Task: changelog
 file 'ChangeLog' do |task|
