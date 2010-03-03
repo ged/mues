@@ -1,0 +1,28 @@
+--- !ditz.rubyforge.org,2008-03-06/project 
+name: MUES
+version: "0.5"
+components: 
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: MUES
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: engine
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: eventbus
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: player
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: buildsystem
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: gameworld
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: docs
+releases: 
+- !ditz.rubyforge.org,2008-03-06/release 
+  name: 2.0.0
+  status: :unreleased
+  release_time: 
+  log_events: 
+  - - 2010-03-03 01:32:58.312373 Z
+    - Michael Granger <ged@FaerieMUD.org>
+    - created
+    - The first minimally-functional release.
