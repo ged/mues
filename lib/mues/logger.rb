@@ -33,7 +33,7 @@ require 'mues/mixins'
 #       end
 #   end
 #
-# == Subversion Id
+# == VCS ID
 #
 #   $Id$
 #   

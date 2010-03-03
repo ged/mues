@@ -3,7 +3,7 @@
 # 
 # A (hopefully) minimal collection of extensions to core classes.
 # 
-# == Subversion Id
+# == VCS ID
 #
 #  $Id$
 # 

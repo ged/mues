@@ -7,7 +7,7 @@ require 'mues/logger/outputter'
 # The MUES::Logger::FileOutputter class, a derivative of
 # MUES::Logger::Outputter that writes to a file or other filehandle.
 # 
-# == Subversion Id
+# == VCS ID
 #
 #  $Id$
 # 

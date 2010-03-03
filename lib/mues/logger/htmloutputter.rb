@@ -5,7 +5,7 @@ require 'mues/logger/fileoutputter'
 
 # Output logging messages in HTML fragments with classes that match their level. 
 # 
-# == Subversion Id
+# == VCS ID
 #
 #  $Id$
 # 

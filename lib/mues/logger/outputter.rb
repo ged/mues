@@ -8,7 +8,7 @@ require 'uri'
 # The MUES::Logger::Outputter class, which is the abstract base class for 
 # objects that control where logging output is sent in an MUES::Logger object. 
 # 
-# == Subversion Id
+# == VCS ID
 #
 #  $Id$
 # 

@@ -8,7 +8,7 @@ require 'mues'
 # 
 # This file contains mixins that are used to extend other classes.
 # 
-# == Subversion Id
+# == VCS ID
 #
 #  $Id$
 # 

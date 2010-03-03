@@ -5,7 +5,7 @@ require 'mues/logger/fileoutputter'
 # A derivative of MUES::Logger::FileOutputter that outputs logging messages 
 # in ANSI colors according to their level.
 # 
-# == Subversion Id
+# == VCS ID
 #
 #  $Id$
 # 
