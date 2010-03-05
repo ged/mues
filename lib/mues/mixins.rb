@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'logger'
+
 # A collection of mixin modules used throughout MUES.
 module MUES
 
@@ -303,136 +305,6 @@ module MUES
 	end # HtmlInspectableObject
 
 
-	# A mixin that collects classes that expect to be configured by an 
-	# MUES::Config instance.
-	#
-	# == Usage
-	# 
-	#	require "mues/mixins"
-	#
-	#	class MyClass
-	#	  include MUES::Configurable
-	# 
-	#	  config_key :myclass
-	#
-	#	  def self::configure( config )
-	#		@@host = config.host
-	#	  end
-	#	end
-	# 
-	module Configurable
-
-		@modules = []
-		class << self
-			attr_accessor :modules
-		end
-
-
-		### Make the given object (which must be a Module) configurable via
-		### a section of an MUES::Config object.
-		def self::extend_object( obj )
-			raise ArgumentError, "can't make a #{obj.class} Configurable" unless
-				obj.is_a?( Module )
-
-			super
-			@modules << obj
-		end
-
-
-		### Generate a config key from the name of the given +klass+.
-		def self::make_key_from_classname( klass )
-			unless klass.name == ''
-				return klass.name.sub( /^MUES::/, '' ).gsub( /\W+/, '_' ).downcase.to_sym
-			else
-				return :anonymous
-			end
-		end
-
-
-		### Mixin hook: extend including classes
-		def self::included( mod )
-			mod.extend( self )
-			super
-		end
-
-
-		### Configure Configurable classes with the sections of the specified
-		### +config+ that correspond to their +config_key+, if present.
-		### (Undocumented)
-		def self::configure_modules( config, dispatcher )
-
-			# Have to keep messages from being logged before logging is 
-			# configured.
-			logmessages = []
-			# logmessages << [
-			# 	:debug, "Propagating config to Configurable classes: %p" %
-			# 	[@modules] ]
-
-			@modules.each do |mod|
-				key = mod.config_key
-
-				if config.member?( key )
-					value = config.send( key )
-					logmessages << [
-						:debug, 
-						"Configuring %s with the %s section of the config: %p" %
-							[mod.name, key, value] ]
-
-					if mod.method(:configure).arity == 2
-						mod.configure( value, dispatcher )
-					else
-						mod.configure( value )
-					end
-				else
-					logmessages << [
-						:debug,
-						"Skipping %s: no %s section in the config" %
-						[mod.name, key] ]
-				end
-			end
-
-			logmessages.each do |lvl, message|
-				MUES::Logger[ self ].send( lvl, message )
-			end
-
-			MUES::Logger[ self ].debug "Propagated config to %d modules: %p" %
-				[ @modules.length, @modules ]
-			return @modules
-		end
-
-
-		#############################################################
-		### A P P E N D E D	  M E T H O D S
-		#############################################################
-
-		### The symbol which corresponds to the section of the configuration
-		### used to configure the Configurable class.
-		attr_writer :config_key
-
-		### :TODO:
-		### * Change #config_key to #class_config_key and #instance_config_key
-		### * Add a ::configure_instances method that would iterate over
-		###   instances that had marked themselves as configurable in the same
-		###   way the classed do now.
-
-
-		### Get (and optionally set) the +config_key+.
-		def config_key( sym=nil )
-			@config_key = sym unless sym.nil?
-			@config_key ||= MUES::Configurable.make_key_from_classname( self )
-			@config_key
-		end
-
-
-		### Default configuration method.
-		def configure( config, dispatcher )
-			raise NotImplementedError,
-				"#{self.name} does not implement required method 'configure'"
-		end
-
-	end # module Configurable
-
-
 	# A mixin that adds a #log method to including classes that calls
 	# MUES::Logger with the class of the receiving object.
 	#
@@ -448,20 +320,122 @@ module MUES
 	#	  end
 	#	end
 	# 
+	### Add logging to a MUES class. Including classes get #log and #log_debug methods.
 	module Loggable
-		require 'mues/logger'
+
+		LEVEL = {
+			:debug => Logger::DEBUG,
+			:info  => Logger::INFO,
+			:warn  => Logger::WARN,
+			:error => Logger::ERROR,
+			:fatal => Logger::FATAL,
+		  }
+
+		### A logging proxy class that wraps calls to the logger into calls that include
+		### the name of the calling class.
+		class ClassNameProxy # :nodoc:
+
+			### Create a new proxy for the given +klass+.
+			def initialize( klass, force_debug=false )
+				@classname   = klass.name
+				@force_debug = force_debug
+			end
+
+			### Delegate calls the global logger with the class name as the 'progname' 
+			### argument.
+			def method_missing( sym, msg=nil, &block )
+				return super unless LEVEL.key?( sym )
+				sym = :debug if @force_debug
+				MUES.logger.add( LEVEL[sym], msg, @classname, &block )
+			end
+		end # ClassNameProxy
 
 		#########
 		protected
 		#########
 
-		### Return the MUES::Logger object for the receiving class.
+		### Copy constructor -- clear the original's log proxy.
+		def initialize_copy( original )
+			@log_proxy = @log_debug_proxy = nil
+			super
+		end
+
+		### Return the proxied logger.
 		def log
-			MUES::Logger[ self.class ]
+			@log_proxy ||= ClassNameProxy.new( self.class )
+		end
+
+		### Return a proxied "debug" logger that ignores other level specification.
+		def log_debug
+			@log_debug_proxy ||= ClassNameProxy.new( self.class, true )
 		end
 
 	end # module Loggable
 
+
+	### A collection of ANSI color utility functions
+	module ANSIColorUtilities
+
+		# Set some ANSI escape code constants (Shamelessly stolen from Perl's
+		# Term::ANSIColor by Russ Allbery <rra@stanford.edu> and Zenin <zenin@best.com>
+		ANSI_ATTRIBUTES = {
+			'clear'      => 0,
+			'reset'      => 0,
+			'bold'       => 1,
+			'dark'       => 2,
+			'underline'  => 4,
+			'underscore' => 4,
+			'blink'      => 5,
+			'reverse'    => 7,
+			'concealed'  => 8,
+
+			'black'      => 30,   'on_black'   => 40,
+			'red'        => 31,   'on_red'     => 41,
+			'green'      => 32,   'on_green'   => 42,
+			'yellow'     => 33,   'on_yellow'  => 43,
+			'blue'       => 34,   'on_blue'    => 44,
+			'magenta'    => 35,   'on_magenta' => 45,
+			'cyan'       => 36,   'on_cyan'    => 46,
+			'white'      => 37,   'on_white'   => 47
+		}
+
+		###############
+		module_function
+		###############
+
+		### Create a string that contains the ANSI codes specified and return it
+		def ansi_code( *attributes )
+			attributes.flatten!
+			attributes.collect! {|at| at.to_s }
+			return '' unless /(?:vt10[03]|xterm(?:-color)?|linux|screen)/i =~ ENV['TERM']
+			attributes = ANSI_ATTRIBUTES.values_at( *attributes ).compact.join(';')
+
+			if attributes.empty?
+				return ''
+			else
+				return "\e[%sm" % attributes
+			end
+		end
+
+
+		### Colorize the given +string+ with the specified +attributes+ and return it, handling 
+		### line-endings, color reset, etc.
+		def colorize( *args )
+			string = ''
+
+			if block_given?
+				string = yield
+			else
+				string = args.shift
+			end
+
+			ending = string[/(\s)$/] || ''
+			string = string.rstrip
+
+			return ansi_code( args.flatten ) + string + ansi_code( 'reset' ) + ending
+		end
+
+	end # module ANSIColorUtilities
 
 end # module MUES
 

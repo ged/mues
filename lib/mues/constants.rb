@@ -11,5 +11,18 @@ module MUES::Constants
 	# The default port to listen on
 	DEFAULT_PORT = 2424
 
+	# The user to use when connecting to amqp
+	DEFAULT_BUS_USER = 'engine'
+
+	# The password to use when connecting to amqp -- obviously this will
+	# need to change for anything but the spike.
+	DEFAULT_BUS_PASS = 'Iuv{o8veeciNgoh0'
+
+	# The name of the vhost that will be used to communicate with players.
+	DEFAULT_PLAYERS_VHOST = '/players'
+
+	# The name of the vhost that will be used for environment events.
+	DEFAULT_ENVIRONMENT_VHOST = '/env'
+
 end # module MUES::Constants
 

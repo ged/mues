@@ -1,0 +1,90 @@
+#!/usr/bin/env ruby
+
+require 'trollop'
+require 'logger'
+
+require 'mues'
+require 'mues/mixins'
+
+### The 'mues' command.
+class MUES::Command
+	include MUES::Loggable
+
+	### Run the command with the given arguments
+	def self::run( arguments )
+		subcommands = self.instance_methods.
+			find_all {|meth| meth =~ /_command$/ }.
+			collect  {|meth| meth[/^(.*)_command$/, 1] }
+
+		global_opts = Trollop.options( arguments ) do
+			banner "MUES utility"
+			version MUES::VERSION
+			opt :debug, "Turn on debug logging"
+			stop_on( subcommands )
+		end
+
+		self.new( global_opts ).run( arguments )
+	end
+
+
+	#################################################################
+	###	I N S T A N C E   M E T H O D S
+	#################################################################
+
+	### Create a new instance of the command configured with the given +global_opts+.
+	def initialize( global_opts={} )
+		@global_opts = global_opts
+		MUES.logger.level = Logger::DEBUG if global_opts[:debug]
+	end
+
+
+	######
+	public
+	######
+
+	# The global command-line options hash
+	attr_reader :global_opts
+
+
+	### Run the command.
+	def run( *arguments )
+		arguments.flatten!
+
+		subcommand = arguments.shift unless arguments.first =~ /^-/
+		subcommand ||= 'help'
+
+		subcommand_method = self.method( "#{subcommand}_command" )
+		return subcommand_method.call( arguments )
+	rescue NameError => err
+		self.log.error "%s: %s" % [ err.class.name, err.message ]
+		$stderr.puts "No such command '%s'" % [ subcommand ]
+	end
+
+
+	# 
+	# Command methods
+	# 
+
+	### Start the server.
+	def start_command( args )
+		opts = Trollop.options( args ) do
+			text "Start the server"
+			opt :config, "The path to the config file to use when starting",
+				:default => 'config.yml'
+			opt :players_vhost, "The AMQP vhost to use for player connections",
+				:default => DEFAULT_PLAYERS_VHOST
+			opt :env_vhost, "The AMQP vhost to use for the game environment",
+				:default => DEFAULT_ENVIRONMENT_VHOST
+			opt :mq_user, "The user to connect to the AMQP bus as"
+			opt :mq_pass, "The password to use when connecting to AMQP"
+		end
+
+		MUES::Engine.start.join
+	end
+
+
+end # class MUES::Command
+
+
+MUES::Command.run( ARGV )
+

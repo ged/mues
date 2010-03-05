@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'bunny'
+
 require 'mues'
 require 'mues/mixins'
 require 'mues/constants'
@@ -11,15 +13,6 @@ class MUES::Engine
 
 	# The Engine's version-control revision
 	VCSREV = %q$Revision$
-
-	# The user to use when connecting to amqp
-	BUS_USER = 'engine'
-
-	# The name of the vhost that will be used to communicate with players.
-	PLAYERS_VHOST = '/players'
-
-	# The name of the vhost that will be used for environment events.
-	ENVIRONMENT_VHOST = '/env'
 
 
 	### Create a new Engine and start it, returning the ThreadGroup containing
@@ -47,13 +40,20 @@ class MUES::Engine
 
 		# Threads and thread groups
 		@engine_threads = ThreadGroup.new
-		@parent_thread  = nil
+		@thread         = nil
+
+		# The environment object
+		@environment    = nil
 	end
 
 
+	######
+	public
+	######
+
 	### Start the engine
 	def start
-		@parent_thread = Thread.new do
+		self.thread = Thread.new do
 			self.log.debug "Starting the Engine..."
 			Thread.current.abort_on_exception = true
 
@@ -61,16 +61,17 @@ class MUES::Engine
 			self.start_player_bus
 
 			# Set up the shared environment
-			# @room = Room.new( @envbus )
-
+			@environment = MUES::Environment.new( @envbus )
+			@environment.start
 		end
 
-		@engine_threads.add( @parent_thread )
+		return self.thread
 	end
 
 
+	### Stop the engine and disconnect all players.
 	def stop
-		log( NOTICE, "Stopping the Engine." )
+		self.log.notice "Stopping the Engine."
 
 		self.stop_player_bus
 		self.stop_environment_bus
@@ -90,9 +91,9 @@ class MUES::Engine
 	def start_environment_bus
 		self.log.notice "Creating the environment event bus."
 		@envbus = Bunny.new(
-			:vhost => ENVIRONMENT_VHOST,
-			:user  => BUS_USER,
-			:pass  => BUS_PASS
+			:vhost => DEFAULT_ENVIRONMENT_VHOST,
+			:user  => DEFAULT_BUS_USER,
+			:pass  => DEFAULT_BUS_PASS
 		  )
 
 		self.log.debug "  starting..."
@@ -111,9 +112,9 @@ class MUES::Engine
 	def start_player_bus
 		self.log.notice "Creating the players event bus."
 		@playersbus = Bunny.new(
-			:vhost => PLAYERS_VHOST,
-			:user  => BUS_USER,
-			:pass  => BUS_PASS
+			:vhost => DEFAULT_PLAYERS_VHOST,
+			:user  => DEFAULT_BUS_USER,
+			:pass  => DEFAULT_BUS_PASS
 		  )
 
 		self.log.debug "  starting..."
@@ -135,7 +136,7 @@ class MUES::Engine
 			:consumer_tag => 'engine',
 			:exclusive    => true,
 			:no_ack       => false,
-			&self.method(:handle_client_connect)
+			&self.method(:handle_connect_event)
 		  )
 	end
 
@@ -153,20 +154,12 @@ class MUES::Engine
 
 	### Handle an incoming connection event: Read the username from the connect 
 	### event and set up a client thread for the corresponding exchange.
-	def handle_client_connect( event )
-		header, details, payload = event.values_at( :header, :delivery_details, :payload )
-		playername = payload.strip
-
-		log( INFO, "Trying to connect to the #{playername} exchange." )
-		exch = @playersbus.exchange( playername, :passive => true )
-		queue = @playersbus.queue( "#{playername}_commands", 
-			:durable => true, :exclusive => true, :auto_delete => true )
-		queue.bind( exch, :key => 'command.#' )
-
-		player = Player.new( playername, queue, exch )
+	def handle_connect_event( event )
+		player = Player.new_from_connect_event( event )
+		player.connect_to_bus( @playersbus )
+		@players[ playername ] = player
 
 		thr = player.start
-		@players[ playername ] = player
 		@player_threads.add( thr )
 	rescue => err
 		self.log.error "Connection event failed: %s: %s" % [ err.class.name, err.message ]

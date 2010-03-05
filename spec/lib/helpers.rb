@@ -10,8 +10,7 @@ BEGIN {
 }
 
 require 'mues'
-require 'mues/logger'
-require 'mues/logger/outputter'
+require 'mues/utils'
 require 'mues/mixins'
 
 # 
@@ -19,65 +18,63 @@ require 'mues/mixins'
 # 
 module MUES::SpecHelpers
 
-	class ArrayLogOutputter < MUES::Logger::Outputter
-		include MUES::HTMLUtilities
-
-		FORMAT = %q{
-		<dd class="log-message #{level}">
-			<span class="log-time">#{time.strftime('%Y/%m/%d %H:%M:%S')}</span>
-			<span class="log-level">#{level}</span>
-			:
-			<span class="log-name">#{escaped_name}</span>
-			<span class="log-frame">#{frame ? '('+frame+'): ' : ''}</span>
-			<span class="log-message-text">#{escaped_msg}</span>
-		</dd>
-		}
-
-		### Create a new ArrayLogOutputter that will append content to +array+.
+	class ArrayLogger
+		### Create a new ArrayLogger that will append content to +array+.
 		def initialize( array )
-			super( 'arraylogger', 'Array Logger', FORMAT )
 			@array = array
 		end
 
-		attr_accessor :array
-
 		### Write the specified +message+ to the array.
-		def write( time, level, name, frame, msg )
-			escaped_msg = escape_html( msg )
-			escaped_name = escape_html( name )
-			html = @format.interpolate( binding )
-
-			@array << html
+		def write( message )
+			@array << message
 		end
+
+		### No-op -- this is here just so Logger doesn't complain
+		def close; end
 
 	end # class ArrayLogger
 
 
-	# The default logging level for reset_logging/setup_logging
-	DEFAULT_LOG_LEVEL = :crit
-
-	### Remove any outputters and reset the level to DEFAULT_LOG_LEVEL
-	def reset_logging
-		MUES::Logger.reset
+	unless defined?( LEVEL )
+		LEVEL = {
+			:debug => Logger::DEBUG,
+			:info  => Logger::INFO,
+			:warn  => Logger::WARN,
+			:error => Logger::ERROR,
+			:fatal => Logger::FATAL,
+		  }
 	end
 
-	### Set up an HTML log outputter at the specified +level+ that's been tailored to SpecMate 
-	### output.
-	def setup_logging( level=DEFAULT_LOG_LEVEL )
-		reset_logging()
-		description = "`%s' spec" % [ @_defined_description ]
-		outputter = nil
+	###############
+	module_function
+	###############
+
+	### Reset the logging subsystem to its default state.
+	def reset_logging
+		MUES.reset_logger
+	end
+
+
+	### Alter the output of the default log formatter to be pretty in SpecMate output
+	def setup_logging( level=Logger::FATAL )
+
+		# Turn symbol-style level config into Logger's expected Fixnum level
+		if MUES::Loggable::LEVEL.key?( level )
+			level = MUES::Loggable::LEVEL[ level ]
+		end
+
+		logger = Logger.new( $stderr )
+		MUES.logger = logger
+		MUES.logger.level = level
 
 		# Only do this when executing from a spec in TextMate
 		if ENV['HTML_LOGGING'] || (ENV['TM_FILENAME'] && ENV['TM_FILENAME'] =~ /_spec\.rb/)
 			Thread.current['logger-output'] = []
-			outputter = ArrayLogOutputter.new( Thread.current['logger-output'] )
-		else
-			outputter = MUES::Logger::Outputter.create( 'color:stderr', description )
+			logdevice = ArrayLogger.new( Thread.current['logger-output'] )
+			MUES.logger = Logger.new( logdevice )
+			# MUES.logger.level = level
+			MUES.logger.formatter = MUES::HtmlLogFormatter.new( logger )
 		end
-
-		MUES::Logger.global.outputters << outputter
-		MUES::Logger::global.level = level
 	end
 
 end

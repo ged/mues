@@ -30,29 +30,71 @@
 #
 module MUES
 
-	### Make a vector out of the given +version_string+, which makes it easier to compare 
-	### with other x.y.z-style version strings.
-	def vvec( version_string )
-		return version_string.split('.').collect {|v| v.to_i }.pack( 'N*' )
-	end
-	module_function :vvec
-
 	# Package version constant
 	VERSION = '2.0.0'
 
-	# Version vector
-	VERSION_VEC = vvec( VERSION )
+	# VCS revision
+	REVISION = %q$Revision$
 
-	unless vvec(RUBY_VERSION) >= vvec('1.9.1')
-		raise "MUES requires Ruby 1.9.1 or greater."
+
+	# Load the logformatters and some other stuff first
+	require 'mues/mixins'
+	require 'mues/utils'
+	require 'mues/constants'
+
+	include MUES::Constants,
+	        MUES::VersionFunctions
+
+
+	### Logging
+	@default_logger = Logger.new( $stderr )
+	@default_logger.level = $DEBUG ? Logger::DEBUG : Logger::WARN
+
+	@default_log_formatter = MUES::LogFormatter.new( @default_logger )
+	@default_logger.formatter = @default_log_formatter
+
+	@logger = @default_logger
+
+
+	class << self
+		# The log formatter that will be used when the logging subsystem is reset
+		attr_accessor :default_log_formatter
+
+		# The logger that will be used when the logging subsystem is reset
+		attr_accessor :default_logger
+
+		# The logger that's currently in effect
+		attr_accessor :logger
+		alias_method :log, :logger
+		alias_method :log=, :logger=
 	end
 
-	# Load all the parts
-	require 'mues/mixins'
-	require 'mues/logger'
-	require 'mues/constants'
-	require 'mues/utils'
+
+	### Reset the global logger object to the default
+	def self::reset_logger
+		self.logger = self.default_logger
+		self.logger.level = Logger::WARN
+		self.logger.formatter = self.default_log_formatter
+	end
+
+
+	### Returns +true+ if the global logger has not been set to something other than
+	### the default one.
+	def self::using_default_logger?
+		return self.logger == self.default_logger
+	end
+
+
+	### Return the library's version string
+	def self::version_string( include_buildnum=false )
+		vstring = "%s %s" % [ self.name, VERSION ]
+		vstring << " (build %s)" % [ REVISION[/: ([[:xdigit:]]+)/, 1] || '0' ] if include_buildnum
+		return vstring
+	end
+
+
 	require 'mues/engine'
+	require 'mues/player'
 
 end # module MUES
 
