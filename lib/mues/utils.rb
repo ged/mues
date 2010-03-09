@@ -376,7 +376,7 @@ module MUES
 
 			cmd.flatten!
 			cmd.collect! {|part| part.to_s }
-			log( "Opening a pipe from: ", cmd.collect {|part| part =~ /\s/ ? part.inspect : part} ) 
+			log( "Opening a pipe from: ", cmd.collect {|part| part =~ /\s/ ? part.inspect : part} )
 
 			if $dryrun
 				$stderr.puts "(dry run mode)"

@@ -5,6 +5,8 @@ require 'bunny'
 require 'mues'
 require 'mues/mixins'
 require 'mues/constants'
+require 'mues/environment'
+
 
 # The main server object class.
 class MUES::Engine
@@ -14,12 +16,13 @@ class MUES::Engine
 	# The Engine's version-control revision
 	VCSREV = %q$Revision$
 
-
-	### Create a new Engine and start it, returning the ThreadGroup containing
-	### all of its threads.
-	def self::start
-		return self.new.start
-	end
+	# The default configuration
+	DEFAULT_CONFIG = {
+		:mq_user       => DEFAULT_MQ_USER,
+		:mq_pass       => DEFAULT_MQ_PASS,
+		:players_vhost => DEFAULT_PLAYERS_VHOST,
+		:env_vhost     => DEFAULT_ENVIRONMENT_VHOST,
+	}
 
 
 	#################################################################
@@ -27,23 +30,32 @@ class MUES::Engine
 	#################################################################
 
 	### Create a new Engine object
-	def initialize
+	def initialize( config={} )
 		self.log.debug "New engine created."
+		@config = DEFAULT_CONFIG.merge( config )
+		self.log.debug "  engine config is: %p" % [ @config ]
+
+		players_vhost, env_vhost, user, password =
+			@config.values_at( :players_vhost, :env_vhost, :mq_user, :mq_pass )
 
 		# AMQP virtualhost connections
-		@playersbus     = nil
-		@envbus         = nil
+		@playersbus     = Bunny.new( :vhost => players_vhost, :user => user, :pass => password )
+		@envbus         = Bunny.new( :vhost => env_vhost, :user => user, :pass => password )
 
 		# Event queues and exchanges
 		@connect_queue  = nil
 		@login_exch     = nil
 
 		# Threads and thread groups
-		@engine_threads = ThreadGroup.new
-		@thread         = nil
+		@threadgroup    = ThreadGroup.new
+		@connect_thread = nil
+		@env_thread     = nil
 
 		# The environment object
 		@environment    = nil
+
+		# The hash of connected players
+		@players        = {}
 	end
 
 
@@ -51,32 +63,63 @@ class MUES::Engine
 	public
 	######
 
+	# The engine's configuration
+	attr_reader :config
+
+	# The thread that handles event-propagation into and out of the Environment
+	attr_accessor :env_thread
+
+	# The thread that handles incoming connections
+	attr_accessor :connect_thread
+
+	# The ThreadGroup that contains the engine's threads
+	attr_reader :threadgroup
+
+	# The MUES::Environment that is running the game world
+	attr_reader :environment
+
+
 	### Start the engine
 	def start
-		self.thread = Thread.new do
-			self.log.debug "Starting the Engine..."
+		self.log.debug "Starting the Engine..."
+		self.set_signal_handlers
+
+		vhost, user, pass = self.config.values_at( :env_vhost, :mq_user, :mq_pass )
+		self.start_environment_bus( vhost, user, pass )
+
+		# Set up the shared environment
+		self.env_thread = Thread.new do
 			Thread.current.abort_on_exception = true
-
-			self.start_environment_bus
-			self.start_player_bus
-
-			# Set up the shared environment
+			self.log.debug "  creating the environment object and starting it..."
 			@environment = MUES::Environment.new( @envbus )
 			@environment.start
 		end
+		self.threadgroup.add( self.env_thread )
 
-		return self.thread
+		# Set up the connection-handler
+		self.connect_thread = Thread.new do
+			Thread.current.abort_on_exception = true
+			self.log.debug "  setting up the connection-handler"
+			self.start_player_bus( vhost, user, pass )
+		end
+		self.threadgroup.add( self.connect_thread )
+
+		return self.env_thread
 	end
 
 
 	### Stop the engine and disconnect all players.
 	def stop
-		self.log.notice "Stopping the Engine."
+		self.unset_signal_handlers
+		self.log.info "Stopping the Engine."
+
+		@environment.stop
 
 		self.stop_player_bus
 		self.stop_environment_bus
 
-		@players.each do |pl|
+		@players.each do |name, pl|
+			self.log.info "  disconnecting player %s" % [ name ]
 			pl.disconnect
 		end
 	end
@@ -87,37 +130,45 @@ class MUES::Engine
 	protected
 	#########
 
-	### Start the connections to AMQP for the environment.
-	def start_environment_bus
-		self.log.notice "Creating the environment event bus."
-		@envbus = Bunny.new(
-			:vhost => DEFAULT_ENVIRONMENT_VHOST,
-			:user  => DEFAULT_BUS_USER,
-			:pass  => DEFAULT_BUS_PASS
-		  )
+	### Set up various signals to shut down/reload the engine.
+	def set_signal_handlers
+		stop_handler = lambda {|*args|
+			self.log.error "Stopping the engine: %p" % [ args ]
+			self.stop
+		}
 
-		self.log.debug "  starting..."
+		Signal.trap( :TERM, &stop_handler )
+		Signal.trap( :INT, &stop_handler )
+		Signal.trap( :HUP, &stop_handler )
+	end
+
+
+	### Restore default signal handlers.
+	def unset_signal_handlers
+		Signal.trap( :TERM, :SIG_DFL )
+		Signal.trap( :INT, :SIG_DFL )
+		Signal.trap( :HUP, :SIG_DFL )
+	end
+
+
+	### Start the connections to AMQP for the environment using the specified +vhost+, 
+	### +user+, and +password+.
+	def start_environment_bus( vhost, user, password )
+		self.log.debug "Starting the environment event bus..."
 		@envbus.start
 	end
 
 
 	### Stop propagating events in the environment
 	def stop_environment_bus
-		self.log.notice "Stopping the environment event bus."
+		self.log.info "Stopping the environment event bus."
 		@envbus.stop
 	end
 
 
 	### Start the connections to AMQP for communication with players.
-	def start_player_bus
-		self.log.notice "Creating the players event bus."
-		@playersbus = Bunny.new(
-			:vhost => DEFAULT_PLAYERS_VHOST,
-			:user  => DEFAULT_BUS_USER,
-			:pass  => DEFAULT_BUS_PASS
-		  )
-
-		self.log.debug "  starting..."
+	def start_player_bus( vhost, user, password )
+		self.log.debug "Starting the players event bus..."
 		@playersbus.start
 
 		# Set up the exchange player clients will use for logging in
@@ -143,9 +194,9 @@ class MUES::Engine
 
 	### Stop accepting incoming connections
 	def stop_player_bus
-		self.log.notice "Stopping the player event bus."
-		@connect_queue.unsubscribe
-		@connect_queue.unbind
+		self.log.info "Stopping the player event bus."
+		@connect_queue.unsubscribe( :consumer_tag => 'engine' )
+		@connect_queue.unbind( @login_exch, :key => :character_name )
 		@connect_queue.delete
 
 		@playersbus.stop

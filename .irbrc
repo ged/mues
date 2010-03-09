@@ -14,7 +14,7 @@ begin
 		MUES::Logger::global.outputters << outputter
 		MUES::Logger::global.level = :debug
 
-		MUES::Logger::global.notice "Logging enabled."
+		MUES::Logger::global.info "Logging enabled."
 	end
 rescue => e
 	$stderr.puts "Ack! MUES library failed to load: #{e.message}\n\t" +

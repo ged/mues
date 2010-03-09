@@ -61,13 +61,16 @@ class MUES::Player
 
 	### Start handling events.
 	def start
-		self.queue.subscribe(
-			:header       => true,
-			:consumer_tag => self.name,
-			:exclusive    => true,
-			:no_ack       => false,
-			&self.method(:handle_command_event)
-		  )
+		@thread = Thread.new do
+			Thread.current.abort_on_exception = true
+			self.queue.subscribe(
+				:header       => true,
+				:consumer_tag => self.name,
+				:exclusive    => true,
+				:no_ack       => false,
+				&self.method(:handle_command_event)
+			  )
+		end
 	end
 
 
@@ -75,8 +78,9 @@ class MUES::Player
 	### player.
 	def disconnect
 		queue = self.queue
-		queue.unsubscribe
-		queue.unbind
+
+		queue.unsubscribe( :consumer_tag => self.name )
+		queue.unbind( self.exchange )
 		queue.delete
 
 		self.exchange.delete
@@ -95,7 +99,7 @@ class MUES::Player
 		command = payload.strip
 
 		if command =~ /^(quit|logout)\b/i
-			self.log.notice "Temporary logout command invoked by '%s'." % [ self.name ]
+			self.log.info "Temporary logout command invoked by '%s'." % [ self.name ]
 			self.disconnect
 		end
 

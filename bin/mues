@@ -2,16 +2,19 @@
 
 require 'trollop'
 require 'logger'
+require 'yaml'
 
 require 'mues'
 require 'mues/mixins'
+require 'mues/utils'
 
 ### The 'mues' command.
 class MUES::Command
-	include MUES::Loggable
+	include MUES::Constants,
+	        MUES::UtilityFunctions
 
 	### Run the command with the given arguments
-	def self::run( arguments )
+	def self::execute( arguments )
 		subcommands = self.instance_methods.
 			find_all {|meth| meth =~ /_command$/ }.
 			collect  {|meth| meth[/^(.*)_command$/, 1] }
@@ -19,11 +22,24 @@ class MUES::Command
 		global_opts = Trollop.options( arguments ) do
 			banner "MUES utility"
 			version MUES::VERSION
+			opt :config, "The path to the config file to use when starting"
+			opt :players_vhost, "The AMQP vhost to use for player connections",
+				:default => DEFAULT_PLAYERS_VHOST
+			opt :env_vhost, "The AMQP vhost to use for the game environment",
+				:default => DEFAULT_ENVIRONMENT_VHOST
+			opt :mq_user, "The user to connect to the AMQP bus as",
+				:default => DEFAULT_MQ_USER
+			opt :mq_pass, "The password to use when connecting to AMQP"
 			opt :debug, "Turn on debug logging"
 			stop_on( subcommands )
 		end
 
-		self.new( global_opts ).run( arguments )
+		if configfile = global_opts[:config]
+			config = YAML.load_file( configfile )
+			global_opts = config.merge( global_opts )
+		end
+
+		self.new( global_opts ).execute( arguments )
 	end
 
 
@@ -32,9 +48,10 @@ class MUES::Command
 	#################################################################
 
 	### Create a new instance of the command configured with the given +global_opts+.
-	def initialize( global_opts={} )
-		@global_opts = global_opts
-		MUES.logger.level = Logger::DEBUG if global_opts[:debug]
+	def initialize( config={} )
+		@config = config
+		MUES.logger.level = Logger::DEBUG if config[:debug]
+		MUES.logger.formatter = MUES::ColorLogFormatter.new( MUES.logger )
 	end
 
 
@@ -45,19 +62,22 @@ class MUES::Command
 	# The global command-line options hash
 	attr_reader :global_opts
 
+	# The configuration
+	attr_reader :config
+
 
 	### Run the command.
-	def run( *arguments )
+	def execute( *arguments )
 		arguments.flatten!
 
-		subcommand = arguments.shift unless arguments.first =~ /^-/
+		subcommand = arguments.shift unless arguments.first.to_s =~ /^-/
 		subcommand ||= 'help'
 
-		subcommand_method = self.method( "#{subcommand}_command" )
-		return subcommand_method.call( arguments )
-	rescue NameError => err
-		self.log.error "%s: %s" % [ err.class.name, err.message ]
-		$stderr.puts "No such command '%s'" % [ subcommand ]
+		if self.respond_to?( "#{subcommand}_command" )
+			self.send( "#{subcommand}_command", arguments )
+		else
+			raise "No such command #{subcommand}."
+		end
 	end
 
 
@@ -65,26 +85,144 @@ class MUES::Command
 	# Command methods
 	# 
 
+	### Show help for the tool.
+	def help_command( args )
+		$stderr.puts "Global opts are: %p" % [ @config ]
+	end
+
+
 	### Start the server.
 	def start_command( args )
 		opts = Trollop.options( args ) do
 			text "Start the server"
-			opt :config, "The path to the config file to use when starting",
-				:default => 'config.yml'
-			opt :players_vhost, "The AMQP vhost to use for player connections",
-				:default => DEFAULT_PLAYERS_VHOST
-			opt :env_vhost, "The AMQP vhost to use for the game environment",
-				:default => DEFAULT_ENVIRONMENT_VHOST
-			opt :mq_user, "The user to connect to the AMQP bus as"
-			opt :mq_pass, "The password to use when connecting to AMQP"
 		end
 
-		MUES::Engine.start.join
+		engine = MUES::Engine.new( opts )
+		engine.start
+
+		# TODO: eventually, we'll just let it go into the background, but for
+		# now, watch its two primary threads.
+		engine.connect_thread.join
+		engine.env_thread.join
+	end
+
+
+	### Set up the MUES environment.
+	def setup_command( args )
+		self.create_vhosts
+		self.create_engine_user
+	end
+
+
+	### Create a user account.
+	def create_user_command( args )
+		username = args.unshift or abort "usage: create_user <username>"
+
+		opts = Trollop.options( args ) do
+			text "Create a new user"
+			opt :password, "Specify the password for the new user"
+		end
+
+		password       = prompt_for_password( "password: " )
+		puts
+		password_again = prompt_for_password( "   again: " )
+		puts
+
+		if password == password_again
+			self.create_user( username, password )
+		else
+			abort "Passwords didn't match."
+		end
+	end
+
+
+	#########
+	protected
+	#########
+
+	### Return the path to rabbitmqctl.
+	def rabbitmqctl
+		@rabbitmqctl ||= ( ENV['RABBITMQCTL'] || which('rabbitmqctl') ) or
+			raise "Can't find rabbitmqctl in your PATH. Try running with " +
+			      "RABBITMQCTL=/path/to/rabbitmqctl"
+	end
+
+
+	### Get the current list of users configured for the event bus.
+	def get_current_userlist
+		users = []
+		readfrom( self.rabbitmqctl, 'list_users' ) do |io|
+			io.each do |line|
+				users << line.chomp unless line.index('...')
+			end
+		end
+		return users
+	end
+
+
+	### Create a new user with the specified +username+.
+	def create_user( username, password )
+		current_users = self.get_current_userlist
+
+		if current_users.include?( username )
+			log "Excellent, we already have a #{username} user. Ensuring the password is correct."
+			run self.rabbitmqctl, 'change_password', username, password
+		else
+			log "Creating new user #{username}."
+			run self.rabbitmqctl, 'add_user', username, password
+		end
+
+		run self.rabbitmqctl, 'set_permissions',
+			'-p', self.config[:players_vhost],
+			username,
+			"^(login|#{username}(:.*)?)$",
+			"^(login|#{username})$",
+			"^#{username}(:.*)?$"
+	end
+
+
+	### Create the players and environment vhosts using the given +config+.
+	def create_vhosts
+		vhosts = []
+		readfrom( self.rabbitmqctl, 'list_vhosts' ) do |io|
+			io.each do |line|
+				vhosts << line.chomp unless line.index('...')
+			end
+		end
+
+		config.values_at( :players_vhost, :env_vhost ).each do |vhost|
+			if vhosts.include?( vhost )
+				log "Excellent, we already have a #{vhost} vhost."
+			else
+				run self.rabbitmqctl, 'add_vhost', vhost
+			end
+		end
+	end
+
+
+	### Create the engine user.
+	def create_engine_user
+		username = self.config[:mq_user]
+		current_users = self.get_current_userlist
+
+		if current_users.include?( username )
+			log "Excellent, we already have a #{username} user. Ensuring the password is correct."
+			run self.rabbitmqctl, 'change_password', username, self.config[:mq_pass]
+		else
+			run self.rabbitmqctl, 'add_user', username, self.config[:mq_pass]
+		end
+
+		self.config.values_at( :players_vhost, :env_vhost ).each do |vhost|
+			log "  setting permissions for the %s vhost to: %p" % [ vhost, '.*' ]
+			run self.rabbitmqctl, 'set_permissions',
+				'-p', vhost,
+				username, '.*', '.*', '.*'
+		end
 	end
 
 
 end # class MUES::Command
 
 
-MUES::Command.run( ARGV )
+MUES::Command.execute( ARGV )
 
