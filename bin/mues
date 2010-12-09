@@ -22,24 +22,33 @@ class MUES::Command
 		global_opts = Trollop.options( arguments ) do
 			banner "MUES utility"
 			version MUES::VERSION
+			text ''
+
+			text "Subcommands"
+			text "  " + subcommands.sort.join('  ')
+			text ''
+
 			opt :config, "The path to the config file to use when starting"
 			opt :players_vhost, "The AMQP vhost to use for player connections",
 				:default => DEFAULT_PLAYERS_VHOST
-			opt :env_vhost, "The AMQP vhost to use for the game environment",
-				:default => DEFAULT_ENVIRONMENT_VHOST
 			opt :mq_user, "The user to connect to the AMQP bus as",
 				:default => DEFAULT_MQ_USER
 			opt :mq_pass, "The password to use when connecting to AMQP"
 			opt :debug, "Turn on debug logging"
+
 			stop_on( subcommands )
 		end
 
-		if configfile = global_opts[:config]
-			config = YAML.load_file( configfile )
-			global_opts = config.merge( global_opts )
-		end
+		command, *args = *arguments
 
-		self.new( global_opts ).execute( arguments )
+		## :TODO: Figure out how to do this while preserving global_opts's 
+		## instance methods.
+		# if configfile = global_opts[:config]
+		# 	config = YAML.load_file( configfile )
+		# 	global_opts = config.merge( global_opts )
+		# end
+
+		self.new( global_opts ).execute( command, *args )
 	end
 
 
@@ -50,7 +59,7 @@ class MUES::Command
 	### Create a new instance of the command configured with the given +global_opts+.
 	def initialize( config={} )
 		@config = config
-		MUES.logger.level = Logger::DEBUG if config[:debug]
+		MUES.logger.level = Logger::DEBUG if config.debug
 		MUES.logger.formatter = MUES::ColorLogFormatter.new( MUES.logger )
 	end
 
@@ -67,10 +76,9 @@ class MUES::Command
 
 
 	### Run the command.
-	def execute( *arguments )
+	def execute( subcommand='help', *arguments )
 		arguments.flatten!
 
-		subcommand = arguments.shift unless arguments.first.to_s =~ /^-/
 		subcommand ||= 'help'
 
 		if self.respond_to?( "#{subcommand}_command" )
@@ -87,7 +95,7 @@ class MUES::Command
 
 	### Show help for the tool.
 	def help_command( args )
-		$stderr.puts "Global opts are: %p" % [ @config ]
+		$stderr.puts "Help mode: Global opts are: %p" % [ @config ]
 	end
 
 
@@ -116,23 +124,31 @@ class MUES::Command
 
 	### Create a user account.
 	def create_user_command( args )
-		username = args.unshift or abort "usage: create_user <username>"
-
 		opts = Trollop.options( args ) do
+			banner "Usage: create_user <username>"
+			text ''
 			text "Create a new user"
+			text ''
 			opt :password, "Specify the password for the new user"
 		end
 
-		password       = prompt_for_password( "password: " )
-		puts
-		password_again = prompt_for_password( "   again: " )
-		puts
-
-		if password == password_again
-			self.create_user( username, password )
-		else
-			abort "Passwords didn't match."
+		unless username = args.shift
+			opts.educate( $stderr )
+			abort "No username given."
 		end
+
+		unless password = opts.password
+			password       = prompt_for_password( "password: " )
+			puts
+			password_again = prompt_for_password( "   again: " )
+			puts
+
+			if password != password_again
+				abort "Passwords didn't match."
+			end
+		end
+
+		self.create_user( username, password )
 	end
 
 

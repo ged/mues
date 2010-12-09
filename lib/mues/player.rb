@@ -14,7 +14,7 @@ class MUES::Player
 	def self::new_from_connect_event( event )
 		header, details, payload = event.values_at( :header, :delivery_details, :payload )
 		name = payload.strip
-		return self.new( name )
+		return self.new( name, header, details )
 	end
 
 
@@ -23,8 +23,10 @@ class MUES::Player
 	#################################################################
 
 	### Create a new Player object for the player with the given +name+.
-	def initialize( name )
+	def initialize( name, header, details )
 		@name     = name
+		@header   = header
+		@details  = details
 
 		@exchange = nil
 		@queue    = nil
@@ -38,6 +40,12 @@ class MUES::Player
 
 	# The player's name
 	attr_reader :name
+
+	# The AMQP header of the connection event
+	attr_reader :header
+
+	# The "delivery details" of the connection event
+	attr_reader :details
 
 	# The Bunny::Exchange object that is connected to the players bus
 	attr_accessor :exchange

@@ -20,8 +20,8 @@ class MUES::Client
 		@password   = password
 		@vhost      = vhost
 
-		@exchange   = nil
-		@queue      = nil
+		@output     = nil
+		@input      = nil
 
 		@client     = Bunny.new(
 			:host  => host,
@@ -41,6 +41,11 @@ class MUES::Client
 	### Connect to the server's player event bus.
 	def connect
 		@client.start
+
+		# Set up our input and output exchange/queue
+		@output = @client.exchange( @playername, :passive => false )
+		@queue = @client.queue
+
 		@exchange = @client.exchange( @playername, :passive => false )
 		@queue = @client.queue( "#{@playername}_output", :exclusive => true )
 

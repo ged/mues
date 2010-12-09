@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 
 require 'bunny'
+require 'verse'
+require 'verse/mixins'
+require 'verse/server'
 
 require 'mues'
 require 'mues/mixins'
@@ -11,7 +14,8 @@ require 'mues/environment'
 # The main server object class.
 class MUES::Engine
     include MUES::Constants,
-	        MUES::Loggable
+	        MUES::Loggable,
+	        Verse::Server
 
 	# The Engine's version-control revision
 	VCSREV = %q$Revision$
@@ -21,7 +25,6 @@ class MUES::Engine
 		:mq_user       => DEFAULT_MQ_USER,
 		:mq_pass       => DEFAULT_MQ_PASS,
 		:players_vhost => DEFAULT_PLAYERS_VHOST,
-		:env_vhost     => DEFAULT_ENVIRONMENT_VHOST,
 	}
 
 
@@ -84,27 +87,60 @@ class MUES::Engine
 		self.log.debug "Starting the Engine..."
 		self.set_signal_handlers
 
-		vhost, user, pass = self.config.values_at( :env_vhost, :mq_user, :mq_pass )
-		self.start_environment_bus( vhost, user, pass )
+		self.start_environment
+		self.start_connect_listener
 
-		# Set up the shared environment
+		self.enter_runloop
+	end
+
+
+	### Create the environment, and start its thread.
+	def start_environment
 		self.env_thread = Thread.new do
 			Thread.current.abort_on_exception = true
 			self.log.debug "  creating the environment object and starting it..."
-			@environment = MUES::Environment.new( @envbus )
+			@environment = MUES::Environment.new
 			@environment.start
 		end
 		self.threadgroup.add( self.env_thread )
+	end
 
-		# Set up the connection-handler
+
+	### Set up the player event bus and start the incoming-connection
+	### listener.
+	def start_connect_listener
 		self.connect_thread = Thread.new do
 			Thread.current.abort_on_exception = true
 			self.log.debug "  setting up the connection-handler"
 			self.start_player_bus( vhost, user, pass )
 		end
 		self.threadgroup.add( self.connect_thread )
+	end
 
-		return self.env_thread
+
+	### Start the main server loop, which for now just waits for its 
+	### main threads to die off and then returns.
+	def enter_runloop
+		begin
+			self.log.debug "In runloop..."
+			self.threadgroup.list.each do |thread|
+				if !thread.alive?
+					self.log.info "  joining %p" % [ thread ]
+					thread.join
+					ThreadGroup::Default.add( thread )
+				else
+					self.log.debug "  %p is still alive; continuing" % [ thread ]
+				end
+			end
+
+			sleep 0.5
+		rescue => err
+			self.log.error "Uncaught %s: %s\n  %s" % [
+				err.class.name,
+				err.message,
+				err.backtrace.join( "\n  " )
+			]
+		end until self.threadgroup.list.empty?
 	end
 
 
@@ -145,24 +181,9 @@ class MUES::Engine
 
 	### Restore default signal handlers.
 	def unset_signal_handlers
-		Signal.trap( :TERM, :SIG_DFL )
-		Signal.trap( :INT, :SIG_DFL )
-		Signal.trap( :HUP, :SIG_DFL )
-	end
-
-
-	### Start the connections to AMQP for the environment using the specified +vhost+, 
-	### +user+, and +password+.
-	def start_environment_bus( vhost, user, password )
-		self.log.debug "Starting the environment event bus..."
-		@envbus.start
-	end
-
-
-	### Stop propagating events in the environment
-	def stop_environment_bus
-		self.log.info "Stopping the environment event bus."
-		@envbus.stop
+		Signal.trap( :TERM, Signal::SIG_DFL )
+		Signal.trap( :INT, Signal::SIG_DFL )
+		Signal.trap( :HUP, Signal::SIG_DFL )
 	end
 
 

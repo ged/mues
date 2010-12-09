@@ -2,5 +2,8 @@
 
 require 'bunny'
 require 'mues'
+require 'mues/client'
 
-# 
+# Create the client object
+
+cl = MUES::Client.new( 'localhost', 'ged', 'foom' )
